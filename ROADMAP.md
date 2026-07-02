@@ -602,34 +602,34 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** None.
 
-- [ ] Add third-party grouping directories and inventories.
-  - [ ] Create `third_party/README.md`.
-  - [ ] Create `third_party/game/README.md`.
-  - [ ] Create `third_party/database/README.md`.
-  - [ ] Create `third_party/networking/README.md`.
-  - [ ] Create `third_party/inference/README.md`.
-  - [ ] Create `third_party/speech/README.md`.
-  - [ ] Document each source tree's path, upstream URL, license, purpose, pin, and build/reference status.
-- [ ] Add stable game/HUD source references.
-  - [ ] Add `https://github.com/hajimehoshi/ebiten.git` at `third_party/game/ebiten`.
-  - [ ] Pin Ebitengine to a stable 2.9.x revision unless a focused plan proves a later feature is required.
-  - [ ] Add `https://github.com/ebitenui/ebitenui.git` at `third_party/game/ebitenui`.
-  - [ ] Add `https://github.com/ebitengine/debugui.git` at `third_party/game/debugui`.
-  - [ ] Record which sources are referenced through `replace` directives and which remain audit/reference checkouts.
+- [x] Add third-party grouping directories and inventories.
+  - [x] Create `third_party/README.md`.
+  - [x] Create `third_party/game/README.md`.
+  - [x] Create `third_party/database/README.md`.
+  - [x] Create `third_party/networking/README.md`.
+  - [x] Create `third_party/inference/README.md`.
+  - [x] Create `third_party/speech/README.md`.
+  - [x] Document each source tree's path, upstream URL, license, purpose, pin, and build/reference status.
+- [x] Add stable game/HUD source references.
+  - [x] Add `https://github.com/hajimehoshi/ebiten.git` at `third_party/game/ebiten`.
+  - [x] Pin Ebitengine to a stable 2.9.x revision unless a focused plan proves a later feature is required.
+  - [x] Add `https://github.com/ebitenui/ebitenui.git` at `third_party/game/ebitenui`.
+  - [x] Add `https://github.com/ebitengine/debugui.git` at `third_party/game/debugui`.
+  - [x] Record which sources are referenced through `replace` directives and which remain audit/reference checkouts.
 - [ ] Add persistence source reference.
-  - [ ] Add `https://gitlab.com/cznic/sqlite` at `third_party/database/modernc-sqlite`.
+  - [x] Add `https://gitlab.com/cznic/sqlite` at `third_party/database/modernc-sqlite`.
   - [ ] Pin the actual `modernc.org/sqlite` dependency through `go.mod`.
-  - [ ] Document why the cgo-free driver is preferred for the initial desktop and Android strategy.
-- [ ] Add WireGuard source references.
-  - [ ] Add `https://git.zx2c4.com/wireguard-go` at `third_party/networking/wireguard-go`.
-  - [ ] Add `https://github.com/WireGuard/wgctrl-go.git` at `third_party/networking/wgctrl-go`.
-  - [ ] Add `https://git.zx2c4.com/wireguard-tools` at `third_party/networking/wireguard-tools`.
-  - [ ] Document that these are references for detection, control, platform behavior, and later integration—not proof of an embedded cross-platform tunnel.
-- [ ] Add inference and speech source references.
-  - [ ] Add `https://github.com/ggml-org/llama.cpp.git` at `third_party/inference/llama.cpp`.
-  - [ ] Mark llama.cpp as a future service adapter rather than an initial HUD binary dependency.
-  - [ ] Add `https://github.com/ggml-org/whisper.cpp.git` at `third_party/speech/whisper.cpp`.
-  - [ ] Mark whisper.cpp as the first portable local ASR reference.
+  - [x] Document why the cgo-free driver is preferred for the initial desktop and Android strategy.
+- [x] Add WireGuard source references.
+  - [x] Add `https://git.zx2c4.com/wireguard-go` at `third_party/networking/wireguard-go`.
+  - [x] Add `https://github.com/WireGuard/wgctrl-go.git` at `third_party/networking/wgctrl-go`.
+  - [x] Add `https://git.zx2c4.com/wireguard-tools` at `third_party/networking/wireguard-tools`.
+  - [x] Document that these are references for detection, control, platform behavior, and later integration—not proof of an embedded cross-platform tunnel.
+- [x] Add inference and speech source references.
+  - [x] Add `https://github.com/ggml-org/llama.cpp.git` at `third_party/inference/llama.cpp`.
+  - [x] Mark llama.cpp as a future service adapter rather than an initial HUD binary dependency.
+  - [x] Add `https://github.com/ggml-org/whisper.cpp.git` at `third_party/speech/whisper.cpp`.
+  - [x] Mark whisper.cpp as the first portable local ASR reference.
 - [ ] Define deferred source admission gates.
   - [ ] Research Qwen3-TTS runtime, packaging, hardware, licensing, and service boundaries before adding its source.
   - [ ] Select a Meshtastic language/client/protobuf integration before adding Meshtastic source.

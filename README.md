@@ -465,6 +465,8 @@ Ebitengine should begin from a stable 2.9.x revision unless a focused implementa
 
 Every grouping directory requires a README inventory. Every submodule addition requires an intentional revision, license review, purpose statement, update procedure, and declaration of whether it is a source reference or active build dependency.
 
+The tracked [`third_party` inventory](./third_party/README.md) records the exact gitlink revisions, licenses, update procedure, and current build relationship for the admitted source set.
+
 ### Research Before Adding
 
 - Qwen3-TTS.
