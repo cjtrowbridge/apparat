@@ -4,11 +4,30 @@ Read `./agents/RULES.md` in its entirety before doing anything in this repositor
 
 ## Framework Resolution
 
-- Treat `./agents/RULES.md` as canonical policy.
+- Treat `./agents/RULES.md` as the canonical shared-policy baseline; explicit host-specific overrides in this file take precedence for this repository.
 - Use host-managed `./playbooks/`, `./references/`, `./templates/`, and `./scripts/` when present.
 - Fall back to `./agents/playbooks/`, `./agents/references/`, `./agents/templates/`, and `./agents/scripts/` when host copies are missing.
 - Treat `./plans/`, `./journal/`, `./kanban/`, and `./downtime/reports/` as host-owned operational state.
 - Keep agent-facing operating instructions in `AGENTS.md`, not the human-facing `README.md`.
+
+## Product Documentation And Planning
+
+- Host-specific scope override: the plan requirement applies to implementation work, not user-approved product-strategy or documentation refinement by itself.
+- Read `./README.md` and `./ROADMAP.md` before proposing or implementing product work.
+- Treat `./README.md` as the canonical human-facing product, architecture, scope, terminology, and design-decision contract.
+- Treat `./ROADMAP.md` as the canonical high-level implementation sequence, dependency map, phase checklist, exit criteria, and open-decision register.
+- Keep `README.md`, `ROADMAP.md`, future design documents, and implementation behavior consistent.
+- Reserve files under `./plans/` for approved implementation work involving code, dependencies, schemas, protocols, build/release systems, migrations, or similarly executable repository changes.
+- Do not create an execution plan merely to discuss, clarify, or directly refine product goals, strategy, README content, or roadmap content when the user has already approved those documentation changes.
+- Before implementation, bind the execution plan to specific `ROADMAP.md` items and verify that its intended behavior agrees with `README.md`.
+- Preserve journals as append-only historical records; record corrections in later entries instead of rewriting prior checkpoints.
+
+## Local Salvagecore Reference
+
+- `./third_party/salvagecore/` is an ignored local checkout of an older Apparat implementation used only for temporary source and design reference.
+- It is not a tracked submodule, build dependency, or product authority.
+- Do not add any file beneath `./third_party/salvagecore/` to the host repository.
+- Do not copy it wholesale. Reuse only behavior explicitly selected by `README.md`, `ROADMAP.md`, and an approved implementation plan.
 
 ## Framework Commands
 
