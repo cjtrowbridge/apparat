@@ -157,7 +157,11 @@ Project validation will eventually participate in Apparat's gameplay mechanics. 
 
 The Research tab is visible in the HUD but BOINC integration and gameplay are not actively developed in the MVP.
 
-## Controller Input
+## Input And Controls
+
+All GUI targets use one application action model for tab selection, focus movement, activation, cancellation, contextual actions, scrolling, text entry, and push-to-talk. Controller, keyboard, mouse, and touch bindings dispatch the same actions rather than maintaining separate UI behavior.
+
+### Steam Deck Controller
 
 The initial Steam Deck mapping is:
 
@@ -175,7 +179,57 @@ Holding `R2` begins local audio capture. Releasing it ends capture and submits t
 
 Steam Deck text fields support the system `Steam+X` on-screen keyboard shortcut and expose a visible keyboard action beside text inputs.
 
-Controller, keyboard, mouse, and touch use one shared focus/navigation model. Essential HUD operations must never be mouse-only.
+### Debian GUI
+
+Debian GUI mode supports the Steam Deck controller mapping unchanged when a compatible controller is attached. Its default keyboard mapping is:
+
+- `Ctrl+PageUp`: previous top-level tab.
+- `Ctrl+PageDown`: next top-level tab.
+- `Alt+1` through `Alt+7`: open Comrades, Projects, Research, Cluster, Routing, Tasks, or Settings directly.
+- `Tab` and `Shift+Tab`: move to the next or previous focusable control.
+- Arrow keys: move within lists, trees, grids, menus, and spatial focus groups.
+- `Enter`: activate the focused control or submit the current form.
+- `Space`: activate a button or toggle the focused checkbox, switch, or selection.
+- `Escape`: close a modal, leave the current focus scope, go back, or cancel the current safe operation.
+- Menu key or `Shift+F10`: open contextual actions for the focused item.
+- `Ctrl+Shift+P`: open the command palette.
+- `PageUp`, `PageDown`, `Home`, and `End`: navigate long views and collections.
+- Right `Ctrl`: hold to talk; release to submit captured audio to the selected ASR route.
+
+Pressing `Escape` while right `Ctrl` is held cancels the recording, and releasing right `Ctrl` after cancellation must not submit it. Push-to-talk and other bindings are configurable, but these defaults remain the documented fallback and automated-test contract.
+
+The default mouse mapping is:
+
+- Left click: focus and activate the selected control according to its normal desktop behavior.
+- Right click: open contextual actions.
+- Wheel or touchpad scroll: scroll the focused or pointed scroll container.
+- Mouse back button: back or cancel when available.
+- Drag: resize approved panes, adjust sliders, select text, or perform an explicitly represented reorder operation.
+
+No essential operation may require pointer-only drag behavior. Complex drag operations must also expose keyboard and controller actions such as move up, move down, move before, move after, or resize by step. An additional mouse button may be configured for push-to-talk, but no mouse-specific push-to-talk binding is required by default.
+
+When a text editor or text field owns focus, ordinary Debian text-editing and clipboard behavior takes precedence over unmodified navigation keys. Global bindings use explicit modifiers so normal typing does not trigger application navigation.
+
+### Debian Headless
+
+Debian headless mode has no HUD focus map and must not initialize Ebitengine. It is operated through:
+
+- Documented CLI commands and configuration.
+- The authenticated HTTPS REST API.
+- Service-manager operations and health checks.
+- `SIGINT` or `SIGTERM` for graceful shutdown.
+
+An interactive terminal UI is not part of the MVP. Adding one later requires a separate input contract and is the admission gate for reconsidering termframe.
+
+### Shared Input Requirements
+
+- Every visible focusable control has a visible focus state.
+- Modal surfaces trap focus and restore it when closed.
+- Disabled controls are skipped or explained consistently.
+- Scrolling has deterministic entry, movement, boundary, and exit behavior.
+- Essential HUD operations are never mouse-only.
+- Input bindings dispatch commands; they do not mutate durable state directly.
+- Binding conflicts, rebinding, and platform-reserved shortcuts are surfaced through Settings rather than silently ignored.
 
 ## System Model
 
@@ -302,7 +356,7 @@ Research work must be isolated from Apparat project data, identity secrets, pers
 ASR and TTS are separate service capabilities:
 
 ```text
-R2 audio capture -> ASR queue -> transcribed text -> command or prompt
+R2 or right-Ctrl audio capture -> ASR queue -> transcribed text -> command or prompt
 generated text -> TTS queue -> spoken playback
 ```
 
@@ -494,13 +548,14 @@ Ebitengine supplies `ebitenmobile`; Android still requires pinned tools and a na
 ## Platform Sequence
 
 1. Steam Deck/Linux GUI and controller input.
-2. Linux headless worker and service runtime.
-3. Secure two-device WireGuard/LAN vertical slice.
-4. Linux desktop packaging and service installation.
-5. Windows desktop packaging and external-WireGuard validation.
-6. macOS packaging, signing, notarization, and external-WireGuard validation.
-7. Android native wrapper, Ebitengine AAR, lifecycle, permissions, keyboard, controller/touch, microphone, audio, storage, and background behavior.
-8. Platform-specific app-managed WireGuard.
+2. Debian/Linux GUI keyboard, mouse, optional-controller, and push-to-talk input.
+3. Linux headless worker and service runtime.
+4. Secure two-device WireGuard/LAN vertical slice.
+5. Linux desktop packaging and service installation.
+6. Windows desktop packaging and external-WireGuard validation.
+7. macOS packaging, signing, notarization, and external-WireGuard validation.
+8. Android native wrapper, Ebitengine AAR, lifecycle, permissions, keyboard, controller/touch, microphone, audio, storage, and background behavior.
+9. Platform-specific app-managed WireGuard.
 
 Cross-platform support is claimed only after target-specific builds and behavior have been validated.
 

@@ -24,7 +24,16 @@ The roadmap assumes these decisions:
     - Controller-first interaction is a core acceptance requirement for the first visual shell.
     - `L1` and `R1` switch top-level tabs.
     - `R2` is hold-to-talk; releasing it submits captured audio to ASR.
+  - Debian/Linux GUI mode is a first-class desktop target.
+    - `Ctrl+PageUp` and `Ctrl+PageDown` switch top-level tabs.
+    - `Alt+1` through `Alt+7` open the seven canonical tabs directly.
+    - `Tab`, `Shift+Tab`, arrow keys, `Enter`, `Space`, `Escape`, Menu or `Shift+F10`, and `Ctrl+Shift+P` provide focus, activation, cancellation, contextual-action, and command-palette controls.
+    - Holding right `Ctrl` starts push-to-talk; releasing it submits audio, while `Escape` cancels the held recording.
+    - Mouse and touchpad input support ordinary desktop activation, context menus, scrolling, and explicit drag operations without making any essential workflow pointer-only.
+    - A connected controller uses the Steam Deck action mapping.
   - Debian/Linux headless devices are first-class workers and service hosts.
+    - Headless control uses documented CLI commands, authenticated HTTPS REST, service-manager operations, health checks, and graceful `SIGINT`/`SIGTERM` handling.
+    - No interactive terminal UI is required for the MVP.
   - Windows, macOS, and Android follow after the Linux vertical slice.
 - **HUD information architecture**
   - The canonical tab order is:
@@ -460,9 +469,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
       - Tasks may emphasize definitions, triggers, schedules, run history, and event traces.
       - Settings may use ordinary forms and nested diagnostic routes.
     - Layout must adapt to Steam Deck resolution, desktop resizing, touch targets, software keyboard use, and later mobile constraints.
-  - **Controller-first focus model**
+  - **Shared controller and Debian GUI focus model**
     - `L1` and `R1` cycle through top-level tabs in canonical order.
     - Holding `R2` starts push-to-talk capture; releasing `R2` stops capture and submits audio to speech-to-text.
+    - Debian GUI uses `Ctrl+PageUp` and `Ctrl+PageDown` for tab cycling, `Alt+1` through `Alt+7` for direct tab selection, and right `Ctrl` for hold-to-talk.
+    - Debian GUI uses standard keyboard focus, activation, cancellation, contextual-action, scrolling, text-editing, and mouse conventions without creating separate application behavior.
     - Directional controls move through an explicit focus graph, not pointer-coordinate emulation.
     - Confirm activates the focused control.
     - Cancel returns to the previous focus scope, closes a transient surface, or aborts a safe in-progress interaction according to context.
@@ -679,10 +690,15 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Define the versioned workload-class taxonomy and extension rules.
   - [ ] Define typed device, service, queue, route, and job capability contracts.
   - [ ] Define which Salvagecore components are copied, adapted, rewritten, or rejected.
-- [ ] Create the controller and focus contract in `docs/controller-map.md`.
+- [ ] Create the shared input and focus contract in `docs/controller-map.md`.
   - [ ] Define `L1`, `R1`, D-pad, sticks, `A`, `B`, `X`, Menu, and `R2`.
+  - [ ] Define Debian `Ctrl+PageUp`, `Ctrl+PageDown`, `Alt+1` through `Alt+7`, focus traversal, activation, cancellation, contextual actions, command palette, scrolling, and right-`Ctrl` push-to-talk.
+  - [ ] Define Debian mouse activation, context menu, scrolling, back, drag alternatives, and optional configurable push-to-talk buttons.
+  - [ ] Define Debian headless CLI, API, service-manager, health-check, and process-signal controls.
   - [ ] Define focus traversal, disabled controls, modal focus, scrolling, and pane transitions.
   - [ ] Define keyboard, mouse, touch, and controller equivalence.
+  - [ ] Define binding precedence while text controls or editors own focus.
+  - [ ] Define configurable bindings, conflict reporting, and platform-reserved shortcut handling.
   - [ ] Define `Steam+X` and visible on-screen keyboard entry points.
   - [ ] Define push-to-talk recording, cancellation, release-to-submit, and feedback states.
 - [ ] Create `docs/security.md`.
@@ -761,8 +777,12 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Detect and normalize standard gamepad input.
   - [ ] Implement directional focus movement.
   - [ ] Implement activation, back, contextual action, and scrolling.
-  - [ ] Implement keyboard equivalents.
-  - [ ] Implement mouse/touch focus and activation without separate behavior.
+  - [ ] Implement Debian GUI keyboard controls.
+    - [ ] Implement `Ctrl+PageUp` and `Ctrl+PageDown` tab cycling.
+    - [ ] Implement `Alt+1` through `Alt+7` direct tab selection.
+    - [ ] Implement `Tab`, `Shift+Tab`, arrows, `Enter`, `Space`, `Escape`, Menu or `Shift+F10`, `Ctrl+Shift+P`, and collection-navigation keys.
+    - [ ] Preserve ordinary text editing and clipboard behavior while text controls own focus.
+  - [ ] Implement mouse/touch focus, activation, context actions, scrolling, and non-pointer drag alternatives without separate application behavior.
   - [ ] Add deterministic focus-navigation tests.
 - [ ] Implement top-level tabs.
   - [ ] Add Comrades as the first tab.
@@ -785,6 +805,9 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [ ] Prototype voice input states without real ASR.
   - [ ] Start capture state while `R2` is held.
   - [ ] End and submit capture state when `R2` is released.
+  - [ ] Start capture state while right `Ctrl` is held in Debian GUI mode.
+  - [ ] End and submit capture state when right `Ctrl` is released.
+  - [ ] Cancel a held right-`Ctrl` recording with `Escape` without submitting on release.
   - [ ] Support cancellation.
   - [ ] Render recording, queued, transcribing, failed, and complete states.
 - [ ] Add developer diagnostics.
@@ -797,8 +820,9 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 **Exit criteria**
 
 - Every primary HUD operation works from a Steam Deck controller.
-- Keyboard, mouse, and touch follow the same focus semantics.
-- `R2` push-to-talk state is testable without a real speech model.
+- Every primary HUD operation works in Debian GUI mode with the documented keyboard controls.
+- Keyboard, mouse, touch, and controller input follow the same focus and command semantics.
+- `R2` and right-`Ctrl` push-to-talk states are testable without a real speech model.
 - No networking, database, or model runtime is required to demonstrate the shell.
 - Comrades and Research are navigable placeholders without active backend implementation.
 
@@ -1123,13 +1147,15 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 ## Phase 8: ASR, TTS, And Voice Control
 
-**Goal:** Turn `R2` push-to-talk into a reliable routed cluster capability.
+**Goal:** Turn controller and Debian GUI push-to-talk into a reliable routed cluster capability.
 
 **Dependencies:** Phases 2, 6, and 7.
 
 - [ ] Add audio capture.
-  - [ ] Start while `R2` is held.
-  - [ ] Stop on release.
+  - [ ] Start while `R2` or the configured Debian GUI push-to-talk key is held.
+  - [ ] Stop and submit on release.
+  - [ ] Use right `Ctrl` as the documented Debian fallback binding.
+  - [ ] Cancel a held Debian recording with `Escape` without submitting on release.
   - [ ] Cancel before submission.
   - [ ] Limit duration and memory.
   - [ ] Store temporary audio safely.
@@ -1160,7 +1186,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Exit criteria**
 
-- Holding and releasing `R2` produces editable transcribed text through a selected local or remote route.
+- Holding and releasing `R2` or right `Ctrl` produces editable transcribed text through a selected local or remote route.
 - Spoken output can be routed independently.
 - Voice state remains visible, cancellable, and privacy-preserving.
 
@@ -1172,6 +1198,10 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - [ ] Steam Deck/Linux GUI.
   - [ ] Controller database and mappings.
+  - [ ] Debian keyboard mapping and text-input precedence.
+  - [ ] Debian mouse and touchpad behavior.
+  - [ ] Debian right-`Ctrl` push-to-talk and cancellation.
+  - [ ] Configurable binding persistence and conflict reporting.
   - [ ] Gamescope/fullscreen/window behavior.
   - [ ] Hi-DPI/readability.
   - [ ] `Steam+X` keyboard.
@@ -1181,6 +1211,9 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [ ] Linux headless.
   - [ ] Service installation.
   - [ ] User/system service choice.
+  - [ ] CLI and authenticated API control.
+  - [ ] Health checks and service-manager operations.
+  - [ ] Graceful `SIGINT` and `SIGTERM`.
   - [ ] Runtime directories and permissions.
   - [ ] Startup, restart, logs, and doctor.
   - [ ] No display dependency.
