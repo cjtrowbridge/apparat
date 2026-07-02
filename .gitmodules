@@ -1,3 +1,30 @@
 [submodule "agents"]
 	path = agents
 	url = https://github.com/cjtrowbridge/agents.git
+[submodule "third_party/game/ebiten"]
+	path = third_party/game/ebiten
+	url = https://github.com/hajimehoshi/ebiten.git
+[submodule "third_party/game/ebitenui"]
+	path = third_party/game/ebitenui
+	url = https://github.com/ebitenui/ebitenui.git
+[submodule "third_party/game/debugui"]
+	path = third_party/game/debugui
+	url = https://github.com/ebitengine/debugui.git
+[submodule "third_party/database/modernc-sqlite"]
+	path = third_party/database/modernc-sqlite
+	url = https://gitlab.com/cznic/sqlite
+[submodule "third_party/networking/wireguard-go"]
+	path = third_party/networking/wireguard-go
+	url = https://git.zx2c4.com/wireguard-go
+[submodule "third_party/networking/wgctrl-go"]
+	path = third_party/networking/wgctrl-go
+	url = https://github.com/WireGuard/wgctrl-go.git
+[submodule "third_party/networking/wireguard-tools"]
+	path = third_party/networking/wireguard-tools
+	url = https://git.zx2c4.com/wireguard-tools
+[submodule "third_party/inference/llama.cpp"]
+	path = third_party/inference/llama.cpp
+	url = https://github.com/ggml-org/llama.cpp.git
+[submodule "third_party/speech/whisper.cpp"]
+	path = third_party/speech/whisper.cpp
+	url = https://github.com/ggml-org/whisper.cpp.git
