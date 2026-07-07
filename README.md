@@ -555,6 +555,20 @@ releases/<goos>/<goarch>/latest[.exe]
 
 The path uses Go `GOOS` and `GOARCH` names such as `linux/amd64`, `linux/arm64`, `windows/amd64`, or `darwin/arm64`. Windows builds use `latest.exe`; other targets use `latest`. Generated binaries under `releases/` are ignored by Git so other devices fetch source and reproduce their local latest artifact.
 
+### Local Runtime
+
+Phase 3 adds shared local runtime startup for GUI and headless modes:
+
+- `cmd/apparat` is the GUI entry point.
+- `cmd/apparatd` is the headless worker/service entry point and does not initialize Ebitengine.
+- `--smoke-test` initializes the shared runtime, prints a non-window diagnostic line, and exits for build and CI checks.
+- `--doctor` validates runtime directories, logging, SQLite, identity status, cluster directory, and local messaging setup.
+- `--runtime-dir` overrides the runtime data root; otherwise Apparat uses platform data directories outside the source tree.
+- Runtime subdirectories include database, logs, identity, cache, artifacts, backups, and recovery.
+- GUI builds compiled with the `gui` build tag enter the Ebitengine run loop; default builds keep the non-window path available for headless validation environments.
+
+Local startup creates an append-only JSONL log, opens SQLite with foreign keys, applies checksumed forward migrations, initializes local cluster-directory tables, and initializes durable inbox/outbox/replay/cursor primitives.
+
 ### Research Before Adding
 
 - Qwen3-TTS.

@@ -840,48 +840,51 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** Phase 1 contracts; Phase 2 may proceed partly in parallel.
 
-- [ ] Split GUI and headless runtime adapters.
-  - [ ] Keep Ebitengine initialization out of headless mode.
-  - [ ] Add explicit GUI, headless, and auto modes.
-  - [ ] Add startup diagnostics and doctor mode.
-  - [ ] Add clean shutdown and context cancellation.
-- [ ] Add runtime configuration and directories.
-  - [ ] Define config precedence.
-  - [ ] Define database, logs, identity, cache, artifacts, backups, and recovery paths.
-  - [ ] Avoid storing durable runtime state inside project source directories by default.
-- [ ] Add structured logging.
-  - [ ] Write append-only JSONL.
-  - [ ] Include component, event, device, project, job, task, and correlation IDs where relevant.
-  - [ ] Redact secrets, tokens, private keys, raw prompts, raw model outputs, and raw voice data by default.
-  - [ ] Add safe log rotation and retention.
-- [ ] Add SQLite lifecycle.
-  - [ ] Open, close, ping, and configure connections.
-  - [ ] Enable foreign keys.
-  - [ ] Validate WAL behavior per platform before making it universal.
-  - [ ] Add forward migrations with checksums.
-  - [ ] Add ULID and timestamp helpers.
-  - [ ] Add repository interfaces that do not leak SQL into the HUD.
-  - [ ] Add read-only database diagnostics.
-- [ ] Add user and device identity.
-  - [ ] Generate/import user identity.
-  - [ ] Generate device identity.
-  - [ ] Sign device authorization.
-  - [ ] Encrypt private-key files with Argon2id and XChaCha20-Poly1305.
-  - [ ] Create public manifests and identity metadata.
-  - [ ] Add startup consistency classification.
-  - [ ] Add doctor, repair, rotation, revocation, and archived reset.
-- [ ] Add the local cluster directory.
-  - [ ] Store signed device profiles.
-  - [ ] Store roles, permissions, endpoints, certificate fingerprints, WireGuard keys, and typed workload capabilities.
-  - [ ] Store capability runtime/provider, models or research projects, modalities, limits, hardware, queue eligibility, health, and policy constraints.
-  - [ ] Store last-seen and reachability state.
-  - [ ] Add change feeds and sync cursors.
-- [ ] Add durable local messaging primitives.
-  - [ ] Add outbox.
-  - [ ] Add inbox.
-  - [ ] Add replay and duplicate tracking.
-  - [ ] Add event cursor state.
-  - [ ] Add bounded retry scheduling.
+- [?] Split GUI and headless runtime adapters.
+  - [?] Make the default GUI binary enter a real Ebitengine run loop instead of exiting after runtime initialization.
+    - The Ebitengine loop is implemented behind the `gui` build tag and still needs native desktop-library validation; default builds use a non-window blocking runtime path for CI and headless safety.
+  - [x] Keep `--smoke-test` as the non-window build and CI verification path.
+  - [x] Keep Ebitengine initialization out of headless mode.
+  - [x] Add explicit GUI, headless, and auto modes.
+  - [x] Add startup diagnostics and doctor mode.
+  - [x] Add clean shutdown and context cancellation.
+- [x] Add runtime configuration and directories.
+  - [x] Define config precedence.
+  - [x] Define database, logs, identity, cache, artifacts, backups, and recovery paths.
+  - [x] Avoid storing durable runtime state inside project source directories by default.
+- [x] Add structured logging.
+  - [x] Write append-only JSONL.
+  - [x] Include component, event, device, project, job, task, and correlation IDs where relevant.
+  - [x] Redact secrets, tokens, private keys, raw prompts, raw model outputs, and raw voice data by default.
+  - [x] Add safe log rotation and retention.
+- [x] Add SQLite lifecycle.
+  - [x] Open, close, ping, and configure connections.
+  - [x] Enable foreign keys.
+  - [-] Keep WAL opt-in until platform validation is complete.
+  - [x] Add forward migrations with checksums.
+  - [x] Add ULID and timestamp helpers.
+  - [x] Add repository interfaces that do not leak SQL into the HUD.
+  - [x] Add read-only database diagnostics.
+- [x] Add user and device identity.
+  - [x] Generate/import user identity.
+  - [x] Generate device identity.
+  - [x] Sign device authorization.
+  - [x] Encrypt private-key files with Argon2id and XChaCha20-Poly1305.
+  - [x] Create public manifests and identity metadata.
+  - [x] Add startup consistency classification.
+  - [x] Add doctor, repair, rotation, revocation, and archived reset.
+- [x] Add the local cluster directory.
+  - [x] Store signed device profiles.
+  - [x] Store roles, permissions, endpoints, certificate fingerprints, WireGuard keys, and typed workload capabilities.
+  - [x] Store capability runtime/provider, models or research projects, modalities, limits, hardware, queue eligibility, health, and policy constraints.
+  - [x] Store last-seen and reachability state.
+  - [x] Add change feeds and sync cursors.
+- [x] Add durable local messaging primitives.
+  - [x] Add outbox.
+  - [x] Add inbox.
+  - [x] Add replay and duplicate tracking.
+  - [x] Add event cursor state.
+  - [x] Add bounded retry scheduling.
 
 **Exit criteria**
 

@@ -5,6 +5,7 @@ go 1.26.4
 require (
 	github.com/ebitenui/ebitenui v0.7.4-0.20260422023258-b1c31d852489
 	github.com/hajimehoshi/ebiten/v2 v2.9.9
+	golang.org/x/crypto v0.53.0
 	modernc.org/sqlite v1.53.1-0.20260625155647-5d243466fa05
 )
 
@@ -23,9 +24,9 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/image v0.31.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 	modernc.org/libc v1.73.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
