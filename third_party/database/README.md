@@ -2,7 +2,7 @@
 
 | Path | Upstream | Revision | License | Apparat Role | Build Status |
 | --- | --- | --- | --- | --- | --- |
-| `modernc-sqlite` | `https://gitlab.com/cznic/sqlite` | `5d243466fa05e8c49a870ead00b79bd4a423f712` (`v1.53.0-3-g5d24346`) | BSD-3-Clause | Source reference for the cgo-free `modernc.org/sqlite` Go driver | Reference only until the root Go module pins the package through `go.mod` |
+| `modernc-sqlite` | `https://gitlab.com/cznic/sqlite` | `5d243466fa05e8c49a870ead00b79bd4a423f712` (`v1.53.0-3-g5d24346`) | BSD-3-Clause | Source reference for the cgo-free `modernc.org/sqlite` Go driver | Active root Go dependency at `v1.53.1-0.20260625155647-5d243466fa05` |
 
 ## Selection Notes
 
