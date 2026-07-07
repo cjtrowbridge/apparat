@@ -6,9 +6,13 @@ Support is claimed only after target-specific build and behavior evidence exists
 
 Requires controller-first HUD, readable 1280x800 sizing, keyboard/mouse fallback, audio capture, local storage paths, external WireGuard compatibility, and generated release artifact under `releases/linux/<arch>/latest`.
 
+Phase 3 keeps `--smoke-test` non-window for CI and build environments. The Ebitengine run loop is wired behind the `gui` build tag so native GUI validation can be performed on systems with the required desktop libraries.
+
 ## Linux Headless
 
 Requires no Ebitengine initialization, CLI/API/service-manager control, health checks, graceful `SIGINT`/`SIGTERM`, durable storage paths, and generated release artifact under `releases/linux/<arch>/latest`.
+
+Phase 3 headless startup initializes the same config, directory, logging, SQLite, identity-status, cluster-directory, and messaging primitives without importing Ebitengine.
 
 ## Windows
 

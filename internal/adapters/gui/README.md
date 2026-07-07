@@ -7,3 +7,5 @@ The GUI adapter renders view models, maps controller/keyboard/mouse/touch input 
 It must not own durable state transitions, SQL, network calls, queue policy, or project authorization.
 
 The Phase 0 dependency anchor uses the `gui` build tag so baseline headless validation can run on systems without native desktop headers. GUI-specific validation must use `go test -tags gui ./internal/adapters/gui` after the required platform libraries are installed.
+
+Phase 3 wires `Run` so default builds block on runtime cancellation without opening a window, while `-tags gui` builds enter the Ebitengine run loop.

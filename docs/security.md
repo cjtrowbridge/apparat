@@ -15,6 +15,8 @@ It does not treat WireGuard reachability as authorization. HTTPS authentication 
 - TLS identity: mTLS certificate bound to the Apparat device identity.
 - Future transport identity: adapter-specific identity mapped to Apparat authorization.
 
+Phase 3 implements local Ed25519 user/device key generation, signatures, public manifests, startup consistency classification, archived reset, and encrypted private-key files using Argon2id-derived XChaCha20-Poly1305 keys.
+
 ## X.509 And TLS
 
 The MVP uses a cluster-local certificate authority signed or authorized by the enrollment authority. TLS leaf keys are separate from Apparat device signing keys and are cryptographically bound in signed device records.
