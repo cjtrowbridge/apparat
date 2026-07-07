@@ -1,2 +1,6 @@
 /third_party/salvagecore/
 /.tools/
+/releases/*/*/latest
+/releases/*/*/latest.exe
+__pycache__/
+*.pyc
