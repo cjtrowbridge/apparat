@@ -683,83 +683,91 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** Phase 0.
 
-- [ ] Create `docs/architecture.md`.
-  - [ ] Define ports-and-adapters package boundaries.
-  - [ ] Define GUI, headless, service-host, queue-owner, project-owner, scheduler-owner, and enrollment-authority roles.
-  - [ ] Define module registration and command/event/store boundaries.
-  - [ ] Define the versioned workload-class taxonomy and extension rules.
-  - [ ] Define typed device, service, queue, route, and job capability contracts.
-  - [ ] Define which Salvagecore components are copied, adapted, rewritten, or rejected.
-- [ ] Create the shared input and focus contract in `docs/controller-map.md`.
-  - [ ] Define `L1`, `R1`, D-pad, sticks, `A`, `B`, `X`, Menu, and `R2`.
-  - [ ] Define Debian `Ctrl+PageUp`, `Ctrl+PageDown`, `Alt+1` through `Alt+7`, focus traversal, activation, cancellation, contextual actions, command palette, scrolling, and right-`Ctrl` push-to-talk.
-  - [ ] Define Debian mouse activation, context menu, scrolling, back, drag alternatives, and optional configurable push-to-talk buttons.
-  - [ ] Define Debian headless CLI, API, service-manager, health-check, and process-signal controls.
-  - [ ] Define focus traversal, disabled controls, modal focus, scrolling, and pane transitions.
-  - [ ] Define keyboard, mouse, touch, and controller equivalence.
-  - [ ] Define binding precedence while text controls or editors own focus.
-  - [ ] Define configurable bindings, conflict reporting, and platform-reserved shortcut handling.
-  - [ ] Define `Steam+X` and visible on-screen keyboard entry points.
-  - [ ] Define push-to-talk recording, cancellation, release-to-submit, and feedback states.
-- [ ] Create `docs/security.md`.
-  - [ ] Produce a threat model for local LAN, WireGuard, stolen devices, malicious peers, replay, queue abuse, and compromised services.
-  - [ ] Choose the X.509 hierarchy.
-  - [ ] Decide whether TLS keys reuse app device keys or are separately bound.
-  - [ ] Define user, device, cluster, WireGuard, TLS, and future transport identities.
-  - [ ] Define enrollment invite, QR code, token expiration, confirmation, and authorization.
-  - [ ] Define certificate issuance, expiration, rotation, revocation, and lost-device recovery.
-  - [ ] Define authorization scopes for projects, queues, services, tasks, settings, and external transports.
-  - [ ] Define audit events and secret-redaction rules.
-  - [ ] Disable TLS 0-RTT for mutating operations.
-- [ ] Create `docs/api.md` and an OpenAPI source.
-  - [ ] Define `/v1/health`.
-  - [ ] Define `/v1/device`.
-  - [ ] Define `/v1/capabilities`.
-  - [ ] Define `POST /v1/jobs`.
-  - [ ] Define `GET /v1/jobs/{id}`.
-  - [ ] Define `POST /v1/jobs/{id}/cancel`.
-  - [ ] Define cursor-based `/v1/events`.
-  - [ ] Define `/v1/project-transactions`.
-  - [ ] Define `202 Accepted`, resource locations, and asynchronous error bodies.
-  - [ ] Define `Idempotency-Key`, body limits, deadlines, bounded concurrency, and content types.
-  - [ ] Define authentication and authorization errors without leaking sensitive state.
-  - [ ] Define typed capability descriptors for text, image, video, STT, TTS, BOINC, and future workload classes.
-  - [ ] Define job workload-class and capability-requirement validation errors.
-  - [ ] Prohibit generic remote execution endpoints.
-- [ ] Define the signed-envelope contract.
-  - [ ] Define envelope version and message type.
-  - [ ] Define message ID, idempotency key, and correlation ID.
-  - [ ] Define sender identity and recipient target.
-  - [ ] Define timestamps, expiration, and deadline.
-  - [ ] Define payload type, schema version, length, hash, and artifact references.
-  - [ ] Select canonical signed encoding.
-  - [ ] Define signature verification, replay rejection, duplicate handling, and version negotiation.
-- [ ] Create `docs/database.md`.
-  - [ ] Define identity, directory, project, chat, artifact, typed service capability, queue, job, event, transaction, task, research, and audit layers.
-  - [ ] Define workload classes independently from runtime/provider names and model/project IDs.
-  - [ ] Define one authoritative owner per project, queue, and task.
-  - [ ] Define forward-only migrations and compatibility policy.
-  - [ ] Define ULID identifiers and UTC millisecond timestamps.
-  - [ ] Define SQLite backup, repair, restore, and optional at-rest encryption decisions.
-- [ ] Create `docs/transport-adapters.md`.
-  - [ ] Define transport capability descriptors.
-  - [ ] Define payload-size and fragmentation rules.
-  - [ ] Define online, delayed, direct, broadcast, acknowledgement, attachment, and store-forward capabilities.
-  - [ ] Define how REST JSON and future compact binary encodings carry the same logical envelope.
-- [ ] Create `docs/platform-matrix.md`.
-  - [ ] Define Steam Deck/Linux GUI requirements.
-  - [ ] Define Linux headless requirements.
-  - [ ] Define Windows and macOS packaging and external-WireGuard assumptions.
-  - [ ] Define Android native wrapper, lifecycle, storage, keyboard, microphone, audio, and background constraints.
-  - [ ] Define evidence required before claiming support.
-- [ ] Create deferred-feature design stubs.
-  - [ ] Create `docs/comrades.md` with the accepted social identity, chat, comrade queue, permission, priority, quota, revocation, and audit goals.
-  - [ ] Create `docs/research.md` with the accepted BOINC, resource-budget, isolation, validation, provenance, and gameplay goals.
-  - [ ] Keep both documents clearly marked post-MVP until their implementation phases begin.
+- [x] Create `docs/architecture.md`.
+  - [x] Define ports-and-adapters package boundaries.
+  - [x] Define GUI, headless, service-host, queue-owner, project-owner, scheduler-owner, and enrollment-authority roles.
+  - [x] Define module registration and command/event/store boundaries.
+  - [x] Define the versioned workload-class taxonomy and extension rules.
+  - [x] Define typed device, service, queue, route, and job capability contracts.
+  - [x] Define which Salvagecore components are copied, adapted, rewritten, or rejected.
+- [x] Create the shared input and focus contract in `docs/controller-map.md`.
+  - [x] Define `L1`, `R1`, D-pad, sticks, `A`, `B`, `X`, Menu, and `R2`.
+  - [x] Define Debian `Ctrl+PageUp`, `Ctrl+PageDown`, `Alt+1` through `Alt+7`, focus traversal, activation, cancellation, contextual actions, command palette, scrolling, and right-`Ctrl` push-to-talk.
+  - [x] Define Debian mouse activation, context menu, scrolling, back, drag alternatives, and optional configurable push-to-talk buttons.
+  - [x] Define Debian headless CLI, API, service-manager, health-check, and process-signal controls.
+  - [x] Define focus traversal, disabled controls, modal focus, scrolling, and pane transitions.
+  - [x] Define keyboard, mouse, touch, and controller equivalence.
+  - [x] Define binding precedence while text controls or editors own focus.
+  - [x] Define configurable bindings, conflict reporting, and platform-reserved shortcut handling.
+  - [x] Define `Steam+X` and visible on-screen keyboard entry points.
+  - [x] Define push-to-talk recording, cancellation, release-to-submit, and feedback states.
+- [x] Create `docs/security.md`.
+  - [x] Produce a threat model for local LAN, WireGuard, stolen devices, malicious peers, replay, queue abuse, and compromised services.
+  - [x] Choose the X.509 hierarchy.
+  - [x] Decide whether TLS keys reuse app device keys or are separately bound.
+  - [x] Define user, device, cluster, WireGuard, TLS, and future transport identities.
+  - [x] Define enrollment invite, QR code, token expiration, confirmation, and authorization.
+  - [x] Define certificate issuance, expiration, rotation, revocation, and lost-device recovery.
+  - [x] Define authorization scopes for projects, queues, services, tasks, settings, and external transports.
+  - [x] Define audit events and secret-redaction rules.
+  - [x] Disable TLS 0-RTT for mutating operations.
+- [x] Create `docs/api.md` and an OpenAPI source.
+  - [x] Define `/v1/health`.
+  - [x] Define `/v1/device`.
+  - [x] Define `/v1/capabilities`.
+  - [x] Define `POST /v1/jobs`.
+  - [x] Define `GET /v1/jobs/{id}`.
+  - [x] Define `POST /v1/jobs/{id}/cancel`.
+  - [x] Define cursor-based `/v1/events`.
+  - [x] Define `/v1/project-transactions`.
+  - [x] Define `202 Accepted`, resource locations, and asynchronous error bodies.
+  - [x] Define `Idempotency-Key`, body limits, deadlines, bounded concurrency, and content types.
+  - [x] Define authentication and authorization errors without leaking sensitive state.
+  - [x] Define typed capability descriptors for text, image, video, STT, TTS, BOINC, and future workload classes.
+  - [x] Define job workload-class and capability-requirement validation errors.
+  - [x] Prohibit generic remote execution endpoints.
+- [x] Define the signed-envelope contract.
+  - [x] Define envelope version and message type.
+  - [x] Define message ID, idempotency key, and correlation ID.
+  - [x] Define sender identity and recipient target.
+  - [x] Define timestamps, expiration, and deadline.
+  - [x] Define payload type, schema version, length, hash, and artifact references.
+  - [x] Select canonical signed encoding.
+  - [x] Define signature verification, replay rejection, duplicate handling, and version negotiation.
+- [x] Create `docs/database.md`.
+  - [x] Define identity, directory, project, chat, artifact, typed service capability, queue, job, event, transaction, task, research, and audit layers.
+  - [x] Define workload classes independently from runtime/provider names and model/project IDs.
+  - [x] Define one authoritative owner per project, queue, and task.
+  - [x] Define forward-only migrations and compatibility policy.
+  - [x] Define ULID identifiers and UTC millisecond timestamps.
+  - [x] Define SQLite backup, repair, restore, and optional at-rest encryption decisions.
+- [x] Create `docs/transport-adapters.md`.
+  - [x] Define transport capability descriptors.
+  - [x] Define payload-size and fragmentation rules.
+  - [x] Define online, delayed, direct, broadcast, acknowledgement, attachment, and store-forward capabilities.
+  - [x] Define how REST JSON and future compact binary encodings carry the same logical envelope.
+- [x] Create `docs/platform-matrix.md`.
+  - [x] Define Steam Deck/Linux GUI requirements.
+  - [x] Define Linux headless requirements.
+  - [x] Define Windows and macOS packaging and external-WireGuard assumptions.
+  - [x] Define Android native wrapper, lifecycle, storage, keyboard, microphone, audio, and background constraints.
+  - [x] Define evidence required before claiming support.
+- [x] Create the canonical build artifact contract.
+  - [x] Define `./releases/[os]/[architecture]/latest[.exe]`.
+  - [x] Use Go `GOOS` and `GOARCH` naming for release directories.
+  - [x] Use `.exe` for Windows artifacts and no suffix for Unix-like artifacts.
+  - [x] Implement a Python build pipeline that detects host OS and architecture.
+  - [x] Add build-pipeline tests.
+  - [x] Keep generated binary artifacts ignored by Git.
+- [x] Create deferred-feature design stubs.
+  - [x] Create `docs/comrades.md` with the accepted social identity, chat, comrade queue, permission, priority, quota, revocation, and audit goals.
+  - [x] Create `docs/research.md` with the accepted BOINC, resource-budget, isolation, validation, provenance, and gameplay goals.
+  - [x] Keep both documents clearly marked post-MVP until their implementation phases begin.
 
 **Exit criteria**
 
 - The package architecture, security model, OpenAPI contract, signed envelope, database boundaries, transport interface, controller map, and platform matrix are approved.
+- The canonical release artifact path and Python build pipeline are implemented and tested.
 - The two-device proof can be implemented without inventing protocol or identity semantics mid-build.
 
 ## Phase 2: Steam Deck HUD Prototype
@@ -768,54 +776,54 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** Phase 1 controller and architecture contracts.
 
-- [ ] Create the Ebitengine application shell.
-  - [ ] Add a small executable entrypoint.
-  - [ ] Add a thin Ebitengine game adapter.
-  - [ ] Add resize and display-scale handling.
-  - [ ] Add a stable theme and readable Steam Deck sizing.
-- [ ] Implement the shared input/focus model.
-  - [ ] Detect and normalize standard gamepad input.
-  - [ ] Implement directional focus movement.
-  - [ ] Implement activation, back, contextual action, and scrolling.
-  - [ ] Implement Debian GUI keyboard controls.
-    - [ ] Implement `Ctrl+PageUp` and `Ctrl+PageDown` tab cycling.
-    - [ ] Implement `Alt+1` through `Alt+7` direct tab selection.
-    - [ ] Implement `Tab`, `Shift+Tab`, arrows, `Enter`, `Space`, `Escape`, Menu or `Shift+F10`, `Ctrl+Shift+P`, and collection-navigation keys.
-    - [ ] Preserve ordinary text editing and clipboard behavior while text controls own focus.
-  - [ ] Implement mouse/touch focus, activation, context actions, scrolling, and non-pointer drag alternatives without separate application behavior.
-  - [ ] Add deterministic focus-navigation tests.
-- [ ] Implement top-level tabs.
-  - [ ] Add Comrades as the first tab.
-  - [ ] Add Projects.
-  - [ ] Add Research as the third tab.
-  - [ ] Add Cluster.
-  - [ ] Add Routing.
-  - [ ] Add Tasks.
-  - [ ] Add Settings as the final tab.
-  - [ ] Implement `L1`/`R1` tab switching and wrap behavior.
-- [ ] Add mock product views.
-  - [ ] Show a clearly labeled future Comrades placeholder describing chat and shared compute.
-  - [ ] Show mock device health, capabilities, queue depth, and activity.
-  - [ ] Show mock project chats, files, artifacts, and Git state.
-  - [ ] Show mock text-generation, image-generation, video-generation, STT, TTS, and BOINC capabilities on different devices.
-  - [ ] Show mock typed services, models/projects, queues, routing profiles, compatibility filtering, and fallbacks.
-  - [ ] Show mock schedules, webhooks, events, approvals, and run history.
-  - [ ] Show mock identity, networking, database, audio, and diagnostics settings.
-  - [ ] Show a clearly labeled future Research placeholder describing BOINC and validated research compute.
-- [ ] Prototype voice input states without real ASR.
-  - [ ] Start capture state while `R2` is held.
-  - [ ] End and submit capture state when `R2` is released.
-  - [ ] Start capture state while right `Ctrl` is held in Debian GUI mode.
-  - [ ] End and submit capture state when right `Ctrl` is released.
-  - [ ] Cancel a held right-`Ctrl` recording with `Escape` without submitting on release.
-  - [ ] Support cancellation.
-  - [ ] Render recording, queued, transcribing, failed, and complete states.
-- [ ] Add developer diagnostics.
-  - [ ] Frame time and memory.
-  - [ ] Active route and focused control.
-  - [ ] Controller identity and current input.
-  - [ ] Store/event queue depth.
-  - [ ] Layout bounds and clipping.
+- [x] Create the Ebitengine application shell.
+  - [x] Add a small executable entrypoint.
+  - [x] Add a thin Ebitengine game adapter.
+  - [x] Add resize and display-scale handling.
+  - [x] Add a stable theme and readable Steam Deck sizing.
+- [x] Implement the shared input/focus model.
+  - [x] Detect and normalize standard gamepad input.
+  - [x] Implement directional focus movement.
+  - [x] Implement activation, back, contextual action, and scrolling.
+  - [x] Implement Debian GUI keyboard controls.
+    - [x] Implement `Ctrl+PageUp` and `Ctrl+PageDown` tab cycling.
+    - [x] Implement `Alt+1` through `Alt+7` direct tab selection.
+    - [x] Implement `Tab`, `Shift+Tab`, arrows, `Enter`, `Space`, `Escape`, Menu or `Shift+F10`, `Ctrl+Shift+P`, and collection-navigation keys.
+    - [x] Preserve ordinary text editing and clipboard behavior while text controls own focus.
+  - [x] Implement mouse/touch focus, activation, context actions, scrolling, and non-pointer drag alternatives without separate application behavior.
+  - [x] Add deterministic focus-navigation tests.
+- [x] Implement top-level tabs.
+  - [x] Add Comrades as the first tab.
+  - [x] Add Projects.
+  - [x] Add Research as the third tab.
+  - [x] Add Cluster.
+  - [x] Add Routing.
+  - [x] Add Tasks.
+  - [x] Add Settings as the final tab.
+  - [x] Implement `L1`/`R1` tab switching and wrap behavior.
+- [x] Add mock product views.
+  - [x] Show a clearly labeled future Comrades placeholder describing chat and shared compute.
+  - [x] Show mock device health, capabilities, queue depth, and activity.
+  - [x] Show mock project chats, files, artifacts, and Git state.
+  - [x] Show mock text-generation, image-generation, video-generation, STT, TTS, and BOINC capabilities on different devices.
+  - [x] Show mock typed services, models/projects, queues, routing profiles, compatibility filtering, and fallbacks.
+  - [x] Show mock schedules, webhooks, events, approvals, and run history.
+  - [x] Show mock identity, networking, database, audio, and diagnostics settings.
+  - [x] Show a clearly labeled future Research placeholder describing BOINC and validated research compute.
+- [x] Prototype voice input states without real ASR.
+  - [x] Start capture state while `R2` is held.
+  - [x] End and submit capture state when `R2` is released.
+  - [x] Start capture state while right `Ctrl` is held in Debian GUI mode.
+  - [x] End and submit capture state when right `Ctrl` is released.
+  - [x] Cancel a held right-`Ctrl` recording with `Escape` without submitting on release.
+  - [x] Support cancellation.
+  - [x] Render recording, queued, transcribing, failed, and complete states.
+- [x] Add developer diagnostics.
+  - [x] Frame time and memory.
+  - [x] Active route and focused control.
+  - [x] Controller identity and current input.
+  - [x] Store/event queue depth.
+  - [x] Layout bounds and clipping.
 
 **Exit criteria**
 

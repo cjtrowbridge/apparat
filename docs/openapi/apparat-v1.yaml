@@ -1,0 +1,106 @@
+openapi: 3.1.0
+info:
+  title: Apparat API
+  version: 0.1.0
+servers:
+  - url: https://apparat.local
+security:
+  - mutualTLS: []
+paths:
+  /v1/health:
+    get:
+      summary: Health and readiness
+      responses:
+        "200":
+          description: Device health
+  /v1/device:
+    get:
+      summary: Authenticated device record
+      responses:
+        "200":
+          description: Device identity, roles, and trust
+  /v1/capabilities:
+    get:
+      summary: Typed workload capabilities
+      responses:
+        "200":
+          description: Capabilities for text, image, video, STT, TTS, BOINC, and future classes
+  /v1/jobs:
+    post:
+      summary: Submit an asynchronous workload job
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Job accepted
+          headers:
+            Location:
+              schema:
+                type: string
+  /v1/jobs/{id}:
+    get:
+      summary: Get job state
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Job state
+  /v1/jobs/{id}/cancel:
+    post:
+      summary: Cancel a job
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Cancellation accepted
+  /v1/events:
+    get:
+      summary: Cursor-based long polling
+      parameters:
+        - name: after
+          in: query
+          schema:
+            type: string
+        - name: wait
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event page
+  /v1/project-transactions:
+    post:
+      summary: Submit an owner-authoritative project transaction
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Transaction accepted
+components:
+  securitySchemes:
+    mutualTLS:
+      type: mutualTLS
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+  schemas:
+    WorkloadClass:
+      type: string
+      enum:
+        - text_generation
+        - image_generation
+        - video_generation
+        - speech_to_text
+        - text_to_speech
+        - research_boinc

@@ -542,9 +542,18 @@ Use:
 ```bash
 make tools
 make verify
+make build
 ```
 
-`make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, race tests, linting, and vulnerability scanning.
+`make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, build-pipeline tests, race tests, linting, and vulnerability scanning.
+
+`make build` runs the Python build pipeline and writes the latest local binary to:
+
+```text
+releases/<goos>/<goarch>/latest[.exe]
+```
+
+The path uses Go `GOOS` and `GOARCH` names such as `linux/amd64`, `linux/arm64`, `windows/amd64`, or `darwin/arm64`. Windows builds use `latest.exe`; other targets use `latest`. Generated binaries under `releases/` are ignored by Git so other devices fetch source and reproduce their local latest artifact.
 
 ### Research Before Adding
 
