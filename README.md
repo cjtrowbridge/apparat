@@ -517,9 +517,34 @@ Normal Go dependencies remain pinned through `go.mod` and `go.sum`. Build tools 
 
 Ebitengine should begin from a stable 2.9.x revision unless a focused implementation plan demonstrates a required newer feature.
 
+`debugui` remains a source-reference checkout for now. Its current source revision tracks Ebitengine 2.10 alpha work, so it is intentionally not an active Go dependency while Apparat starts on stable Ebitengine 2.9.x.
+
 Every grouping directory requires a README inventory. Every submodule addition requires an intentional revision, license review, purpose statement, update procedure, and declaration of whether it is a source reference or active build dependency.
 
 The tracked [`third_party` inventory](./third_party/README.md) records the exact gitlink revisions, licenses, update procedure, and current build relationship for the admitted source set.
+
+### Active Go Workspace
+
+The root Go module is `github.com/cjtrowbridge/apparat`.
+
+Phase 0 establishes:
+
+- Go toolchain baseline: `1.26.4`.
+- Ebitengine dependency: `github.com/hajimehoshi/ebiten/v2 v2.9.9`.
+- EbitenUI dependency: `github.com/ebitenui/ebitenui v0.7.4-0.20260422023258-b1c31d852489`.
+- SQLite dependency: `modernc.org/sqlite v1.53.1-0.20260625155647-5d243466fa05`.
+- Developer tool pins: `golangci-lint v2.12.2` and `govulncheck v1.5.0`.
+
+`third_party/` is isolated from root Go package discovery by its own lightweight `go.mod`. This keeps reference checkouts, external tests, GPL reference trees, and temporary predecessor material out of application builds unless a later approved plan explicitly activates an adapter.
+
+Use:
+
+```bash
+make tools
+make verify
+```
+
+`make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, race tests, linting, and vulnerability scanning.
 
 ### Research Before Adding
 

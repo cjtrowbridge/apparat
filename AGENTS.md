@@ -29,6 +29,19 @@ Read `./agents/RULES.md` in its entirety before doing anything in this repositor
 - Do not add any file beneath `./third_party/salvagecore/` to the host repository.
 - Do not copy it wholesale. Reuse only behavior explicitly selected by `README.md`, `ROADMAP.md`, and an approved implementation plan.
 
+## Application Governance
+
+- Keep executable application code under `cmd/` and `internal/`.
+- Keep source-reference checkouts under `third_party/`; application imports must not depend on `third_party/salvagecore`.
+- Use `cmd/apparat` for the GUI console and `cmd/apparatd` for the headless worker/service entry point.
+- Keep shared runtime orchestration in `internal/app`.
+- Keep product rules and durable concepts in `internal/domain`.
+- Keep external-system integrations in `internal/adapters`.
+- Keep OS and platform lifecycle boundaries in `internal/platform`.
+- Split files before they become difficult to review; treat roughly 500 lines as a review threshold and roughly 1,000 lines as a strong decomposition warning.
+- Use structured logging with stable component, event, command, correlation, and error fields.
+- Redact secrets, tokens, private keys, passphrases, raw audio, message bodies, project file contents, and other sensitive payloads before logging.
+
 ## Framework Commands
 
 Initialize the framework after cloning:

@@ -627,9 +627,9 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Add `https://github.com/ebitenui/ebitenui.git` at `third_party/game/ebitenui`.
   - [x] Add `https://github.com/ebitengine/debugui.git` at `third_party/game/debugui`.
   - [x] Record which sources are referenced through `replace` directives and which remain audit/reference checkouts.
-- [ ] Add persistence source reference.
+- [x] Add persistence source reference.
   - [x] Add `https://gitlab.com/cznic/sqlite` at `third_party/database/modernc-sqlite`.
-  - [ ] Pin the actual `modernc.org/sqlite` dependency through `go.mod`.
+  - [x] Pin the actual `modernc.org/sqlite` dependency through `go.mod`.
   - [x] Document why the cgo-free driver is preferred for the initial desktop and Android strategy.
 - [x] Add WireGuard source references.
   - [x] Add `https://git.zx2c4.com/wireguard-go` at `third_party/networking/wireguard-go`.
@@ -641,34 +641,34 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Mark llama.cpp as a future service adapter rather than an initial HUD binary dependency.
   - [x] Add `https://github.com/ggml-org/whisper.cpp.git` at `third_party/speech/whisper.cpp`.
   - [x] Mark whisper.cpp as the first portable local ASR reference.
-- [ ] Define deferred source admission gates.
-  - [ ] Research Qwen3-TTS runtime, packaging, hardware, licensing, and service boundaries before adding its source.
-  - [ ] Select a Meshtastic language/client/protobuf integration before adding Meshtastic source.
-  - [ ] Establish Signal gateway feasibility and maintenance constraints before adding an implementation.
-  - [ ] Select BOINC client, RPC, manager, or integration sources only after the Research architecture defines the required boundary.
-  - [ ] Require an approved use case before adding any alternative model, speech, artifact, or networking runtime.
-- [ ] Record MVP exclusions.
-  - [ ] Exclude qTox, TokTok qTox, and go-toxcore-c.
-  - [ ] Exclude Tor.
-  - [ ] Exclude WebRTC until a requirement cannot be met by HTTPS and event cursors.
-  - [ ] Exclude curl because the Go HTTP stack covers the first API.
-  - [ ] Exclude OpenSSL and libsodium from the MVP build.
-  - [ ] Record that OpenSSL does not supply PGP semantics.
-  - [ ] Exclude Qwen3-ASR while whisper.cpp is the selected local ASR reference.
-  - [ ] Exclude `golang/mobile` as a source checkout while using pinned Ebitengine mobile tooling.
-  - [ ] Exclude termframe until an interactive headless TUI is approved.
-- [ ] Establish the Go application workspace.
-  - [ ] Create and pin the root Go module.
-  - [ ] Define supported Go and Ebitengine versions.
-  - [ ] Separate application code from third-party reference modules.
-  - [ ] Establish formatting, linting, unit-test, race-test, and dependency-audit commands.
-  - [ ] Pin build tools independently from source-reference submodules.
-- [ ] Establish application governance.
-  - [ ] Define module/package boundaries.
-  - [ ] Define file-size and decomposition expectations.
-  - [ ] Require README inventories for application and third-party grouping directories.
-  - [ ] Define structured logging and sensitive-data redaction requirements.
-  - [ ] Define documentation synchronization requirements.
+- [x] Define deferred source admission gates.
+  - [x] Research Qwen3-TTS runtime, packaging, hardware, licensing, and service boundaries before adding its source.
+  - [x] Select a Meshtastic language/client/protobuf integration before adding Meshtastic source.
+  - [x] Establish Signal gateway feasibility and maintenance constraints before adding an implementation.
+  - [x] Select BOINC client, RPC, manager, or integration sources only after the Research architecture defines the required boundary.
+  - [x] Require an approved use case before adding any alternative model, speech, artifact, or networking runtime.
+- [x] Record MVP exclusions.
+  - [x] Exclude qTox, TokTok qTox, and go-toxcore-c.
+  - [x] Exclude Tor.
+  - [x] Exclude WebRTC until a requirement cannot be met by HTTPS and event cursors.
+  - [x] Exclude curl because the Go HTTP stack covers the first API.
+  - [x] Exclude OpenSSL and libsodium from the MVP build.
+  - [x] Record that OpenSSL does not supply PGP semantics.
+  - [x] Exclude Qwen3-ASR while whisper.cpp is the selected local ASR reference.
+  - [x] Exclude `golang/mobile` as a source checkout while using pinned Ebitengine mobile tooling.
+  - [x] Exclude termframe until an interactive headless TUI is approved.
+- [x] Establish the Go application workspace.
+  - [x] Create and pin the root Go module.
+  - [x] Define supported Go and Ebitengine versions.
+  - [x] Separate application code from third-party reference modules.
+  - [x] Establish formatting, linting, unit-test, race-test, and dependency-audit commands.
+  - [x] Pin build tools independently from source-reference submodules.
+- [x] Establish application governance.
+  - [x] Define module/package boundaries.
+  - [x] Define file-size and decomposition expectations.
+  - [x] Require README inventories for application and third-party grouping directories.
+  - [x] Define structured logging and sensitive-data redaction requirements.
+  - [x] Define documentation synchronization requirements.
 
 **Exit criteria**
 
