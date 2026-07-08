@@ -38,3 +38,28 @@ func TestRotationCreatesBoundedFile(t *testing.T) {
 		t.Fatalf("rotated log missing: %v", err)
 	}
 }
+
+func TestLastRunResetsAndRedacts(t *testing.T) {
+	path := t.TempDir() + "/last_run.log"
+	if err := os.WriteFile(path, []byte("stale"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	lastRun, err := StartLastRun(path, map[string]any{"binary": "apparat", "token": "abc"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := lastRun.Write("info", "database", "ready", "database ready", map[string]any{"private_key": "secret"}); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	if strings.Contains(text, "stale") || strings.Contains(text, "abc") || strings.Contains(text, "secret") {
+		t.Fatalf("last_run leaked stale or sensitive data: %s", text)
+	}
+	if !strings.Contains(text, "process_start") || !strings.Contains(text, "database") {
+		t.Fatalf("last_run missing diagnostics: %s", text)
+	}
+}

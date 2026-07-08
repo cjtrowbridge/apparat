@@ -7,7 +7,7 @@ import (
 )
 
 func TestRuntimeDirPrecedence(t *testing.T) {
-	cfg, err := Load(Options{Args: []string{"--runtime-dir", "/cli/app"}, Env: map[string]string{"APPARAT_RUNTIME_DIR": "/env/app"}, DefaultMode: ModeGUI})
+	cfg, err := Load(Options{Args: []string{"--runtime-dir", "/cli/app"}, Env: map[string]string{"APPARAT_RUNTIME_DIR": "/env/app"}, DefaultMode: ModeGUI, BinaryName: "apparat"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -17,7 +17,7 @@ func TestRuntimeDirPrecedence(t *testing.T) {
 }
 
 func TestRuntimeDirUsesEnvironment(t *testing.T) {
-	cfg, err := Load(Options{Env: map[string]string{"APPARAT_RUNTIME_DIR": "/env/app"}, DefaultMode: ModeHeadless})
+	cfg, err := Load(Options{Env: map[string]string{"APPARAT_RUNTIME_DIR": "/env/app"}, DefaultMode: ModeHeadless, BinaryName: "apparatd"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,11 +27,25 @@ func TestRuntimeDirUsesEnvironment(t *testing.T) {
 }
 
 func TestDefaultRootAvoidsSourceDirectoryName(t *testing.T) {
-	cfg, err := Load(Options{Env: map[string]string{"XDG_DATA_HOME": "/tmp/data"}, DefaultMode: ModeGUI})
+	cfg, err := Load(Options{Env: map[string]string{"XDG_DATA_HOME": "/tmp/data"}, DefaultMode: ModeGUI, BinaryName: "apparat"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasSuffix(cfg.RootDir, filepath.Join("data", "apparat")) {
+	if !strings.HasSuffix(cfg.RootDir, filepath.Join("data", "apparat", "apparat")) {
 		t.Fatalf("root = %q", cfg.RootDir)
+	}
+}
+
+func TestDefaultRootsAreBinarySpecific(t *testing.T) {
+	gui, err := Load(Options{Env: map[string]string{"XDG_DATA_HOME": "/tmp/data"}, DefaultMode: ModeGUI, BinaryName: "apparat"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	headless, err := Load(Options{Env: map[string]string{"XDG_DATA_HOME": "/tmp/data"}, DefaultMode: ModeHeadless, BinaryName: "apparatd"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gui.RootDir == headless.RootDir {
+		t.Fatalf("expected separate roots, both = %q", gui.RootDir)
 	}
 }

@@ -18,7 +18,9 @@ const (
 
 type Config struct {
 	Mode         Mode
+	BinaryName   string
 	RootDir      string
+	LastRunPath  string
 	DatabasePath string
 	LogsDir      string
 	IdentityDir  string
@@ -34,6 +36,7 @@ type Options struct {
 	Args        []string
 	Env         map[string]string
 	DefaultMode Mode
+	BinaryName  string
 }
 
 func Load(options Options) (Config, error) {
@@ -45,9 +48,13 @@ func Load(options Options) (Config, error) {
 	if mode == "" {
 		mode = ModeAuto
 	}
+	binaryName := options.BinaryName
+	if binaryName == "" {
+		binaryName = "apparat"
+	}
 	root := env["APPARAT_RUNTIME_DIR"]
 	if root == "" {
-		root = defaultRootDir(env)
+		root = filepath.Join(defaultRootDir(env), binaryName)
 	}
 	flags := flag.NewFlagSet("apparat", flag.ContinueOnError)
 	flags.Var((*stringMode)(&mode), "mode", "runtime mode: gui, headless, or auto")
@@ -65,7 +72,9 @@ func Load(options Options) (Config, error) {
 	root = filepath.Clean(root)
 	cfg := Config{
 		Mode:         mode,
+		BinaryName:   binaryName,
 		RootDir:      root,
+		LastRunPath:  filepath.Join(root, "last_run.log"),
 		DatabasePath: filepath.Join(root, "data", "apparat.db"),
 		LogsDir:      filepath.Join(root, "logs"),
 		IdentityDir:  filepath.Join(root, "identity"),
@@ -102,7 +111,7 @@ func validateMode(mode Mode) error {
 }
 
 func EnsureDirectories(cfg Config) error {
-	for _, path := range []string{filepath.Dir(cfg.DatabasePath), cfg.LogsDir, cfg.IdentityDir, cfg.CacheDir, cfg.ArtifactsDir, cfg.BackupsDir, cfg.RecoveryDir} {
+	for _, path := range []string{cfg.RootDir, filepath.Dir(cfg.DatabasePath), cfg.LogsDir, cfg.IdentityDir, cfg.CacheDir, cfg.ArtifactsDir, cfg.BackupsDir, cfg.RecoveryDir} {
 		if err := os.MkdirAll(path, 0o700); err != nil {
 			return err
 		}

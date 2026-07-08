@@ -31,6 +31,10 @@ Read `./agents/RULES.md` in its entirety before doing anything in this repositor
 
 ## Application Governance
 
+- Treat every new file or feature as undocumented until its purpose, operation, assumptions, failure modes, and verification path are recorded at the closest useful documentation layer.
+- Add or update a local `README.md` for every code, script, tool, test, or build directory that gains source files.
+- When adding or changing a script, update `scripts/README.md`, provide useful `--help` output, and document prerequisites, side effects, outputs, and common failures.
+- When adding or changing build/runtime behavior, update the root `README.md` if normal users or contributors need to run, configure, observe, or troubleshoot it.
 - Keep executable application code under `cmd/` and `internal/`.
 - Keep source-reference checkouts under `third_party/`; application imports must not depend on `third_party/salvagecore`.
 - Use `cmd/apparat` for the GUI console and `cmd/apparatd` for the headless worker/service entry point.
@@ -38,7 +42,9 @@ Read `./agents/RULES.md` in its entirety before doing anything in this repositor
 - Keep product rules and durable concepts in `internal/domain`.
 - Keep external-system integrations in `internal/adapters`.
 - Keep OS and platform lifecycle boundaries in `internal/platform`.
-- Split files before they become difficult to review; treat roughly 500 lines as a review threshold and roughly 1,000 lines as a strong decomposition warning.
+- Keep code files at or below 400 physical lines; `make check-code-size` enforces this for included source files.
+- Decompose any over-limit code file into smaller package files and document the split in that directory before expecting `make verify` to pass.
+- Run `make check-docs` before considering documentation-governance work complete.
 - Use structured logging with stable component, event, command, correlation, and error fields.
 - Redact secrets, tokens, private keys, passphrases, raw audio, message bodies, project file contents, and other sensitive payloads before logging.
 

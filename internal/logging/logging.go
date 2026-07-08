@@ -15,6 +15,10 @@ type Logger struct {
 	retention int
 }
 
+type LastRun struct {
+	path string
+}
+
 type Event struct {
 	Time        string         `json:"time"`
 	Component   string         `json:"component"`
@@ -75,6 +79,42 @@ func Redact(fields map[string]any) map[string]any {
 		out[key] = value
 	}
 	return out
+}
+
+func StartLastRun(path string, fields map[string]any) (LastRun, error) {
+	log := LastRun{path: path}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return log, err
+	}
+	if err := os.WriteFile(path, nil, 0o600); err != nil {
+		return log, err
+	}
+	return log, log.Write("info", "runtime", "process_start", "created last_run.log", fields)
+}
+
+func (log LastRun) Write(level string, component string, event string, message string, fields map[string]any) error {
+	if log.path == "" {
+		return nil
+	}
+	entry := map[string]any{
+		"time":      time.Now().UTC().Format(time.RFC3339Nano),
+		"level":     level,
+		"component": component,
+		"event":     event,
+		"message":   message,
+		"fields":    Redact(fields),
+	}
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return err
+	}
+	file, err := os.OpenFile(log.path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = file.Close() }()
+	_, err = file.Write(append(data, '\n'))
+	return err
 }
 
 func (logger Logger) rotateIfNeeded() error {

@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/cjtrowbridge/apparat/internal/config"
@@ -43,5 +45,30 @@ func TestRuntimeDoctorInitializesLocalState(t *testing.T) {
 	diag := runtime.Doctor(context.Background())
 	if !diag.Healthy {
 		t.Fatalf("doctor unhealthy: %+v", diag)
+	}
+	data, err := os.ReadFile(cfg.LastRunPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	for _, want := range []string{"process_start", "directories_ready", "migrations_ready", "repository_ready", "healthy"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("last_run missing %q: %s", want, text)
+		}
+	}
+}
+
+func TestRuntimeDefaultsUseSeparateBinaryRoots(t *testing.T) {
+	root := t.TempDir()
+	guiCfg, err := config.Load(config.Options{Env: map[string]string{"XDG_DATA_HOME": root}, DefaultMode: config.ModeGUI, BinaryName: "apparat"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	headlessCfg, err := config.Load(config.Options{Env: map[string]string{"XDG_DATA_HOME": root}, DefaultMode: config.ModeHeadless, BinaryName: "apparatd"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if guiCfg.LastRunPath == headlessCfg.LastRunPath {
+		t.Fatalf("expected separate last_run paths, both = %q", guiCfg.LastRunPath)
 	}
 }

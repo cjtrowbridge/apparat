@@ -27,6 +27,15 @@ Domain packages must not import GUI, SQLite, HTTP, WireGuard, model runtime, BOI
 
 One device may hold several roles.
 
+## Binary And Runtime Boundaries
+
+`apparat` and `apparatd` are built as separate release artifacts under `releases/<goos>/<goarch>/<binary>/latest[.exe]`.
+
+- `apparat` is compiled with the GUI build tag by the release pipeline and enters the Ebitengine run loop during normal execution.
+- `apparatd` is compiled without the GUI build tag and must remain safe on devices without desktop libraries or a display server.
+- Default runtime roots are binary-specific, so GUI and headless smoke runs produce separate databases, logs, caches, and `last_run.log` files unless `--runtime-dir` explicitly points both binaries at the same root.
+- `last_run.log` is reset on each process start for immediate debugging, while append-only JSONL logs under `logs/` retain durable structured history.
+
 ## Modules, Commands, Events, And Store
 
 Feature modules register stable IDs, routes, commands, reducers, effects, repositories, health checks, and view-model producers.
