@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Build Apparat into the canonical local release artifact path."""
+"""Build Apparat binaries into canonical local release artifact paths.
+
+Canonical invocation from the repository root:
+
+    python3 scripts/build.py
+
+The default build produces both `apparat` and `apparatd`. The GUI target
+requires native desktop development headers on Linux because Ebitengine uses
+GLFW/X11 there.
+"""
 
 from __future__ import annotations
 
@@ -8,14 +17,24 @@ import os
 import platform
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@dataclass(frozen=True)
+class Target:
+    package: str
+    tags: tuple[str, ...] = ()
+
+
 TARGETS = {
-    "apparat": "./cmd/apparat",
-    "apparatd": "./cmd/apparatd",
+    "apparat": Target("./cmd/apparat", ("gui",)),
+    "apparatd": Target("./cmd/apparatd"),
 }
+ALL_TARGETS = tuple(TARGETS)
 
 
 def host_goos() -> str:
@@ -50,14 +69,45 @@ def host_goarch() -> str:
 
 def artifact_path(goos: str, goarch: str, target: str) -> Path:
     suffix = ".exe" if goos == "windows" else ""
-    return ROOT / "releases" / goos / goarch / f"latest{suffix}"
+    return ROOT / "releases" / goos / goarch / target / f"latest{suffix}"
+
+
+def selected_targets(target: str) -> tuple[str, ...]:
+    if target == "all":
+        return ALL_TARGETS
+    return (target,)
+
+
+def build_command(go: str, target: str, output: Path) -> list[str]:
+    spec = TARGETS[target]
+    command = [go, "build", "-trimpath"]
+    if spec.tags:
+        command.extend(["-tags", ",".join(spec.tags)])
+    command.extend(["-o", str(output), spec.package])
+    return command
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="Build Apparat GUI and headless binaries into canonical release paths.",
+        epilog=(
+            "Examples:\n"
+            "  python3 scripts/build.py\n"
+            "  python3 scripts/build.py --target apparatd\n"
+            "  python3 scripts/build.py --target apparat --print-path\n\n"
+            "Outputs:\n"
+            "  releases/<goos>/<goarch>/apparat/latest[.exe]\n"
+            "  releases/<goos>/<goarch>/apparatd/latest[.exe]\n\n"
+            "Linux GUI prerequisite packages include libx11-dev, libxcursor-dev, "
+            "libxrandr-dev, libxinerama-dev, libxi-dev, libgl1-mesa-dev, "
+            "libxxf86vm-dev, and libasound2-dev. Prefer `make build` so the "
+            "repo-local Go cache settings are applied."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--os", dest="goos", default=None, help="target GOOS; defaults to detected host")
     parser.add_argument("--arch", dest="goarch", default=None, help="target GOARCH; defaults to detected host")
-    parser.add_argument("--target", choices=sorted(TARGETS), default="apparat", help="command target to build")
+    parser.add_argument("--target", choices=[*sorted(TARGETS), "all"], default="all", help="command target to build")
     parser.add_argument("--go", default=os.environ.get("GO", "go"), help="go executable")
     parser.add_argument("--print-path", action="store_true", help="print the expected artifact path without building")
     return parser.parse_args(argv)
@@ -67,22 +117,43 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     goos = args.goos or host_goos()
     goarch = args.goarch or host_goarch()
-    output = artifact_path(goos, goarch, args.target)
+    targets = selected_targets(args.target)
 
     if args.print_path:
-        print(output)
+        for target in targets:
+            print(artifact_path(goos, goarch, target))
         return 0
 
-    output.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     env["GOOS"] = goos
     env["GOARCH"] = goarch
 
-    command = [args.go, "build", "-trimpath", "-o", str(output), TARGETS[args.target]]
-    print(f"building target={args.target} goos={goos} goarch={goarch} output={output}")
-    subprocess.run(command, cwd=ROOT, env=env, check=True)
-    print(output)
+    for target in targets:
+        output = artifact_path(goos, goarch, target)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        command = build_command(args.go, target, output)
+        print(f"building target={target} goos={goos} goarch={goarch} output={output}")
+        try:
+            subprocess.run(command, cwd=ROOT, env=env, check=True)
+        except subprocess.CalledProcessError as error:
+            print_build_failure_help(target, error)
+            return error.returncode
+        print(output)
     return 0
+
+
+def print_build_failure_help(target: str, error: subprocess.CalledProcessError) -> None:
+    print(f"build failed for target={target} exit={error.returncode}", file=sys.stderr)
+    if target == "apparat":
+        print(
+            "The GUI target is compiled with `-tags gui`. On Linux it requires native "
+            "desktop development headers. Install packages such as libx11-dev, "
+            "libxcursor-dev, libxrandr-dev, libxinerama-dev, libxi-dev, "
+            "libgl1-mesa-dev, libxxf86vm-dev, and libasound2-dev, then rerun "
+            "`make build`.",
+            file=sys.stderr,
+        )
+    print("For usage details run: python3 scripts/build.py --help", file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -545,15 +545,52 @@ make verify
 make build
 ```
 
-`make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, build-pipeline tests, race tests, linting, and vulnerability scanning.
+`make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, build-pipeline tests, race tests, code-size checks, documentation-completeness checks, linting, and vulnerability scanning.
 
-`make build` runs the Python build pipeline and writes the latest local binary to:
+### Build Process
 
-```text
-releases/<goos>/<goarch>/latest[.exe]
+Run build and verification commands from the repository root. Prefer Makefile targets because they apply repo-local Go cache settings and keep generated files out of source directories.
+
+Prerequisites:
+
+- Go `1.26.4` on `PATH`, or use the checked local toolchain path when present.
+- Python 3 for repository scripts.
+- Pinned developer tools installed with `make tools` before full verification.
+- Network access the first time Go modules or vulnerability data must be downloaded.
+- Linux GUI builds need native desktop development headers for Ebitengine/GLFW: `libx11-dev`, `libxcursor-dev`, `libxrandr-dev`, `libxinerama-dev`, `libxi-dev`, `libgl1-mesa-dev`, `libxxf86vm-dev`, and `libasound2-dev`.
+
+Common commands:
+
+```bash
+make verify
+make build
+make run-built
+make run-built-headless
+python3 scripts/build.py --help
+python3 scripts/build.py --target apparatd
+python3 scripts/build.py --target apparat --print-path
 ```
 
-The path uses Go `GOOS` and `GOARCH` names such as `linux/amd64`, `linux/arm64`, `windows/amd64`, or `darwin/arm64`. Windows builds use `latest.exe`; other targets use `latest`. Generated binaries under `releases/` are ignored by Git so other devices fetch source and reproduce their local latest artifact.
+`make build` runs the Python build pipeline and writes both latest local binaries to:
+
+```text
+releases/<goos>/<goarch>/apparat/latest[.exe]
+releases/<goos>/<goarch>/apparatd/latest[.exe]
+```
+
+The path uses Go `GOOS` and `GOARCH` names such as `linux/amd64`, `linux/arm64`, `windows/amd64`, or `darwin/arm64`. Windows builds use `latest.exe`; other targets use `latest`. `apparat` is the GUI binary and `apparatd` is the headless worker/service binary. Generated binaries under `releases/` are ignored by Git so other devices fetch source and reproduce their local latest artifact.
+
+Use `make run-built` for the GUI artifact smoke test and `make run-built-headless` for the headless artifact smoke test.
+
+`python3 build.py` at the repository root is a compatibility wrapper that delegates to `python3 scripts/build.py`. The canonical script location remains `scripts/build.py`; script inventory and troubleshooting details live in [`scripts/README.md`](./scripts/README.md).
+
+Build troubleshooting:
+
+- If Go tries to write under a read-only home cache, rerun through `make build` or set `GOCACHE` and `GOMODCACHE` to writable paths.
+- If module downloads fail, allow network access or pre-populate the Go module cache.
+- If the GUI artifact fails with `X11/Xlib.h` or similar missing headers, install the Linux GUI development packages listed above.
+- If only the headless worker is needed, use `python3 scripts/build.py --target apparatd` or `make run-built-headless`.
+- If documentation checks fail, add or update the closest relevant directory `README.md` and ensure new scripts are listed in `scripts/README.md`.
 
 ### Local Runtime
 
@@ -563,9 +600,13 @@ Phase 3 adds shared local runtime startup for GUI and headless modes:
 - `cmd/apparatd` is the headless worker/service entry point and does not initialize Ebitengine.
 - `--smoke-test` initializes the shared runtime, prints a non-window diagnostic line, and exits for build and CI checks.
 - `--doctor` validates runtime directories, logging, SQLite, identity status, cluster directory, and local messaging setup.
-- `--runtime-dir` overrides the runtime data root; otherwise Apparat uses platform data directories outside the source tree.
+- `--runtime-dir` overrides the runtime data root; otherwise `apparat` and `apparatd` use separate platform data directories outside the source tree.
 - Runtime subdirectories include database, logs, identity, cache, artifacts, backups, and recovery.
-- GUI builds compiled with the `gui` build tag enter the Ebitengine run loop; default builds keep the non-window path available for headless validation environments.
+- `last_run.log` is recreated in the runtime root at every process start and records verbose startup, component, doctor, smoke-test, failure, panic, and shutdown diagnostics for immediate debugging.
+- Append-only JSONL logs remain under the runtime `logs/` directory for durable structured history.
+- GUI builds compiled with the `gui` build tag enter the Ebitengine run loop; headless builds keep the non-window path available for worker and service validation environments.
+
+Contributor verification includes a source-size gate: code files must be at most 400 physical lines unless they are excluded generated/vendor/reference artifacts. Over-limit files should be decomposed into smaller package files with local README context where needed.
 
 Local startup creates an append-only JSONL log, opens SQLite with foreign keys, applies checksumed forward migrations, initializes local cluster-directory tables, and initializes durable inbox/outbox/replay/cursor primitives.
 

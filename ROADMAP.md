@@ -91,6 +91,12 @@ The roadmap assumes these decisions:
   - Scheduler failover.
   - Dynamic workload routing optimization.
   - Unrestricted remote execution.
+- **Documentation completeness**
+  - Every new file or feature must be documented at the closest useful documentation layer.
+  - New or changed code, script, tool, test, and build directories require local `README.md` coverage.
+  - New or changed scripts require useful `--help` output and `scripts/README.md` inventory coverage.
+  - Build and runtime behavior that normal users or contributors run, configure, observe, or troubleshoot must be surfaced in the root `README.md`.
+  - `make verify` includes automated documentation-completeness checks where the requirement can be mechanically validated.
 
 ## Salvagecore Reference Baseline
 
@@ -753,10 +759,12 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Define Android native wrapper, lifecycle, storage, keyboard, microphone, audio, and background constraints.
   - [x] Define evidence required before claiming support.
 - [x] Create the canonical build artifact contract.
-  - [x] Define `./releases/[os]/[architecture]/latest[.exe]`.
+  - [x] Define `./releases/[os]/[architecture]/apparat/latest[.exe]` for the GUI console.
+  - [x] Define `./releases/[os]/[architecture]/apparatd/latest[.exe]` for the headless worker/service.
   - [x] Use Go `GOOS` and `GOARCH` naming for release directories.
   - [x] Use `.exe` for Windows artifacts and no suffix for Unix-like artifacts.
   - [x] Implement a Python build pipeline that detects host OS and architecture.
+  - [x] Build both canonical binaries by default while preserving single-target builds.
   - [x] Add build-pipeline tests.
   - [x] Keep generated binary artifacts ignored by Git.
 - [x] Create deferred-feature design stubs.
@@ -842,7 +850,13 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - [?] Split GUI and headless runtime adapters.
   - [?] Make the default GUI binary enter a real Ebitengine run loop instead of exiting after runtime initialization.
-    - The Ebitengine loop is implemented behind the `gui` build tag and still needs native desktop-library validation; default builds use a non-window blocking runtime path for CI and headless safety.
+    - The Ebitengine loop is implemented behind the `gui` build tag and the release pipeline builds the `apparat` artifact with that tag.
+    - Native desktop-library and display-server validation remains target-specific evidence.
+  - [x] Build GUI and headless artifacts into separate binary-specific release directories.
+    - [x] Use `releases/<goos>/<goarch>/apparat/latest[.exe]` for the GUI artifact.
+    - [x] Use `releases/<goos>/<goarch>/apparatd/latest[.exe]` for the headless artifact.
+    - [x] Keep generated artifacts ignored by Git.
+  - [x] Keep GUI and headless default runtime roots separate unless `--runtime-dir` explicitly overrides them.
   - [x] Keep `--smoke-test` as the non-window build and CI verification path.
   - [x] Keep Ebitengine initialization out of headless mode.
   - [x] Add explicit GUI, headless, and auto modes.
@@ -854,9 +868,24 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Avoid storing durable runtime state inside project source directories by default.
 - [x] Add structured logging.
   - [x] Write append-only JSONL.
+  - [x] Recreate runtime-root `last_run.log` at each process start for immediate verbose diagnostics.
+  - [x] Record binary name, mode, runtime root, OS, architecture, Go version, process ID, flags, component startup, doctor, smoke-test, errors, panics, and shutdown state in `last_run.log`.
   - [x] Include component, event, device, project, job, task, and correlation IDs where relevant.
   - [x] Redact secrets, tokens, private keys, raw prompts, raw model outputs, and raw voice data by default.
   - [x] Add safe log rotation and retention.
+- [x] Add source-size governance.
+  - [x] Require included code files to stay at or below 400 physical lines.
+  - [x] Exclude generated, vendored/reference, `third_party/`, `.tools/`, release, plan, journal, downtime, and prose documentation files.
+  - [x] Add `scripts/check_code_file_lines.py`.
+  - [x] Add `make check-code-size`.
+  - [x] Include the check in `make verify`.
+- [x] Add documentation completeness governance.
+  - [x] Require tracked source directories to carry local `README.md` documentation.
+  - [x] Require tracked scripts to be inventoried in `scripts/README.md`.
+  - [x] Require executable Python scripts to provide `--help` usage.
+  - [x] Add `scripts/check_directory_docs.py`.
+  - [x] Add `make check-docs`.
+  - [x] Include the check in `make verify`.
 - [x] Add SQLite lifecycle.
   - [x] Open, close, ping, and configure connections.
   - [x] Enable foreign keys.
@@ -893,11 +922,143 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - SQLite survives restart and migrations.
 - Logs explain state transitions without exposing sensitive payloads.
 
-## Phase 4: Secure Two-Device HTTPS/WireGuard Vertical Slice
+## Phase 4: Basic HUD Tabs And Content
+
+**Goal:** Turn the mock HUD foundation into the first usable local UI before adding more backend networking and service complexity.
+
+**Dependencies:** Phases 1–3.
+
+- [ ] Establish the tab shell as the next implementation focus.
+  - [ ] Keep the canonical tab order: Comrades, Projects, Research, Cluster, Routing, Tasks, Settings.
+  - [ ] Represent tabs as data from a tab-view model rather than hard-coding a single visual strip.
+  - [ ] Store the tab list as ordered tab descriptors with stable IDs, labels, icons or glyph slots, accessibility labels, visibility state, and future badge/status metadata.
+  - [ ] Default to a top tab bar for the MVP.
+  - [ ] Design the tab-view model so a later setting can realign tabs from the top edge to a side rail without changing tab content implementations.
+  - [ ] Keep tab content independent from tab placement so top, left, right, compact, and future responsive layouts can share the same selected-tab state.
+  - [ ] Keep `L1` and `R1` tab switching for Steam Deck/controller input.
+  - [ ] Keep Debian/Linux keyboard tab switching through `Ctrl+PageUp`, `Ctrl+PageDown`, and `Alt+1` through `Alt+7`.
+  - [ ] Represent input actions as named bindings from the configuration manager rather than scattering hard-coded key checks through tab code.
+  - [ ] Keep default bindings hard-coded for now while preserving a path to user-editable bindings later.
+  - [ ] Preserve mouse/touch activation without making essential workflows pointer-only.
+  - [ ] Keep `R2` and right `Ctrl` push-to-talk visible as UI state even before real ASR is integrated.
+- [ ] Add a temporary HUD configuration manager.
+  - [ ] Provide hard-coded default values through one configuration manager boundary during Phase 4.
+  - [ ] Keep the boundary shaped so a later implementation can load and save the same values through SQLite-backed user configuration tables.
+  - [ ] Include tab-view defaults.
+    - [ ] Canonical tab order.
+    - [ ] Default tab placement: top.
+    - [ ] Future allowed placements: top, left side rail, right side rail, compact/sidebar-responsive.
+    - [ ] Tab density: comfortable by default, with compact and expanded options planned.
+    - [ ] Tab label mode: icon plus text by default, with icon-only and text-only options planned where usable.
+    - [ ] Default selected tab.
+  - [ ] Include key-binding defaults.
+    - [ ] Previous tab: `L1` and `Ctrl+PageUp`.
+    - [ ] Next tab: `R1` and `Ctrl+PageDown`.
+    - [ ] Direct tab selection: `Alt+1` through `Alt+7`.
+    - [ ] Push-to-talk: `R2` and right `Ctrl`.
+    - [ ] Cancel recording: `Escape`.
+    - [ ] Focus, activation, back, context menu, command palette, scroll, and collection-navigation actions.
+  - [ ] Include display and accessibility defaults.
+    - [ ] Theme: dark by default, with light and high-contrast variants planned.
+    - [ ] Accent color: Apparat default now, user-selectable later.
+    - [ ] UI scale/zoom: default `1.0`.
+    - [ ] Font size: Steam Deck readable default, with future small/medium/large/custom choices.
+    - [ ] Font family: bundled/default UI font now, user-selectable later where platform packaging permits.
+    - [ ] Motion/reduced-animation preference.
+    - [ ] Contrast and focus-ring strength.
+    - [ ] Panel density, list row height, and card spacing.
+    - [ ] Text wrapping and truncation preference for long project, queue, device, and task names.
+  - [ ] Include interaction defaults.
+    - [ ] Controller sensitivity and repeat delay.
+    - [ ] Keyboard repeat delay for held navigation.
+    - [ ] Mouse/touch scroll speed.
+    - [ ] Push-to-talk mode: hold by default, with future toggle mode if accessibility testing supports it.
+    - [ ] Confirmation requirements for destructive actions.
+    - [ ] Default command-palette visibility and shortcut.
+    - [ ] Default landing tab on startup.
+    - [ ] Remember last selected tab, panel, project, route, and task when enabled later.
+    - [ ] Default sort and filter preferences for devices, projects, queues, tasks, comrades, and research projects.
+  - [ ] Include notification defaults.
+    - [ ] Notification visibility: important local events only by default.
+    - [ ] Notification sound volume and mute state.
+    - [ ] Toast duration and whether controller focus should move to urgent notifications.
+    - [ ] Categories for job completion, device offline/online, task failure, comrade request, research milestone, and security warning.
+    - [ ] Quiet-hours schedule placeholder.
+  - [ ] Include diagnostic defaults.
+    - [ ] Developer overlay visibility.
+    - [ ] Log detail level for local UI diagnostics.
+    - [ ] Whether runtime paths and build artifacts are shown in Settings by default.
+    - [ ] Whether frame timing, memory, input events, focus path, and layout bounds are shown in diagnostics.
+  - [ ] Include default view preferences.
+    - [ ] Projects default view: recent projects first.
+    - [ ] Cluster default view: device health summary first.
+    - [ ] Routing default view: workload-class overview first.
+    - [ ] Tasks default view: active and failed runs first.
+    - [ ] Comrades default view: placeholder relationship list first until chat exists.
+    - [ ] Research default view: placeholder validated-project catalog first until BOINC integration exists.
+  - [ ] Include privacy and safety defaults.
+    - [ ] Hide sensitive paths and identifiers by default in presentation surfaces where practical.
+    - [ ] Require explicit reveal for secrets, tokens, private keys, raw prompts, model outputs, and raw voice diagnostics.
+    - [ ] Default sharing posture: no comrade or research resource sharing until explicitly enabled.
+  - [ ] Do not expose user editing UI yet unless it is clearly marked non-persistent or future.
+- [ ] Implement reusable HUD layout primitives.
+  - [ ] Add a consistent top tab bar.
+  - [ ] Build the tab bar through the tab-view model so the same content can later render as a side rail.
+  - [ ] Add focusable panels, lists, cards, empty states, status pills, and action rows.
+  - [ ] Add a shared detail-pane pattern for selected items.
+  - [ ] Add loading, offline, warning, and disabled states.
+  - [ ] Add controller/keyboard focus styling that is visible at Steam Deck scale.
+  - [ ] Keep rendering driven by view models rather than direct database or adapter calls.
+- [ ] Implement the Comrades tab as a visible placeholder.
+  - [ ] Explain real-friend chat as a future capability.
+  - [ ] Explain comrade queues for low-priority shared inference access.
+  - [ ] Show placeholder sharing grants, queue access, quota, revocation, and audit concepts.
+  - [ ] Keep all controls disabled or clearly marked future until backend support exists.
+- [ ] Implement the Projects tab basic content.
+  - [ ] Show project list, selected project summary, chat preview, file tree placeholder, artifact list placeholder, and Git status placeholder.
+  - [ ] Add local-only mock actions for selecting projects, opening files, viewing chat entries, and inspecting Git state.
+  - [ ] Show offline draft and transaction concepts without applying real file changes yet.
+- [ ] Implement the Research tab as a visible placeholder.
+  - [ ] Explain BOINC delegation as validated public-interest compute.
+  - [ ] Show placeholder project catalog, validation state, budget, schedule, contribution, and gameplay-validation concepts.
+  - [ ] Keep BOINC execution disabled until the later Research phase.
+- [ ] Implement the Cluster tab basic content.
+  - [ ] Show local device identity status, runtime mode, runtime root, database path, and `last_run.log` status.
+  - [ ] Show mock device cards with roles, reachability, health, typed capabilities, and queue/service ownership.
+  - [ ] Surface doctor status and recent diagnostics in a human-readable panel.
+- [ ] Implement the Routing tab basic content.
+  - [ ] Show workload classes: text generation, image generation, video generation, STT, TTS, and BOINC research compute.
+  - [ ] Show mock queues, priorities, device assignments, compatibility filtering, fallback routes, and policy constraints.
+  - [ ] Make it clear that BOINC is schedulable research compute, not model inference.
+- [ ] Implement the Tasks tab basic content.
+  - [ ] Show placeholder scheduled tasks, webhooks, event-driven tasks, Signal-driven tasks, manual approvals, and run history.
+  - [ ] Show disabled create/edit controls until durable task storage and execution exist.
+- [ ] Implement the Settings tab basic content.
+  - [ ] Show local runtime paths, build artifact paths, mode, identity status, documentation/check status, and developer diagnostics.
+  - [ ] Show the current temporary HUD configuration values, including tab placement, theme, scale, font size, and key-binding defaults.
+  - [ ] Label configuration values as hard-coded Phase 4 defaults that will later load from and save to SQLite-backed user settings.
+  - [ ] Show controls or command hints for `--doctor`, `--smoke-test`, `last_run.log`, and verification commands.
+  - [ ] Keep destructive identity/runtime operations disabled until explicit backend support exists.
+- [ ] Add UI verification and documentation.
+  - [ ] Add deterministic tests for tab order, tab content models, input actions, focus transitions, and placeholder disabled states.
+  - [ ] Document each tab's current MVP behavior and future backend boundary in `internal/hud/README.md` or tab-specific docs.
+  - [ ] Update screenshots or text walkthroughs when the visual shell is stable enough to show.
+
+**Exit criteria**
+
+- The GUI opens into a usable seven-tab HUD with readable basic content for every canonical tab.
+- The tab system is data-driven enough to support future top/side realignment without rewriting tab contents.
+- Key bindings and user-facing display defaults come from a temporary configuration manager rather than scattered literals.
+- Controller, keyboard, mouse, and touch can navigate the basic tab content without backend services.
+- All backend-dependent controls are clearly disabled, mocked, or labeled future.
+- Cluster and Settings expose enough local diagnostics to debug startup, runtime paths, and `last_run.log`.
+- The next backend phase can wire real data into established view-model boundaries instead of inventing UI structure.
+
+## Phase 5: Secure Two-Device HTTPS/WireGuard Vertical Slice
 
 **Goal:** Complete the MVP proof between a Steam Deck and one headless worker.
 
-**Dependencies:** Phases 1–3.
+**Dependencies:** Phases 1–4.
 
 - [ ] Add external-network configuration.
   - [ ] Detect expected WireGuard interfaces where possible.
@@ -957,11 +1118,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - No trust is derived solely from LAN presence or WireGuard reachability.
 - Duplicate delivery cannot duplicate the logical job.
 
-## Phase 5: Project Workspace And Git Operations
+## Phase 6: Project Workspace And Git Operations
 
 **Goal:** Make Apparat useful for real project navigation and controlled repository work.
 
-**Dependencies:** Phase 4 transport and persistence.
+**Dependencies:** Phase 5 transport and persistence.
 
 - [ ] Add project registration and ownership.
   - [ ] Register existing filesystem/Git folders.
@@ -1008,11 +1169,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - A Steam Deck can open a real project, inspect files and Git state, submit a project chat job, and recover offline drafts without granting arbitrary shell access.
 
-## Phase 6: Typed Compute Services, Queues, And Routing
+## Phase 7: Typed Compute Services, Queues, And Routing
 
 **Goal:** Route each workload only through authoritative queues and devices that explicitly support its workload class and requirements.
 
-**Dependencies:** Phases 4–5.
+**Dependencies:** Phases 5–6.
 
 - [ ] Establish the workload-class registry.
   - [ ] Add `text_generation`.
@@ -1064,10 +1225,10 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [ ] Register speech workload contracts.
   - [ ] Define STT audio inputs, language, timestamps, streaming, and transcript output.
   - [ ] Define TTS text inputs, voice, language, streaming, audio format, and output.
-  - [ ] Defer concrete STT/TTS adapters to Phase 8 while preserving typed discovery and routing now.
+  - [ ] Defer concrete STT/TTS adapters to Phase 9 while preserving typed discovery and routing now.
 - [ ] Register BOINC workload contract.
   - [ ] Define BOINC project identity, client/runtime, platform, application, resource, schedule, and validation requirements.
-  - [ ] Defer concrete BOINC execution to Phase 12 while preserving typed discovery and routing now.
+  - [ ] Defer concrete BOINC execution to Phase 13 while preserving typed discovery and routing now.
 - [ ] Implement authoritative queues.
   - [ ] Direct device queues.
   - [ ] Pool-owner queues.
@@ -1107,11 +1268,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - Mock image, video, STT, TTS, and BOINC jobs route only to matching advertised capabilities.
 - Unsupported workload classes and incompatible requirements fail clearly before execution.
 
-## Phase 7: Automation, Scheduling, And Webhooks
+## Phase 8: Automation, Scheduling, And Webhooks
 
 **Goal:** Run durable cluster tasks even when some devices are offline.
 
-**Dependencies:** Phase 6 typed queues.
+**Dependencies:** Phase 7 typed queues.
 
 - [ ] Add task definitions.
   - [ ] Owner device.
@@ -1156,11 +1317,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - A scheduler-owned task can trigger, submit inference, await a result, survive restart, resume idempotently, and produce an auditable outcome.
 
-## Phase 8: ASR, TTS, And Voice Control
+## Phase 9: ASR, TTS, And Voice Control
 
 **Goal:** Turn controller and Debian GUI push-to-talk into a reliable routed cluster capability.
 
-**Dependencies:** Phases 2, 6, and 7.
+**Dependencies:** Phases 2, 7, and 8.
 
 - [ ] Add audio capture.
   - [ ] Start while `R2` or the configured Debian GUI push-to-talk key is held.
@@ -1201,7 +1362,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - Spoken output can be routed independently.
 - Voice state remains visible, cancellable, and privacy-preserving.
 
-## Phase 9: Platform Packaging And Release Pipeline
+## Phase 10: Platform Packaging And Release Pipeline
 
 **Goal:** Validate and ship each supported platform honestly and independently.
 
@@ -1263,7 +1424,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - Each platform is marked supported only after its build, packaging, input, storage, networking, audio, and lifecycle checks pass.
 
-## Phase 10: Alternative Transports And Long-Term Resilience
+## Phase 11: Alternative Transports And Long-Term Resilience
 
 **Goal:** Carry the same authenticated durable operations across constrained or human-mediated transports.
 
@@ -1311,7 +1472,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - Alternative transports carry only operations appropriate to their capabilities while preserving Apparat identity, authorization, queue, project, and task semantics.
 
-## Phase 11: Comrades, Chat, And Shared Inference
+## Phase 12: Comrades, Chat, And Shared Inference
 
 **Goal:** Add trusted real-friend communication and owner-controlled sharing of otherwise idle inference capacity.
 
@@ -1375,7 +1536,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - The resource owner can inspect usage and immediately pause or revoke access.
 - Shared inference does not expose project files, secrets, arbitrary tools, shell access, or unrelated cluster state.
 
-## Phase 12: Research, BOINC, And Validation Gameplay
+## Phase 13: Research, BOINC, And Validation Gameplay
 
 **Goal:** Allow opt-in personal compute to support validated BOINC projects through a transparent, constrained, and engaging Research surface.
 
