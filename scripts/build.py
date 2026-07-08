@@ -35,6 +35,15 @@ TARGETS = {
     "apparatd": Target("./cmd/apparatd"),
 }
 ALL_TARGETS = tuple(TARGETS)
+ANDROID_APK_HELP = (
+    "Android APK builds are not integrated yet. The Ebitengine mobile source "
+    "framework is present through the Ebitengine submodule, and salvagecore "
+    "contains a golang/mobile reference checkout, but Apparat still needs a "
+    "pinned Android SDK/NDK/JDK toolchain, host-owned Android wrapper or AAR "
+    "pipeline, manifest/activity lifecycle code, signing configuration, "
+    "permissions, and device/emulator validation before the pipeline can emit "
+    "releases/android/<arch>/apparat/latest.apk."
+)
 
 
 def host_goos() -> str:
@@ -101,7 +110,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
             "Linux GUI prerequisite packages include libx11-dev, libxcursor-dev, "
             "libxrandr-dev, libxinerama-dev, libxi-dev, libgl1-mesa-dev, "
             "libxxf86vm-dev, and libasound2-dev. Prefer `make build` so the "
-            "repo-local Go cache settings are applied."
+            "repo-local Go cache settings are applied.\n\n"
+            f"{ANDROID_APK_HELP}"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -117,6 +127,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     goos = args.goos or host_goos()
     goarch = args.goarch or host_goarch()
+    if goos == "android":
+        print(ANDROID_APK_HELP, file=sys.stderr)
+        return 2
     targets = selected_targets(args.target)
 
     if args.print_path:

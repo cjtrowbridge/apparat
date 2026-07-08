@@ -31,6 +31,7 @@ type Diagnostic struct {
 	Healthy        bool
 	Mode           Mode
 	RootDir        string
+	LastRunPath    string
 	DatabasePath   string
 	IdentityStatus identity.Status
 	Message        string
@@ -99,6 +100,7 @@ func (runtime *Runtime) Initialize(ctx context.Context) error {
 		"binary":       runtime.config.BinaryName,
 		"mode":         runtime.mode,
 		"root":         runtime.config.RootDir,
+		"last_run":     runtime.config.LastRunPath,
 		"database":     runtime.config.DatabasePath,
 		"os":           goruntime.GOOS,
 		"architecture": goruntime.GOARCH,
@@ -162,7 +164,7 @@ func (runtime *Runtime) Close() error {
 }
 
 func (runtime *Runtime) Doctor(ctx context.Context) Diagnostic {
-	diag := Diagnostic{Mode: runtime.mode, RootDir: runtime.config.RootDir, DatabasePath: runtime.config.DatabasePath, IdentityStatus: identity.Classify(runtime.config.IdentityDir), Healthy: true, Message: "ok"}
+	diag := Diagnostic{Mode: runtime.mode, RootDir: runtime.config.RootDir, LastRunPath: runtime.config.LastRunPath, DatabasePath: runtime.config.DatabasePath, IdentityStatus: identity.Classify(runtime.config.IdentityDir), Healthy: true, Message: "ok"}
 	if err := runtime.Initialize(ctx); err != nil {
 		diag.Healthy = false
 		diag.Message = err.Error()

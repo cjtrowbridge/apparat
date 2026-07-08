@@ -49,6 +49,7 @@ These candidates are intentionally absent until a focused architecture and imple
 - **Meshtastic:** select the protobuf/client boundary, payload-size strategy, fragmentation, acknowledgements, store-and-forward behavior, and conformance tests before adding source.
 - **Signal gateway:** establish feasibility, account operation, identity mapping, maintenance risk, rate limits, and gateway trust boundaries before selecting an implementation.
 - **BOINC:** define the Research tab architecture, validation model, isolation boundary, RPC/client/manager role, and packaging approach before adding BOINC sources.
+- **Android mobile tooling:** use the admitted Ebitengine `ebitenmobile` source first; admit `golang/mobile` or an Android wrapper source tree only if Phase 5 proves it is required for a durable APK pipeline independent of the ignored salvagecore checkout.
 - **Alternative runtimes:** require a specific workload, adapter contract, license review, platform target, and validation plan before adding any model, speech, artifact, or networking runtime.
 
 ## MVP Source Exclusions

@@ -46,7 +46,7 @@ func main() {
 	}
 	if cfg.Doctor {
 		diag := runtime.Doctor(ctx)
-		fmt.Printf("apparatd doctor healthy=%t mode=%s root=%s identity=%s message=%s\n", diag.Healthy, diag.Mode, diag.RootDir, diag.IdentityStatus, diag.Message)
+		fmt.Printf("apparatd doctor healthy=%t mode=%s root=%s last_run=%s identity=%s message=%s\n", diag.Healthy, diag.Mode, diag.RootDir, diag.LastRunPath, diag.IdentityStatus, diag.Message)
 		if !diag.Healthy {
 			_ = runtime.RecordLastRun("error", "process", "doctor_failed", "doctor command failed", map[string]any{"message": diag.Message})
 			os.Exit(1)
@@ -55,6 +55,7 @@ func main() {
 		return
 	}
 
+	fmt.Fprintf(os.Stderr, "apparatd runtime root=%s last_run=%s\n", cfg.RootDir, cfg.LastRunPath)
 	if err := runtime.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		_ = runtime.RecordLastRun("error", "process", "run_failed", "headless runtime failed", map[string]any{"error": err.Error()})
 		slog.Error("run apparatd", "error", err)
@@ -68,6 +69,6 @@ func smokeTest(ctx context.Context, runtime *app.Runtime) error {
 		return err
 	}
 	diag := runtime.Doctor(ctx)
-	fmt.Printf("apparatd smoke ok mode=%s tabs=%d root=%s identity=%s\n", runtime.Mode(), len(runtime.Snapshot().Tabs), diag.RootDir, diag.IdentityStatus)
+	fmt.Printf("apparatd smoke ok mode=%s tabs=%d root=%s last_run=%s identity=%s\n", runtime.Mode(), len(runtime.Snapshot().Tabs), diag.RootDir, diag.LastRunPath, diag.IdentityStatus)
 	return nil
 }

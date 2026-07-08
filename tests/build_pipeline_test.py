@@ -56,6 +56,12 @@ class BuildPipelineTest(unittest.TestCase):
         self.assertEqual(result, 0)
         run.assert_not_called()
 
+    def test_android_build_is_rejected_until_apk_pipeline_exists(self):
+        with mock.patch("subprocess.run") as run:
+            result = build.main(["--os", "android", "--arch", "arm64", "--target", "apparat"])
+        self.assertEqual(result, 2)
+        run.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
