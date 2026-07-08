@@ -580,6 +580,8 @@ releases/<goos>/<goarch>/apparatd/latest[.exe]
 
 The path uses Go `GOOS` and `GOARCH` names such as `linux/amd64`, `linux/arm64`, `windows/amd64`, or `darwin/arm64`. Windows builds use `latest.exe`; other targets use `latest`. `apparat` is the GUI binary and `apparatd` is the headless worker/service binary. Generated binaries under `releases/` are ignored by Git so other devices fetch source and reproduce their local latest artifact.
 
+Android APK builds are not integrated yet. The Ebitengine mobile source framework is present through the Ebitengine submodule, and salvagecore contains a temporary `golang/mobile` reference checkout, but the build script intentionally rejects `--os android` until pinned Android SDK/NDK/JDK tooling, a host-owned Android wrapper or AAR pipeline, manifest/lifecycle code, signing, permissions, and device/emulator validation exist; the future artifact should be an installable APK, not a plain Go binary. The Android pipeline must keep working after `third_party/salvagecore` is removed, so any required source or build logic must live in Apparat-owned tracked paths or documented external prerequisites.
+
 Use `make run-built` for the GUI artifact smoke test and `make run-built-headless` for the headless artifact smoke test.
 
 `python3 build.py` at the repository root is a compatibility wrapper that delegates to `python3 scripts/build.py`. The canonical script location remains `scripts/build.py`; script inventory and troubleshooting details live in [`scripts/README.md`](./scripts/README.md).
@@ -598,9 +600,11 @@ Phase 3 adds shared local runtime startup for GUI and headless modes:
 
 - `cmd/apparat` is the GUI entry point.
 - `cmd/apparatd` is the headless worker/service entry point and does not initialize Ebitengine.
-- `--smoke-test` initializes the shared runtime, prints a non-window diagnostic line, and exits for build and CI checks.
-- `--doctor` validates runtime directories, logging, SQLite, identity status, cluster directory, and local messaging setup.
+- `--smoke-test` initializes the shared runtime, prints a non-window diagnostic line including `root=` and `last_run=`, and exits for build and CI checks.
+- `--doctor` validates runtime directories, logging, SQLite, identity status, cluster directory, and local messaging setup; its output includes the exact `last_run.log` path.
 - `--runtime-dir` overrides the runtime data root; otherwise `apparat` and `apparatd` use separate platform data directories outside the source tree.
+- Default Linux runtime roots are `~/.local/share/apparat/apparat` for the GUI and `~/.local/share/apparat/apparatd` for the headless worker, unless `XDG_DATA_HOME` is set.
+- Normal GUI and headless startup prints the selected runtime root and `last_run.log` path before entering the long-running process.
 - Runtime subdirectories include database, logs, identity, cache, artifacts, backups, and recovery.
 - `last_run.log` is recreated in the runtime root at every process start and records verbose startup, component, doctor, smoke-test, failure, panic, and shutdown diagnostics for immediate debugging.
 - Append-only JSONL logs remain under the runtime `logs/` directory for durable structured history.
@@ -632,19 +636,20 @@ Local startup creates an append-only JSONL log, opens SQLite with foreign keys, 
 
 Go's standard TLS and HTTP libraries cover the initial API. The retained Go-native identity design covers the initial signature and encrypted-key requirements. OpenSSL does not provide PGP semantics, and adding OpenSSL or libsodium would create unnecessary cgo and cross-platform work.
 
-Ebitengine supplies `ebitenmobile`; Android still requires pinned tools and a native wrapper, but not necessarily a `golang/mobile` source submodule.
+Ebitengine supplies `ebitenmobile` through the admitted Ebitengine source tree, and the ignored salvagecore reference includes `third_party/cicd/mobile` from `golang/mobile` for temporary comparison. Android still requires pinned tools and a host-owned native wrapper or AAR pipeline before Apparat can claim APK support. Salvagecore is not a durable build input; any Android material Apparat needs must be admitted into this repository or replaced with a documented external prerequisite.
 
 ## Platform Sequence
 
 1. Steam Deck/Linux GUI and controller input.
 2. Debian/Linux GUI keyboard, mouse, optional-controller, and push-to-talk input.
 3. Linux headless worker and service runtime.
-4. Secure two-device WireGuard/LAN vertical slice.
-5. Linux desktop packaging and service installation.
-6. Windows desktop packaging and external-WireGuard validation.
-7. macOS packaging, signing, notarization, and external-WireGuard validation.
-8. Android native wrapper, Ebitengine AAR, lifecycle, permissions, keyboard, controller/touch, microphone, audio, storage, and background behavior.
-9. Platform-specific app-managed WireGuard.
+4. Android GUI APK build pipeline for `releases/android/arm64/apparat/latest.apk`; no Android headless artifact in this phase.
+5. Secure two-device WireGuard/LAN vertical slice.
+6. Linux desktop packaging and service installation.
+7. Windows desktop packaging and external-WireGuard validation.
+8. macOS packaging, signing, notarization, and external-WireGuard validation.
+9. Android release hardening beyond the first GUI APK.
+10. Platform-specific app-managed WireGuard.
 
 Cross-platform support is claimed only after target-specific builds and behavior have been validated.
 

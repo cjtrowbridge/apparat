@@ -928,121 +928,121 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** Phases 1–3.
 
-- [ ] Establish the tab shell as the next implementation focus.
-  - [ ] Keep the canonical tab order: Comrades, Projects, Research, Cluster, Routing, Tasks, Settings.
-  - [ ] Represent tabs as data from a tab-view model rather than hard-coding a single visual strip.
-  - [ ] Store the tab list as ordered tab descriptors with stable IDs, labels, icons or glyph slots, accessibility labels, visibility state, and future badge/status metadata.
-  - [ ] Default to a top tab bar for the MVP.
-  - [ ] Design the tab-view model so a later setting can realign tabs from the top edge to a side rail without changing tab content implementations.
-  - [ ] Keep tab content independent from tab placement so top, left, right, compact, and future responsive layouts can share the same selected-tab state.
-  - [ ] Keep `L1` and `R1` tab switching for Steam Deck/controller input.
-  - [ ] Keep Debian/Linux keyboard tab switching through `Ctrl+PageUp`, `Ctrl+PageDown`, and `Alt+1` through `Alt+7`.
-  - [ ] Represent input actions as named bindings from the configuration manager rather than scattering hard-coded key checks through tab code.
-  - [ ] Keep default bindings hard-coded for now while preserving a path to user-editable bindings later.
-  - [ ] Preserve mouse/touch activation without making essential workflows pointer-only.
-  - [ ] Keep `R2` and right `Ctrl` push-to-talk visible as UI state even before real ASR is integrated.
-- [ ] Add a temporary HUD configuration manager.
-  - [ ] Provide hard-coded default values through one configuration manager boundary during Phase 4.
-  - [ ] Keep the boundary shaped so a later implementation can load and save the same values through SQLite-backed user configuration tables.
-  - [ ] Include tab-view defaults.
-    - [ ] Canonical tab order.
-    - [ ] Default tab placement: top.
-    - [ ] Future allowed placements: top, left side rail, right side rail, compact/sidebar-responsive.
-    - [ ] Tab density: comfortable by default, with compact and expanded options planned.
-    - [ ] Tab label mode: icon plus text by default, with icon-only and text-only options planned where usable.
-    - [ ] Default selected tab.
-  - [ ] Include key-binding defaults.
-    - [ ] Previous tab: `L1` and `Ctrl+PageUp`.
-    - [ ] Next tab: `R1` and `Ctrl+PageDown`.
-    - [ ] Direct tab selection: `Alt+1` through `Alt+7`.
-    - [ ] Push-to-talk: `R2` and right `Ctrl`.
-    - [ ] Cancel recording: `Escape`.
-    - [ ] Focus, activation, back, context menu, command palette, scroll, and collection-navigation actions.
-  - [ ] Include display and accessibility defaults.
-    - [ ] Theme: dark by default, with light and high-contrast variants planned.
-    - [ ] Accent color: Apparat default now, user-selectable later.
-    - [ ] UI scale/zoom: default `1.0`.
-    - [ ] Font size: Steam Deck readable default, with future small/medium/large/custom choices.
-    - [ ] Font family: bundled/default UI font now, user-selectable later where platform packaging permits.
-    - [ ] Motion/reduced-animation preference.
-    - [ ] Contrast and focus-ring strength.
-    - [ ] Panel density, list row height, and card spacing.
-    - [ ] Text wrapping and truncation preference for long project, queue, device, and task names.
-  - [ ] Include interaction defaults.
-    - [ ] Controller sensitivity and repeat delay.
-    - [ ] Keyboard repeat delay for held navigation.
-    - [ ] Mouse/touch scroll speed.
-    - [ ] Push-to-talk mode: hold by default, with future toggle mode if accessibility testing supports it.
-    - [ ] Confirmation requirements for destructive actions.
-    - [ ] Default command-palette visibility and shortcut.
-    - [ ] Default landing tab on startup.
-    - [ ] Remember last selected tab, panel, project, route, and task when enabled later.
-    - [ ] Default sort and filter preferences for devices, projects, queues, tasks, comrades, and research projects.
-  - [ ] Include notification defaults.
-    - [ ] Notification visibility: important local events only by default.
-    - [ ] Notification sound volume and mute state.
-    - [ ] Toast duration and whether controller focus should move to urgent notifications.
-    - [ ] Categories for job completion, device offline/online, task failure, comrade request, research milestone, and security warning.
-    - [ ] Quiet-hours schedule placeholder.
-  - [ ] Include diagnostic defaults.
-    - [ ] Developer overlay visibility.
-    - [ ] Log detail level for local UI diagnostics.
-    - [ ] Whether runtime paths and build artifacts are shown in Settings by default.
-    - [ ] Whether frame timing, memory, input events, focus path, and layout bounds are shown in diagnostics.
-  - [ ] Include default view preferences.
-    - [ ] Projects default view: recent projects first.
-    - [ ] Cluster default view: device health summary first.
-    - [ ] Routing default view: workload-class overview first.
-    - [ ] Tasks default view: active and failed runs first.
-    - [ ] Comrades default view: placeholder relationship list first until chat exists.
-    - [ ] Research default view: placeholder validated-project catalog first until BOINC integration exists.
-  - [ ] Include privacy and safety defaults.
-    - [ ] Hide sensitive paths and identifiers by default in presentation surfaces where practical.
-    - [ ] Require explicit reveal for secrets, tokens, private keys, raw prompts, model outputs, and raw voice diagnostics.
-    - [ ] Default sharing posture: no comrade or research resource sharing until explicitly enabled.
-  - [ ] Do not expose user editing UI yet unless it is clearly marked non-persistent or future.
-- [ ] Implement reusable HUD layout primitives.
-  - [ ] Add a consistent top tab bar.
-  - [ ] Build the tab bar through the tab-view model so the same content can later render as a side rail.
-  - [ ] Add focusable panels, lists, cards, empty states, status pills, and action rows.
-  - [ ] Add a shared detail-pane pattern for selected items.
-  - [ ] Add loading, offline, warning, and disabled states.
-  - [ ] Add controller/keyboard focus styling that is visible at Steam Deck scale.
-  - [ ] Keep rendering driven by view models rather than direct database or adapter calls.
-- [ ] Implement the Comrades tab as a visible placeholder.
-  - [ ] Explain real-friend chat as a future capability.
-  - [ ] Explain comrade queues for low-priority shared inference access.
-  - [ ] Show placeholder sharing grants, queue access, quota, revocation, and audit concepts.
-  - [ ] Keep all controls disabled or clearly marked future until backend support exists.
-- [ ] Implement the Projects tab basic content.
-  - [ ] Show project list, selected project summary, chat preview, file tree placeholder, artifact list placeholder, and Git status placeholder.
-  - [ ] Add local-only mock actions for selecting projects, opening files, viewing chat entries, and inspecting Git state.
-  - [ ] Show offline draft and transaction concepts without applying real file changes yet.
-- [ ] Implement the Research tab as a visible placeholder.
-  - [ ] Explain BOINC delegation as validated public-interest compute.
-  - [ ] Show placeholder project catalog, validation state, budget, schedule, contribution, and gameplay-validation concepts.
-  - [ ] Keep BOINC execution disabled until the later Research phase.
-- [ ] Implement the Cluster tab basic content.
-  - [ ] Show local device identity status, runtime mode, runtime root, database path, and `last_run.log` status.
-  - [ ] Show mock device cards with roles, reachability, health, typed capabilities, and queue/service ownership.
-  - [ ] Surface doctor status and recent diagnostics in a human-readable panel.
-- [ ] Implement the Routing tab basic content.
-  - [ ] Show workload classes: text generation, image generation, video generation, STT, TTS, and BOINC research compute.
-  - [ ] Show mock queues, priorities, device assignments, compatibility filtering, fallback routes, and policy constraints.
-  - [ ] Make it clear that BOINC is schedulable research compute, not model inference.
-- [ ] Implement the Tasks tab basic content.
-  - [ ] Show placeholder scheduled tasks, webhooks, event-driven tasks, Signal-driven tasks, manual approvals, and run history.
-  - [ ] Show disabled create/edit controls until durable task storage and execution exist.
-- [ ] Implement the Settings tab basic content.
-  - [ ] Show local runtime paths, build artifact paths, mode, identity status, documentation/check status, and developer diagnostics.
-  - [ ] Show the current temporary HUD configuration values, including tab placement, theme, scale, font size, and key-binding defaults.
-  - [ ] Label configuration values as hard-coded Phase 4 defaults that will later load from and save to SQLite-backed user settings.
-  - [ ] Show controls or command hints for `--doctor`, `--smoke-test`, `last_run.log`, and verification commands.
-  - [ ] Keep destructive identity/runtime operations disabled until explicit backend support exists.
-- [ ] Add UI verification and documentation.
-  - [ ] Add deterministic tests for tab order, tab content models, input actions, focus transitions, and placeholder disabled states.
-  - [ ] Document each tab's current MVP behavior and future backend boundary in `internal/hud/README.md` or tab-specific docs.
-  - [ ] Update screenshots or text walkthroughs when the visual shell is stable enough to show.
+- [x] Establish the tab shell as the next implementation focus.
+  - [x] Keep the canonical tab order: Comrades, Projects, Research, Cluster, Routing, Tasks, Settings.
+  - [x] Represent tabs as data from a tab-view model rather than hard-coding a single visual strip.
+  - [x] Store the tab list as ordered tab descriptors with stable IDs, labels, icons or glyph slots, accessibility labels, visibility state, and future badge/status metadata.
+  - [x] Default to a top tab bar for the MVP.
+  - [x] Design the tab-view model so a later setting can realign tabs from the top edge to a side rail without changing tab content implementations.
+  - [x] Keep tab content independent from tab placement so top, left, right, compact, and future responsive layouts can share the same selected-tab state.
+  - [x] Keep `L1` and `R1` tab switching for Steam Deck/controller input.
+  - [x] Keep Debian/Linux keyboard tab switching through `Ctrl+PageUp`, `Ctrl+PageDown`, and `Alt+1` through `Alt+7`.
+  - [x] Represent input actions as named bindings from the configuration manager rather than scattering hard-coded key checks through tab code.
+  - [x] Keep default bindings hard-coded for now while preserving a path to user-editable bindings later.
+  - [x] Preserve mouse/touch activation without making essential workflows pointer-only.
+  - [x] Keep `R2` and right `Ctrl` push-to-talk visible as UI state even before real ASR is integrated.
+- [x] Add a temporary HUD configuration manager.
+  - [x] Provide hard-coded default values through one configuration manager boundary during Phase 4.
+  - [x] Keep the boundary shaped so a later implementation can load and save the same values through SQLite-backed user configuration tables.
+  - [x] Include tab-view defaults.
+    - [x] Canonical tab order.
+    - [x] Default tab placement: top.
+    - [x] Future allowed placements: top, left side rail, right side rail, compact/sidebar-responsive.
+    - [x] Tab density: comfortable by default, with compact and expanded options planned.
+    - [x] Tab label mode: icon plus text by default, with icon-only and text-only options planned where usable.
+    - [x] Default selected tab.
+  - [x] Include key-binding defaults.
+    - [x] Previous tab: `L1` and `Ctrl+PageUp`.
+    - [x] Next tab: `R1` and `Ctrl+PageDown`.
+    - [x] Direct tab selection: `Alt+1` through `Alt+7`.
+    - [x] Push-to-talk: `R2` and right `Ctrl`.
+    - [x] Cancel recording: `Escape`.
+    - [x] Focus, activation, back, context menu, command palette, scroll, and collection-navigation actions.
+  - [x] Include display and accessibility defaults.
+    - [x] Theme: dark by default, with light and high-contrast variants planned.
+    - [x] Accent color: Apparat default now, user-selectable later.
+    - [x] UI scale/zoom: default `1.0`.
+    - [x] Font size: Steam Deck readable default, with future small/medium/large/custom choices.
+    - [x] Font family: bundled/default UI font now, user-selectable later where platform packaging permits.
+    - [x] Motion/reduced-animation preference.
+    - [x] Contrast and focus-ring strength.
+    - [x] Panel density, list row height, and card spacing.
+    - [x] Text wrapping and truncation preference for long project, queue, device, and task names.
+  - [x] Include interaction defaults.
+    - [x] Controller sensitivity and repeat delay.
+    - [x] Keyboard repeat delay for held navigation.
+    - [x] Mouse/touch scroll speed.
+    - [x] Push-to-talk mode: hold by default, with future toggle mode if accessibility testing supports it.
+    - [x] Confirmation requirements for destructive actions.
+    - [x] Default command-palette visibility and shortcut.
+    - [x] Default landing tab on startup.
+    - [x] Remember last selected tab, panel, project, route, and task when enabled later.
+    - [x] Default sort and filter preferences for devices, projects, queues, tasks, comrades, and research projects.
+  - [x] Include notification defaults.
+    - [x] Notification visibility: important local events only by default.
+    - [x] Notification sound volume and mute state.
+    - [x] Toast duration and whether controller focus should move to urgent notifications.
+    - [x] Categories for job completion, device offline/online, task failure, comrade request, research milestone, and security warning.
+    - [x] Quiet-hours schedule placeholder.
+  - [x] Include diagnostic defaults.
+    - [x] Developer overlay visibility.
+    - [x] Log detail level for local UI diagnostics.
+    - [x] Whether runtime paths and build artifacts are shown in Settings by default.
+    - [x] Whether frame timing, memory, input events, focus path, and layout bounds are shown in diagnostics.
+  - [x] Include default view preferences.
+    - [x] Projects default view: recent projects first.
+    - [x] Cluster default view: device health summary first.
+    - [x] Routing default view: workload-class overview first.
+    - [x] Tasks default view: active and failed runs first.
+    - [x] Comrades default view: placeholder relationship list first until chat exists.
+    - [x] Research default view: placeholder validated-project catalog first until BOINC integration exists.
+  - [x] Include privacy and safety defaults.
+    - [x] Hide sensitive paths and identifiers by default in presentation surfaces where practical.
+    - [x] Require explicit reveal for secrets, tokens, private keys, raw prompts, model outputs, and raw voice diagnostics.
+    - [x] Default sharing posture: no comrade or research resource sharing until explicitly enabled.
+  - [x] Do not expose user editing UI yet unless it is clearly marked non-persistent or future.
+- [x] Implement reusable HUD layout primitives.
+  - [x] Add a consistent top tab bar.
+  - [x] Build the tab bar through the tab-view model so the same content can later render as a side rail.
+  - [x] Add focusable panels, lists, cards, empty states, status pills, and action rows.
+  - [x] Add a shared detail-pane pattern for selected items.
+  - [x] Add loading, offline, warning, and disabled states.
+  - [x] Add controller/keyboard focus styling that is visible at Steam Deck scale.
+  - [x] Keep rendering driven by view models rather than direct database or adapter calls.
+- [x] Implement the Comrades tab as a visible placeholder.
+  - [x] Explain real-friend chat as a future capability.
+  - [x] Explain comrade queues for low-priority shared inference access.
+  - [x] Show placeholder sharing grants, queue access, quota, revocation, and audit concepts.
+  - [x] Keep all controls disabled or clearly marked future until backend support exists.
+- [x] Implement the Projects tab basic content.
+  - [x] Show project list, selected project summary, chat preview, file tree placeholder, artifact list placeholder, and Git status placeholder.
+  - [x] Add local-only mock actions for selecting projects, opening files, viewing chat entries, and inspecting Git state.
+  - [x] Show offline draft and transaction concepts without applying real file changes yet.
+- [x] Implement the Research tab as a visible placeholder.
+  - [x] Explain BOINC delegation as validated public-interest compute.
+  - [x] Show placeholder project catalog, validation state, budget, schedule, contribution, and gameplay-validation concepts.
+  - [x] Keep BOINC execution disabled until the later Research phase.
+- [x] Implement the Cluster tab basic content.
+  - [x] Show local device identity status, runtime mode, runtime root, database path, and `last_run.log` status.
+  - [x] Show mock device cards with roles, reachability, health, typed capabilities, and queue/service ownership.
+  - [x] Surface doctor status and recent diagnostics in a human-readable panel.
+- [x] Implement the Routing tab basic content.
+  - [x] Show workload classes: text generation, image generation, video generation, STT, TTS, and BOINC research compute.
+  - [x] Show mock queues, priorities, device assignments, compatibility filtering, fallback routes, and policy constraints.
+  - [x] Make it clear that BOINC is schedulable research compute, not model inference.
+- [x] Implement the Tasks tab basic content.
+  - [x] Show placeholder scheduled tasks, webhooks, event-driven tasks, Signal-driven tasks, manual approvals, and run history.
+  - [x] Show disabled create/edit controls until durable task storage and execution exist.
+- [x] Implement the Settings tab basic content.
+  - [x] Show local runtime paths, build artifact paths, mode, identity status, documentation/check status, and developer diagnostics.
+  - [x] Show the current temporary HUD configuration values, including tab placement, theme, scale, font size, and key-binding defaults.
+  - [x] Label configuration values as hard-coded Phase 4 defaults that will later load from and save to SQLite-backed user settings.
+  - [x] Show controls or command hints for `--doctor`, `--smoke-test`, `last_run.log`, and verification commands.
+  - [x] Keep destructive identity/runtime operations disabled until explicit backend support exists.
+- [x] Add UI verification and documentation.
+  - [x] Add deterministic tests for tab order, tab content models, input actions, focus transitions, and placeholder disabled states.
+  - [x] Document each tab's current MVP behavior and future backend boundary in `internal/hud/README.md` or tab-specific docs.
+  - [x] Update screenshots or text walkthroughs when the visual shell is stable enough to show.
 
 **Exit criteria**
 
@@ -1054,11 +1054,118 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - Cluster and Settings expose enough local diagnostics to debug startup, runtime paths, and `last_run.log`.
 - The next backend phase can wire real data into established view-model boundaries instead of inventing UI structure.
 
-## Phase 5: Secure Two-Device HTTPS/WireGuard Vertical Slice
+## Phase 5: Android GUI APK Build Pipeline
+
+**Goal:** Produce a working Android GUI APK artifact for Apparat in the canonical release directory without adding or claiming an Android headless target.
+
+**Dependencies:** Phase 4 HUD shell and Apparat-owned tracked dependencies. Salvagecore may be inspected temporarily, but the final build pipeline must not require it.
+
+**Scope boundary:** This phase builds only the GUI Android APK. It does not build `apparatd` for Android; users who want headless behavior on Android can later run Linux headless builds through Termux-like environments or a separate approved worker strategy.
+
+**Salvagecore retirement boundary:** `third_party/salvagecore` is a temporary ignored reference and will eventually be removed. Any Android source, scripts, manifests, wrapper code, or tooling required for Apparat must be admitted into Apparat-owned tracked paths or replaced with documented external tool prerequisites before Phase 5 can be complete.
+
+- [ ] Confirm Android source and reference baseline.
+  - [ ] Treat `third_party/game/ebiten` as the admitted Ebitengine source containing `cmd/ebitenmobile` and mobile runtime packages.
+  - [ ] Inspect salvagecore's ignored `third_party/cicd/mobile` checkout as reference material for `golang/mobile` behavior and Android app build conventions.
+  - [ ] Inspect salvagecore's Ebitengine Android examples, manifests, and mobile build scripts for reusable decisions without copying wholesale.
+  - [ ] Document which salvagecore Android lessons are adopted, rejected, or deferred in Apparat-owned documentation.
+  - [ ] Keep salvagecore ignored and unstaged; do not add any file under `third_party/salvagecore` to this repository.
+- [ ] Convert temporary reference lessons into Apparat-owned inputs.
+  - [ ] For each salvagecore Android lesson adopted, identify the durable Apparat-owned destination: tracked submodule, tracked wrapper/source file, script, documentation, or external prerequisite.
+  - [ ] If `golang/mobile` is required directly, add it through the normal third-party source admission process instead of depending on salvagecore's ignored checkout.
+  - [ ] If Ebitengine's admitted `ebitenmobile` tooling is sufficient, keep `golang/mobile` absent as a source checkout and document why.
+  - [ ] Add or update the relevant `third_party` inventory if any new submodule is admitted.
+  - [ ] Add a build/test guard that fails if the Android pipeline references `third_party/salvagecore`.
+  - [ ] Prove the Android build works after temporarily moving, hiding, or ignoring `third_party/salvagecore`.
+- [ ] Choose the first APK architecture.
+  - [ ] Prefer the shortest working path: use Ebitengine's `ebitenmobile` tooling directly if it can build the Apparat GUI package into an installable APK with acceptable lifecycle behavior.
+  - [ ] Fall back to a host-owned Android wrapper project only if direct `ebitenmobile` output cannot express required manifest, permissions, signing, storage, or lifecycle behavior.
+  - [ ] Record the decision in `README.md`, `ROADMAP.md`, `scripts/README.md`, and the nearest Android/package README.
+- [ ] Pin Android build prerequisites.
+  - [ ] Define required JDK version.
+  - [ ] Define required Android SDK command-line tools version.
+  - [ ] Define Android platform/API level.
+  - [ ] Define Android build-tools version.
+  - [ ] Define Android NDK version if required by Ebitengine/mobile tooling.
+  - [ ] Define Gradle/Android Gradle Plugin versions only if a wrapper project is introduced.
+  - [ ] Define where tools are discovered from environment variables such as `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `ANDROID_NDK_HOME`, and `JAVA_HOME`.
+  - [ ] Keep downloaded tools outside tracked source unless an approved bootstrap/cache strategy says otherwise.
+- [ ] Add Android build preflight checks.
+  - [ ] Add a script or build-script mode that reports missing Java, SDK, platform, build-tools, NDK, `adb`, and `ebitenmobile` prerequisites with actionable messages.
+  - [ ] Detect when the Ebitengine submodule is missing or not initialized.
+  - [ ] Detect unsupported host OS or architecture combinations.
+  - [ ] Detect unsupported target Android ABI values before build time.
+  - [ ] Keep `python3 scripts/build.py --os android --target apparatd` rejected with an explanation that Android headless is intentionally out of scope.
+  - [ ] Preserve the current rejection for Android APK builds until this preflight passes.
+- [ ] Define canonical Android GUI artifact paths.
+  - [ ] Use `releases/android/arm64/apparat/latest.apk` for the primary Android GUI APK.
+  - [ ] Add additional ABI paths only after each target is validated, such as `releases/android/arm/apparat/latest.apk`, `releases/android/amd64/apparat/latest.apk`, or `releases/android/386/apparat/latest.apk`.
+  - [ ] Do not create `releases/android/<arch>/apparatd/` in this phase.
+  - [ ] Keep generated APKs ignored by Git, matching the existing local artifact policy.
+- [ ] Integrate APK output into the Python build pipeline.
+  - [ ] Extend `scripts/build.py --os android --arch arm64 --target apparat` to produce `latest.apk` after the Android preflight succeeds.
+  - [ ] Keep default host desktop builds unchanged when no Android target is requested.
+  - [ ] Ensure `--print-path` reports the APK path without building.
+  - [ ] Ensure `--target all --os android` builds only Android-supported targets, currently `apparat`, or fails with a clear unsupported-target explanation.
+  - [ ] Add a Makefile target such as `make build-android` that delegates to the Python pipeline with the repo-local environment.
+  - [ ] Add a Makefile target such as `make check-android-build-env` for preflight-only validation.
+- [ ] Add Android application metadata.
+  - [ ] Define app package/application ID.
+  - [ ] Define app label and launcher metadata.
+  - [ ] Define minimum and target SDK versions.
+  - [ ] Define orientation behavior for Steam Deck-like landscape and phone/tablet layouts.
+  - [ ] Define debug and release signing behavior.
+  - [ ] Define version name/code generation and where those values come from.
+- [ ] Add Android permissions and platform behavior.
+  - [ ] Request microphone permission only when voice capture is enabled or tested.
+  - [ ] Avoid broad storage permissions; use app-scoped storage for runtime data, `last_run.log`, SQLite, cache, and artifacts.
+  - [ ] Define network permissions for HTTPS over WireGuard/local network.
+  - [ ] Defer VPN-service permissions and app-managed WireGuard to the later transport/platform phase.
+  - [ ] Define controller, keyboard, touch, and text-input expectations for the Phase 4 HUD.
+  - [ ] Define audio output behavior for future TTS without claiming full voice support in this phase.
+- [ ] Adapt runtime paths for Android GUI.
+  - [ ] Map Apparat runtime root to Android app-scoped storage.
+  - [ ] Ensure `last_run.log` is recreated on every Android GUI launch.
+  - [ ] Ensure SQLite, logs, identity, cache, artifacts, backups, and recovery directories are created with Android-safe paths.
+  - [ ] Surface the Android runtime root and `last_run.log` path in Settings or diagnostics where feasible.
+  - [ ] Avoid logging secrets, raw audio, private message bodies, or project file contents.
+- [ ] Validate the Android GUI smoke path.
+  - [ ] Build a debug APK locally.
+  - [ ] Install the APK on an emulator or physical Android device with `adb`.
+  - [ ] Launch the app and verify the Ebitengine window/activity opens.
+  - [ ] Verify the seven tabs render and remain clickable/touchable.
+  - [ ] Verify keyboard/controller navigation where the device supports it.
+  - [ ] Verify `last_run.log` exists in the Android runtime root after launch.
+  - [ ] Capture failure logs from `adb logcat` and map them back to Apparat components.
+- [ ] Add Android build tests.
+  - [ ] Unit-test Android artifact path selection.
+  - [ ] Unit-test that Android supports only the `apparat` target in this phase.
+  - [ ] Unit-test preflight failure messages for missing SDK/JDK/NDK/tooling.
+  - [ ] Unit-test `--print-path` for Android APK output.
+  - [ ] Add an optional integration test target that builds and installs the APK only when Android tools and a device/emulator are available.
+- [ ] Document Android build and troubleshooting.
+  - [ ] Update root `README.md` with Android APK build commands, prerequisites, artifact path, and support caveats.
+  - [ ] Update `scripts/README.md` with Android build options, preflight, outputs, side effects, and common failures.
+  - [ ] Add or update Android-specific README files in any new wrapper/build directory.
+  - [ ] Update `docs/platform-matrix.md` with the exact Android evidence collected.
+  - [ ] Record the Android APK phase checkpoint in the journal and regenerate plan indexes if a formal execution plan is created.
+
+**Exit criteria**
+
+- `python3 scripts/build.py --os android --arch arm64 --target apparat` produces `releases/android/arm64/apparat/latest.apk`.
+- `python3 scripts/build.py --os android --arch arm64 --target apparatd` fails clearly because Android headless is out of scope.
+- `--print-path` reports the Android APK path without building.
+- The APK installs and launches on at least one emulator or physical Android device.
+- The Android GUI displays the Phase 4 tab HUD and supports touch/click tab selection.
+- Android startup creates a fresh `last_run.log` in the runtime root and exposes enough diagnostics to debug failures.
+- The Android build, tests, and documentation remain valid if `third_party/salvagecore` is removed.
+- Documentation explains prerequisites, commands, artifact paths, validation evidence, and known limitations.
+
+## Phase 6: Secure Two-Device HTTPS/WireGuard Vertical Slice
 
 **Goal:** Complete the MVP proof between a Steam Deck and one headless worker.
 
-**Dependencies:** Phases 1–4.
+**Dependencies:** Phases 1–5.
 
 - [ ] Add external-network configuration.
   - [ ] Detect expected WireGuard interfaces where possible.
@@ -1118,11 +1225,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - No trust is derived solely from LAN presence or WireGuard reachability.
 - Duplicate delivery cannot duplicate the logical job.
 
-## Phase 6: Project Workspace And Git Operations
+## Phase 7: Project Workspace And Git Operations
 
 **Goal:** Make Apparat useful for real project navigation and controlled repository work.
 
-**Dependencies:** Phase 5 transport and persistence.
+**Dependencies:** Phase 6 transport and persistence.
 
 - [ ] Add project registration and ownership.
   - [ ] Register existing filesystem/Git folders.
@@ -1169,11 +1276,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - A Steam Deck can open a real project, inspect files and Git state, submit a project chat job, and recover offline drafts without granting arbitrary shell access.
 
-## Phase 7: Typed Compute Services, Queues, And Routing
+## Phase 8: Typed Compute Services, Queues, And Routing
 
 **Goal:** Route each workload only through authoritative queues and devices that explicitly support its workload class and requirements.
 
-**Dependencies:** Phases 5–6.
+**Dependencies:** Phases 6–7.
 
 - [ ] Establish the workload-class registry.
   - [ ] Add `text_generation`.
@@ -1225,10 +1332,10 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [ ] Register speech workload contracts.
   - [ ] Define STT audio inputs, language, timestamps, streaming, and transcript output.
   - [ ] Define TTS text inputs, voice, language, streaming, audio format, and output.
-  - [ ] Defer concrete STT/TTS adapters to Phase 9 while preserving typed discovery and routing now.
+  - [ ] Defer concrete STT/TTS adapters to Phase 10 while preserving typed discovery and routing now.
 - [ ] Register BOINC workload contract.
   - [ ] Define BOINC project identity, client/runtime, platform, application, resource, schedule, and validation requirements.
-  - [ ] Defer concrete BOINC execution to Phase 13 while preserving typed discovery and routing now.
+  - [ ] Defer concrete BOINC execution to Phase 14 while preserving typed discovery and routing now.
 - [ ] Implement authoritative queues.
   - [ ] Direct device queues.
   - [ ] Pool-owner queues.
@@ -1268,11 +1375,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - Mock image, video, STT, TTS, and BOINC jobs route only to matching advertised capabilities.
 - Unsupported workload classes and incompatible requirements fail clearly before execution.
 
-## Phase 8: Automation, Scheduling, And Webhooks
+## Phase 9: Automation, Scheduling, And Webhooks
 
 **Goal:** Run durable cluster tasks even when some devices are offline.
 
-**Dependencies:** Phase 7 typed queues.
+**Dependencies:** Phase 8 typed queues.
 
 - [ ] Add task definitions.
   - [ ] Owner device.
@@ -1317,11 +1424,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - A scheduler-owned task can trigger, submit inference, await a result, survive restart, resume idempotently, and produce an auditable outcome.
 
-## Phase 9: ASR, TTS, And Voice Control
+## Phase 10: ASR, TTS, And Voice Control
 
 **Goal:** Turn controller and Debian GUI push-to-talk into a reliable routed cluster capability.
 
-**Dependencies:** Phases 2, 7, and 8.
+**Dependencies:** Phases 2, 8, and 9.
 
 - [ ] Add audio capture.
   - [ ] Start while `R2` or the configured Debian GUI push-to-talk key is held.
@@ -1362,7 +1469,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - Spoken output can be routed independently.
 - Voice state remains visible, cancellable, and privacy-preserving.
 
-## Phase 10: Platform Packaging And Release Pipeline
+## Phase 11: Platform Packaging And Release Pipeline
 
 **Goal:** Validate and ship each supported platform honestly and independently.
 
@@ -1403,15 +1510,13 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Controller, microphone, and audio.
   - [ ] External WireGuard.
 - [ ] Android.
-  - [ ] Native Android application wrapper.
-  - [ ] Ebitengine AAR generated with pinned tooling.
-  - [ ] Activity lifecycle and suspend/resume.
-  - [ ] Touch, controller, keyboard, and text input.
-  - [ ] Microphone and audio permissions.
-  - [ ] Scoped storage and runtime state.
-  - [ ] Background and battery constraints.
-  - [ ] External WireGuard first.
-  - [ ] VPN-service integration only in a later plan.
+  - [ ] Continue from Phase 5 Android GUI APK support rather than redoing its build-pipeline work.
+  - [ ] Harden release signing, versioning, provenance, and upgrade/rollback behavior.
+  - [ ] Validate additional Android ABIs only after `android/arm64` is proven.
+  - [ ] Expand device coverage across phone, tablet, controller, keyboard, and touch configurations.
+  - [ ] Validate microphone, audio output, scoped storage, background, and battery behavior against real feature use.
+  - [ ] Keep Android headless out of scope unless a later Termux/service-worker strategy is approved.
+  - [ ] Keep external WireGuard first; defer VPN-service integration to the later transport/platform phase.
 - [ ] Release engineering.
   - [ ] Artifact naming and directory layout.
   - [ ] Checksums and provenance.
@@ -1424,7 +1529,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - Each platform is marked supported only after its build, packaging, input, storage, networking, audio, and lifecycle checks pass.
 
-## Phase 11: Alternative Transports And Long-Term Resilience
+## Phase 12: Alternative Transports And Long-Term Resilience
 
 **Goal:** Carry the same authenticated durable operations across constrained or human-mediated transports.
 
@@ -1472,7 +1577,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - Alternative transports carry only operations appropriate to their capabilities while preserving Apparat identity, authorization, queue, project, and task semantics.
 
-## Phase 12: Comrades, Chat, And Shared Inference
+## Phase 13: Comrades, Chat, And Shared Inference
 
 **Goal:** Add trusted real-friend communication and owner-controlled sharing of otherwise idle inference capacity.
 
@@ -1536,7 +1641,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - The resource owner can inspect usage and immediately pause or revoke access.
 - Shared inference does not expose project files, secrets, arbitrary tools, shell access, or unrelated cluster state.
 
-## Phase 13: Research, BOINC, And Validation Gameplay
+## Phase 14: Research, BOINC, And Validation Gameplay
 
 **Goal:** Allow opt-in personal compute to support validated BOINC projects through a transparent, constrained, and engaging Research surface.
 

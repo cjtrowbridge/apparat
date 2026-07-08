@@ -2,6 +2,8 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-07-08-13-18-21 | plans/past/2026-07-08-08-49-21_execute-phase-4-basic-hud-tabs.md | Execute Phase 4 Basic HUD Tabs | Implement the Phase 4 data-driven HUD tab system, temporary configuration manager, basic tab content, verification, and documentation before backend networking work.
+2026-07-08-08-54-13 | plans/past/2026-07-07-10-59-06_split-artifacts-last-run-log-code-size-governance.md | Split Artifacts Last Run Log Code Size Governance | Split GUI/headless release artifacts, add runtime-specific last_run.log diagnostics, and enforce code-file line limits in the build.
 2026-07-07-10-56-29 | plans/past/2026-07-07-10-24-58_execute-phase-3-runtime-identity-persistence.md | Execute Phase 3 Runtime Identity Persistence | Implement Phase 3 local runtime modes, configuration, structured logs, SQLite lifecycle, identity, cluster directory, local messaging primitives, verification, build, commit, and push.
 2026-07-07-09-48-23 | plans/past/2026-07-07-09-20-28_complete-phase-1-and-2.md | Complete Phase 1 And 2 | Add the canonical release artifact pipeline, complete Phase 1 contract docs, build the Phase 2 HUD prototype, verify the build, and check the binary runs.
 2026-07-07-09-17-39 | plans/past/2026-07-06-20-29-08_complete-phase-0-foundation.md | Complete Phase 0 Foundation | Finish the Phase 0 repository, Go workspace, dependency, governance, documentation, and verification foundation.

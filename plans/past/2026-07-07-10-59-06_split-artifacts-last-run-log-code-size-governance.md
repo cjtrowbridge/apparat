@@ -2,7 +2,7 @@
 plan_id: 2026-07-07-10-59-06_split-artifacts-last-run-log-code-size-governance
 title: Split Artifacts Last Run Log Code Size Governance
 summary: Split GUI/headless release artifacts, add runtime-specific last_run.log diagnostics, and enforce code-file line limits in the build.
-status: current
+status: past
 created_at: 2026-07-07-10-59-06
 ---
 
@@ -114,12 +114,12 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
     - [x] 6.2.2 Confirm `releases/<goos>/<goarch>/apparatd/latest[.exe]` exists and is ignored.
     - [?] 6.2.3 Confirm GUI smoke run writes GUI `last_run.log`.
     - [x] 6.2.4 Confirm headless smoke run writes headless `last_run.log`.
-  - [ ] 6.3 Complete checkpoint.
-    - [ ] 6.3.1 Check pending downtime reports.
+  - [x] 6.3 Complete checkpoint.
+    - [x] 6.3.1 Check pending downtime reports.
     - [x] 6.3.2 Confirm `third_party/salvagecore` is absent from staged changes.
-    - [ ] 6.3.3 Review final diff.
-    - [ ] 6.3.4 Commit if all checks pass.
-    - [ ] 6.3.5 Push the passing checkpoint to `origin`.
+    - [x] 6.3.3 Review final diff.
+    - [x] 6.3.4 Commit if all checks pass.
+    - [x] 6.3.5 Push the passing checkpoint to `origin`.
 
 - [x] 7. Add documentation completeness governance.
   - [x] 7.1 Document build operations.

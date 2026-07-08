@@ -16,15 +16,45 @@ func TestCanonicalTabOrder(t *testing.T) {
 	}
 }
 
+func TestDefaultHUDConfig(t *testing.T) {
+	config := DefaultConfigManager{}.Config()
+	if config.Display.Theme != ThemeDark {
+		t.Fatalf("theme = %q, want dark", config.Display.Theme)
+	}
+	if config.TabView.Placement != TabPlacementTop {
+		t.Fatalf("placement = %q, want top", config.TabView.Placement)
+	}
+	if config.Display.Scale != 1.0 || config.Display.FontSize != 18 {
+		t.Fatalf("display defaults = scale %v font %d", config.Display.Scale, config.Display.FontSize)
+	}
+	if config.Privacy.SharingDefault != "disabled" {
+		t.Fatalf("sharing default = %q, want disabled", config.Privacy.SharingDefault)
+	}
+}
+
+func TestTabDescriptorsAreStableAndAccessible(t *testing.T) {
+	descriptors := DefaultTabDescriptors()
+	ids := []TabID{TabComrades, TabProjects, TabResearch, TabCluster, TabRouting, TabTasks, TabSettings}
+	for index, id := range ids {
+		descriptor := descriptors[index]
+		if descriptor.ID != id {
+			t.Fatalf("descriptor %d = %q, want %q", index, descriptor.ID, id)
+		}
+		if descriptor.Label == "" || descriptor.AccessibilityLabel == "" || !descriptor.Visible || !descriptor.Enabled {
+			t.Fatalf("descriptor missing required metadata: %+v", descriptor)
+		}
+	}
+}
+
 func TestTabWrapBehavior(t *testing.T) {
 	shell := NewShell()
 	shell.PreviousTab()
-	if shell.Snapshot().ActiveTab().ID != TabSettings {
-		t.Fatalf("previous from first tab = %q, want settings", shell.Snapshot().ActiveTab().ID)
+	if shell.Snapshot().ActiveTab().ID() != TabSettings {
+		t.Fatalf("previous from first tab = %q, want settings", shell.Snapshot().ActiveTab().ID())
 	}
 	shell.NextTab()
-	if shell.Snapshot().ActiveTab().ID != TabComrades {
-		t.Fatalf("next from last tab = %q, want comrades", shell.Snapshot().ActiveTab().ID)
+	if shell.Snapshot().ActiveTab().ID() != TabComrades {
+		t.Fatalf("next from last tab = %q, want comrades", shell.Snapshot().ActiveTab().ID())
 	}
 }
 
@@ -33,8 +63,34 @@ func TestDirectTabSelection(t *testing.T) {
 	if err := shell.SelectTab(2); err != nil {
 		t.Fatal(err)
 	}
-	if shell.Snapshot().ActiveTab().ID != TabResearch {
-		t.Fatalf("selected tab = %q, want research", shell.Snapshot().ActiveTab().ID)
+	if shell.Snapshot().ActiveTab().ID() != TabResearch {
+		t.Fatalf("selected tab = %q, want research", shell.Snapshot().ActiveTab().ID())
+	}
+}
+
+func TestActionRoutingUsesNamedActions(t *testing.T) {
+	shell := NewShell()
+	if err := shell.ApplyAction(ActionNextTab); err != nil {
+		t.Fatal(err)
+	}
+	if shell.Snapshot().ActiveTab().ID() != TabProjects {
+		t.Fatalf("action next selected %q", shell.Snapshot().ActiveTab().ID())
+	}
+	if err := shell.ApplyAction(ActionPreviousTab); err != nil {
+		t.Fatal(err)
+	}
+	if shell.Snapshot().ActiveTab().ID() != TabComrades {
+		t.Fatalf("action previous selected %q", shell.Snapshot().ActiveTab().ID())
+	}
+}
+
+func TestDefaultBindingsExposeFutureEditableInputs(t *testing.T) {
+	bindings := DefaultBindings()
+	if len(bindings.Inputs(ActionNextTab)) < 2 {
+		t.Fatalf("next-tab bindings too small: %+v", bindings.Inputs(ActionNextTab))
+	}
+	if len(bindings.Inputs(ActionPushToTalk)) < 2 {
+		t.Fatalf("push-to-talk bindings too small: %+v", bindings.Inputs(ActionPushToTalk))
 	}
 }
 
@@ -55,4 +111,35 @@ func TestReleaseVoiceCaptureQueuesSubmission(t *testing.T) {
 	if shell.Snapshot().VoiceState != VoiceQueued {
 		t.Fatalf("voice state = %q, want queued", shell.Snapshot().VoiceState)
 	}
+}
+
+func TestEachTabHasContentAndBackendActionsDisabled(t *testing.T) {
+	shell := NewShell()
+	for _, tab := range shell.Snapshot().Tabs {
+		if tab.Summary == "" || len(tab.Rows()) == 0 {
+			t.Fatalf("tab missing content: %+v", tab.Descriptor)
+		}
+	}
+	if !hasDisabledFutureRow(shell.Snapshot().Tabs, TabComrades) {
+		t.Fatal("comrades tab should contain disabled future controls")
+	}
+	if !hasDisabledFutureRow(shell.Snapshot().Tabs, TabTasks) {
+		t.Fatal("tasks tab should contain disabled future controls")
+	}
+}
+
+func hasDisabledFutureRow(tabs []Tab, id TabID) bool {
+	for _, tab := range tabs {
+		if tab.ID() != id {
+			continue
+		}
+		for _, section := range tab.Sections {
+			for _, row := range section.Rows {
+				if row.Disabled && row.Future {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

@@ -36,6 +36,8 @@ The `apparat` target is compiled with the `gui` build tag. On Linux, it requires
 
 The `apparatd` target avoids the GUI build tag and is the correct target for headless workers and display-free validation.
 
+Android APK output is not integrated yet. Ebitengine mobile source exists through the Ebitengine submodule, and the ignored salvagecore reference contains `golang/mobile` material under `third_party/cicd/mobile`, but `scripts/build.py --os android` intentionally exits before building because Apparat still needs pinned Android SDK/NDK/JDK tools, a host-owned Android wrapper or AAR pipeline, Android manifest/activity lifecycle code, signing configuration, permissions, and emulator/device validation before it can honestly emit `releases/android/<arch>/apparat/latest.apk`.
+
 ## Verification Scripts
 
 Run:

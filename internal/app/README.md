@@ -6,6 +6,8 @@ It coordinates configuration, identity, persistence, modules, queues, services, 
 
 Phase 3 startup initializes binary-specific runtime directories, reset-on-start `last_run.log` diagnostics, append-only JSONL logging, SQLite migrations, identity status, cluster directory repositories, local messaging repositories, and doctor diagnostics.
 
+Every initialized runtime must create or replace `last_run.log` at `config.LastRunPath`, include that path in doctor diagnostics, and emit enough component-level events to debug startup failures without needing the durable JSONL history first.
+
 ## Boundaries
 
 - May depend on `internal/domain`, `internal/adapters`, and `internal/platform`.
