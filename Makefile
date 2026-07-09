@@ -6,7 +6,7 @@ GO_ENV = GOCACHE=$(GO_CACHE) GOMODCACHE=$(GO_MOD_CACHE)
 GOLANGCI_LINT_VERSION ?= v2.12.2
 GOVULNCHECK_VERSION ?= v1.5.0
 
-.PHONY: all fmt test test-race test-build test-gui-deps check-code-size check-docs lint audit tools build run-built run-built-headless verify
+.PHONY: all fmt test test-race test-build test-gui-deps check-code-size check-docs lint audit tools build build-android check-android-build-env run-built run-built-headless verify
 
 all: verify
 
@@ -33,6 +33,12 @@ test-gui-deps:
 
 build:
 	$(GO_ENV) python3 scripts/build.py
+
+check-android-build-env:
+	$(GO_ENV) python3 scripts/build.py --check-android-env
+
+build-android:
+	$(GO_ENV) python3 scripts/build.py --os android --arch arm64 --target apparat
 
 run-built:
 	artifact=$$(python3 scripts/build.py --target apparat --print-path); python3 scripts/run_artifact.py "$$artifact" -- --smoke-test --runtime-dir /tmp/apparat-run-built/apparat

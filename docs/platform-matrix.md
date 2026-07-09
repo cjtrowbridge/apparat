@@ -24,4 +24,26 @@ Requires signing/notarization decisions, external WireGuard validation, keychain
 
 ## Android
 
-Requires native wrapper, Ebitengine AAR, lifecycle handling, permissions, storage, keyboard/controller/touch, microphone, audio, background behavior, and later VPN-service decisions for app-managed WireGuard.
+Phase 5 adds the first Android build artifact but does not yet claim full Android runtime support.
+
+Current evidence:
+
+- Build host: Linux `amd64` development environment.
+- Build command: `python3 scripts/build.py --os android --arch arm64 --target apparat`.
+- Preflight command: `python3 scripts/build.py --check-android-env`.
+- Artifact: `releases/android/arm64/apparat/latest.apk`.
+- Package ID: `com.cjtrowbridge.apparat`.
+- App label: `Apparat`.
+- Native ABI: `arm64-v8a`.
+- Permission: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks.
+- Activity: `org.golang.app.GoNativeActivity` with landscape orientation.
+- Toolchain: JDK 21, Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
+
+Known caveats:
+
+- The APK has been built and inspected with Android build-tools, but install/launch validation is still pending because `adb` daemon startup was blocked by the current sandbox/approval environment.
+- The Android GUI has not yet been observed on a physical device or emulator in this checkpoint.
+- `last_run.log` creation inside Android app-scoped storage still needs device/emulator launch evidence.
+- `gomobile` emits its default `minSdkVersion` metadata; explicit min/target SDK control is deferred to a future wrapper, signing, or release-hardening phase if direct `gomobile build` remains insufficient.
+- Android `apparatd` is intentionally unsupported; headless Android work requires a later Termux/service-worker strategy.
+- App-managed WireGuard/VPN-service, microphone capture, broad storage, background execution, release signing, store packaging, and additional Android ABIs are future work.

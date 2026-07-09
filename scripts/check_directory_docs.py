@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 SOURCE_SUFFIXES = {".go", ".py", ".sh"}
-EXCLUDED_DIR_PARTS = {".git", ".tools", "__pycache__", "third_party", "releases", "journal", "plans", "downtime"}
+EXCLUDED_DIR_PARTS = {".git", ".tools", ".tmp", "__pycache__", "third_party", "releases", "journal", "plans", "downtime"}
 SCRIPT_DIR = Path("scripts")
 
 
