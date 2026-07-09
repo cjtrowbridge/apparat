@@ -1058,7 +1058,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Goal:** Produce a working Android GUI APK artifact for Apparat in the canonical release directory without adding or claiming an Android headless target.
 
-**Current status:** Build pipeline, package inspection, Pixel install, process-liveness validation, app-private runtime storage, and Android `last_run.log` creation are implemented for Linux-hosted `android/arm64` GUI APK builds. A direct-runner defect was found where the previous Android-only `mobile.SetGame` path installed and stayed alive but displayed only the Android splash/default icon instead of the Phase 4 HUD. The current candidate fix restores the shared `ebiten.RunGame` adapter for Android, rebuilds the APK with portrait phone orientation, and passes package/signing/page-alignment gates. Phase 5 remains incomplete until on-device visual validation confirms the HUD renders and tabs are touch-clickable like Debian.
+**Current status:** Build pipeline, package inspection, Pixel install, process-liveness validation, app-private runtime storage, and Android `last_run.log` creation are implemented for Linux-hosted `android/arm64` GUI APK builds. Direct `GoNativeActivity` paths can initialize Apparat runtime state but stay on the Android splash/default icon instead of attaching Ebitengine's view. The current APK now uses tracked Apparat wrapper sources under `android/apparat`, `cmd/apparatmobile`, and Ebitengine's generated mobile view classes. Phase 5 remains incomplete until on-device visual validation confirms the wrapper APK renders the HUD and tabs are touch-clickable like Debian.
 
 **Dependencies:** Phase 4 HUD shell and Apparat-owned tracked dependencies. Salvagecore may be inspected temporarily, but the final build pipeline must not require it.
 
@@ -1084,8 +1084,8 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Select `android/arm64` as the first APK architecture.
   - [x] Use direct Ebitengine `gomobile build` as the shortest diagnostic path for producing and installing an APK.
   - [x] Record that the first Android-only `mobile.SetGame` runner was not sufficient because it reached process startup without attaching a visible Ebitengine HUD surface on Android.
-  - [x] Restore the shared `ebiten.RunGame` adapter as the smaller Apparat-owned candidate rendering fix before admitting a wrapper/AAR project.
-  - [ ] Promote a host-owned wrapper/AAR project from deferred option to required Phase 5 work only if the shared-runner APK still fails on-device visual HUD validation.
+  - [x] Test the shared `ebiten.RunGame` adapter and record that it still fails under direct `GoNativeActivity` with `internal/ui: Run is not implemented for GOOS=android`.
+  - [x] Promote the host-owned wrapper/AAR-style path to required Phase 5 work.
   - [x] Record the decision in `README.md`, `ROADMAP.md`, `scripts/README.md`, `cmd/apparat/README.md`, and `docs/platform-matrix.md`.
 - [x] Pin Android build prerequisites.
   - [x] Define required JDK version: JDK 21.
@@ -1093,7 +1093,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Define Android platform/API level: `android-35`.
   - [x] Define Android build-tools version: `35.0.0`.
   - [x] Define Android NDK version: `27.2.12479018`.
-  - [x] Define Gradle/Android Gradle Plugin versions as not applicable because no wrapper project is introduced in this phase.
+  - [x] Define Gradle/Android Gradle Plugin versions as not applicable because the wrapper is assembled with Android SDK/JDK tools in the Python pipeline.
   - [x] Define tool discovery through `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `ANDROID_NDK_HOME`, `JAVA_HOME`, PATH, and ignored repo-local `.tools/` and `.tmp/` fallbacks.
   - [x] Keep downloaded tools outside tracked source.
 - [x] Define Android build host support.
@@ -1124,7 +1124,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Add `make check-android-build-env`.
 - [x] Add Android application metadata.
   - [x] Define app package/application ID: `com.cjtrowbridge.apparat`.
-  - [x] Define app label and launcher metadata: `Apparat`, `org.golang.app.GoNativeActivity`.
+  - [x] Define app label and launcher metadata: `Apparat`, `com.cjtrowbridge.apparat.MainActivity`.
   - [x] Define current version metadata: `versionCode=1`, `versionName=0.1.0`.
   - [x] Define orientation behavior: default phone launch is portrait; landscape/tablet/controller layouts remain supported as later validation targets.
   - [x] Define debug signing behavior: direct `gomobile build` emits a debug APK.
@@ -1150,18 +1150,18 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Launch the app and verify the process remains alive after startup.
   - [x] Verify Android package/startup fixes discovered during Pixel testing: modern SDK metadata, v2/v3 signing, 16 KB native page alignment, and app-private runtime storage.
   - [x] Record that the current APK still shows only the Android splash/default icon even though the process remains alive.
-  - [x] Replace the Android-only `mobile.SetGame` startup path with the shared `ebiten.RunGame` GUI adapter so Ebitengine selects the Android mobile UI backend.
+  - [x] Replace the direct `GoNativeActivity` startup path with an Apparat-owned wrapper activity that attaches Ebitengine's generated `EbitenView`.
   - [ ] Verify the app opens to the Apparat HUD instead of the Android splash/default icon.
   - [ ] Verify the seven tabs render and remain clickable/touchable on Android.
   - [ ] Verify keyboard/controller navigation where the device supports it.
   - [x] Verify `last_run.log` exists in the Android app-private runtime root after launch.
   - [x] Capture `adb logcat` and `last_run.log` evidence for install/startup failures and fixes.
 - [ ] Implement Android GUI parity.
-  - [x] Decide the minimal Apparat-owned Android integration path: use the shared `ebiten.RunGame` adapter first, with wrapper/AAR as fallback after visual validation evidence.
-  - [ ] Keep all durable Android wrapper sources, manifests, Gradle/config files, generated-AAR instructions, and scripts in tracked Apparat-owned paths.
+  - [x] Decide the minimal Apparat-owned Android integration path: tracked wrapper sources plus generated Ebitengine mobile view classes assembled by the Python pipeline.
+  - [x] Keep durable Android wrapper sources, manifests, generated-AAR instructions, and scripts in tracked Apparat-owned paths.
   - [ ] Keep `third_party/salvagecore` as reference-only and prove the final Android GUI path does not depend on it.
-  - [ ] Ensure the Android entrypoint starts the same `internal/app` runtime path as Debian GUI startup.
-  - [ ] Ensure the Android UI uses the same HUD tab model, tab order, clickable tabs, disabled-placeholder states, runtime diagnostics, and logging behavior as Debian.
+  - [x] Ensure the Android entrypoint starts the same `internal/app` runtime initialization path as Debian GUI startup.
+  - [x] Ensure the Android UI uses the same HUD tab model, tab order, clickable tabs, disabled-placeholder states, runtime diagnostics, and logging behavior as Debian.
   - [ ] Add Android safe-area/status-bar/navigation-bar layout handling so the HUD is readable on phone screens.
   - [ ] Add Android scale/density handling so tab buttons and body text remain usable on Pixel-class devices.
   - [x] Default Android phone launch to portrait and document any intentional landscape/controller override separately.
@@ -1190,8 +1190,8 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [x] `--print-path` reports the Android APK path without building.
 - [x] The APK installs and launches on at least one physical Android device.
 - [x] The APK no longer fails modern Pixel install gates for obsolete SDK metadata, missing v2/v3 signing, or 16 KB page-size compatibility.
-- [ ] The Android GUI displays the Phase 4 tab HUD and supports touch/click tab selection on Android.
-- [ ] The Android app opens to the Apparat HUD instead of remaining on the Android splash/default icon.
+- [ ] The Android wrapper GUI displays the Phase 4 tab HUD and supports touch/click tab selection on Android.
+- [ ] The Android wrapper app opens to the Apparat HUD instead of remaining on the Android splash/default icon.
 - [x] Android phone startup defaults to portrait mode unless a later user setting or device class explicitly selects landscape.
 - [ ] Android safe-area, density, and touch handling make the HUD readable and usable on a Pixel-class device.
 - [x] Android startup creates a fresh `last_run.log` in the runtime root and exposes enough diagnostics to debug failures.

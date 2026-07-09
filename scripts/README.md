@@ -7,6 +7,7 @@ Run scripts from the repository root unless a script explicitly says otherwise. 
 ## Inventory
 
 - `build.py`: Builds canonical local release artifacts for `apparat`, `apparatd`, and the Android GUI APK.
+- `android_wrapper.py`: Assembles the Android GUI wrapper APK from Ebitengine mobile binding output and tracked Apparat Android sources.
 - `check_code_file_lines.py`: Fails when included code files exceed the 400-line limit.
 - `check_directory_docs.py`: Fails when source directories or scripts are missing required documentation.
 - `regenerate_plan_indexes.py`: Validates plan files and regenerates plan indexes.
@@ -65,7 +66,7 @@ Android prerequisites:
 - Android NDK `27.2.12479018`, discovered through `ANDROID_NDK_HOME` or the SDK `ndk/27.2.12479018` directory.
 - Ebitengine `github.com/ebitengine/gomobile v0.0.0-20250923094054-ea854a63cce1` in the Go module cache.
 
-`scripts/build.py --check-android-env` checks those prerequisites and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35 so modern Android devices do not reject the APK as targeting an obsolete Android version or as malformed under Android S+ package parsing. The pipeline then zipaligns/signs the APK with a generated debug keystore and links the native library with 16 KB page alignment for current Pixel devices. It does not fork application source.
+`scripts/build.py --check-android-env` checks those prerequisites and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner, supports local module replacement for wrapper binding, and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35. The pipeline binds `cmd/apparatmobile`, generates Ebitengine mobile view classes, compiles tracked `android/apparat` wrapper sources, then zipaligns/signs the APK with a generated debug keystore. It does not fork application source.
 
 Android build side effects:
 

@@ -62,19 +62,16 @@ class BuildPipelineTest(unittest.TestCase):
             ("minSdkVersion:'23'", "targetSdkVersion:'30'", "native-code: 'arm64-v8a'"),
         )
 
-    def test_android_build_uses_gomobile_and_gui_tag(self):
-        command = build.android_build_command(Path("gomobile"), "arm64", build.artifact_path("android", "arm64", "apparat"))
-        self.assertEqual(command[:2], ["gomobile", "build"])
-        self.assertIn("android/arm64", command)
-        self.assertIn("gui", command)
-        self.assertIn("-ldflags", command)
-        self.assertIn("-extldflags=-Wl,-z,max-page-size=0x4000", command)
-        self.assertIn("./cmd/apparat", command)
-
     def test_android_manifest_defaults_to_portrait(self):
-        manifest = Path("cmd/apparat/AndroidManifest.xml").read_text(encoding="utf-8")
+        manifest = Path("android/apparat/AndroidManifest.xml").read_text(encoding="utf-8")
         self.assertIn('android:screenOrientation="portrait"', manifest)
         self.assertNotIn('android:screenOrientation="landscape"', manifest)
+        self.assertIn('android:name=".MainActivity"', manifest)
+
+    def test_android_wrapper_activity_uses_ebiten_view(self):
+        activity = Path("android/apparat/src/com/cjtrowbridge/apparat/MainActivity.java").read_text(encoding="utf-8")
+        self.assertIn("Apparatmobile.ready()", activity)
+        self.assertIn("new EbitenView(this)", activity)
 
     def test_all_targets_builds_distinct_outputs(self):
         outputs = [build.artifact_path("linux", "amd64", target) for target in build.selected_targets("all", "linux")]

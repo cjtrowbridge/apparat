@@ -34,4 +34,4 @@ Linux GUI builds require native desktop development headers used by Ebitengine/G
 
 ## Android Mobile Runner
 
-Android GUI builds use the same `ebiten.RunGame(NewGame())` adapter as Debian. Ebitengine selects its mobile UI backend under `GOOS=android`, while `GoNativeActivity` owns the Android activity lifecycle. A previous `mobile.SetGame` runner initialized Apparat runtime state but left Pixel devices on the Android splash/default icon, so the shared run loop is the current Phase 5 rendering fix.
+Android GUI APKs use the `cmd/apparatmobile` binding package plus the tracked `android/apparat` wrapper. Direct `GoNativeActivity` paths can initialize Apparat runtime state but do not attach Ebitengine's `EbitenView` on the Pixel, so the wrapper activity owns Android view lifecycle and this adapter owns the shared HUD game model.
