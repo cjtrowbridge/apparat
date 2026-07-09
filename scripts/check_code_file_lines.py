@@ -13,6 +13,7 @@ CODE_SUFFIXES = {".go", ".py", ".sh", ".yaml", ".yml", ".json"}
 EXCLUDED_DIRS = {
     ".git",
     ".tools",
+    ".tmp",
     "__pycache__",
     "third_party",
     "releases",

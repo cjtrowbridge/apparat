@@ -766,7 +766,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Implement a Python build pipeline that detects host OS and architecture.
   - [x] Build both canonical binaries by default while preserving single-target builds.
   - [x] Add build-pipeline tests.
-  - [x] Keep generated binary artifacts ignored by Git.
+  - [x] Track generated binary artifacts in Git so other devices can pull latest builds directly.
 - [x] Create deferred-feature design stubs.
   - [x] Create `docs/comrades.md` with the accepted social identity, chat, comrade queue, permission, priority, quota, revocation, and audit goals.
   - [x] Create `docs/research.md` with the accepted BOINC, resource-budget, isolation, validation, provenance, and gameplay goals.
@@ -855,7 +855,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Build GUI and headless artifacts into separate binary-specific release directories.
     - [x] Use `releases/<goos>/<goarch>/apparat/latest[.exe]` for the GUI artifact.
     - [x] Use `releases/<goos>/<goarch>/apparatd/latest[.exe]` for the headless artifact.
-    - [x] Keep generated artifacts ignored by Git.
+    - [x] Track generated artifacts in Git as the current latest build surface.
   - [x] Keep GUI and headless default runtime roots separate unless `--runtime-dir` explicitly overrides them.
   - [x] Keep `--smoke-test` as the non-window build and CI verification path.
   - [x] Keep Ebitengine initialization out of headless mode.
@@ -875,7 +875,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Add safe log rotation and retention.
 - [x] Add source-size governance.
   - [x] Require included code files to stay at or below 400 physical lines.
-  - [x] Exclude generated, vendored/reference, `third_party/`, `.tools/`, release, plan, journal, downtime, and prose documentation files.
+  - [x] Exclude generated, vendored/reference, `third_party/`, `.tools/` and `.tmp/`, release, plan, journal, downtime, and prose documentation files.
   - [x] Add `scripts/check_code_file_lines.py`.
   - [x] Add `make check-code-size`.
   - [x] Include the check in `make verify`.
@@ -1058,108 +1058,124 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Goal:** Produce a working Android GUI APK artifact for Apparat in the canonical release directory without adding or claiming an Android headless target.
 
+**Current status:** Build pipeline and package inspection are implemented for Linux-hosted `android/arm64` GUI APK builds. Device/emulator install and launch validation remains pending because `adb` daemon startup was blocked by the current sandbox/approval environment during execution.
+
 **Dependencies:** Phase 4 HUD shell and Apparat-owned tracked dependencies. Salvagecore may be inspected temporarily, but the final build pipeline must not require it.
 
 **Scope boundary:** This phase builds only the GUI Android APK. It does not build `apparatd` for Android; users who want headless behavior on Android can later run Linux headless builds through Termux-like environments or a separate approved worker strategy.
 
-**Salvagecore retirement boundary:** `third_party/salvagecore` is a temporary ignored reference and will eventually be removed. Any Android source, scripts, manifests, wrapper code, or tooling required for Apparat must be admitted into Apparat-owned tracked paths or replaced with documented external tool prerequisites before Phase 5 can be complete.
+**Salvagecore retirement boundary:** `third_party/salvagecore` is a temporary ignored reference and will eventually be removed. Android source, scripts, manifests, wrapper code, and tooling required for Apparat must live in Apparat-owned tracked paths or documented external tool prerequisites. The implemented pipeline does not reference `third_party/salvagecore`.
 
-- [ ] Confirm Android source and reference baseline.
-  - [ ] Treat `third_party/game/ebiten` as the admitted Ebitengine source containing `cmd/ebitenmobile` and mobile runtime packages.
-  - [ ] Inspect salvagecore's ignored `third_party/cicd/mobile` checkout as reference material for `golang/mobile` behavior and Android app build conventions.
-  - [ ] Inspect salvagecore's Ebitengine Android examples, manifests, and mobile build scripts for reusable decisions without copying wholesale.
-  - [ ] Document which salvagecore Android lessons are adopted, rejected, or deferred in Apparat-owned documentation.
-  - [ ] Keep salvagecore ignored and unstaged; do not add any file under `third_party/salvagecore` to this repository.
-- [ ] Convert temporary reference lessons into Apparat-owned inputs.
-  - [ ] For each salvagecore Android lesson adopted, identify the durable Apparat-owned destination: tracked submodule, tracked wrapper/source file, script, documentation, or external prerequisite.
-  - [ ] If `golang/mobile` is required directly, add it through the normal third-party source admission process instead of depending on salvagecore's ignored checkout.
-  - [ ] If Ebitengine's admitted `ebitenmobile` tooling is sufficient, keep `golang/mobile` absent as a source checkout and document why.
-  - [ ] Add or update the relevant `third_party` inventory if any new submodule is admitted.
-  - [ ] Add a build/test guard that fails if the Android pipeline references `third_party/salvagecore`.
-  - [ ] Prove the Android build works after temporarily moving, hiding, or ignoring `third_party/salvagecore`.
-- [ ] Choose the first APK architecture.
-  - [ ] Prefer the shortest working path: use Ebitengine's `ebitenmobile` tooling directly if it can build the Apparat GUI package into an installable APK with acceptable lifecycle behavior.
-  - [ ] Fall back to a host-owned Android wrapper project only if direct `ebitenmobile` output cannot express required manifest, permissions, signing, storage, or lifecycle behavior.
-  - [ ] Record the decision in `README.md`, `ROADMAP.md`, `scripts/README.md`, and the nearest Android/package README.
-- [ ] Pin Android build prerequisites.
-  - [ ] Define required JDK version.
-  - [ ] Define required Android SDK command-line tools version.
-  - [ ] Define Android platform/API level.
-  - [ ] Define Android build-tools version.
-  - [ ] Define Android NDK version if required by Ebitengine/mobile tooling.
-  - [ ] Define Gradle/Android Gradle Plugin versions only if a wrapper project is introduced.
-  - [ ] Define where tools are discovered from environment variables such as `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `ANDROID_NDK_HOME`, and `JAVA_HOME`.
-  - [ ] Keep downloaded tools outside tracked source unless an approved bootstrap/cache strategy says otherwise.
-- [ ] Add Android build preflight checks.
-  - [ ] Add a script or build-script mode that reports missing Java, SDK, platform, build-tools, NDK, `adb`, and `ebitenmobile` prerequisites with actionable messages.
-  - [ ] Detect when the Ebitengine submodule is missing or not initialized.
-  - [ ] Detect unsupported host OS or architecture combinations.
-  - [ ] Detect unsupported target Android ABI values before build time.
-  - [ ] Keep `python3 scripts/build.py --os android --target apparatd` rejected with an explanation that Android headless is intentionally out of scope.
-  - [ ] Preserve the current rejection for Android APK builds until this preflight passes.
-- [ ] Define canonical Android GUI artifact paths.
-  - [ ] Use `releases/android/arm64/apparat/latest.apk` for the primary Android GUI APK.
-  - [ ] Add additional ABI paths only after each target is validated, such as `releases/android/arm/apparat/latest.apk`, `releases/android/amd64/apparat/latest.apk`, or `releases/android/386/apparat/latest.apk`.
-  - [ ] Do not create `releases/android/<arch>/apparatd/` in this phase.
-  - [ ] Keep generated APKs ignored by Git, matching the existing local artifact policy.
-- [ ] Integrate APK output into the Python build pipeline.
-  - [ ] Extend `scripts/build.py --os android --arch arm64 --target apparat` to produce `latest.apk` after the Android preflight succeeds.
-  - [ ] Keep default host desktop builds unchanged when no Android target is requested.
-  - [ ] Ensure `--print-path` reports the APK path without building.
-  - [ ] Ensure `--target all --os android` builds only Android-supported targets, currently `apparat`, or fails with a clear unsupported-target explanation.
-  - [ ] Add a Makefile target such as `make build-android` that delegates to the Python pipeline with the repo-local environment.
-  - [ ] Add a Makefile target such as `make check-android-build-env` for preflight-only validation.
-- [ ] Add Android application metadata.
-  - [ ] Define app package/application ID.
-  - [ ] Define app label and launcher metadata.
-  - [ ] Define minimum and target SDK versions.
-  - [ ] Define orientation behavior for Steam Deck-like landscape and phone/tablet layouts.
-  - [ ] Define debug and release signing behavior.
-  - [ ] Define version name/code generation and where those values come from.
-- [ ] Add Android permissions and platform behavior.
-  - [ ] Request microphone permission only when voice capture is enabled or tested.
-  - [ ] Avoid broad storage permissions; use app-scoped storage for runtime data, `last_run.log`, SQLite, cache, and artifacts.
-  - [ ] Define network permissions for HTTPS over WireGuard/local network.
-  - [ ] Defer VPN-service permissions and app-managed WireGuard to the later transport/platform phase.
-  - [ ] Define controller, keyboard, touch, and text-input expectations for the Phase 4 HUD.
-  - [ ] Define audio output behavior for future TTS without claiming full voice support in this phase.
+**Build host policy:** Android APK builds are not inherently Linux-only. Phase 5 uses Linux as the first evidence-producing build host because it is the current development and verification baseline, but the Python pipeline remains host-agnostic where practical. macOS and Windows Android build hosts are planned only after explicit validation on those hosts.
+
+- [x] Confirm Android source and reference baseline.
+  - [x] Treat `third_party/game/ebiten` as the admitted Ebitengine source containing `cmd/ebitenmobile` and mobile runtime packages.
+  - [x] Inspect Ebitengine mobile behavior and confirm direct `gomobile build` can emit a GUI APK for `cmd/apparat`.
+  - [x] Reject a durable dependency on salvagecore's ignored `third_party/cicd/mobile` checkout.
+  - [x] Document that salvagecore remains temporary reference material only and is not an Android build input.
+  - [x] Keep salvagecore ignored and unstaged; do not add any file under `third_party/salvagecore` to this repository.
+- [x] Convert temporary reference lessons into Apparat-owned inputs.
+  - [x] Use tracked Apparat-owned files for Android behavior: `cmd/apparat/AndroidManifest.xml`, `cmd/apparat/gomobile_app.go`, `scripts/build.py`, Makefile targets, tests, and documentation.
+  - [x] Keep `golang/mobile` absent as a source checkout; the first APK uses Ebitengine's pinned `github.com/ebitengine/gomobile` Go module instead.
+  - [x] Keep `ebitenmobile bind` deferred as future wrapper/AAR reference material rather than the Phase 5 APK path.
+  - [x] Add a unit guard that fails if the Android build pipeline references `third_party/salvagecore`.
+  - [ ] Prove the Android build works after temporarily moving or hiding `third_party/salvagecore`; the implemented script has no reference to it, but this destructive local proof still needs an explicit checkpoint if desired.
+- [x] Choose the first APK architecture.
+  - [x] Select `android/arm64` as the first APK architecture.
+  - [x] Use direct Ebitengine `gomobile build` for the shortest working path.
+  - [x] Record that a host-owned wrapper/AAR project is deferred until direct `gomobile build` cannot meet manifest, lifecycle, signing, SDK metadata, or release-hardening needs.
+  - [x] Record the decision in `README.md`, `ROADMAP.md`, `scripts/README.md`, `cmd/apparat/README.md`, and `docs/platform-matrix.md`.
+- [x] Pin Android build prerequisites.
+  - [x] Define required JDK version: JDK 21.
+  - [x] Define Android SDK command-line tools as an external prerequisite under `ANDROID_HOME`, `ANDROID_SDK_ROOT`, or ignored `.tools/android`.
+  - [x] Define Android platform/API level: `android-35`.
+  - [x] Define Android build-tools version: `35.0.0`.
+  - [x] Define Android NDK version: `27.2.12479018`.
+  - [x] Define Gradle/Android Gradle Plugin versions as not applicable because no wrapper project is introduced in this phase.
+  - [x] Define tool discovery through `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `ANDROID_NDK_HOME`, `JAVA_HOME`, PATH, and ignored repo-local `.tools/` and `.tmp/` fallbacks.
+  - [x] Keep downloaded tools outside tracked source.
+- [x] Define Android build host support.
+  - [x] Treat Linux as the first evidence-producing host for Phase 5.
+  - [x] Keep `scripts/build.py` path handling, environment detection, and command construction portable with `pathlib` and environment variables.
+  - [x] Avoid Linux-only shell assumptions inside the Python build logic.
+  - [x] Report macOS/Windows hosts as unvalidated rather than unsupported when running Android preflight.
+  - [x] Document that macOS and Windows APK build hosts are not claimed supported until their preflight, build, and install/launch validation pass.
+  - [x] Allow APK install/launch validation from any host with working `adb`.
+- [x] Add Android build preflight checks.
+  - [x] Add `python3 scripts/build.py --check-android-env`.
+  - [x] Add `make check-android-build-env`.
+  - [x] Report missing Java, SDK command-line tools, platform, build-tools, NDK, gomobile module source, and optional `adb`.
+  - [x] Detect unsupported Android ABI values before build time.
+  - [x] Keep `python3 scripts/build.py --os android --target apparatd` rejected with a headless-out-of-scope explanation.
+  - [x] Prepare ignored `.tools/bin/gomobile-apparat` when the pinned Ebitengine gomobile helper is missing.
+- [x] Define canonical Android GUI artifact paths.
+  - [x] Use `releases/android/arm64/apparat/latest.apk` for the primary Android GUI APK.
+  - [x] Keep additional ABI paths deferred until individually validated.
+  - [x] Do not create `releases/android/<arch>/apparatd/` in this phase.
+  - [x] Track generated APKs in Git as the current latest Android build surface.
+- [x] Integrate APK output into the Python build pipeline.
+  - [x] Extend `scripts/build.py --os android --arch arm64 --target apparat` to produce `latest.apk` after preflight succeeds.
+  - [x] Keep default host desktop builds unchanged when no Android target is requested.
+  - [x] Ensure `--print-path` reports the APK path without building.
+  - [x] Ensure `--target all --os android` builds only Android-supported targets, currently `apparat`.
+  - [x] Add `make build-android`.
+  - [x] Add `make check-android-build-env`.
+- [x] Add Android application metadata.
+  - [x] Define app package/application ID: `com.cjtrowbridge.apparat`.
+  - [x] Define app label and launcher metadata: `Apparat`, `org.golang.app.GoNativeActivity`.
+  - [x] Define current version metadata: `versionCode=1`, `versionName=0.1.0`.
+  - [x] Define orientation behavior: landscape for the controller-first HUD.
+  - [x] Define debug signing behavior: direct `gomobile build` emits a debug APK.
+  - [ ] Define release signing, store packaging, and automated version generation in a later release-hardening phase.
+  - [ ] Define explicit min/target SDK control later if direct `gomobile build` remains insufficient; current package inspection shows gomobile default `minSdkVersion='16'` despite compiling with `-androidapi 35`.
+- [x] Add Android permissions and platform behavior.
+  - [x] Request `android.permission.INTERNET` for HTTPS over external WireGuard/local network.
+  - [x] Avoid broad storage permissions; runtime data remains app-scoped by default.
+  - [x] Defer microphone permission until voice capture is enabled and tested.
+  - [x] Defer VPN-service permissions and app-managed WireGuard to the later transport/platform phase.
+  - [x] Keep controller, keyboard, touch, and text-input expectations tied to the Phase 4 HUD rather than claiming Android-specific validation yet.
+  - [x] Defer Android audio/TTS behavior beyond package startup.
 - [ ] Adapt runtime paths for Android GUI.
-  - [ ] Map Apparat runtime root to Android app-scoped storage.
-  - [ ] Ensure `last_run.log` is recreated on every Android GUI launch.
-  - [ ] Ensure SQLite, logs, identity, cache, artifacts, backups, and recovery directories are created with Android-safe paths.
-  - [ ] Surface the Android runtime root and `last_run.log` path in Settings or diagnostics where feasible.
-  - [ ] Avoid logging secrets, raw audio, private message bodies, or project file contents.
+  - [x] Reuse the existing runtime startup path so `last_run.log` creation is part of Android app startup.
+  - [ ] Verify the actual Android app-scoped runtime root on device/emulator.
+  - [ ] Verify `last_run.log` is recreated on every Android GUI launch.
+  - [ ] Verify SQLite, logs, identity, cache, artifacts, backups, and recovery directories are Android-safe.
+  - [x] Document Android runtime-path assumptions and validation gap in `docs/platform-matrix.md`.
 - [ ] Validate the Android GUI smoke path.
-  - [ ] Build a debug APK locally.
-  - [ ] Install the APK on an emulator or physical Android device with `adb`.
-  - [ ] Launch the app and verify the Ebitengine window/activity opens.
-  - [ ] Verify the seven tabs render and remain clickable/touchable.
+  - [x] Build a debug APK locally.
+  - [x] Inspect package metadata with Android build-tools: package ID, label, `INTERNET` permission, launcher activity, and `arm64-v8a` native code.
+  - [ ] Install the APK on an emulator or physical Android device with `adb`; blocked because `adb` daemon startup was not permitted in the current execution environment.
+  - [ ] Launch the app and verify the Ebitengine activity opens.
+  - [ ] Verify the seven tabs render and remain clickable/touchable on Android.
   - [ ] Verify keyboard/controller navigation where the device supports it.
   - [ ] Verify `last_run.log` exists in the Android runtime root after launch.
   - [ ] Capture failure logs from `adb logcat` and map them back to Apparat components.
-- [ ] Add Android build tests.
-  - [ ] Unit-test Android artifact path selection.
-  - [ ] Unit-test that Android supports only the `apparat` target in this phase.
-  - [ ] Unit-test preflight failure messages for missing SDK/JDK/NDK/tooling.
-  - [ ] Unit-test `--print-path` for Android APK output.
-  - [ ] Add an optional integration test target that builds and installs the APK only when Android tools and a device/emulator are available.
-- [ ] Document Android build and troubleshooting.
-  - [ ] Update root `README.md` with Android APK build commands, prerequisites, artifact path, and support caveats.
-  - [ ] Update `scripts/README.md` with Android build options, preflight, outputs, side effects, and common failures.
-  - [ ] Add or update Android-specific README files in any new wrapper/build directory.
-  - [ ] Update `docs/platform-matrix.md` with the exact Android evidence collected.
-  - [ ] Record the Android APK phase checkpoint in the journal and regenerate plan indexes if a formal execution plan is created.
+- [x] Add Android build tests.
+  - [x] Unit-test Android artifact path selection.
+  - [x] Unit-test that Android supports only the `apparat` target in this phase.
+  - [x] Unit-test Android `apparatd` rejection.
+  - [x] Unit-test Android unsupported ABI rejection.
+  - [x] Unit-test preflight failure reporting for missing SDK/JDK/NDK/tooling.
+  - [x] Unit-test `--print-path` for Android APK output.
+  - [x] Unit-test that the Android pipeline does not reference `third_party/salvagecore`.
+  - [ ] Add an optional integration test target that installs and launches the APK when Android tools and a device/emulator are available.
+- [x] Document Android build and troubleshooting.
+  - [x] Update root `README.md` with Android APK build commands, prerequisites, artifact path, and support caveats.
+  - [x] Update `scripts/README.md` with Android build options, preflight, outputs, side effects, and common failures.
+  - [x] Update `cmd/apparat/README.md` for the Android manifest and gomobile hook.
+  - [x] Update `docs/platform-matrix.md` with the exact Android evidence collected.
+  - [x] Record the Android APK phase checkpoint in the journal and regenerate plan indexes.
 
 **Exit criteria**
 
-- `python3 scripts/build.py --os android --arch arm64 --target apparat` produces `releases/android/arm64/apparat/latest.apk`.
-- `python3 scripts/build.py --os android --arch arm64 --target apparatd` fails clearly because Android headless is out of scope.
-- `--print-path` reports the Android APK path without building.
-- The APK installs and launches on at least one emulator or physical Android device.
-- The Android GUI displays the Phase 4 tab HUD and supports touch/click tab selection.
-- Android startup creates a fresh `last_run.log` in the runtime root and exposes enough diagnostics to debug failures.
-- The Android build, tests, and documentation remain valid if `third_party/salvagecore` is removed.
-- Documentation explains prerequisites, commands, artifact paths, validation evidence, and known limitations.
+- [x] `python3 scripts/build.py --os android --arch arm64 --target apparat` produces `releases/android/arm64/apparat/latest.apk`.
+- [x] `python3 scripts/build.py --os android --arch arm64 --target apparatd` fails clearly because Android headless is out of scope.
+- [x] `--print-path` reports the Android APK path without building.
+- [ ] The APK installs and launches on at least one emulator or physical Android device.
+- [ ] The Android GUI displays the Phase 4 tab HUD and supports touch/click tab selection on Android.
+- [ ] Android startup creates a fresh `last_run.log` in the runtime root and exposes enough diagnostics to debug failures.
+- [x] The Android build, tests, and documentation do not require `third_party/salvagecore`.
+- [x] Documentation explains prerequisites, commands, artifact paths, validation evidence, and known limitations.
 
 ## Phase 6: Secure Two-Device HTTPS/WireGuard Vertical Slice
 

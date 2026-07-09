@@ -564,11 +564,15 @@ Common commands:
 ```bash
 make verify
 make build
+make build-android
+make check-android-build-env
 make run-built
 make run-built-headless
 python3 scripts/build.py --help
 python3 scripts/build.py --target apparatd
 python3 scripts/build.py --target apparat --print-path
+python3 scripts/build.py --os android --arch arm64 --target apparat
+python3 scripts/build.py --os android --arch arm64 --target apparat --print-path
 ```
 
 `make build` runs the Python build pipeline and writes both latest local binaries to:
@@ -578,9 +582,19 @@ releases/<goos>/<goarch>/apparat/latest[.exe]
 releases/<goos>/<goarch>/apparatd/latest[.exe]
 ```
 
-The path uses Go `GOOS` and `GOARCH` names such as `linux/amd64`, `linux/arm64`, `windows/amd64`, or `darwin/arm64`. Windows builds use `latest.exe`; other targets use `latest`. `apparat` is the GUI binary and `apparatd` is the headless worker/service binary. Generated binaries under `releases/` are ignored by Git so other devices fetch source and reproduce their local latest artifact.
+The path uses Go `GOOS` and `GOARCH` names such as `linux/amd64`, `linux/arm64`, `windows/amd64`, or `darwin/arm64`. Windows builds use `latest.exe`; other targets use `latest`. `apparat` is the GUI binary and `apparatd` is the headless worker/service binary. Latest artifacts under `releases/` are tracked in Git so other devices can pull the current known-good GUI, headless, and Android APK builds directly. Contributors should rebuild them intentionally when build inputs change.
 
-Android APK builds are not integrated yet. The Ebitengine mobile source framework is present through the Ebitengine submodule, and salvagecore contains a temporary `golang/mobile` reference checkout, but the build script intentionally rejects `--os android` until pinned Android SDK/NDK/JDK tooling, a host-owned Android wrapper or AAR pipeline, manifest/lifecycle code, signing, permissions, and device/emulator validation exist; the future artifact should be an installable APK, not a plain Go binary. The Android pipeline must keep working after `third_party/salvagecore` is removed, so any required source or build logic must live in Apparat-owned tracked paths or documented external prerequisites.
+Android Phase 5 builds the GUI APK only. The canonical Android artifact is:
+
+```text
+releases/android/arm64/apparat/latest.apk
+```
+
+Use `make check-android-build-env` to validate Android prerequisites and `make build-android` to produce the APK. The Android pipeline requires JDK 21, Android SDK command-line tools, platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and Ebitengine's `github.com/ebitengine/gomobile` module. Tools are discovered from `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, with ignored repo-local `.tools/` fallbacks when present; `.tmp/` is used only for disposable patched-tool source.
+
+The pipeline uses `gomobile build` against `cmd/apparat` with the `gui` tag and an Apparat-owned `AndroidManifest.xml`. It generates an ignored patched local `gomobile-apparat` helper under `.tools/bin` because the pinned Ebitengine `gomobile` package scanner checks for `github.com/ebitengine/gomobile/app` while its regular expression only recognizes `golang.org/x` package symbols. This patch is a build-tool workaround, not an application source fork. No Android build script or source path depends on the ignored `third_party/salvagecore` checkout.
+
+Android headless is intentionally out of scope for Phase 5: `python3 scripts/build.py --os android --arch arm64 --target apparatd` fails with a clear message. Users who want headless behavior on Android should use a future Termux/service-worker strategy rather than expecting an APK for `apparatd`.
 
 Use `make run-built` for the GUI artifact smoke test and `make run-built-headless` for the headless artifact smoke test.
 
@@ -592,6 +606,8 @@ Build troubleshooting:
 - If module downloads fail, allow network access or pre-populate the Go module cache.
 - If the GUI artifact fails with `X11/Xlib.h` or similar missing headers, install the Linux GUI development packages listed above.
 - If only the headless worker is needed, use `python3 scripts/build.py --target apparatd` or `make run-built-headless`.
+- If Android preflight fails, install or point `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME` at the pinned toolchain versions, then rerun `make check-android-build-env`.
+- If Android device validation fails, verify `adb devices` outside restricted sandboxes and capture `adb logcat` before treating the APK as launched.
 - If documentation checks fail, add or update the closest relevant directory `README.md` and ensure new scripts are listed in `scripts/README.md`.
 
 ### Local Runtime
@@ -636,7 +652,7 @@ Local startup creates an append-only JSONL log, opens SQLite with foreign keys, 
 
 Go's standard TLS and HTTP libraries cover the initial API. The retained Go-native identity design covers the initial signature and encrypted-key requirements. OpenSSL does not provide PGP semantics, and adding OpenSSL or libsodium would create unnecessary cgo and cross-platform work.
 
-Ebitengine supplies `ebitenmobile` through the admitted Ebitengine source tree, and the ignored salvagecore reference includes `third_party/cicd/mobile` from `golang/mobile` for temporary comparison. Android still requires pinned tools and a host-owned native wrapper or AAR pipeline before Apparat can claim APK support. Salvagecore is not a durable build input; any Android material Apparat needs must be admitted into this repository or replaced with a documented external prerequisite.
+Ebitengine supplies mobile runtime packages through the admitted Ebitengine source tree and the pinned `github.com/ebitengine/gomobile` module. Phase 5 uses direct `gomobile build` for the first GUI APK instead of admitting `golang/mobile` as a source checkout or depending on salvagecore's temporary `third_party/cicd/mobile` reference. `ebitenmobile bind` remains useful reference material for future wrapper/AAR work, but it is not required for the current `latest.apk` path.
 
 ## Platform Sequence
 

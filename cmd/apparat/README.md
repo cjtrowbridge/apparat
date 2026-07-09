@@ -6,10 +6,23 @@ It loads configuration with binary name `apparat`, creates the shared applicatio
 
 At startup it prints the selected runtime root and `last_run.log` path before entering the Ebitengine loop. By default on Linux, the GUI runtime root is `~/.local/share/apparat/apparat` unless `XDG_DATA_HOME`, `APPARAT_RUNTIME_DIR`, or `--runtime-dir` overrides it.
 
-The release pipeline builds this command with the `gui` build tag into:
+The desktop release pipeline builds this command with the `gui` build tag into:
 
 ```text
 releases/<goos>/<goarch>/apparat/latest[.exe]
 ```
+
+The Android release pipeline also builds this command with the `gui` tag through Ebitengine's gomobile runtime into:
+
+```text
+releases/android/arm64/apparat/latest.apk
+```
+
+Android packaging files in this directory:
+
+- `AndroidManifest.xml`: owns the package ID `com.cjtrowbridge.apparat`, app label `Apparat`, launcher `GoNativeActivity`, landscape orientation, debug metadata, and `INTERNET` permission for HTTPS over external WireGuard/local networks.
+- `gomobile_app.go`: is Android-only and references `github.com/ebitengine/gomobile/app` so the Ebitengine gomobile builder recognizes the package as a mobile app.
+
+Android broad storage, microphone, VPN-service, and app-managed WireGuard permissions are intentionally absent until those behaviors are implemented and validated. The current APK is a debug build artifact; release signing and store packaging are future work.
 
 On Linux, normal GUI builds require Ebitengine native desktop dependencies such as X11, cursor, randr, xinerama, xi, OpenGL, xxf86vm, and ALSA development headers.
