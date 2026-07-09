@@ -46,6 +46,9 @@ type Game struct {
 	pageDownWasHit bool
 	pageUpWasHit   bool
 	tabRects       []tabRect
+	l1WasPressed   bool
+	r1WasPressed   bool
+	r2Held         bool
 }
 
 type tabRect struct {
@@ -80,6 +83,12 @@ func (game *Game) Update() error {
 			_ = game.shell.SelectTab(index)
 		}
 	}
+	for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
+		x, y := ebiten.TouchPosition(id)
+		if index, ok := game.tabIndexAt(x, y); ok {
+			_ = game.shell.SelectTab(index)
+		}
+	}
 	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6, ebiten.Key7} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
 			_ = game.shell.SelectTab(index)
@@ -96,7 +105,35 @@ func (game *Game) Update() error {
 		game.shell.CancelVoiceCapture()
 	}
 	game.rightCtrlHeld = rightCtrl
+	game.updateGamepad()
 	return nil
+}
+
+func (game *Game) updateGamepad() {
+	for _, id := range ebiten.AppendGamepadIDs(nil) {
+		if !ebiten.IsStandardGamepadLayoutAvailable(id) {
+			continue
+		}
+		l1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopLeft)
+		r1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopRight)
+		r2 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontBottomRight)
+		if r1 && !game.r1WasPressed {
+			_ = game.shell.ApplyAction(hud.ActionNextTab)
+		}
+		if l1 && !game.l1WasPressed {
+			_ = game.shell.ApplyAction(hud.ActionPreviousTab)
+		}
+		if r2 && !game.r2Held {
+			game.shell.StartVoiceCapture("gamepad-r2")
+		}
+		if !r2 && game.r2Held {
+			game.shell.ReleaseVoiceCapture()
+		}
+		game.l1WasPressed = l1
+		game.r1WasPressed = r1
+		game.r2Held = r2
+		break // Use only the first standard-layout gamepad.
+	}
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {

@@ -85,6 +85,12 @@ def write_ebiten_view_sources(source_dir: Path) -> None:
         text = (template_dir / name).read_text(encoding="utf-8")
         for old, new in replacements.items():
             text = text.replace(old, new)
+        if name == "EbitenSurfaceView.java":
+            # Ensure the surface uses RGBA_8888 for correct alpha compositing.
+            text = text.replace(
+                "setEGLConfigChooser(8, 8, 8, 8, 0, 0);",
+                "setEGLConfigChooser(8, 8, 8, 8, 0, 0);\n        getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);"
+            )
         (source_dir / name).write_text(text, encoding="utf-8")
 
 
