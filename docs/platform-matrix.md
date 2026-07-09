@@ -36,7 +36,7 @@ Current evidence:
 - App label: `Apparat`.
 - Native ABI: `arm64-v8a`.
 - Permission: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks.
-- Activity: `org.golang.app.GoNativeActivity` with portrait phone orientation.
+- Activity: `com.cjtrowbridge.apparat.MainActivity` with portrait phone orientation and Ebitengine `EbitenView`.
 - Toolchain: JDK 21, Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
 - SDK metadata: `minSdkVersion=23`, `targetSdkVersion=30`, and `platformBuildVersionCode=35`.
 - Signing: debug keystore generated under ignored `.tools/android/debug.keystore`; APK verifies with v1, v2, and v3 signature schemes.
@@ -45,7 +45,7 @@ Current evidence:
 
 Known caveats:
 
-- Visual confirmation of the Android HUD after the shared `ebiten.RunGame` runner fix is still pending; previous ADB evidence confirmed install, process start, runtime initialization, SQLite migration, and `last_run.log` creation while the earlier `mobile.SetGame` runner remained on the Android splash/default icon.
-- Direct `gomobile build` still needs future release-hardening review for signing, icons, store packaging, and whether a wrapper/AAR project is needed long-term. A wrapper/AAR remains the fallback if the shared-runner APK still fails visual HUD validation.
+- Visual confirmation of the Android wrapper APK is still pending because ADB escalation is currently blocked by the environment usage limit. Earlier ADB evidence confirmed direct package install, process start, runtime initialization, SQLite migration, and `last_run.log` creation, but direct `GoNativeActivity` paths stayed on the Android splash/default icon.
+- The current APK uses the wrapper/AAR-style path. Future release-hardening still needs signing, icons, store packaging, additional ABI decisions, and broader Android device validation.
 - Android `apparatd` is intentionally unsupported; headless Android work requires a later Termux/service-worker strategy.
 - App-managed WireGuard/VPN-service, microphone capture, broad storage, background execution, release signing, store packaging, and additional Android ABIs are future work.

@@ -12,13 +12,13 @@ The desktop release pipeline builds this command with the `gui` build tag into:
 releases/<goos>/<goarch>/apparat/latest[.exe]
 ```
 
-The Android release pipeline also builds this command with the `gui` tag through Ebitengine's gomobile runtime into:
+The Android release pipeline does not use this desktop command as the render entrypoint. It binds `cmd/apparatmobile` and the tracked `android/apparat` wrapper into:
 
 ```text
 releases/android/arm64/apparat/latest.apk
 ```
 
-Android packaging files in this directory:
+Legacy direct-gomobile packaging files in this directory:
 
 - `AndroidManifest.xml`: owns the package ID `com.cjtrowbridge.apparat`, app label `Apparat`, launcher `GoNativeActivity`, portrait phone orientation, debug metadata, and `INTERNET` permission for HTTPS over external WireGuard/local networks.
 - `gomobile_app.go`: is Android-only and references `github.com/ebitengine/gomobile/app` so the Ebitengine gomobile builder recognizes the package as a mobile app.

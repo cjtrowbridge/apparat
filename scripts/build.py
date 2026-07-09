@@ -15,6 +15,10 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+try:
+    from scripts import android_wrapper
+except ModuleNotFoundError:
+    import android_wrapper
 ROOT = Path(__file__).resolve().parents[1]
 ANDROID_API = "35"
 ANDROID_MIN_API = "23"
@@ -95,22 +99,6 @@ def desktop_build_command(go: str, target: str, output: Path) -> list[str]:
         command.extend(["-tags", ",".join(spec.tags)])
     command.extend(["-o", str(output), spec.package])
     return command
-def android_build_command(gomobile: Path, goarch: str, output: Path) -> list[str]:
-    return [
-        str(gomobile),
-        "build",
-        "-target",
-        ANDROID_ARCHES[goarch],
-        "-androidapi",
-        ANDROID_API,
-        "-o",
-        str(output),
-        "-tags",
-        "gui",
-        "-ldflags",
-        f"-extldflags=-Wl,-z,max-page-size={ANDROID_PAGE_SIZE}",
-        TARGETS["apparat"].package,
-    ]
 def android_badging_expectations(goarch: str) -> tuple[str, ...]:
     return (
         f"minSdkVersion:'{ANDROID_MIN_API}'",
@@ -223,8 +211,13 @@ def build_patched_gomobile(go: str, source: Path) -> None:
         'Local: "minSdkVersion",\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\tValue: fmt.Sprintf("%v", MinSDK),\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},':
         f'Local: "minSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: fmt.Sprintf("%v", MinSDK),\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\txml.Attr{{\n\t\t\t\t\t\t\t\tName: xml.Name{{\n\t\t\t\t\t\t\t\t\tSpace: androidSchema,\n\t\t\t\t\t\t\t\t\tLocal: "targetSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: "{ANDROID_TARGET_API}",\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t}},',
     })
+    patch_file(temp / "cmd" / "gomobile" / "bind.go", {
+        "if f == nil {\n\t\t\treturn nil\n\t\t}":
+        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo 1.26.4\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.9.9\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT}\\nreplace github.com/ebitengine/gomobile => {temp}\\nreplace github.com/hajimehoshi/ebiten/v2 => {ROOT / "third_party" / "game" / "ebiten"}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
+    })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE), "./cmd/gomobile"], cwd=temp, check=True)
+    subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE.parent / executable("gobind")), "./cmd/gobind"], cwd=temp, check=True)
 def patch_file(path: Path, replacements: dict[str, str]) -> None:
     text = path.read_text(encoding="utf-8")
     for old, new in replacements.items():
@@ -309,10 +302,13 @@ def build_android(go: str, goarch: str) -> int:
         return 1
     output = artifact_path("android", goarch, "apparat")
     output.parent.mkdir(parents=True, exist_ok=True)
-    command = android_build_command(toolchain.gomobile, goarch, output)
     print(f"building target=apparat goos=android goarch={goarch} output={output}")
     try:
-        subprocess.run(command, cwd=ROOT, env=android_tool_env(toolchain), check=True)
+        android_wrapper.build_wrapper_apk(toolchain, go, goarch, output, {
+            "api": ANDROID_API, "min_api": ANDROID_MIN_API,
+            "target_api": ANDROID_TARGET_API, "build_tools": ANDROID_BUILD_TOOLS,
+            "page_size": ANDROID_PAGE_SIZE,
+        })
     except subprocess.CalledProcessError as error:
         print(f"Android APK build failed exit={error.returncode}", file=sys.stderr)
         print("Run `python3 scripts/build.py --check-android-env` for prerequisite details.", file=sys.stderr)
