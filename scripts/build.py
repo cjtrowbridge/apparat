@@ -21,20 +21,18 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 ANDROID_API = "35"
+ANDROID_MIN_API = "23"
 ANDROID_BUILD_TOOLS = "35.0.0"
 ANDROID_NDK = "27.2.12479018"
 GOMOBILE_VERSION = "v0.0.0-20250923094054-ea854a63cce1"
 PATCHED_GOMOBILE = ROOT / ".tools" / "bin" / "gomobile-apparat"
 
-
 @dataclass(frozen=True)
 class Target:
     package: str
     tags: tuple[str, ...] = ()
-
 
 @dataclass(frozen=True)
 class AndroidToolchain:
@@ -45,7 +43,6 @@ class AndroidToolchain:
     gomobile: Path
     adb: Path | None
 
-
 TARGETS = {
     "apparat": Target("./cmd/apparat", ("gui",)),
     "apparatd": Target("./cmd/apparatd"),
@@ -54,10 +51,8 @@ ALL_TARGETS = tuple(TARGETS)
 ANDROID_ARCHES = {"arm64": "android/arm64"}
 ANDROID_HEADLESS_HELP = "Android Phase 5 builds only the GUI `apparat` APK; use Linux/Termux for headless `apparatd`."
 
-
 class BuildError(RuntimeError):
     """A build-time configuration error with user-facing guidance."""
-
 
 def host_goos() -> str:
     system = platform.system().lower()
@@ -68,7 +63,6 @@ def host_goos() -> str:
     if system == "windows" or system.startswith(("msys", "cygwin")):
         return "windows"
     raise ValueError(f"unsupported host OS: {platform.system()}")
-
 
 def host_goarch() -> str:
     machine = platform.machine().lower()
@@ -86,13 +80,11 @@ def host_goarch() -> str:
         raise ValueError(f"unsupported host architecture: {platform.machine()}")
     return aliases[machine]
 
-
 def artifact_path(goos: str, goarch: str, target: str) -> Path:
     if goos == "android":
         return ROOT / "releases" / "android" / goarch / target / "latest.apk"
     suffix = ".exe" if goos == "windows" else ""
     return ROOT / "releases" / goos / goarch / target / f"latest{suffix}"
-
 
 def selected_targets(target: str, goos: str | None = None) -> tuple[str, ...]:
     if target == "all" and goos == "android":
@@ -100,7 +92,6 @@ def selected_targets(target: str, goos: str | None = None) -> tuple[str, ...]:
     if target == "all":
         return ALL_TARGETS
     return (target,)
-
 
 def validate_target(goos: str, goarch: str, target: str) -> None:
     if goos != "android":
@@ -110,7 +101,6 @@ def validate_target(goos: str, goarch: str, target: str) -> None:
     if target != "apparat":
         raise BuildError(ANDROID_HEADLESS_HELP)
 
-
 def desktop_build_command(go: str, target: str, output: Path) -> list[str]:
     spec = TARGETS[target]
     command = [go, "build", "-trimpath"]
@@ -118,7 +108,6 @@ def desktop_build_command(go: str, target: str, output: Path) -> list[str]:
         command.extend(["-tags", ",".join(spec.tags)])
     command.extend(["-o", str(output), spec.package])
     return command
-
 
 def android_build_command(gomobile: Path, goarch: str, output: Path) -> list[str]:
     return [
@@ -135,18 +124,15 @@ def android_build_command(gomobile: Path, goarch: str, output: Path) -> list[str
         TARGETS["apparat"].package,
     ]
 
-
 def default_sdk_root() -> Path:
     env = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     return Path(env).expanduser() if env else ROOT / ".tools" / "android"
-
 
 def default_java_home() -> Path | None:
     if os.environ.get("JAVA_HOME"):
         return Path(os.environ["JAVA_HOME"]).expanduser()
     local = ROOT / ".tools" / "jdks" / "openjdk-21" / "usr" / "lib" / "jvm" / "java-21-openjdk-amd64"
     return local if local.exists() else None
-
 
 def find_executable(name: str, extra_dirs: list[Path] | None = None) -> Path | None:
     for directory in extra_dirs or []:
@@ -155,7 +141,6 @@ def find_executable(name: str, extra_dirs: list[Path] | None = None) -> Path | N
             return candidate
     found = shutil.which(name)
     return Path(found) if found else None
-
 
 def android_tool_env(toolchain: AndroidToolchain) -> dict[str, str]:
     env = os.environ.copy()
@@ -174,11 +159,9 @@ def android_tool_env(toolchain: AndroidToolchain) -> dict[str, str]:
     env["PATH"] = os.pathsep.join([str(path) for path in path_parts] + [env.get("PATH", "")])
     return env
 
-
 def check_path(path: Path, label: str, failures: list[str]) -> None:
     if not path.exists():
         failures.append(f"missing {label}: {path}")
-
 
 def resolve_android_toolchain(go: str) -> tuple[AndroidToolchain | None, list[str], list[str]]:
     failures: list[str] = []
@@ -208,10 +191,8 @@ def resolve_android_toolchain(go: str) -> tuple[AndroidToolchain | None, list[st
         return None, failures, warnings
     return AndroidToolchain(sdk_root, ndk_root, java_home, java, gomobile, adb), failures, warnings
 
-
 def executable(name: str) -> str:
     return f"{name}.exe" if host_goos() == "windows" else name
-
 
 def module_cache_dir(go: str) -> Path:
     result = subprocess.run([go, "env", "GOMODCACHE"], cwd=ROOT, check=True, capture_output=True, text=True)
@@ -222,8 +203,6 @@ def ensure_patched_gomobile(go: str, failures: list[str]) -> Path | None:
     env_tool = os.environ.get("GOMOBILE")
     if env_tool:
         return Path(env_tool).expanduser()
-    if PATCHED_GOMOBILE.is_file():
-        return PATCHED_GOMOBILE
     try:
         source = module_cache_dir(go) / f"github.com/ebitengine/gomobile@{GOMOBILE_VERSION}"
     except (subprocess.CalledProcessError, FileNotFoundError) as error:
@@ -248,18 +227,36 @@ def build_patched_gomobile(go: str, source: Path) -> None:
         shutil.rmtree(temp)
     shutil.copytree(source, temp)
     make_writable(temp)
-    build_file = temp / "cmd" / "gomobile" / "build.go"
-    text = build_file.read_text(encoding="utf-8")
-    old = r"`[0-9a-f]{8} t _?(?:.*/vendor/)?(golang.org/x.*/[^.]*)`"
-    new = r"`[0-9a-f]{8} t _?(?:.*/vendor/)?((?:golang.org/x|github.com/ebitengine/gomobile).*/[^.]*)`"
-    if old not in text:
-        raise RuntimeError("expected gomobile package scanner regex not found")
-    build_file.write_text(text.replace(old, new), encoding="utf-8")
+    patch_file(temp / "cmd" / "gomobile" / "build.go", {
+        r"`[0-9a-f]{8} t _?(?:.*/vendor/)?(golang.org/x.*/[^.]*)`":
+        r"`[0-9a-f]{8} t _?(?:.*/vendor/)?((?:golang.org/x|github.com/ebitengine/gomobile).*/[^.]*)`",
+    })
+    patch_file(temp / "internal" / "binres" / "sdk.go", {
+        "const MinSDK = 16": f"const MinSDK = {ANDROID_MIN_API}",
+    })
+    patch_file(temp / "internal" / "binres" / "binres.go", {
+        'Local: "platformBuildVersionCode",\n\t\t\t\t\t\t},\n\t\t\t\t\t\tValue: "16",':
+        f'Local: "platformBuildVersionCode",\n\t\t\t\t\t\t}},\n\t\t\t\t\t\tValue: "{ANDROID_API}",',
+        'Local: "platformBuildVersionName",\n\t\t\t\t\t\t},\n\t\t\t\t\t\tValue: "4.1.2-1425332",':
+        f'Local: "platformBuildVersionName",\n\t\t\t\t\t\t}},\n\t\t\t\t\t\tValue: "{ANDROID_API}",',
+        'Local: "minSdkVersion",\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\tValue: fmt.Sprintf("%v", MinSDK),\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},':
+        f'Local: "minSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: fmt.Sprintf("%v", MinSDK),\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\txml.Attr{{\n\t\t\t\t\t\t\t\tName: xml.Name{{\n\t\t\t\t\t\t\t\t\tSpace: androidSchema,\n\t\t\t\t\t\t\t\t\tLocal: "targetSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: "{ANDROID_API}",\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t}},',
+    })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE), "./cmd/gomobile"], cwd=temp, check=True)
 
 
+def patch_file(path: Path, replacements: dict[str, str]) -> None:
+    text = path.read_text(encoding="utf-8")
+    for old, new in replacements.items():
+        if old not in text:
+            raise RuntimeError(f"expected patch target not found in {path}")
+        text = text.replace(old, new)
+    path.write_text(text, encoding="utf-8")
+
+
 def make_writable(path: Path) -> None:
+    path.chmod(path.stat().st_mode | stat.S_IWUSR)
     for item in path.rglob("*"):
         try:
             item.chmod(item.stat().st_mode | stat.S_IWUSR)
@@ -271,21 +268,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Build Apparat GUI/headless binaries and Android GUI APKs into canonical release paths.",
         epilog=(
-            "Examples:\n"
-            "  python3 scripts/build.py\n"
-            "  python3 scripts/build.py --target apparatd\n"
-            "  python3 scripts/build.py --target apparat --print-path\n"
-            "  python3 scripts/build.py --os android --arch arm64 --target apparat\n"
-            "  python3 scripts/build.py --check-android-env\n\n"
-            "Outputs:\n"
-            "  releases/<goos>/<goarch>/apparat/latest[.exe]\n"
-            "  releases/<goos>/<goarch>/apparatd/latest[.exe]\n"
-            "  releases/android/arm64/apparat/latest.apk\n\n"
-            "Linux GUI prerequisite packages include libx11-dev, libxcursor-dev, "
-            "libxrandr-dev, libxinerama-dev, libxi-dev, libgl1-mesa-dev, "
-            "libxxf86vm-dev, and libasound2-dev. Android builds require JDK 21, "
-            f"Android API {ANDROID_API}, build-tools {ANDROID_BUILD_TOOLS}, NDK {ANDROID_NDK}, "
-            "and Ebitengine gomobile."
+            "Examples: python3 scripts/build.py; python3 scripts/build.py --target apparatd; "
+            "python3 scripts/build.py --target apparat --print-path; "
+            "python3 scripts/build.py --os android --arch arm64 --target apparat; "
+            "python3 scripts/build.py --check-android-env\n\n"
+            "Outputs: releases/<goos>/<goarch>/apparat/latest[.exe], "
+            "releases/<goos>/<goarch>/apparatd/latest[.exe], "
+            "releases/android/arm64/apparat/latest.apk.\n\n"
+            "Linux GUI builds require Ebitengine/GLFW native headers. "
+            f"Android builds require JDK 21, API {ANDROID_API}, build-tools {ANDROID_BUILD_TOOLS}, "
+            f"NDK {ANDROID_NDK}, and Ebitengine gomobile."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

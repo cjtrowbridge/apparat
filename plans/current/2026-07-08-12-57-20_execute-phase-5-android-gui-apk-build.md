@@ -96,7 +96,7 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 8.1 Define package name `com.cjtrowbridge.apparat`.
   - [x] 8.2 Define app label `Apparat` and launcher activity metadata.
   - [x] 8.3 Define current version name/code as `0.1.0` and `1`.
-  - [x] 8.4 Document gomobile's current default `minSdkVersion` behavior and defer explicit SDK metadata control.
+  - [x] 8.4 Patch gomobile metadata synthesis to emit `minSdkVersion=23`, `targetSdkVersion=35`, and platform build version `35`.
   - [x] 8.5 Define landscape orientation for the controller-first HUD.
   - [x] 8.6 Add network permission for HTTPS over external WireGuard/local network.
   - [x] 8.7 Defer microphone permission until voice capture is enabled and tested.
@@ -154,7 +154,7 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 13.8 Confirm `releases/android/arm64/apparat/latest.apk` exists and is tracked by Git.
   - [x] 13.9 Confirm Android `apparatd` fails clearly.
   - [?] 13.10 Temporarily hide or move `third_party/salvagecore` and rerun Android build; not performed because the script/test path already proves no reference and moving local reference material is a separate destructive checkpoint.
-  - [?] 13.11 Run emulator/device install and launch validation; blocked by `adb` daemon permission rejection.
+  - [?] 13.11 Run emulator/device install and launch validation; Pixel install previously failed due obsolete SDK metadata, and rebuilt APK now declares min SDK 23 / target SDK 35, but final device validation still needs user-side retry or permitted `adb`.
   - [x] 13.12 Confirm no files under `third_party/salvagecore` are staged.
   - [x] 13.13 Review final diff and staged payload.
   - [?] 13.14 Check pending downtime reports before final summary.
@@ -162,7 +162,7 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
 
 ## Open Follow-Up
 
-- Complete install/launch validation with a physical Android device or emulator where `adb devices`, `adb install`, `adb shell am start`, and `adb logcat` are permitted.
+- Retry install on Pixel or complete install/launch validation with a physical Android device or emulator where `adb devices`, `adb install`, `adb shell am start`, and `adb logcat` are permitted.
 - Verify the HUD renders on Android and that tab touch/click input works.
 - Verify Android app-scoped runtime root and `last_run.log` creation after launch.
 - Decide whether direct `gomobile build` is sufficient for release hardening or whether a host-owned wrapper/AAR project is needed for SDK metadata, signing, icons, permissions, and store packaging.
