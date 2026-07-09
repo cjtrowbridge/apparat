@@ -1127,7 +1127,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Define orientation behavior: landscape for the controller-first HUD.
   - [x] Define debug signing behavior: direct `gomobile build` emits a debug APK.
   - [ ] Define release signing, store packaging, and automated version generation in a later release-hardening phase.
-  - [ ] Define explicit min/target SDK control later if direct `gomobile build` remains insufficient; current package inspection shows gomobile default `minSdkVersion='16'` despite compiling with `-androidapi 35`.
+  - [x] Define explicit SDK metadata through the patched helper: `minSdkVersion=23`, `targetSdkVersion=35`, and platform build version `35`.
 - [x] Add Android permissions and platform behavior.
   - [x] Request `android.permission.INTERNET` for HTTPS over external WireGuard/local network.
   - [x] Avoid broad storage permissions; runtime data remains app-scoped by default.

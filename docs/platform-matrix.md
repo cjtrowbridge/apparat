@@ -38,12 +38,13 @@ Current evidence:
 - Permission: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks.
 - Activity: `org.golang.app.GoNativeActivity` with landscape orientation.
 - Toolchain: JDK 21, Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
+- SDK metadata: `minSdkVersion=23`, `targetSdkVersion=35`, and `platformBuildVersionCode=35`.
 
 Known caveats:
 
 - The APK has been built and inspected with Android build-tools, but install/launch validation is still pending because `adb` daemon startup was blocked by the current sandbox/approval environment.
 - The Android GUI has not yet been observed on a physical device or emulator in this checkpoint.
 - `last_run.log` creation inside Android app-scoped storage still needs device/emulator launch evidence.
-- `gomobile` emits its default `minSdkVersion` metadata; explicit min/target SDK control is deferred to a future wrapper, signing, or release-hardening phase if direct `gomobile build` remains insufficient.
+- Direct `gomobile build` still needs future release-hardening review for signing, icons, store packaging, and whether a wrapper/AAR project is needed long-term.
 - Android `apparatd` is intentionally unsupported; headless Android work requires a later Termux/service-worker strategy.
 - App-managed WireGuard/VPN-service, microphone capture, broad storage, background execution, release signing, store packaging, and additional Android ABIs are future work.

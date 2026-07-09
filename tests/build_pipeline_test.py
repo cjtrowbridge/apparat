@@ -50,6 +50,11 @@ class BuildPipelineTest(unittest.TestCase):
         command = build.desktop_build_command("go", "apparatd", build.artifact_path("linux", "amd64", "apparatd"))
         self.assertNotIn("-tags", command)
 
+
+    def test_android_sdk_metadata_constants_are_modern(self):
+        self.assertEqual(build.ANDROID_MIN_API, "23")
+        self.assertEqual(build.ANDROID_API, "35")
+
     def test_android_build_uses_gomobile_and_gui_tag(self):
         command = build.android_build_command(Path("gomobile"), "arm64", build.artifact_path("android", "arm64", "apparat"))
         self.assertEqual(command[:2], ["gomobile", "build"])
