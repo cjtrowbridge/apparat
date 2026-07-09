@@ -24,7 +24,7 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 
 ## Execution Status
 
-Phase 5 is partially executed: the APK build pipeline, preflight, artifact generation, package inspection, documentation, and unit tests are implemented. Device/emulator install and launch validation is blocked because `adb` daemon startup was rejected by the current sandbox/approval environment.
+Phase 5 is partially executed: the APK build pipeline, preflight, artifact generation, package inspection, documentation, unit tests, Pixel install, process-liveness validation, app-private Android runtime storage, and Android `last_run.log` creation are implemented. The original Phase 5 goal is not complete because the previous Android-only `mobile.SetGame` runner installed and stayed alive but displayed only the Android splash/default icon rather than the Phase 4 HUD. The current candidate fix restores the shared `ebiten.RunGame` adapter for Android and rebuilds the APK with portrait phone orientation. Remaining completion requires on-device visual validation that the HUD renders and tabs are touch-clickable like Debian.
 
 ## Implementation Checklist
 
@@ -38,11 +38,13 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
 
 - [x] 2. Decide the durable Android build shape.
   - [x] 2.1 Attempt the shortest direct Ebitengine/gomobile path.
-  - [x] 2.2 Confirm direct `gomobile build` can emit an installable-looking APK artifact for `cmd/apparat`.
+  - [x] 2.2 Confirm direct `gomobile build` can emit an installable APK artifact for `cmd/apparat`.
   - [x] 2.3 Document why `golang/mobile` is not admitted as a source checkout.
-  - [x] 2.4 Defer wrapper/AAR work until direct gomobile lacks required lifecycle, manifest, signing, SDK, or release behavior.
+  - [x] 2.4 Confirm the Android-only `mobile.SetGame` path lacks required Android GUI lifecycle/render-surface behavior because Pixel startup remains on the Android splash/default icon.
   - [x] 2.5 Avoid new third-party source admission in this checkpoint.
   - [x] 2.6 Record the decision in `README.md`, `ROADMAP.md`, `scripts/README.md`, `cmd/apparat/README.md`, and `docs/platform-matrix.md`.
+  - [x] 2.7 Restore the shared `ebiten.RunGame` adapter as the smaller candidate lifecycle/render-surface fix.
+  - [ ] 2.8 Promote the Apparat-owned wrapper/AAR path from deferred option to required Phase 5 work only if the shared-runner APK still fails visual HUD validation.
 
 - [x] 3. Define Android toolchain prerequisites.
   - [x] 3.1 Select JDK 21.
@@ -96,12 +98,13 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 8.1 Define package name `com.cjtrowbridge.apparat`.
   - [x] 8.2 Define app label `Apparat` and launcher activity metadata.
   - [x] 8.3 Define current version name/code as `0.1.0` and `1`.
-  - [x] 8.4 Patch gomobile metadata synthesis to emit `minSdkVersion=23`, `targetSdkVersion=35`, and platform build version `35`.
-  - [x] 8.5 Define landscape orientation for the controller-first HUD.
+  - [x] 8.4 Patch gomobile metadata synthesis to emit `minSdkVersion=23`, `targetSdkVersion=30`, and platform build version `35`.
+  - [x] 8.5 Change Android phone default orientation to portrait; treat landscape/tablet/controller behavior as a separate validated mode.
   - [x] 8.6 Add network permission for HTTPS over external WireGuard/local network.
   - [x] 8.7 Defer microphone permission until voice capture is enabled and tested.
   - [x] 8.8 Avoid broad storage permissions.
   - [x] 8.9 Defer Android VPN-service permission and app-managed WireGuard.
+  - [x] 8.10 Add modern Pixel package/startup gates discovered during device testing: target SDK compatibility, v2/v3 signing, 16 KB native page alignment, and app-private runtime storage.
 
 - [?] 9. Adapt Android runtime behavior.
   - [x] 9.1 Reuse the existing runtime startup path in the Android GUI entrypoint.
@@ -113,15 +116,19 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
 
 - [?] 10. Validate Android GUI behavior.
   - [x] 10.1 Build the debug APK locally.
-  - [?] 10.2 Install the APK on an emulator or physical Android device with `adb`; blocked by sandbox/approval restrictions on `adb` daemon startup.
-  - [?] 10.3 Launch the app and verify Ebitengine activity startup.
-  - [?] 10.4 Verify the seven-tab Phase 4 HUD renders on Android.
+  - [x] 10.2 Install the APK on a physical Pixel device with `adb`.
+  - [x] 10.3 Launch the app and verify the Android process remains alive after startup.
+  - [?] 10.4 Verify the seven-tab Phase 4 HUD renders on Android; current evidence shows only the Android splash/default icon.
   - [?] 10.5 Verify touch/click tab selection on Android.
   - [?] 10.6 Verify keyboard/controller navigation where device support exists.
-  - [?] 10.7 Verify runtime directory creation on Android.
-  - [?] 10.8 Verify fresh `last_run.log` after Android launch.
-  - [?] 10.9 Capture `adb logcat` evidence for startup and failures.
+  - [x] 10.7 Verify runtime directory creation on Android.
+  - [x] 10.8 Verify fresh `last_run.log` after Android launch.
+  - [x] 10.9 Capture `adb logcat` and `last_run.log` evidence for startup and failures.
   - [x] 10.10 Record exact build host, toolchain, ABI, package metadata, and validation blocker.
+  - [x] 10.11 Record the Pixel install fixes required to reach app startup: modern SDK metadata, target SDK 30 compatibility workaround, debug APK signing, 16 KB page alignment, and app-private runtime root.
+  - [ ] 10.12 Verify Android opens to the Apparat HUD instead of remaining on the Android splash/default icon.
+  - [ ] 10.13 Verify portrait startup on a Pixel-class phone.
+  - [ ] 10.14 Capture visual evidence of the Android HUD matching the Debian HUD at the current Phase 4 feature level.
 
 - [x] 11. Add tests.
   - [x] 11.1 Unit-test Android APK artifact path selection.
@@ -143,26 +150,44 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 12.7 Append the checkpoint to the journal.
   - [x] 12.8 Regenerate plan indexes.
 
-- [?] 13. Verify and complete.
-  - [x] 13.1 Run `make fmt` equivalent through local Go path.
-  - [x] 13.2 Run `make test` equivalent through local Go path.
-  - [x] 13.3 Run `make test-build`.
-  - [x] 13.4 Run `make check-docs`.
-  - [x] 13.5 Run `make check-code-size`.
-  - [x] 13.6 Run Android preflight.
-  - [x] 13.7 Run Android build.
-  - [x] 13.8 Confirm `releases/android/arm64/apparat/latest.apk` exists and is tracked by Git.
-  - [x] 13.9 Confirm Android `apparatd` fails clearly.
-  - [?] 13.10 Temporarily hide or move `third_party/salvagecore` and rerun Android build; not performed because the script/test path already proves no reference and moving local reference material is a separate destructive checkpoint.
-  - [?] 13.11 Run emulator/device install and launch validation; Pixel install previously failed due obsolete SDK metadata, and rebuilt APK now declares min SDK 23 / target SDK 35, but final device validation still needs user-side retry or permitted `adb`.
-  - [x] 13.12 Confirm no files under `third_party/salvagecore` are staged.
-  - [x] 13.13 Review final diff and staged payload.
-  - [?] 13.14 Check pending downtime reports before final summary.
-  - [?] 13.15 Commit and push after approval.
+- [ ] 13. Implement Android GUI parity.
+  - [x] 13.1 Decide the minimal Apparat-owned Android integration path: restore the shared `ebiten.RunGame` adapter first, with wrapper/AAR as fallback if visual validation fails.
+  - [-] 13.2 Add or update tracked Android wrapper sources/configuration so durable Android behavior lives outside `third_party/salvagecore`; closed for this checkpoint because the smaller shared-runner fix does not add wrapper sources.
+  - [ ] 13.3 Preserve the existing package metadata, SDK metadata, signing, native page-alignment, ABI, and release-artifact path gates.
+  - [ ] 13.4 Ensure Android startup enters the same `internal/app` runtime path used by the Debian GUI.
+  - [?] 13.5 Attach the actual Ebitengine render surface so the Apparat HUD is visible after launch; implemented through shared `ebiten.RunGame`, awaiting on-device visual validation.
+  - [ ] 13.6 Keep the seven canonical tabs, tab order, clickable tab behavior, disabled placeholders, runtime diagnostics, and Settings content aligned with Debian.
+  - [ ] 13.7 Add Android safe-area/status-bar/navigation-bar layout handling.
+  - [ ] 13.8 Add Android scale/density handling so tab buttons and body text remain readable on Pixel-class screens.
+  - [x] 13.9 Default Android phone launch to portrait mode and document landscape/controller behavior as a future or optional mode.
+  - [-] 13.10 Update `scripts/build.py`, Makefile targets, tests, and documentation to build the final wrapper/AAR-based APK if that path is selected; closed unless shared-runner validation fails.
+  - [ ] 13.11 Verify the rebuilt APK installs, launches, renders the HUD, supports touch tab selection, writes `last_run.log`, and stays alive on the Pixel.
+  - [ ] 13.12 Prove the final Android GUI path does not reference `third_party/salvagecore`.
+
+- [?] 14. Verify and complete.
+  - [x] 14.1 Run `make fmt` equivalent through local Go path.
+  - [x] 14.2 Run `make test` equivalent through local Go path.
+  - [x] 14.3 Run `make test-build`.
+  - [x] 14.4 Run `make check-docs`.
+  - [x] 14.5 Run `make check-code-size`.
+  - [x] 14.6 Run Android preflight.
+  - [x] 14.7 Run Android build.
+  - [x] 14.8 Confirm `releases/android/arm64/apparat/latest.apk` exists and is tracked by Git.
+  - [x] 14.9 Confirm Android `apparatd` fails clearly.
+  - [?] 14.10 Temporarily hide or move `third_party/salvagecore` and rerun Android build; not performed because the script/test path already proves no reference and moving local reference material is a separate destructive checkpoint.
+  - [x] 14.11 Run Pixel install and launch validation with ADB; install succeeds, app process remains alive, and app-private `last_run.log` is created.
+  - [ ] 14.12 Run Pixel visual validation after Android GUI parity work; the HUD must render instead of the Android splash/default icon.
+  - [ ] 14.13 Validate Android phone portrait startup.
+  - [ ] 14.14 Validate Android touch/click tab selection.
+  - [x] 14.15 Confirm no files under `third_party/salvagecore` are staged.
+  - [x] 14.16 Review final diff and staged payload.
+  - [?] 14.17 Check pending downtime reports before final summary.
+  - [?] 14.18 Commit and push after approval.
 
 ## Open Follow-Up
 
-- Retry install on Pixel or complete install/launch validation with a physical Android device or emulator where `adb devices`, `adb install`, `adb shell am start`, and `adb logcat` are permitted.
-- Verify the HUD renders on Android and that tab touch/click input works.
-- Verify Android app-scoped runtime root and `last_run.log` creation after launch.
-- Decide whether direct `gomobile build` is sufficient for release hardening or whether a host-owned wrapper/AAR project is needed for SDK metadata, signing, icons, permissions, and store packaging.
+- Direct `gomobile build` remains the APK path while the shared `ebiten.RunGame` candidate fix awaits visual validation.
+- Add an Apparat-owned Android GUI wrapper/AAR path only if the shared-runner APK still fails to open to the same Phase 4 HUD as Debian.
+- Android phone startup now defaults to portrait mode while preserving future landscape/tablet/controller support.
+- Visually confirm the Android HUD renders and touch/click tabs work on the Pixel screen.
+- Preserve the already discovered Pixel gates: target SDK compatibility workaround, v2/v3 signing, 16 KB page alignment, app-private runtime storage, process liveness, and fresh `last_run.log`.

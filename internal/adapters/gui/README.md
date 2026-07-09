@@ -31,3 +31,7 @@ make run-built
 ```
 
 Linux GUI builds require native desktop development headers used by Ebitengine/GLFW, including X11, cursor, randr, xinerama, xi, OpenGL, xxf86vm, and ALSA development packages. If those are missing, record the exact missing package/header and do not mark GUI validation complete.
+
+## Android Mobile Runner
+
+Android GUI builds use the same `ebiten.RunGame(NewGame())` adapter as Debian. Ebitengine selects its mobile UI backend under `GOOS=android`, while `GoNativeActivity` owns the Android activity lifecycle. A previous `mobile.SetGame` runner initialized Apparat runtime state but left Pixel devices on the Android splash/default icon, so the shared run loop is the current Phase 5 rendering fix.

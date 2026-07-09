@@ -120,6 +120,12 @@ func EnsureDirectories(cfg Config) error {
 }
 
 func defaultRootDir(env map[string]string) string {
+	if runtime.GOOS == "android" {
+		if value := env["APPARAT_ANDROID_FILES_DIR"]; value != "" {
+			return filepath.Join(value, "apparat")
+		}
+		return filepath.Join("/data/data/com.cjtrowbridge.apparat/files", "apparat")
+	}
 	if value := env["XDG_DATA_HOME"]; value != "" {
 		return filepath.Join(value, "apparat")
 	}

@@ -20,9 +20,9 @@ releases/android/arm64/apparat/latest.apk
 
 Android packaging files in this directory:
 
-- `AndroidManifest.xml`: owns the package ID `com.cjtrowbridge.apparat`, app label `Apparat`, launcher `GoNativeActivity`, landscape orientation, debug metadata, and `INTERNET` permission for HTTPS over external WireGuard/local networks.
+- `AndroidManifest.xml`: owns the package ID `com.cjtrowbridge.apparat`, app label `Apparat`, launcher `GoNativeActivity`, portrait phone orientation, debug metadata, and `INTERNET` permission for HTTPS over external WireGuard/local networks.
 - `gomobile_app.go`: is Android-only and references `github.com/ebitengine/gomobile/app` so the Ebitengine gomobile builder recognizes the package as a mobile app.
 
-Android broad storage, microphone, VPN-service, and app-managed WireGuard permissions are intentionally absent until those behaviors are implemented and validated. The build helper patches gomobile so the APK declares `minSdkVersion=23` and `targetSdkVersion=35`; release signing and store packaging are future work.
+Android broad storage, microphone, VPN-service, and app-managed WireGuard permissions are intentionally absent until those behaviors are implemented and validated. The build helper patches gomobile so the APK declares `minSdkVersion=23` and `targetSdkVersion=30`, preserves modern manifest attributes, signs with a generated debug keystore, and links the native library with 16 KB page alignment; release signing and store packaging are future work.
 
 On Linux, normal GUI builds require Ebitengine native desktop dependencies such as X11, cursor, randr, xinerama, xi, OpenGL, xxf86vm, and ALSA development headers.
