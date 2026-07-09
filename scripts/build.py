@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 """Build Apparat artifacts into canonical local release paths.
-
 Canonical invocation from the repository root:
-
     python3 scripts/build.py
-
 The default desktop build produces both `apparat` and `apparatd`. Android
 builds are GUI-only and produce `releases/android/arm64/apparat/latest.apk`.
 """
-
 from __future__ import annotations
-
 import argparse
 import os
 import platform
@@ -20,20 +15,19 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-
 ROOT = Path(__file__).resolve().parents[1]
 ANDROID_API = "35"
 ANDROID_MIN_API = "23"
+ANDROID_TARGET_API = "30"
+ANDROID_PAGE_SIZE = "0x4000"
 ANDROID_BUILD_TOOLS = "35.0.0"
 ANDROID_NDK = "27.2.12479018"
 GOMOBILE_VERSION = "v0.0.0-20250923094054-ea854a63cce1"
 PATCHED_GOMOBILE = ROOT / ".tools" / "bin" / "gomobile-apparat"
-
 @dataclass(frozen=True)
 class Target:
     package: str
     tags: tuple[str, ...] = ()
-
 @dataclass(frozen=True)
 class AndroidToolchain:
     sdk_root: Path
@@ -42,18 +36,16 @@ class AndroidToolchain:
     java: Path
     gomobile: Path
     adb: Path | None
-
 TARGETS = {
     "apparat": Target("./cmd/apparat", ("gui",)),
     "apparatd": Target("./cmd/apparatd"),
 }
 ALL_TARGETS = tuple(TARGETS)
 ANDROID_ARCHES = {"arm64": "android/arm64"}
+ANDROID_NATIVE_CODES = {"arm64": "arm64-v8a"}
 ANDROID_HEADLESS_HELP = "Android Phase 5 builds only the GUI `apparat` APK; use Linux/Termux for headless `apparatd`."
-
 class BuildError(RuntimeError):
     """A build-time configuration error with user-facing guidance."""
-
 def host_goos() -> str:
     system = platform.system().lower()
     if system == "darwin":
@@ -63,7 +55,6 @@ def host_goos() -> str:
     if system == "windows" or system.startswith(("msys", "cygwin")):
         return "windows"
     raise ValueError(f"unsupported host OS: {platform.system()}")
-
 def host_goarch() -> str:
     machine = platform.machine().lower()
     aliases = {
@@ -79,20 +70,17 @@ def host_goarch() -> str:
     if machine not in aliases:
         raise ValueError(f"unsupported host architecture: {platform.machine()}")
     return aliases[machine]
-
 def artifact_path(goos: str, goarch: str, target: str) -> Path:
     if goos == "android":
         return ROOT / "releases" / "android" / goarch / target / "latest.apk"
     suffix = ".exe" if goos == "windows" else ""
     return ROOT / "releases" / goos / goarch / target / f"latest{suffix}"
-
 def selected_targets(target: str, goos: str | None = None) -> tuple[str, ...]:
     if target == "all" and goos == "android":
         return ("apparat",)
     if target == "all":
         return ALL_TARGETS
     return (target,)
-
 def validate_target(goos: str, goarch: str, target: str) -> None:
     if goos != "android":
         return
@@ -100,7 +88,6 @@ def validate_target(goos: str, goarch: str, target: str) -> None:
         raise BuildError(f"unsupported Android arch {goarch!r}; supported: {', '.join(sorted(ANDROID_ARCHES))}")
     if target != "apparat":
         raise BuildError(ANDROID_HEADLESS_HELP)
-
 def desktop_build_command(go: str, target: str, output: Path) -> list[str]:
     spec = TARGETS[target]
     command = [go, "build", "-trimpath"]
@@ -108,7 +95,6 @@ def desktop_build_command(go: str, target: str, output: Path) -> list[str]:
         command.extend(["-tags", ",".join(spec.tags)])
     command.extend(["-o", str(output), spec.package])
     return command
-
 def android_build_command(gomobile: Path, goarch: str, output: Path) -> list[str]:
     return [
         str(gomobile),
@@ -121,19 +107,24 @@ def android_build_command(gomobile: Path, goarch: str, output: Path) -> list[str
         str(output),
         "-tags",
         "gui",
+        "-ldflags",
+        f"-extldflags=-Wl,-z,max-page-size={ANDROID_PAGE_SIZE}",
         TARGETS["apparat"].package,
     ]
-
+def android_badging_expectations(goarch: str) -> tuple[str, ...]:
+    return (
+        f"minSdkVersion:'{ANDROID_MIN_API}'",
+        f"targetSdkVersion:'{ANDROID_TARGET_API}'",
+        f"native-code: '{ANDROID_NATIVE_CODES[goarch]}'",
+    )
 def default_sdk_root() -> Path:
     env = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     return Path(env).expanduser() if env else ROOT / ".tools" / "android"
-
 def default_java_home() -> Path | None:
     if os.environ.get("JAVA_HOME"):
         return Path(os.environ["JAVA_HOME"]).expanduser()
     local = ROOT / ".tools" / "jdks" / "openjdk-21" / "usr" / "lib" / "jvm" / "java-21-openjdk-amd64"
     return local if local.exists() else None
-
 def find_executable(name: str, extra_dirs: list[Path] | None = None) -> Path | None:
     for directory in extra_dirs or []:
         candidate = directory / name
@@ -141,7 +132,6 @@ def find_executable(name: str, extra_dirs: list[Path] | None = None) -> Path | N
             return candidate
     found = shutil.which(name)
     return Path(found) if found else None
-
 def android_tool_env(toolchain: AndroidToolchain) -> dict[str, str]:
     env = os.environ.copy()
     path_parts = [
@@ -158,11 +148,9 @@ def android_tool_env(toolchain: AndroidToolchain) -> dict[str, str]:
     env["ANDROID_NDK_HOME"] = str(toolchain.ndk_root)
     env["PATH"] = os.pathsep.join([str(path) for path in path_parts] + [env.get("PATH", "")])
     return env
-
 def check_path(path: Path, label: str, failures: list[str]) -> None:
     if not path.exists():
         failures.append(f"missing {label}: {path}")
-
 def resolve_android_toolchain(go: str) -> tuple[AndroidToolchain | None, list[str], list[str]]:
     failures: list[str] = []
     warnings: list[str] = []
@@ -171,34 +159,28 @@ def resolve_android_toolchain(go: str) -> tuple[AndroidToolchain | None, list[st
     java_home = default_java_home()
     java_dirs = [java_home / "bin"] if java_home else []
     java = find_executable("java", java_dirs)
-
     check_path(sdk_root / "cmdline-tools" / "latest" / "bin" / executable("sdkmanager"), "Android SDK command-line tools", failures)
     check_path(sdk_root / "platforms" / f"android-{ANDROID_API}", f"Android platform android-{ANDROID_API}", failures)
     check_path(sdk_root / "build-tools" / ANDROID_BUILD_TOOLS / executable("aapt2"), f"Android build-tools {ANDROID_BUILD_TOOLS}", failures)
+    check_path(sdk_root / "build-tools" / ANDROID_BUILD_TOOLS / executable("apksigner"), f"Android apksigner {ANDROID_BUILD_TOOLS}", failures)
+    check_path(sdk_root / "build-tools" / ANDROID_BUILD_TOOLS / executable("zipalign"), f"Android zipalign {ANDROID_BUILD_TOOLS}", failures)
     check_path(ndk_root, f"Android NDK {ANDROID_NDK}", failures)
     if not java:
         failures.append("missing Java runtime; set JAVA_HOME to JDK 21 or install Java on PATH")
-
     if platform.system().lower() != "linux":
         warnings.append("Android build host is unvalidated on this OS; Linux is the first evidence-producing host")
-
     adb = find_executable("adb", [sdk_root / "platform-tools"])
     if not adb:
         warnings.append("adb not found; APK build can run, but install/launch validation will be skipped")
-
     gomobile = ensure_patched_gomobile(go, failures)
     if failures or not java or not gomobile:
         return None, failures, warnings
     return AndroidToolchain(sdk_root, ndk_root, java_home, java, gomobile, adb), failures, warnings
-
 def executable(name: str) -> str:
     return f"{name}.exe" if host_goos() == "windows" else name
-
 def module_cache_dir(go: str) -> Path:
     result = subprocess.run([go, "env", "GOMODCACHE"], cwd=ROOT, check=True, capture_output=True, text=True)
     return Path(result.stdout.strip())
-
-
 def ensure_patched_gomobile(go: str, failures: list[str]) -> Path | None:
     env_tool = os.environ.get("GOMOBILE")
     if env_tool:
@@ -218,8 +200,6 @@ def ensure_patched_gomobile(go: str, failures: list[str]) -> Path | None:
         failures.append(f"failed to prepare patched Ebitengine gomobile tool: {error}")
         return None
     return PATCHED_GOMOBILE
-
-
 def build_patched_gomobile(go: str, source: Path) -> None:
     temp = ROOT / ".tmp" / "gomobile-apparat-src"
     if temp.exists():
@@ -233,6 +213,7 @@ def build_patched_gomobile(go: str, source: Path) -> None:
     })
     patch_file(temp / "internal" / "binres" / "sdk.go", {
         "const MinSDK = 16": f"const MinSDK = {ANDROID_MIN_API}",
+        "sdkpath.AndroidAPIPath(MinSDK)": f"sdkpath.AndroidAPIPath({ANDROID_API})",
     })
     patch_file(temp / "internal" / "binres" / "binres.go", {
         'Local: "platformBuildVersionCode",\n\t\t\t\t\t\t},\n\t\t\t\t\t\tValue: "16",':
@@ -240,12 +221,10 @@ def build_patched_gomobile(go: str, source: Path) -> None:
         'Local: "platformBuildVersionName",\n\t\t\t\t\t\t},\n\t\t\t\t\t\tValue: "4.1.2-1425332",':
         f'Local: "platformBuildVersionName",\n\t\t\t\t\t\t}},\n\t\t\t\t\t\tValue: "{ANDROID_API}",',
         'Local: "minSdkVersion",\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\tValue: fmt.Sprintf("%v", MinSDK),\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},':
-        f'Local: "minSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: fmt.Sprintf("%v", MinSDK),\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\txml.Attr{{\n\t\t\t\t\t\t\t\tName: xml.Name{{\n\t\t\t\t\t\t\t\t\tSpace: androidSchema,\n\t\t\t\t\t\t\t\t\tLocal: "targetSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: "{ANDROID_API}",\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t}},',
+        f'Local: "minSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: fmt.Sprintf("%v", MinSDK),\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\txml.Attr{{\n\t\t\t\t\t\t\t\tName: xml.Name{{\n\t\t\t\t\t\t\t\t\tSpace: androidSchema,\n\t\t\t\t\t\t\t\t\tLocal: "targetSdkVersion",\n\t\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t\t\tValue: "{ANDROID_TARGET_API}",\n\t\t\t\t\t\t\t}},\n\t\t\t\t\t\t}},',
     })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE), "./cmd/gomobile"], cwd=temp, check=True)
-
-
 def patch_file(path: Path, replacements: dict[str, str]) -> None:
     text = path.read_text(encoding="utf-8")
     for old, new in replacements.items():
@@ -253,8 +232,6 @@ def patch_file(path: Path, replacements: dict[str, str]) -> None:
             raise RuntimeError(f"expected patch target not found in {path}")
         text = text.replace(old, new)
     path.write_text(text, encoding="utf-8")
-
-
 def make_writable(path: Path) -> None:
     path.chmod(path.stat().st_mode | stat.S_IWUSR)
     for item in path.rglob("*"):
@@ -262,8 +239,6 @@ def make_writable(path: Path) -> None:
             item.chmod(item.stat().st_mode | stat.S_IWUSR)
         except OSError:
             pass
-
-
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Build Apparat GUI/headless binaries and Android GUI APKs into canonical release paths.",
@@ -288,34 +263,26 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--print-path", action="store_true", help="print the expected artifact path without building")
     parser.add_argument("--check-android-env", action="store_true", help="check Android APK prerequisites without building")
     return parser.parse_args(argv)
-
-
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     goos = args.goos or host_goos()
     goarch = args.goarch or host_goarch()
     targets = selected_targets(args.target, goos)
-
     try:
         for target in targets:
             validate_target(goos, goarch, target)
     except BuildError as error:
         print(error, file=sys.stderr)
         return 2
-
     if args.print_path:
         for target in targets:
             print(artifact_path(goos, goarch, target))
         return 0
-
     if args.check_android_env:
         return check_android_env(args.go)
-
     if goos == "android":
         return build_android(args.go, goarch)
     return build_desktop(args.go, goos, goarch, targets)
-
-
 def check_android_env(go: str) -> int:
     toolchain, failures, warnings = resolve_android_toolchain(go)
     for warning in warnings:
@@ -331,8 +298,6 @@ def check_android_env(go: str) -> int:
     print(f"gomobile: {toolchain.gomobile}")
     print(f"adb: {toolchain.adb or 'not found; install/launch validation unavailable'}")
     return 0
-
-
 def build_android(go: str, goarch: str) -> int:
     toolchain, failures, warnings = resolve_android_toolchain(go)
     for warning in warnings:
@@ -352,10 +317,54 @@ def build_android(go: str, goarch: str) -> int:
         print(f"Android APK build failed exit={error.returncode}", file=sys.stderr)
         print("Run `python3 scripts/build.py --check-android-env` for prerequisite details.", file=sys.stderr)
         return error.returncode
+    try:
+        sign_android_apk(toolchain, output)
+        validate_android_apk(toolchain, output, goarch)
+    except BuildError as error:
+        print(error, file=sys.stderr)
+        return 1
     print(output)
     return 0
-
-
+def validate_android_apk(toolchain: AndroidToolchain, output: Path, goarch: str) -> None:
+    aapt2 = toolchain.sdk_root / "build-tools" / ANDROID_BUILD_TOOLS / executable("aapt2")
+    result = subprocess.run([str(aapt2), "dump", "badging", str(output)], check=True, capture_output=True, text=True)
+    missing = [value for value in android_badging_expectations(goarch) if value not in result.stdout]
+    if missing:
+        raise BuildError(f"Android APK metadata validation failed; missing: {', '.join(missing)}")
+    apksigner = toolchain.sdk_root / "build-tools" / ANDROID_BUILD_TOOLS / executable("apksigner")
+    subprocess.run([str(apksigner), "verify", "--verbose", str(output)], check=True, capture_output=True, text=True)
+def sign_android_apk(toolchain: AndroidToolchain, output: Path) -> None:
+    build_tools = toolchain.sdk_root / "build-tools" / ANDROID_BUILD_TOOLS
+    keystore = ROOT / ".tools" / "android" / "debug.keystore"
+    unsigned = output.with_suffix(".unsigned.apk")
+    aligned = output.with_suffix(".aligned.apk")
+    ensure_debug_keystore(toolchain, keystore)
+    if unsigned.exists():
+        unsigned.unlink()
+    if aligned.exists():
+        aligned.unlink()
+    output.replace(unsigned)
+    subprocess.run([str(build_tools / executable("zipalign")), "-p", "-f", "4", str(unsigned), str(aligned)], check=True)
+    subprocess.run([
+        str(build_tools / executable("apksigner")), "sign", "--ks", str(keystore),
+        "--ks-pass", "pass:android", "--key-pass", "pass:android", "--out", str(output), str(aligned),
+    ], check=True)
+    output.with_name(output.name + ".idsig").unlink(missing_ok=True)
+    unsigned.unlink(missing_ok=True)
+    aligned.unlink(missing_ok=True)
+def ensure_debug_keystore(toolchain: AndroidToolchain, keystore: Path) -> None:
+    if keystore.exists():
+        return
+    keytool = find_executable("keytool", [toolchain.java_home / "bin"] if toolchain.java_home else [])
+    if not keytool:
+        raise BuildError("missing JDK keytool for Android debug keystore generation")
+    keystore.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run([
+        str(keytool), "-genkeypair", "-v", "-keystore", str(keystore),
+        "-storepass", "android", "-keypass", "android", "-alias", "apparat-debug",
+        "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000",
+        "-dname", "CN=Apparat Debug,O=Apparat,C=US",
+    ], check=True)
 def build_desktop(go: str, goos: str, goarch: str, targets: tuple[str, ...]) -> int:
     env = os.environ.copy()
     env["GOOS"] = goos
@@ -372,8 +381,6 @@ def build_desktop(go: str, goos: str, goarch: str, targets: tuple[str, ...]) -> 
             return error.returncode
         print(output)
     return 0
-
-
 def print_build_failure_help(target: str, error: subprocess.CalledProcessError) -> None:
     print(f"build failed for target={target} exit={error.returncode}", file=sys.stderr)
     if target == "apparat":
@@ -386,7 +393,5 @@ def print_build_failure_help(target: str, error: subprocess.CalledProcessError) 
             file=sys.stderr,
         )
     print("For usage details run: python3 scripts/build.py --help", file=sys.stderr)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

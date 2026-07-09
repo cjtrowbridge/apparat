@@ -65,13 +65,14 @@ Android prerequisites:
 - Android NDK `27.2.12479018`, discovered through `ANDROID_NDK_HOME` or the SDK `ndk/27.2.12479018` directory.
 - Ebitengine `github.com/ebitengine/gomobile v0.0.0-20250923094054-ea854a63cce1` in the Go module cache.
 
-`scripts/build.py --check-android-env` checks those prerequisites and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner and synthesizes `minSdkVersion=23` plus `targetSdkVersion=35` so modern Android devices do not reject the APK as targeting an obsolete Android version. It does not fork application source.
+`scripts/build.py --check-android-env` checks those prerequisites and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35 so modern Android devices do not reject the APK as targeting an obsolete Android version or as malformed under Android S+ package parsing. The pipeline then zipaligns/signs the APK with a generated debug keystore and links the native library with 16 KB page alignment for current Pixel devices. It does not fork application source.
 
 Android build side effects:
 
 - Creates or updates `.tools/bin/gomobile-apparat` when the helper is missing.
 - Uses `.tmp/gomobile-apparat-src` as disposable patched-tool source.
 - Writes the APK to `releases/android/arm64/apparat/latest.apk`.
+- Removes temporary unsigned/aligned APKs and optional signing sidecars after the final signed APK is verified.
 - Does not read from or reference `third_party/salvagecore`.
 
 ## Verification Scripts

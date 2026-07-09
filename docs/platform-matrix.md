@@ -36,15 +36,16 @@ Current evidence:
 - App label: `Apparat`.
 - Native ABI: `arm64-v8a`.
 - Permission: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks.
-- Activity: `org.golang.app.GoNativeActivity` with landscape orientation.
+- Activity: `org.golang.app.GoNativeActivity` with portrait phone orientation.
 - Toolchain: JDK 21, Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
-- SDK metadata: `minSdkVersion=23`, `targetSdkVersion=35`, and `platformBuildVersionCode=35`.
+- SDK metadata: `minSdkVersion=23`, `targetSdkVersion=30`, and `platformBuildVersionCode=35`.
+- Signing: debug keystore generated under ignored `.tools/android/debug.keystore`; APK verifies with v1, v2, and v3 signature schemes.
+- Native page alignment: `lib/arm64-v8a/libapparat.so` LOAD segments align to `0x4000` for 16 KB page-size devices.
+- Device validation: installed successfully on connected Pixel device `58051FDCQ002T9`, Android release `16`, SDK `36`; process remained alive after launch and wrote `last_run.log` under app-private storage.
 
 Known caveats:
 
-- The APK has been built and inspected with Android build-tools, but install/launch validation is still pending because `adb` daemon startup was blocked by the current sandbox/approval environment.
-- The Android GUI has not yet been observed on a physical device or emulator in this checkpoint.
-- `last_run.log` creation inside Android app-scoped storage still needs device/emulator launch evidence.
-- Direct `gomobile build` still needs future release-hardening review for signing, icons, store packaging, and whether a wrapper/AAR project is needed long-term.
+- Visual confirmation of the Android HUD after the shared `ebiten.RunGame` runner fix is still pending; previous ADB evidence confirmed install, process start, runtime initialization, SQLite migration, and `last_run.log` creation while the earlier `mobile.SetGame` runner remained on the Android splash/default icon.
+- Direct `gomobile build` still needs future release-hardening review for signing, icons, store packaging, and whether a wrapper/AAR project is needed long-term. A wrapper/AAR remains the fallback if the shared-runner APK still fails visual HUD validation.
 - Android `apparatd` is intentionally unsupported; headless Android work requires a later Termux/service-worker strategy.
 - App-managed WireGuard/VPN-service, microphone capture, broad storage, background execution, release signing, store packaging, and additional Android ABIs are future work.
