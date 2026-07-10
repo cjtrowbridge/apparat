@@ -24,7 +24,17 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 
 ## Execution Status
 
-Phase 5 is partially executed: the APK build pipeline, preflight, artifact generation, package inspection, documentation, unit tests, Pixel install, process-liveness validation, app-private Android runtime storage, and Android `last_run.log` creation are implemented. Direct `GoNativeActivity` paths initialized runtime state but stayed on the Android splash/default icon or failed with `internal/ui: Run is not implemented for GOOS=android`. The current APK uses tracked Apparat wrapper sources plus Ebitengine generated mobile view classes. Remaining completion requires on-device visual validation that the wrapper HUD renders and tabs are touch-clickable like Debian.
+Phase 5 is partially executed: the APK build pipeline, preflight, artifact generation, package inspection, documentation, unit tests, Pixel install, process-liveness validation, app-private Android runtime storage, Android `last_run.log` creation, wrapper HUD rendering, full-screen Android view sizing, touch tab selection, and screenshot evidence are implemented. Direct `GoNativeActivity` paths initialized runtime state but stayed on the Android splash/default icon or failed with `internal/ui: Run is not implemented for GOOS=android`; the durable APK path now uses tracked Apparat wrapper sources plus Ebitengine generated mobile view classes. Remaining completion focuses on additional device testing, Android safe-area and density hardening, runtime-path validation depth, release-hardening deferrals, and resolving any local Ebitengine patch/submodule reproducibility work.
+
+## Merged Checkpoint
+
+The duplicate current plan `plans/current/2026-07-09-14-25-00_refactor-android-rendering-and-fit-screen.md` was merged into this Phase 5 plan. Its completed work is represented below in checklist items 8, 10, 13, and 14:
+
+- Initialized `go.Seq.setContext(getApplicationContext())` in `MainActivity.java` so Ebitengine can query Android display metrics through gobind's native context path.
+- Removed temporary Java-to-Go scale propagation, debug logging, transparent-background, framebuffer-query, and oversized-layout guard hacks.
+- Removed the fixed portrait activity orientation so the Android wrapper can fill the screen in supported orientations.
+- Added Android touch handling for tab selection and standard gamepad handling for `L1`, `R1`, and `R2`.
+- Rebuilt and deployed the APK, verified touch tab selection on device, and captured screenshot evidence showing the Projects tab active with `input=select-tab`.
 
 ## Implementation Checklist
 
@@ -99,9 +109,9 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 8.2 Define app label `Apparat` and launcher activity metadata.
   - [x] 8.3 Define current version name/code as `0.1.0` and `1`.
   - [x] 8.4 Patch gomobile metadata synthesis to emit `minSdkVersion=23`, `targetSdkVersion=30`, and platform build version `35`.
-  - [x] 8.5 Change Android phone default orientation to portrait; treat landscape/tablet/controller behavior as a separate validated mode.
+  - [x] 8.5 Remove fixed portrait orientation from the wrapper activity so Android can fill the available screen in supported orientations.
   - [x] 8.6 Add network permission for HTTPS over external WireGuard/local network.
-  - [x] 8.7 Defer microphone permission until voice capture is enabled and tested.
+  - [x] 8.7 Add microphone permission for the existing push-to-talk state path while keeping real Android audio capture validation as future Phase 10 work.
   - [x] 8.8 Avoid broad storage permissions.
   - [x] 8.9 Defer Android VPN-service permission and app-managed WireGuard.
   - [x] 8.10 Add modern Pixel package/startup gates discovered during device testing: target SDK compatibility, v2/v3 signing, 16 KB native page alignment, and app-private runtime storage.
@@ -118,17 +128,17 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 10.1 Build the debug APK locally.
   - [x] 10.2 Install the APK on a physical Pixel device with `adb`.
   - [x] 10.3 Launch the app and verify the Android process remains alive after startup.
-  - [?] 10.4 Verify the seven-tab Phase 4 HUD renders on Android; current evidence shows only the Android splash/default icon.
-  - [?] 10.5 Verify touch/click tab selection on Android.
+  - [x] 10.4 Verify the seven-tab Phase 4 HUD renders on Android through the wrapper `EbitenView`.
+  - [x] 10.5 Verify touch/click tab selection on Android.
   - [?] 10.6 Verify keyboard/controller navigation where device support exists.
   - [x] 10.7 Verify runtime directory creation on Android.
   - [x] 10.8 Verify fresh `last_run.log` after Android launch.
   - [x] 10.9 Capture `adb logcat` and `last_run.log` evidence for startup and failures.
   - [x] 10.10 Record exact build host, toolchain, ABI, package metadata, and validation blocker.
   - [x] 10.11 Record the Pixel install fixes required to reach app startup: modern SDK metadata, target SDK 30 compatibility workaround, debug APK signing, 16 KB page alignment, and app-private runtime root.
-  - [ ] 10.12 Verify Android opens to the Apparat HUD instead of remaining on the Android splash/default icon.
-  - [ ] 10.13 Verify portrait startup on a Pixel-class phone.
-  - [ ] 10.14 Capture visual evidence of the Android HUD matching the Debian HUD at the current Phase 4 feature level.
+  - [x] 10.12 Verify Android opens to the Apparat HUD instead of remaining on the Android splash/default icon.
+  - [-] 10.13 Verify portrait startup on a Pixel-class phone; closed because the wrapper no longer forces portrait orientation.
+  - [x] 10.14 Capture visual evidence of the Android HUD matching the Debian HUD at the current Phase 4 feature level.
 
 - [x] 11. Add tests.
   - [x] 11.1 Unit-test Android APK artifact path selection.
@@ -150,19 +160,23 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 12.7 Append the checkpoint to the journal.
   - [x] 12.8 Regenerate plan indexes.
 
-- [ ] 13. Implement Android GUI parity.
+- [?] 13. Implement Android GUI parity.
   - [x] 13.1 Decide the minimal Apparat-owned Android integration path: tracked wrapper sources plus generated Ebitengine mobile view classes.
   - [x] 13.2 Add tracked Android wrapper sources/configuration so durable Android behavior lives outside `third_party/salvagecore`.
   - [x] 13.3 Preserve the existing package metadata, SDK metadata, signing, ABI, and release-artifact path gates.
   - [x] 13.4 Ensure Android startup enters the same `internal/app` runtime initialization path used by the Debian GUI.
-  - [?] 13.5 Attach the actual Ebitengine render surface so the Apparat HUD is visible after launch; implemented through wrapper `EbitenView`, awaiting on-device visual validation.
+  - [x] 13.5 Attach the actual Ebitengine render surface so the Apparat HUD is visible after launch.
   - [x] 13.6 Keep the seven canonical tabs, tab order, clickable tab behavior, disabled placeholders, runtime diagnostics, and Settings content aligned with Debian.
   - [ ] 13.7 Add Android safe-area/status-bar/navigation-bar layout handling.
   - [ ] 13.8 Add Android scale/density handling so tab buttons and body text remain readable on Pixel-class screens.
-  - [x] 13.9 Default Android phone launch to portrait mode and document landscape/controller behavior as a future or optional mode.
+  - [x] 13.9 Remove fixed portrait orientation and allow the wrapper view to fill the Android screen in supported orientations.
   - [x] 13.10 Update `scripts/build.py`, tests, and documentation to build the wrapper/AAR-style APK path.
-  - [ ] 13.11 Verify the rebuilt APK installs, launches, renders the HUD, supports touch tab selection, writes `last_run.log`, and stays alive on the Pixel.
+  - [x] 13.11 Verify the rebuilt APK installs, launches, renders the HUD, supports touch tab selection, writes `last_run.log`, and stays alive on the Pixel.
   - [ ] 13.12 Prove the final Android GUI path does not reference `third_party/salvagecore`.
+  - [x] 13.13 Make the top tab strip responsive on small screens by sizing all tab buttons from the largest measured label plus balanced horizontal padding.
+  - [x] 13.14 Make the top tab strip horizontally scrollable with mouse drag and touchscreen drag while preserving tap/click tab selection.
+  - [x] 13.15 Keep the active tab visible when controller, keyboard, mouse, or touch input changes the selected tab.
+  - [?] 13.16 Validate the responsive scrollable tab strip on Debian and the attached Android tablet; Android tablet build/install/launch/screenshot validation passed, Debian build/runtime validation passed, and interactive Debian window validation remains environment-limited.
 
 - [?] 14. Verify and complete.
   - [x] 14.1 Run `make fmt` equivalent through local Go path.
@@ -176,9 +190,9 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
   - [x] 14.9 Confirm Android `apparatd` fails clearly.
   - [?] 14.10 Temporarily hide or move `third_party/salvagecore` and rerun Android build; not performed because the script/test path already proves no reference and moving local reference material is a separate destructive checkpoint.
   - [x] 14.11 Run Pixel install and launch validation with ADB; install succeeds, app process remains alive, and app-private `last_run.log` is created.
-  - [ ] 14.12 Run Pixel visual validation after Android GUI parity work; the HUD must render instead of the Android splash/default icon.
-  - [ ] 14.13 Validate Android phone portrait startup.
-  - [ ] 14.14 Validate Android touch/click tab selection.
+  - [x] 14.12 Run Pixel visual validation after Android GUI parity work; the HUD renders instead of the Android splash/default icon.
+  - [-] 14.13 Validate Android phone portrait startup; closed because fixed portrait orientation was removed.
+  - [x] 14.14 Validate Android touch/click tab selection.
   - [x] 14.15 Confirm no files under `third_party/salvagecore` are staged.
   - [x] 14.16 Review final diff and staged payload.
   - [?] 14.17 Check pending downtime reports before final summary.
@@ -187,7 +201,6 @@ Phase 5 is partially executed: the APK build pipeline, preflight, artifact gener
 ## Open Follow-Up
 
 - Direct `GoNativeActivity` is no longer the APK render path; the current APK uses the tracked Apparat wrapper activity and Ebitengine generated `EbitenView`.
-- The wrapper APK still needs on-device visual validation because ADB escalation is currently blocked by the environment usage limit.
-- Android phone startup now defaults to portrait mode while preserving future landscape/tablet/controller support.
-- Visually confirm the Android HUD renders and touch/click tabs work on the Pixel screen.
+- Android HUD rendering and touch tab selection have on-device screenshot evidence; additional device, controller, keyboard, safe-area, and density testing still needs to be added to this Phase 5 plan.
+- The wrapper no longer forces portrait orientation; future testing should cover phone, tablet, portrait, landscape, keyboard, controller, and touch configurations explicitly.
 - Preserve the already discovered Pixel gates: target SDK compatibility workaround, v2/v3 signing, 16 KB page alignment, app-private runtime storage, process liveness, and fresh `last_run.log`.

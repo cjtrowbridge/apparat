@@ -4,6 +4,7 @@ package gui
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 	"strings"
 
@@ -27,10 +28,10 @@ const (
 	tabTop            = 10
 	tabHeight         = 54
 	tabGap            = 6
-	tabTextInsetX     = 12
+	tabTextInsetX     = 18
 	tabTextInsetY     = 18
-	tabWidth          = 132
-	tabWideWidth      = 156
+	debugGlyphWidth   = 6
+	tabDragThreshold  = 6
 	bodyGap           = 8
 	bodyInnerPaddingX = 18
 	bodyInnerPaddingY = 18
@@ -46,6 +47,11 @@ type Game struct {
 	pageDownWasHit bool
 	pageUpWasHit   bool
 	tabRects       []tabRect
+	tabScrollX     int
+	tabContentW    int
+	mouseTabDrag   dragState
+	touchTabDrag   dragState
+	touchID        ebiten.TouchID
 	l1WasPressed   bool
 	r1WasPressed   bool
 	r2Held         bool
@@ -59,6 +65,15 @@ type tabRect struct {
 	h     int
 }
 
+type dragState struct {
+	active      bool
+	dragged     bool
+	startX      int
+	lastX       int
+	startY      int
+	startScroll int
+}
+
 func NewGame() *Game {
 	root := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()))
 	return &Game{shell: hud.NewShell(), ui: &ebitenui.UI{Container: root}, width: 1280, height: 800}
@@ -66,6 +81,7 @@ func NewGame() *Game {
 
 func (game *Game) Update() error {
 	game.ui.Update()
+	startIndex := game.shell.Snapshot().ActiveIndex
 	ctrlPressed := ebiten.IsKeyPressed(ebiten.KeyControl)
 	pageDownPressed := ebiten.IsKeyPressed(ebiten.KeyPageDown)
 	pageUpPressed := ebiten.IsKeyPressed(ebiten.KeyPageUp)
@@ -77,18 +93,8 @@ func (game *Game) Update() error {
 	}
 	game.pageDownWasHit = pageDownPressed
 	game.pageUpWasHit = pageUpPressed
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		x, y := ebiten.CursorPosition()
-		if index, ok := game.tabIndexAt(x, y); ok {
-			_ = game.shell.SelectTab(index)
-		}
-	}
-	for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
-		x, y := ebiten.TouchPosition(id)
-		if index, ok := game.tabIndexAt(x, y); ok {
-			_ = game.shell.SelectTab(index)
-		}
-	}
+	game.updateMouseTabDrag()
+	game.updateTouchTabDrag()
 	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6, ebiten.Key7} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
 			_ = game.shell.SelectTab(index)
@@ -106,7 +112,68 @@ func (game *Game) Update() error {
 	}
 	game.rightCtrlHeld = rightCtrl
 	game.updateGamepad()
+	if activeIndex := game.shell.Snapshot().ActiveIndex; activeIndex != startIndex {
+		game.ensureTabVisible(activeIndex)
+	}
 	return nil
+}
+
+func (game *Game) updateMouseTabDrag() {
+	x, y := ebiten.CursorPosition()
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && game.pointInTabStrip(x, y) {
+		game.mouseTabDrag = dragState{active: true, startX: x, lastX: x, startY: y, startScroll: game.tabScrollX}
+	}
+	if game.mouseTabDrag.active && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		game.dragTabs(&game.mouseTabDrag, x)
+	}
+	if game.mouseTabDrag.active && inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		if !game.mouseTabDrag.dragged {
+			if index, ok := game.tabIndexAt(x, y); ok {
+				_ = game.shell.SelectTab(index)
+			}
+		}
+		game.mouseTabDrag = dragState{}
+	}
+}
+
+func (game *Game) updateTouchTabDrag() {
+	if !game.touchTabDrag.active {
+		for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
+			x, y := ebiten.TouchPosition(id)
+			if game.pointInTabStrip(x, y) {
+				game.touchID = id
+				game.touchTabDrag = dragState{active: true, startX: x, lastX: x, startY: y, startScroll: game.tabScrollX}
+				break
+			}
+		}
+	}
+	if game.touchTabDrag.active {
+		x, _ := ebiten.TouchPosition(game.touchID)
+		game.dragTabs(&game.touchTabDrag, x)
+		for _, id := range inpututil.AppendJustReleasedTouchIDs(nil) {
+			if id != game.touchID {
+				continue
+			}
+			if !game.touchTabDrag.dragged {
+				if index, ok := game.tabIndexAt(game.touchTabDrag.startX, game.touchTabDrag.startY); ok {
+					_ = game.shell.SelectTab(index)
+				}
+			}
+			game.touchTabDrag = dragState{}
+			break
+		}
+	}
+}
+
+func (game *Game) dragTabs(state *dragState, x int) {
+	dx := x - state.startX
+	if dx < -tabDragThreshold || dx > tabDragThreshold {
+		state.dragged = true
+	}
+	if state.dragged {
+		game.tabScrollX = clampTabScroll(state.startScroll-dx, game.tabContentW, game.tabViewportWidth())
+	}
+	state.lastX = x
 }
 
 func (game *Game) updateGamepad() {
@@ -140,39 +207,105 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	snapshot := game.shell.Snapshot()
 	screen.Fill(backgroundColor)
 	game.ui.Draw(screen)
-	game.tabRects = drawTabs(screen, snapshot)
+	game.tabRects = game.drawTabs(screen, snapshot)
 	drawActiveTab(screen, snapshot, game.width, game.height)
 	drawDiagnostics(screen, snapshot, game.height)
 }
 
-func drawTabs(screen *ebiten.Image, snapshot hud.Snapshot) []tabRect {
+func (game *Game) drawTabs(screen *ebiten.Image, snapshot hud.Snapshot) []tabRect {
 	rects := make([]tabRect, 0, len(snapshot.Tabs))
-	x := windowMargin
+	tabW := tabButtonWidth(snapshot)
+	game.tabContentW = tabContentWidth(len(snapshot.Tabs), tabW)
+	game.tabScrollX = clampTabScroll(game.tabScrollX, game.tabContentW, game.tabViewportWidth())
+	tabArea := screen.SubImage(image.Rect(windowMargin, tabTop, windowMargin+game.tabViewportWidth(), tabTop+tabHeight)).(*ebiten.Image)
+	x := -game.tabScrollX
 	for index, tab := range snapshot.Tabs {
 		label := fmt.Sprintf("%s %s", tab.Descriptor.Glyph, tab.Title())
-		w := tabWidth
-		if len(label) > 11 {
-			w = tabWideWidth
-		}
 		color := panelColor
 		if index == snapshot.ActiveIndex {
 			color = activeTabColor
 		}
-		ebitenutil.DrawRect(screen, float64(x), tabTop, float64(w), tabHeight, color)
-		ebitenutil.DebugPrintAt(screen, label, x+tabTextInsetX, tabTop+tabTextInsetY)
-		rects = append(rects, tabRect{index: index, x: x, y: tabTop, w: w, h: tabHeight})
-		x += w + tabGap
+		ebitenutil.DrawRect(tabArea, float64(x), 0, float64(tabW), tabHeight, color)
+		ebitenutil.DebugPrintAt(tabArea, label, x+tabTextInsetX, tabTextInsetY)
+		rects = append(rects, tabRect{index: index, x: windowMargin + x, y: tabTop, w: tabW, h: tabHeight})
+		x += tabW + tabGap
 	}
 	return rects
 }
 
+func tabButtonWidth(snapshot hud.Snapshot) int {
+	maxW := 0
+	for _, tab := range snapshot.Tabs {
+		label := fmt.Sprintf("%s %s", tab.Descriptor.Glyph, tab.Title())
+		if w := labelWidth(label); w > maxW {
+			maxW = w
+		}
+	}
+	return maxW + tabTextInsetX*2
+}
+
+func labelWidth(label string) int {
+	return len([]rune(label)) * debugGlyphWidth
+}
+
+func tabContentWidth(count int, tabW int) int {
+	if count == 0 {
+		return 0
+	}
+	return count*tabW + (count-1)*tabGap
+}
+
 func (game *Game) tabIndexAt(x int, y int) (int, bool) {
+	if !game.pointInTabStrip(x, y) {
+		return 0, false
+	}
 	for _, rect := range game.tabRects {
 		if x >= rect.x && x < rect.x+rect.w && y >= rect.y && y < rect.y+rect.h {
 			return rect.index, true
 		}
 	}
 	return 0, false
+}
+
+func (game *Game) pointInTabStrip(x int, y int) bool {
+	return x >= windowMargin && x < game.width-windowMargin && y >= tabTop && y < tabTop+tabHeight
+}
+
+func (game *Game) tabViewportWidth() int {
+	if width := game.width - windowMargin*2; width > 0 {
+		return width
+	}
+	return 1
+}
+
+func (game *Game) ensureTabVisible(index int) {
+	snapshot := game.shell.Snapshot()
+	tabW := tabButtonWidth(snapshot)
+	game.tabContentW = tabContentWidth(len(snapshot.Tabs), tabW)
+	viewportW := game.tabViewportWidth()
+	left := index * (tabW + tabGap)
+	right := left + tabW
+	if left < game.tabScrollX {
+		game.tabScrollX = left
+	}
+	if right > game.tabScrollX+viewportW {
+		game.tabScrollX = right - viewportW
+	}
+	game.tabScrollX = clampTabScroll(game.tabScrollX, game.tabContentW, viewportW)
+}
+
+func clampTabScroll(scroll int, contentW int, viewportW int) int {
+	maxScroll := contentW - viewportW
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if scroll < 0 {
+		return 0
+	}
+	if scroll > maxScroll {
+		return maxScroll
+	}
+	return scroll
 }
 
 func drawActiveTab(screen *ebiten.Image, snapshot hud.Snapshot, width int, height int) {
