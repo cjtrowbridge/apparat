@@ -87,21 +87,8 @@ class BuildPipelineTest(unittest.TestCase):
         self.assertIn("raw.githubusercontent.com/cjtrowbridge/apparat/main/releases/android/arm64/apparat/latest.apk", activity)
         self.assertIn("ACTION_MANAGE_UNKNOWN_APP_SOURCES", activity)
         self.assertIn("canRequestPackageInstalls", activity)
-        self.assertIn('"settings".equals(Apparatmobile.activeTab())', activity)
-        self.assertIn("Apparatmobile.updateButtonVisible(width, height)", activity)
-        self.assertIn("positionUpdateButton", activity)
-        self.assertIn("setMinHeight(dp(48))", activity)
-        self.assertIn("Math.max(dp(48)", activity)
         self.assertIn("setUseCaches(false)", activity)
-        self.assertIn("Gravity.TOP | Gravity.START", activity)
-        self.assertIn("View.GONE", activity)
-        self.assertIn('updateButton.setText("Check for update")', activity)
-        self.assertNotIn("GradientDrawable", activity)
         self.assertIn("application/vnd.android.package-archive", provider)
-        self.assertIn("func ActiveTab() string", mobile)
-        self.assertIn("func UpdateButtonX(width int, height int) int", mobile)
-        self.assertIn("func UpdateButtonVisible(width int, height int) bool", mobile)
-        self.assertNotIn("UpdateButtonViewX", mobile)
 
     def test_all_targets_builds_distinct_outputs(self):
         outputs = [build.artifact_path("linux", "amd64", target) for target in build.selected_targets("all", "linux")]

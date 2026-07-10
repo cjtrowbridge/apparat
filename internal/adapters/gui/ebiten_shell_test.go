@@ -181,8 +181,6 @@ func TestDragBodyPaneStartsSmoothlyAfterThreshold(t *testing.T) {
 	}
 }
 
-
-
 func TestInputPlaceholderRectStaysInsideFieldset(t *testing.T) {
 	fieldset := rect{x: 10, y: 20, w: 240, h: 160}
 	input := inputPlaceholderRect(fieldset, 1)
@@ -193,8 +191,6 @@ func TestInputPlaceholderRectStaysInsideFieldset(t *testing.T) {
 		t.Fatalf("input height = %d, want at least %d", input.h, touchTargetH)
 	}
 }
-
-
 
 func TestBodyRowsUseTouchTargetHeight(t *testing.T) {
 	if fieldsetRowH < 44 || touchTargetH < 44 {
