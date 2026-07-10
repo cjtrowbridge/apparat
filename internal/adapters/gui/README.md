@@ -22,11 +22,11 @@ The current custom shell uses taller tab buttons with compact outer margins and 
 
 ## Tab Body Layout
 
-Tab bodies are rendered from measured rectangles. Do not draw new content as unconstrained text or floating overlays. Layout helpers use screen-space rectangles as their canonical output. Drawing into a clipped pane converts those rectangles to pane-local coordinates at the clipping boundary; drawing helpers must not mix the two coordinate spaces.
+Tab bodies are rendered from measured rectangles. Do not draw new content as unconstrained text or floating overlays. During the HUD layout recovery checkpoint, body content uses direct screen-space drawing with bounded static panes and fieldsets. Reintroduce clipped pane drawing only with screenshot evidence that each tab still renders in the correct place.
 
-Settings renders as a vertical stack of fieldsets. Each fieldset owns its title, explanation, and content rows. The temporary Android update button is a native bridge only for the platform install action; the HUD still reserves and draws the owning `Updates` fieldset and exposes a stable native slot id, `settings.updates.check_for_update`, for Android placement. Native slot geometry comes from the live `Game` instance so Settings scroll offset and clipping visibility are applied before Android places the overlay button.
+Settings renders as a vertical stack of fieldsets. Each fieldset owns its title, explanation, and content rows. The temporary Android update button is a native bridge only for the platform install action; the HUD still reserves and draws the owning `Updates` fieldset and exposes a stable native slot id, `settings.updates.check_for_update`, for Android placement. Until body scrolling is reintroduced with visual validation, the native button uses a stable Settings header slot rather than scrolled fieldset geometry.
 
-Comrades, Projects, Cluster, Routing, and Tasks render as master-detail bodies. The left pane lists selectable objects, and the right pane owns placeholder/detail content until real selection data exists. Both panes clip and scroll their own content with mouse wheel, pointer drag, and touch drag input. Future adjustable dividers must preserve the same minimum-width and no-overlap rules.
+Comrades, Projects, Cluster, Routing, and Tasks render as master-detail bodies. The left pane lists selectable objects, and the right pane owns placeholder/detail content until real selection data exists. Future scrolling and adjustable dividers must preserve the same minimum-width and no-overlap rules, and must be validated with screenshots before release.
 
 Rows, list items, buttons, and input-like controls must remain large enough for touchscreens. Keep minimum touch target constants named and covered by tests when changing tab body layout. Text blocks wrap or truncate inside bounded rectangles; they must not draw over adjacent fieldsets or panes.
 

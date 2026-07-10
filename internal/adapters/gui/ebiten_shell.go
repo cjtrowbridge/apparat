@@ -100,9 +100,6 @@ func (game *Game) Update() error {
 	game.pageUpWasHit = pageUpPressed
 	game.updateMouseTabDrag()
 	game.updateTouchTabDrag()
-	game.updateBodyWheel()
-	game.updateMouseBodyDrag()
-	game.updateTouchBodyDrag()
 	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6, ebiten.Key7} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
 			_ = game.shell.SelectTab(index)

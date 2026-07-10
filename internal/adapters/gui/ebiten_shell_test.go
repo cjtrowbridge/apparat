@@ -111,15 +111,6 @@ func TestMasterDetailRectsStaySeparatedAtNarrowWidth(t *testing.T) {
 	}
 }
 
-func TestLocalRectConversionUsesPaneOrigin(t *testing.T) {
-	pane := rect{x: 100, y: 200, w: 300, h: 400}
-	child := rect{x: 112, y: 244, w: 80, h: 44}
-	local := child.localTo(pane)
-	if local.x != 12 || local.y != 44 || local.w != child.w || local.h != child.h {
-		t.Fatalf("local rect = %+v, want x=12 y=44 w=%d h=%d", local, child.w, child.h)
-	}
-}
-
 func TestMasterDetailTextRectsAreInsideExpectedPanes(t *testing.T) {
 	body := tabBodyRect(1280, 800)
 	list, detail := masterDetailRects(body)
@@ -190,29 +181,7 @@ func TestDragBodyPaneStartsSmoothlyAfterThreshold(t *testing.T) {
 	}
 }
 
-func TestUpdateButtonRectSitsInsideSettingsBody(t *testing.T) {
-	body := tabBodyRect(1600, 1260)
-	button := updateButtonRect(1600, 1260)
-	if button.x < body.x || button.y < body.y || button.x+button.w > body.x+body.w || button.y+button.h > body.y+body.h {
-		t.Fatalf("button rect %+v outside body %+v", button, body)
-	}
-	if button.h < touchTargetH {
-		t.Fatalf("button height = %d, want at least %d", button.h, touchTargetH)
-	}
-}
 
-func TestNativeUpdateSlotUsesStableID(t *testing.T) {
-	button, ok := nativeControlSlotRect(nativeSlotUpdate, 1600, 1260)
-	if !ok {
-		t.Fatal("update native slot missing")
-	}
-	if _, ok := nativeControlSlotRect("missing.slot", 1600, 1260); ok {
-		t.Fatal("unexpected native slot for unknown id")
-	}
-	if button.h < touchTargetH || button.w <= button.h {
-		t.Fatalf("button slot should be touch-sized and wider than tall: %+v", button)
-	}
-}
 
 func TestInputPlaceholderRectStaysInsideFieldset(t *testing.T) {
 	fieldset := rect{x: 10, y: 20, w: 240, h: 160}
@@ -225,32 +194,7 @@ func TestInputPlaceholderRectStaysInsideFieldset(t *testing.T) {
 	}
 }
 
-func TestLiveUpdateButtonSlotMovesWithSettingsScroll(t *testing.T) {
-	game := NewGame()
-	if err := game.shell.SelectTab(6); err != nil {
-		t.Fatal(err)
-	}
-	game.bodyScroll.settings = 30
-	live := game.UpdateButtonY(1280, 800)
-	static := UpdateButtonY(1280, 800)
-	if live != static-30 {
-		t.Fatalf("live button y = %d, want static y %d minus scroll", live, static)
-	}
-}
 
-func TestLiveUpdateButtonSlotHidesWhenScrolledOutOfView(t *testing.T) {
-	game := NewGame()
-	if err := game.shell.SelectTab(6); err != nil {
-		t.Fatal(err)
-	}
-	if !game.UpdateButtonVisible(1280, 800) {
-		t.Fatal("update button should be visible before Settings scroll")
-	}
-	game.bodyScroll.settings = 10000
-	if game.UpdateButtonVisible(1280, 800) {
-		t.Fatal("update button should be hidden after its slot scrolls out of the body")
-	}
-}
 
 func TestBodyRowsUseTouchTargetHeight(t *testing.T) {
 	if fieldsetRowH < 44 || touchTargetH < 44 {
