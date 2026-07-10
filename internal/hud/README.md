@@ -63,3 +63,13 @@ Phase 4 tab content is local, mocked, or placeholder-only:
 - Settings shows runtime/config diagnostics, hard-coded HUD settings, command hints, and verification hints.
 
 Backend-dependent controls must be disabled or clearly marked future until their storage, transport, queue, or execution systems exist.
+
+## Body Layout Patterns
+
+Tab bodies use structured layout patterns rather than free-form text placement:
+
+- Settings is a vertical list of fieldsets. Each fieldset owns its title, explanation, and rows or controls. New Settings groups are appended as fieldsets.
+- Comrades, Projects, Cluster, Routing, and Tasks use master-detail structure. The left pane lists the relevant objects; the right pane shows selected-object context. Placeholder explanatory content belongs in the blank right-hand detail pane until real selection data exists.
+- Research can use fieldsets while it remains review/placeholder content, then move to master-detail when selectable research projects exist.
+- Native platform controls must correspond to a reserved HUD element and stay hidden outside the owning tab.
+- List rows, fieldset rows, buttons, and form controls must keep touch-first target sizing comparable to tab buttons.

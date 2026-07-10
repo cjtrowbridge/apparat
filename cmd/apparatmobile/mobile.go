@@ -13,6 +13,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/mobile"
 )
 
+var game *gui.Game
+
 func init() {
 	cfg, err := config.Load(config.Options{DefaultMode: config.ModeGUI, BinaryName: "apparat"})
 	if err != nil {
@@ -29,10 +31,34 @@ func init() {
 		return
 	}
 	_ = runtime.RecordLastRun("info", "android", "mobile_game_ready", "Ebitengine mobile game registered", map[string]any{"root": cfg.RootDir})
-	mobile.SetGame(gui.NewGame())
+	game = gui.NewGame()
+	mobile.SetGame(game)
 	_ = fmt.Sprintf("%p", runtime)
 }
 
 func Ready() bool {
 	return true
+}
+
+func ActiveTab() string {
+	if game == nil {
+		return ""
+	}
+	return game.ActiveTabID()
+}
+
+func UpdateButtonX(width int, height int) int {
+	return gui.UpdateButtonX(width, height)
+}
+
+func UpdateButtonY(width int, height int) int {
+	return gui.UpdateButtonY(width, height)
+}
+
+func UpdateButtonW(width int, height int) int {
+	return gui.UpdateButtonW(width, height)
+}
+
+func UpdateButtonH(width int, height int) int {
+	return gui.UpdateButtonH(width, height)
 }

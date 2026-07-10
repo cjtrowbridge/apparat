@@ -33,8 +33,9 @@ type Row struct {
 }
 
 type Section struct {
-	Title string
-	Rows  []Row
+	Title       string
+	Description string
+	Rows        []Row
 }
 
 type Tab struct {
