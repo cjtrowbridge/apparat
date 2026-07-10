@@ -20,6 +20,16 @@ Phase 4 starts with an Ebitengine-rendered shell driven by `internal/hud` snapsh
 
 The current custom shell uses taller tab buttons with compact outer margins and a small tab-to-body gap so the HUD wastes less screen area on Steam Deck and Debian desktop windows. The top tab strip sizes every tab from the widest measured label plus balanced horizontal padding, and it supports horizontal mouse and touchscreen drag scrolling when the tabs exceed the viewport. Keep layout constants named in the adapter until they move into the user-editable HUD configuration manager.
 
+## Tab Body Layout
+
+Tab bodies are rendered from measured rectangles. Do not draw new content as unconstrained text or floating overlays.
+
+Settings renders as a vertical stack of fieldsets. Each fieldset owns its title, explanation, and content rows. The temporary Android update button is a native bridge only for the platform install action; the HUD still reserves and draws the owning `Updates` fieldset.
+
+Comrades, Projects, Cluster, Routing, and Tasks render as master-detail bodies. The left pane lists selectable objects, and the right pane owns placeholder/detail content until real selection data exists. Future adjustable dividers must preserve the same minimum-width and no-overlap rules.
+
+Rows, list items, and buttons must remain large enough for touchscreens. Keep minimum touch target constants named and covered by tests when changing tab body layout.
+
 ## Native GUI Validation
 
 GUI-specific validation must use:

@@ -179,6 +179,9 @@ The duplicate current plan `plans/current/2026-07-09-14-25-00_refactor-android-r
   - [?] 13.16 Validate the responsive scrollable tab strip on Debian and the attached Android tablet; Android tablet build/install/launch/screenshot validation passed, Debian build/runtime validation passed, and interactive Debian window validation remains environment-limited.
   - [x] 13.17 Move the Android Ebitengine display-info guard out of the local dirty submodule checkout and into the Apparat-owned Android wrapper build pipeline.
   - [x] 13.18 Restore `third_party/game/ebiten` to a clean worktree after the Apparat-owned build-pipeline guard is verified.
+  - [x] 13.19 Fix Android tab-strip touch handling so taps still select tabs and drag scrolling starts smoothly without a jump.
+  - [?] 13.20 Add a temporary Android-native Settings `Updates` panel that downloads the tracked `latest.apk`, compares it with the installed APK, requests install-from-this-source permission only when needed, and launches the package installer with user consent; implemented and build/install validated, with final Settings-tab visual confirmation still pending because the attached tablet entered doze/lockscreen during screenshot capture.
+  - [?] 13.21 Create HUD tab-content guidelines and align the current tab bodies so content is arranged in responsive, touch-sized, non-overlapping elements rather than floating overlays; implemented and build-validated, with final attached-tablet install/screenshot validation pending because ADB escalation was blocked by the approval usage limiter.
 
 - [?] 14. Verify and complete.
   - [x] 14.1 Run `make fmt` equivalent through local Go path.

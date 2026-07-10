@@ -1058,7 +1058,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Goal:** Produce a working Android GUI APK artifact for Apparat in the canonical release directory without adding or claiming an Android headless target.
 
-**Current status:** Build pipeline, package inspection, Pixel install, process-liveness validation, app-private runtime storage, Android `last_run.log` creation, wrapper HUD rendering, full-screen Android view sizing, touch tab selection, and screenshot evidence are implemented for Linux-hosted `android/arm64` GUI APK builds. Direct `GoNativeActivity` paths can initialize Apparat runtime state but stay on the Android splash/default icon instead of attaching Ebitengine's view. The current APK now uses tracked Apparat wrapper sources under `android/apparat`, `cmd/apparatmobile`, and Ebitengine's generated mobile view classes. Phase 5 remains incomplete until additional device testing, Android safe-area and density hardening, runtime-path validation depth, release-hardening deferrals, and any local Ebitengine patch/submodule reproducibility work are resolved or explicitly deferred.
+**Current status:** Build pipeline, package inspection, Pixel install, process-liveness validation, app-private runtime storage, Android `last_run.log` creation, wrapper HUD rendering, full-screen Android view sizing, touch tab selection, and screenshot evidence are implemented for Linux-hosted `android/arm64` GUI APK builds. Direct `GoNativeActivity` paths can initialize Apparat runtime state but stay on the Android splash/default icon instead of attaching Ebitengine's view. The current APK now uses tracked Apparat wrapper sources under `android/apparat`, `cmd/apparatmobile`, and Ebitengine's generated mobile view classes. A temporary Settings `Updates` fieldset and native Android button bridge are being added during Phase 5 for the tracked GitHub `latest.apk`; production update manifests, installed/latest version display, and release signing remain future work. Phase 5 remains incomplete until additional device testing, Android safe-area and density hardening, runtime-path validation depth, release-hardening deferrals, and any local Ebitengine patch/submodule reproducibility work are resolved or explicitly deferred.
 
 **Dependencies:** Phase 4 HUD shell and Apparat-owned tracked dependencies. Salvagecore may be inspected temporarily, but the final build pipeline must not require it.
 
@@ -1549,6 +1549,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [ ] Android.
   - [ ] Continue from Phase 5 Android GUI APK support rather than redoing its build-pipeline work.
   - [ ] Harden release signing, versioning, provenance, and upgrade/rollback behavior.
+  - [ ] Replace the temporary APK hash-only update check with installed-version versus latest-version display before offering an update.
   - [ ] Validate additional Android ABIs only after `android/arm64` is proven.
   - [ ] Expand device coverage across phone, tablet, controller, keyboard, and touch configurations.
   - [ ] Validate microphone, audio output, scoped storage, background, and battery behavior against real feature use.

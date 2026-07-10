@@ -74,6 +74,30 @@ class BuildPipelineTest(unittest.TestCase):
         self.assertIn("Apparatmobile.ready()", activity)
         self.assertIn("new EbitenView(this)", activity)
 
+    def test_android_manifest_declares_temporary_update_installer_boundary(self):
+        manifest = Path("android/apparat/AndroidManifest.xml").read_text(encoding="utf-8")
+        self.assertIn("android.permission.REQUEST_INSTALL_PACKAGES", manifest)
+        self.assertIn("UpdateApkProvider", manifest)
+        self.assertIn("com.cjtrowbridge.apparat.update", manifest)
+
+    def test_android_wrapper_has_temporary_update_button(self):
+        activity = Path("android/apparat/src/com/cjtrowbridge/apparat/MainActivity.java").read_text(encoding="utf-8")
+        provider = Path("android/apparat/src/com/cjtrowbridge/apparat/UpdateApkProvider.java").read_text(encoding="utf-8")
+        mobile = Path("cmd/apparatmobile/mobile.go").read_text(encoding="utf-8")
+        self.assertIn("raw.githubusercontent.com/cjtrowbridge/apparat/main/releases/android/arm64/apparat/latest.apk", activity)
+        self.assertIn("ACTION_MANAGE_UNKNOWN_APP_SOURCES", activity)
+        self.assertIn("canRequestPackageInstalls", activity)
+        self.assertIn('"settings".equals(Apparatmobile.activeTab())', activity)
+        self.assertIn("positionUpdateButton", activity)
+        self.assertIn("setMinHeight(44)", activity)
+        self.assertIn("Gravity.TOP | Gravity.START", activity)
+        self.assertIn("View.GONE", activity)
+        self.assertIn('updateButton.setText("Check for update")', activity)
+        self.assertNotIn("GradientDrawable", activity)
+        self.assertIn("application/vnd.android.package-archive", provider)
+        self.assertIn("func ActiveTab() string", mobile)
+        self.assertIn("func UpdateButtonX(width int, height int) int", mobile)
+
     def test_all_targets_builds_distinct_outputs(self):
         outputs = [build.artifact_path("linux", "amd64", target) for target in build.selected_targets("all", "linux")]
         self.assertEqual(

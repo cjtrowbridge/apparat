@@ -39,7 +39,7 @@ def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: d
             "github.com/hajimehoshi/ebiten/v2/mobile/ebitenmobileview",
         ], cwd=ROOT, env=env, check=True)
     write_ebiten_view_sources(source_dir)
-    shutil.copy2(ROOT / "android" / "apparat" / "src" / "com" / "cjtrowbridge" / "apparat" / "MainActivity.java", source_dir.parent / "MainActivity.java")
+    copy_android_wrapper_sources(work / "src")
     run = lambda args: subprocess.run(args, cwd=ROOT, env=env, check=True)
     base_jar = work / "classes-base.jar"
     native_lib = apk_dir / "libgojni.so"
@@ -98,6 +98,14 @@ def write_ebiten_view_sources(source_dir: Path) -> None:
                 "setEGLConfigChooser(8, 8, 8, 8, 0, 0);\n        getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);"
             )
         (source_dir / name).write_text(text, encoding="utf-8")
+
+
+def copy_android_wrapper_sources(destination: Path) -> None:
+    source = ROOT / "android" / "apparat" / "src"
+    for path in source.rglob("*.java"):
+        target = destination / path.relative_to(source)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
 
 
 @contextmanager

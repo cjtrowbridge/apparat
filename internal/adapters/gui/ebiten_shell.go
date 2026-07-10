@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"strings"
+	"sync/atomic"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui"
@@ -31,10 +31,8 @@ const (
 	tabTextInsetX     = 18
 	tabTextInsetY     = 18
 	debugGlyphWidth   = 6
-	tabDragThreshold  = 6
+	tabDragThreshold  = 18
 	bodyGap           = 8
-	bodyInnerPaddingX = 18
-	bodyInnerPaddingY = 18
 	diagnosticsHeight = 58
 )
 
@@ -55,6 +53,7 @@ type Game struct {
 	l1WasPressed   bool
 	r1WasPressed   bool
 	r2Held         bool
+	activeTabID    atomic.Value
 }
 
 type tabRect struct {
@@ -76,7 +75,9 @@ type dragState struct {
 
 func NewGame() *Game {
 	root := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()))
-	return &Game{shell: hud.NewShell(), ui: &ebitenui.UI{Container: root}, width: 1280, height: 800}
+	game := &Game{shell: hud.NewShell(), ui: &ebitenui.UI{Container: root}, width: 1280, height: 800}
+	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
+	return game
 }
 
 func (game *Game) Update() error {
@@ -115,23 +116,29 @@ func (game *Game) Update() error {
 	if activeIndex := game.shell.Snapshot().ActiveIndex; activeIndex != startIndex {
 		game.ensureTabVisible(activeIndex)
 	}
+	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
 	return nil
+}
+
+func (game *Game) ActiveTabID() string {
+	if id, ok := game.activeTabID.Load().(string); ok {
+		return id
+	}
+	return ""
 }
 
 func (game *Game) updateMouseTabDrag() {
 	x, y := ebiten.CursorPosition()
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && game.pointInTabStrip(x, y) {
 		game.mouseTabDrag = dragState{active: true, startX: x, lastX: x, startY: y, startScroll: game.tabScrollX}
+		if index, ok := game.tabIndexAt(x, y); ok {
+			_ = game.shell.SelectTab(index)
+		}
 	}
 	if game.mouseTabDrag.active && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		game.dragTabs(&game.mouseTabDrag, x)
 	}
 	if game.mouseTabDrag.active && inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		if !game.mouseTabDrag.dragged {
-			if index, ok := game.tabIndexAt(x, y); ok {
-				_ = game.shell.SelectTab(index)
-			}
-		}
 		game.mouseTabDrag = dragState{}
 	}
 }
@@ -143,6 +150,9 @@ func (game *Game) updateTouchTabDrag() {
 			if game.pointInTabStrip(x, y) {
 				game.touchID = id
 				game.touchTabDrag = dragState{active: true, startX: x, lastX: x, startY: y, startScroll: game.tabScrollX}
+				if index, ok := game.tabIndexAt(x, y); ok {
+					_ = game.shell.SelectTab(index)
+				}
 				break
 			}
 		}
@@ -154,11 +164,6 @@ func (game *Game) updateTouchTabDrag() {
 			if id != game.touchID {
 				continue
 			}
-			if !game.touchTabDrag.dragged {
-				if index, ok := game.tabIndexAt(game.touchTabDrag.startX, game.touchTabDrag.startY); ok {
-					_ = game.shell.SelectTab(index)
-				}
-			}
 			game.touchTabDrag = dragState{}
 			break
 		}
@@ -167,8 +172,11 @@ func (game *Game) updateTouchTabDrag() {
 
 func (game *Game) dragTabs(state *dragState, x int) {
 	dx := x - state.startX
-	if dx < -tabDragThreshold || dx > tabDragThreshold {
+	if !state.dragged && absInt(dx) > tabDragThreshold {
 		state.dragged = true
+		state.startX = x
+		state.startScroll = game.tabScrollX
+		dx = 0
 	}
 	if state.dragged {
 		game.tabScrollX = clampTabScroll(state.startScroll-dx, game.tabContentW, game.tabViewportWidth())
@@ -308,37 +316,11 @@ func clampTabScroll(scroll int, contentW int, viewportW int) int {
 	return scroll
 }
 
-func drawActiveTab(screen *ebiten.Image, snapshot hud.Snapshot, width int, height int) {
-	tab := snapshot.ActiveTab()
-	bodyX := windowMargin
-	bodyY := tabTop + tabHeight + bodyGap
-	bodyWidth := width - windowMargin*2
-	bodyHeight := height - bodyY - diagnosticsHeight
-	contentX := bodyX + bodyInnerPaddingX
-	contentY := bodyY + bodyInnerPaddingY
-	ebitenutil.DrawRect(screen, float64(bodyX), float64(bodyY), float64(bodyWidth), float64(bodyHeight), panelColor)
-	ebitenutil.DebugPrintAt(screen, tab.Title(), contentX, contentY)
-	ebitenutil.DebugPrintAt(screen, tab.Summary, contentX, contentY+24)
-	y := contentY + 60
-	for _, section := range tab.Sections {
-		ebitenutil.DebugPrintAt(screen, strings.ToUpper(section.Title), contentX, y)
-		y += 24
-		for _, row := range section.Rows {
-			prefix := "•"
-			if row.Disabled {
-				prefix = "⊘"
-			} else if row.Future {
-				prefix = "◇"
-			}
-			line := fmt.Sprintf("%s %s", prefix, row.Label)
-			if row.Detail != "" {
-				line = fmt.Sprintf("%s — %s", line, row.Detail)
-			}
-			ebitenutil.DebugPrintAt(screen, line, contentX+20, y)
-			y += 20
-		}
-		y += 12
+func absInt(value int) int {
+	if value < 0 {
+		return -value
 	}
+	return value
 }
 
 func drawDiagnostics(screen *ebiten.Image, snapshot hud.Snapshot, height int) {

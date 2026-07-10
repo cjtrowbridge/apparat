@@ -35,7 +35,7 @@ Current evidence:
 - Package ID: `com.cjtrowbridge.apparat`.
 - App label: `Apparat`.
 - Native ABI: `arm64-v8a`.
-- Permissions: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks and `android.permission.RECORD_AUDIO` for the push-to-talk state path.
+- Permissions: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks, `android.permission.RECORD_AUDIO` for the push-to-talk state path, and temporary Phase 5 `android.permission.REQUEST_INSTALL_PACKAGES` for the dev Updates fieldset button.
 - Activity: `com.cjtrowbridge.apparat.MainActivity` with Ebitengine `EbitenView`; the wrapper does not force portrait orientation.
 - Toolchain: JDK 21, Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
 - SDK metadata: `minSdkVersion=23`, `targetSdkVersion=30`, and `platformBuildVersionCode=35`.
@@ -48,4 +48,4 @@ Known caveats:
 - Additional Android device coverage is still pending for safe-area handling, density/readability hardening, keyboard/controller input, portrait and landscape behavior across form factors, and deeper runtime-path validation.
 - The current APK uses the wrapper/AAR-style path. Future release-hardening still needs signing, icons, store packaging, additional ABI decisions, and broader Android device validation.
 - Android `apparatd` is intentionally unsupported; headless Android work requires a later Termux/service-worker strategy.
-- App-managed WireGuard/VPN-service, real microphone capture, broad storage, background execution, release signing, store packaging, and additional Android ABIs are future work.
+- App-managed WireGuard/VPN-service, real microphone capture, broad storage, background execution, release signing, store packaging, signed update manifests, and additional Android ABIs are future work.
