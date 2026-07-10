@@ -6,6 +6,7 @@ import (
 	"fmt"
 	img "image"
 	"image/color"
+	"strings"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui"
@@ -57,7 +58,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 func (game *Game) buildTabs(snapshot hud.Snapshot) []*widget.TabBookTab {
 	tabs := make([]*widget.TabBookTab, 0, len(snapshot.Tabs))
 	for _, tabData := range snapshot.Tabs {
-		label := fmt.Sprintf("%s %s", tabData.Descriptor.Glyph, tabData.Title())
+		label := tabData.Title()
 
 		tab := widget.NewTabBookTab(
 			widget.TabBookTabOpts.Label(label),
@@ -69,11 +70,7 @@ func (game *Game) buildTabs(snapshot hud.Snapshot) []*widget.TabBookTab {
 		if tabData.Descriptor.ID == hud.TabSettings {
 			tab.AddChild(game.buildSettingsTab(tabData))
 		} else {
-			// Placeholder for other tabs (master-detail layouts will go here)
-			placeholderText := widget.NewText(
-				widget.TextOpts.Text(fmt.Sprintf("%s Panel (EbitenUI)", tabData.Title()), game.theme.ButtonTheme.TextFace, color.White),
-			)
-			tab.AddChild(placeholderText)
+			tab.AddChild(game.buildMasterDetailTab(tabData))
 		}
 
 		tabs = append(tabs, tab)
@@ -86,44 +83,193 @@ func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateab
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
 			widget.RowLayoutOpts.Spacing(bodyGap),
+			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
 		)),
 	)
+
+	if tabData.Summary != "" {
+		summary := widget.NewText(
+			widget.TextOpts.Text(tabData.Summary, game.theme.ButtonTheme.TextFace, color.White),
+		)
+		content.AddChild(summary)
+	}
+
+	for _, section := range tabData.Sections {
+		sectionContainer := widget.NewContainer(
+			widget.ContainerOpts.BackgroundImage(game.theme.PanelTheme.BackgroundImage),
+			widget.ContainerOpts.Layout(widget.NewRowLayout(
+				widget.RowLayoutOpts.Direction(widget.DirectionVertical),
+				widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
+				widget.RowLayoutOpts.Spacing(4),
+			)),
+			widget.ContainerOpts.WidgetOpts(
+				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
+			),
+		)
+
+		title := widget.NewText(
+			widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.ButtonTheme.TextFace, color.White),
+		)
+		sectionContainer.AddChild(title)
+
+		if section.Description != "" {
+			desc := widget.NewText(
+				widget.TextOpts.Text(section.Description, game.theme.ButtonTheme.TextFace, color.White),
+			)
+			sectionContainer.AddChild(desc)
+		}
+
+		for _, row := range section.Rows {
+			if row.ID == "settings.updates.check_for_update" {
+				updateBtn := widget.NewButton(
+					widget.ButtonOpts.Text(row.Label, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+					widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+					widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
+					widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
+					widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+						if game.onCheckForUpdate != nil {
+							game.onCheckForUpdate()
+						} else {
+							args.Button.Text().Label = "Update check simulated"
+						}
+					}),
+				)
+				sectionContainer.AddChild(updateBtn)
+			} else {
+				rowText := row.Label
+				if row.Detail != "" {
+					rowText = fmt.Sprintf("%s: %s", row.Label, row.Detail)
+				}
+				label := widget.NewText(
+					widget.TextOpts.Text(rowText, game.theme.ButtonTheme.TextFace, color.White),
+				)
+				sectionContainer.AddChild(label)
+			}
+		}
+		content.AddChild(sectionContainer)
+	}
 
 	scrollContainer := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(content),
 		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
+		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true})),
 	)
 
-	// Example: Add an Update Check section manually for now
-	updateSection := widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(game.theme.PanelTheme.BackgroundImage),
+	return scrollContainer
+}
+
+func (game *Game) buildMasterDetailTab(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
+	root := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(2),
+			widget.GridLayoutOpts.Stretch([]bool{false, true}, []bool{true}),
+			widget.GridLayoutOpts.Spacing(8, 0),
+		)),
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true})),
+	)
+
+	// Left List Pane
+	listContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
 			widget.RowLayoutOpts.Spacing(4),
+			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 8, Right: 8, Top: 8, Bottom: 8}),
 		)),
 		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
+			widget.WidgetOpts.MinSize(170, 0),
+			widget.WidgetOpts.LayoutData(widget.GridLayoutData{
+				MaxHeight: 0,
+			}),
 		),
 	)
 
-	title := widget.NewText(
-		widget.TextOpts.Text("Updates", game.theme.ButtonTheme.TextFace, color.White),
-	)
-	updateSection.AddChild(title)
+	for _, section := range tabData.Sections {
+		btn := widget.NewButton(
+			widget.ButtonOpts.Text(section.Title, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+			widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+			widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
+			widget.ButtonOpts.WidgetOpts(
+				widget.WidgetOpts.MinSize(0, 44),
+				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
+			),
+			widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+				// Detail update logic placeholder
+			}),
+		)
+		listContainer.AddChild(btn)
+	}
 
-	updateBtn := widget.NewButton(
-		widget.ButtonOpts.Text("Check for update", game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
-		widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
-		widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			if game.onCheckForUpdate != nil {
-				game.onCheckForUpdate()
+	listScroll := widget.NewScrollContainer(
+		widget.ScrollContainerOpts.Content(listContainer),
+		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
+		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.GridLayoutData{
+			MaxHeight: 0,
+		})),
+	)
+	root.AddChild(listScroll)
+
+	// Right Detail Pane
+	detailContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
+			widget.RowLayoutOpts.Spacing(bodyGap),
+			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
+		)),
+	)
+
+	if tabData.Summary != "" {
+		summary := widget.NewText(
+			widget.TextOpts.Text(tabData.Summary, game.theme.ButtonTheme.TextFace, color.White),
+		)
+		detailContainer.AddChild(summary)
+	}
+
+	for _, section := range tabData.Sections {
+		sectionContainer := widget.NewContainer(
+			widget.ContainerOpts.BackgroundImage(game.theme.PanelTheme.BackgroundImage),
+			widget.ContainerOpts.Layout(widget.NewRowLayout(
+				widget.RowLayoutOpts.Direction(widget.DirectionVertical),
+				widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
+				widget.RowLayoutOpts.Spacing(4),
+			)),
+			widget.ContainerOpts.WidgetOpts(
+				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
+			),
+		)
+
+		title := widget.NewText(
+			widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.ButtonTheme.TextFace, color.White),
+		)
+		sectionContainer.AddChild(title)
+
+		if section.Description != "" {
+			desc := widget.NewText(
+				widget.TextOpts.Text(section.Description, game.theme.ButtonTheme.TextFace, color.White),
+			)
+			sectionContainer.AddChild(desc)
+		}
+
+		for _, row := range section.Rows {
+			rowText := row.Label
+			if row.Detail != "" {
+				rowText = fmt.Sprintf("%s: %s", row.Label, row.Detail)
 			}
-		}),
-	)
-	updateSection.AddChild(updateBtn)
+			label := widget.NewText(
+				widget.TextOpts.Text(rowText, game.theme.ButtonTheme.TextFace, color.White),
+			)
+			sectionContainer.AddChild(label)
+		}
+		detailContainer.AddChild(sectionContainer)
+	}
 
-	content.AddChild(updateSection)
-	return scrollContainer
+	detailScroll := widget.NewScrollContainer(
+		widget.ScrollContainerOpts.Content(detailContainer),
+		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
+		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.GridLayoutData{
+			MaxHeight: 0,
+		})),
+	)
+	root.AddChild(detailScroll)
+
+	return root
 }

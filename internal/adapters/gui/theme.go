@@ -7,9 +7,17 @@ import (
 
 	"github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/v2"
 	ebitentext "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/basicfont"
 )
+
+func createBorderedNineSlice(fill color.Color, border color.Color) *image.NineSlice {
+	i := ebiten.NewImage(3, 3)
+	i.Fill(border)
+	i.Set(1, 1, fill)
+	return image.NewNineSlice(i, [3]int{1, 1, 1}, [3]int{1, 1, 1})
+}
 
 func createUITheme() *widget.Theme {
 	theme := widget.Theme{}
@@ -29,10 +37,10 @@ func createUITheme() *widget.Theme {
 	// Button styles
 	theme.ButtonTheme = &widget.ButtonParams{
 		Image: &widget.ButtonImage{
-			Idle:     image.NewNineSliceColor(panelBgColor),
-			Hover:    image.NewNineSliceColor(accentColor),
-			Pressed:  image.NewNineSliceColor(accentColor),
-			Disabled: image.NewNineSliceColor(bgColor),
+			Idle:     createBorderedNineSlice(panelBgColor, borderColor),
+			Hover:    createBorderedNineSlice(accentColor, borderColor),
+			Pressed:  createBorderedNineSlice(accentColor, borderColor),
+			Disabled: createBorderedNineSlice(bgColor, borderColor),
 		},
 		TextColor: &widget.ButtonTextColor{
 			Idle:     textColor,
@@ -50,10 +58,10 @@ func createUITheme() *widget.Theme {
 	theme.TabbookTheme = &widget.TabBookParams{
 		TabButton: &widget.ButtonParams{
 			Image: &widget.ButtonImage{
-				Idle:     image.NewNineSliceColor(bgColor),
-				Hover:    image.NewNineSliceColor(panelBgColor),
-				Pressed:  image.NewNineSliceColor(accentColor),
-				Disabled: image.NewNineSliceColor(bgColor),
+				Idle:     createBorderedNineSlice(bgColor, borderColor),
+				Hover:    createBorderedNineSlice(panelBgColor, borderColor),
+				Pressed:  createBorderedNineSlice(accentColor, borderColor),
+				Disabled: createBorderedNineSlice(bgColor, borderColor),
 			},
 			TextColor: &widget.ButtonTextColor{
 				Idle:     textColor,
@@ -71,7 +79,7 @@ func createUITheme() *widget.Theme {
 
 	// Panel styles
 	theme.PanelTheme = &widget.PanelParams{
-		BackgroundImage: image.NewNineSliceColor(panelBgColor),
+		BackgroundImage: createBorderedNineSlice(panelBgColor, borderColor),
 	}
 
 	theme.SliderTheme = &widget.SliderParams{
@@ -109,7 +117,7 @@ func createUITheme() *widget.Theme {
 func createScrollContainerImage() *widget.ScrollContainerImage {
 	borderColor := color.RGBA{R: 40, G: 45, B: 60, A: 255}
 	return &widget.ScrollContainerImage{
-		Idle: image.NewNineSliceColor(borderColor),
-		Mask: image.NewNineSliceColor(borderColor),
+		Idle: createBorderedNineSlice(color.RGBA{0, 0, 0, 0}, borderColor),
+		Mask: createBorderedNineSlice(color.RGBA{0, 0, 0, 0}, borderColor),
 	}
 }

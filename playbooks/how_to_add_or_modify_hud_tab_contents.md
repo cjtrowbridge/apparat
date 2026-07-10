@@ -20,6 +20,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Do not use raw imperative coordinates (`ebitenutil.DebugPrintAt`, `ebitenutil.DrawRect`), custom `SubImage` clipping, or custom drag-scroll loops.
    * Put related content in EbitenUI layout containers (like `widget.RowLayout` or `widget.GridLayout`) and `widget.ScrollContainer`.
    * Each bounded element must own its title, explanation, controls, and body content.
+   * Tab content must remain strictly data-driven (dynamically iterating through `tab.Sections` and `section.Rows`); do not hardcode EbitenUI containers or widgets outside of this loop pattern.
 
 2. **Prevent Overlap By Construction**
    * Do not place controls as floating overlays unless they correspond to a reserved body element.
@@ -35,7 +36,8 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 4. **Keep Visual Vocabulary Consistent**
    * Fieldsets use a visible border, compact title, short explanatory text when helpful, and a clear content area.
    * Rows use consistent label/detail spacing and disabled/future markers.
-   * List items, rows, buttons, and form controls must meet the same touch-first minimum target sizing as tab buttons.
+   * All interactive UI elements (list items, rows, buttons, and form controls) *must* enforce a strict minimum touch target height of 44px by configuring `MinSize: (0, 44)` on the widget options.
+   * Buttons must be visually distinct from plain text and backgrounds by using bordered NineSlice graphics (e.g., via `createBorderedNineSlice`) instead of solid/transparent colors.
    * Buttons and form controls appear inside the fieldset or toolbar that explains their purpose.
    * Text fields and input-like placeholders are block-level controls; they keep touch target height and clip or wrap content within their own rectangle.
 
