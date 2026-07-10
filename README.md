@@ -202,7 +202,7 @@ The default mouse mapping is:
 
 - Left click: focus and activate the selected control according to its normal desktop behavior.
 - Right click: open contextual actions.
-- Wheel or touchpad scroll: scroll the focused or pointed scroll container.
+- Wheel, touchpad scroll, or touch drag: scroll the focused or pointed scroll container.
 - Mouse back button: back or cancel when available.
 - Drag: resize approved panes, adjust sliders, select text, or perform an explicitly represented reorder operation.
 

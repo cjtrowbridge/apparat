@@ -92,6 +92,12 @@ func TestDefaultBindingsExposeFutureEditableInputs(t *testing.T) {
 	if len(bindings.Inputs(ActionPushToTalk)) < 2 {
 		t.Fatalf("push-to-talk bindings too small: %+v", bindings.Inputs(ActionPushToTalk))
 	}
+	if len(bindings.Inputs(ActionScroll)) < 4 {
+		t.Fatalf("scroll bindings should expose wheel, pointer drag, touch drag, and controller defaults: %+v", bindings.Inputs(ActionScroll))
+	}
+	if len(bindings.Inputs(ActionScrollUp)) == 0 || len(bindings.Inputs(ActionScrollDown)) == 0 {
+		t.Fatalf("scroll step bindings missing: up=%+v down=%+v", bindings.Inputs(ActionScrollUp), bindings.Inputs(ActionScrollDown))
+	}
 }
 
 func TestRightCtrlCancellationDoesNotSubmitOnRelease(t *testing.T) {

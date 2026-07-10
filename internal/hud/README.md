@@ -47,6 +47,7 @@ Default bindings preserve the accepted controls:
 - `Alt+1` through `Alt+7` select canonical tabs directly.
 - `R2` and right `Ctrl` are push-to-talk.
 - `Escape` cancels held recording.
+- Pointer wheel, pointer drag, touch drag, right-stick scrolling, `PageUp`, and `PageDown` are tracked as scroll defaults.
 
 Bindings are hard-coded for Phase 4 but must be treated as future user-editable settings.
 
@@ -68,8 +69,9 @@ Backend-dependent controls must be disabled or clearly marked future until their
 
 Tab bodies use structured layout patterns rather than free-form text placement:
 
-- Settings is a vertical list of fieldsets. Each fieldset owns its title, explanation, and rows or controls. New Settings groups are appended as fieldsets.
+- Settings is a vertical list of fieldsets. Each fieldset owns its title, explanation, and rows or controls. The temporary `Updates` fieldset stays first while update-in-place is a high-priority Phase 5 test surface; ordinary new Settings groups are appended as fieldsets.
 - Comrades, Projects, Cluster, Routing, and Tasks use master-detail structure. The left pane lists the relevant objects; the right pane shows selected-object context. Placeholder explanatory content belongs in the blank right-hand detail pane until real selection data exists.
 - Research can use fieldsets while it remains review/placeholder content, then move to master-detail when selectable research projects exist.
 - Native platform controls must correspond to a reserved HUD element and stay hidden outside the owning tab.
 - List rows, fieldset rows, buttons, and form controls must keep touch-first target sizing comparable to tab buttons.
+- Text and input-like controls are block-level elements. Text wraps, truncates, clips, or scrolls inside the owning fieldset or pane instead of drawing over neighboring content.

@@ -60,7 +60,8 @@ public class MainActivity extends Activity {
         updateButton = new Button(this);
         updateButton.setText("Check for update");
         updateButton.setAllCaps(false);
-        updateButton.setMinHeight(44);
+        updateButton.setMinHeight(dp(48));
+        updateButton.setMinimumHeight(dp(48));
         updateButton.setVisibility(View.GONE);
         updateButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,7 +71,7 @@ public class MainActivity extends Activity {
         });
         FrameLayout.LayoutParams updateLayout = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
-                44,
+                dp(48),
                 Gravity.TOP | Gravity.START);
         addContentView(updateButton, updateLayout);
     }
@@ -120,8 +121,8 @@ public class MainActivity extends Activity {
             return;
         }
         FrameLayout.LayoutParams layout = (FrameLayout.LayoutParams) updateButton.getLayoutParams();
-        layout.width = (int) Apparatmobile.updateButtonW(width, height);
-        layout.height = (int) Apparatmobile.updateButtonH(width, height);
+        layout.width = Math.max(dp(160), (int) Apparatmobile.updateButtonW(width, height));
+        layout.height = Math.max(dp(48), (int) Apparatmobile.updateButtonH(width, height));
         layout.leftMargin = (int) Apparatmobile.updateButtonX(width, height);
         layout.topMargin = (int) Apparatmobile.updateButtonY(width, height);
         updateButton.setLayoutParams(layout);
@@ -138,7 +139,7 @@ public class MainActivity extends Activity {
                     String installedHash = sha256(new File(getApplicationInfo().sourceDir));
                     String downloadedHash = sha256(apk);
                     if (installedHash.equals(downloadedHash)) {
-                        showToast("Already current");
+                        showToast("Already current: installed and GitHub APK hashes match (" + shortHash(installedHash) + ")");
                         return;
                     }
                     runOnUiThread(new Runnable() {
@@ -156,7 +157,9 @@ public class MainActivity extends Activity {
 
     private File downloadLatestApk() throws Exception {
         File apk = new File(getCacheDir(), "latest.apk");
-        HttpURLConnection connection = (HttpURLConnection) new URL(UPDATE_URL).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(UPDATE_URL + "?t=" + System.currentTimeMillis()).openConnection();
+        connection.setUseCaches(false);
+        connection.addRequestProperty("Cache-Control", "no-cache");
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
         connection.setInstanceFollowRedirects(true);
@@ -211,6 +214,17 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private static String shortHash(String hash) {
+        if (hash == null || hash.length() < 12) {
+            return hash;
+        }
+        return hash.substring(0, 12);
     }
 
     private static String sha256(File file) throws Exception {

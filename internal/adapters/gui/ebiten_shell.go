@@ -47,9 +47,13 @@ type Game struct {
 	tabRects       []tabRect
 	tabScrollX     int
 	tabContentW    int
+	bodyScroll     bodyScrollState
 	mouseTabDrag   dragState
 	touchTabDrag   dragState
+	mouseBodyDrag  bodyDragState
+	touchBodyDrag  bodyDragState
 	touchID        ebiten.TouchID
+	bodyTouchID    ebiten.TouchID
 	l1WasPressed   bool
 	r1WasPressed   bool
 	r2Held         bool
@@ -96,6 +100,9 @@ func (game *Game) Update() error {
 	game.pageUpWasHit = pageUpPressed
 	game.updateMouseTabDrag()
 	game.updateTouchTabDrag()
+	game.updateBodyWheel()
+	game.updateMouseBodyDrag()
+	game.updateTouchBodyDrag()
 	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6, ebiten.Key7} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
 			_ = game.shell.SelectTab(index)
@@ -125,6 +132,14 @@ func (game *Game) ActiveTabID() string {
 		return id
 	}
 	return ""
+}
+
+func (game *Game) LayoutWidth() int {
+	return game.width
+}
+
+func (game *Game) LayoutHeight() int {
+	return game.height
 }
 
 func (game *Game) updateMouseTabDrag() {
@@ -216,7 +231,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(backgroundColor)
 	game.ui.Draw(screen)
 	game.tabRects = game.drawTabs(screen, snapshot)
-	drawActiveTab(screen, snapshot, game.width, game.height)
+	game.drawActiveTab(screen, snapshot)
 	drawDiagnostics(screen, snapshot, game.height)
 }
 

@@ -25,6 +25,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Stack vertical elements using measured heights and fixed gaps.
    * Split horizontal elements using explicit columns and a divider.
    * Clip, wrap, scroll, or truncate overflowing content inside its owning element; never let it draw over the next element.
+   * Native platform controls must be backed by a stable HUD slot id and a measured slot rectangle from the same layout pass as the owning element.
 
 3. **Be Responsive By Default**
    * Every tab body must work down to the current minimum supported body width for the target surface.
@@ -36,9 +37,11 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Rows use consistent label/detail spacing and disabled/future markers.
    * List items, rows, buttons, and form controls must meet the same touch-first minimum target sizing as tab buttons.
    * Buttons and form controls appear inside the fieldset or toolbar that explains their purpose.
+   * Text fields and input-like placeholders are block-level controls; they keep touch target height and clip or wrap content within their own rectangle.
 
 5. **Preserve The HUD Action Model**
    * Controller, keyboard, mouse, touch, and native-platform controls must dispatch the same named actions whenever possible.
+   * Scrollable panes support wheel, pointer drag, touch drag, and keyboard/controller scroll bindings through the HUD action model.
    * Native platform views may be used as temporary bridges only when the engine cannot perform the platform operation directly.
    * Native views must be hidden outside the tab and body element they support.
 

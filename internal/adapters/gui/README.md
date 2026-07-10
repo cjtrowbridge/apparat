@@ -24,11 +24,11 @@ The current custom shell uses taller tab buttons with compact outer margins and 
 
 Tab bodies are rendered from measured rectangles. Do not draw new content as unconstrained text or floating overlays.
 
-Settings renders as a vertical stack of fieldsets. Each fieldset owns its title, explanation, and content rows. The temporary Android update button is a native bridge only for the platform install action; the HUD still reserves and draws the owning `Updates` fieldset.
+Settings renders as a vertical stack of fieldsets. Each fieldset owns its title, explanation, and content rows. The temporary Android update button is a native bridge only for the platform install action; the HUD still reserves and draws the owning `Updates` fieldset and exposes a stable native slot id, `settings.updates.check_for_update`, for Android placement.
 
-Comrades, Projects, Cluster, Routing, and Tasks render as master-detail bodies. The left pane lists selectable objects, and the right pane owns placeholder/detail content until real selection data exists. Future adjustable dividers must preserve the same minimum-width and no-overlap rules.
+Comrades, Projects, Cluster, Routing, and Tasks render as master-detail bodies. The left pane lists selectable objects, and the right pane owns placeholder/detail content until real selection data exists. Both panes clip and scroll their own content with mouse wheel, pointer drag, and touch drag input. Future adjustable dividers must preserve the same minimum-width and no-overlap rules.
 
-Rows, list items, and buttons must remain large enough for touchscreens. Keep minimum touch target constants named and covered by tests when changing tab body layout.
+Rows, list items, buttons, and input-like controls must remain large enough for touchscreens. Keep minimum touch target constants named and covered by tests when changing tab body layout. Text blocks wrap or truncate inside bounded rectangles; they must not draw over adjacent fieldsets or panes.
 
 ## Native GUI Validation
 
