@@ -2,7 +2,7 @@
 plan_id: 2026-07-10-16-33-53_fix-ebitenui-regressions
 title: Fix EbitenUI Layout Regressions
 summary: Restores the canonical layout, master-detail UI, sizing constraints, and dynamic update logic missing after EbitenUI migration.
-status: current
+status: past
 created_at: 2026-07-10-16-33-53
 ---
 
@@ -120,6 +120,6 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 7.1.2 Build the Android APK (`make build-android`).
   - [x] 7.1.3 Deploy to the Android tablet (`adb install -r releases/android/arm64/apparat/latest.apk`).
   - [x] 7.1.4 Visually verify layout logic, 44px touch targets, and pane borders on the tablet.
-- [ ] 7.2 Finalization.
-  - [ ] 7.2.1 Update the daily journal (`journal/2026-07-10.md`) detailing the UI restorations.
-  - [ ] 7.2.2 Commit and push the final fixes to `main`.
+- [x] 7.2 Finalization.
+  - [x] 7.2.1 Update the daily journal (`journal/2026-07-10.md`) detailing the UI restorations.
+  - [x] 7.2.2 Commit and push the final fixes to `main`.
