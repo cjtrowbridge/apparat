@@ -26,6 +26,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Split horizontal elements using explicit columns and a divider.
    * Clip, wrap, scroll, or truncate overflowing content inside its owning element; never let it draw over the next element.
    * Native platform controls must be backed by a stable HUD slot id and a measured slot rectangle from the same layout pass as the owning element.
+   * If the owning element scrolls, native platform controls must use live scrolled slot geometry and must be hidden when their slot is clipped out of view.
 
 3. **Be Responsive By Default**
    * Every tab body must work down to the current minimum supported body width for the target surface.

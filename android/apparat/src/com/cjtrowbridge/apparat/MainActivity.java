@@ -105,10 +105,16 @@ public class MainActivity extends Activity {
         }
         try {
             boolean settingsActive = "settings".equals(Apparatmobile.activeTab());
+            boolean slotVisible = false;
             if (settingsActive) {
+                int width = view.getWidth();
+                int height = view.getHeight();
+                slotVisible = width > 0 && height > 0 && Apparatmobile.updateButtonVisible(width, height);
+            }
+            if (settingsActive && slotVisible) {
                 positionUpdateButton();
             }
-            updateButton.setVisibility(settingsActive ? View.VISIBLE : View.GONE);
+            updateButton.setVisibility(settingsActive && slotVisible ? View.VISIBLE : View.GONE);
         } catch (Exception error) {
             updateButton.setVisibility(View.GONE);
         }

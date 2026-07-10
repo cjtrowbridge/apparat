@@ -134,14 +134,6 @@ func (game *Game) ActiveTabID() string {
 	return ""
 }
 
-func (game *Game) LayoutWidth() int {
-	return game.width
-}
-
-func (game *Game) LayoutHeight() int {
-	return game.height
-}
-
 func (game *Game) updateMouseTabDrag() {
 	x, y := ebiten.CursorPosition()
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && game.pointInTabStrip(x, y) {
