@@ -1,0 +1,8 @@
+## TODO
+
+This is a list of tasks/items that need to be tackled. The user can add things here asynchronously which may be things that need more thought, or may be things that the user can direct the agent to pull out of here and tackle.
+
+- [ ] the update button is floating in a random place now instead of being in the correct place in the updates fieldset.
+- [ ] let's add a view fieldset in settings with a checkbox for show dev overlay. this should be unchecked by default but show a new debugui floating/draggable box with statistics like window size, frame rate, ups, resource usage, system resource usage, etc 
+- [ ] is it possible to take the same hash of the binary that's shown in git for the file, so we can compare our binary to the current latest version on github? This could let us move immediately to a model of notifying/updating when a new version is available rather than waiting for the beta to start doing that.
+- [ ] can we already make this new/temporary update-in-place feature apply to all the os/architecture build types, so they can all start updating themselves immediately? it seems like linux and windows binaries should deploy a simple (os-specfici) update script that downloads the new binary to a temporary filename next to the main binary, tells the main binary to exit, and then moves the temporary to replace the main binary and launches the new binary.  If anything fails, just re-launch the old binary with some kind of flag to let it know the update failed. then show a toast about the update failing when that flag is set at launch.
