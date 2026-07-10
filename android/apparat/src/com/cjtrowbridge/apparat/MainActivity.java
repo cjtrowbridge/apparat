@@ -34,16 +34,8 @@ public class MainActivity extends Activity {
     private static final String UPDATE_AUTHORITY = "com.cjtrowbridge.apparat.update";
     private static final String APK_MIME_TYPE = "application/vnd.android.package-archive";
     private EbitenView view;
-    private Button updateButton;
     private Handler mainHandler;
     private File downloadedUpdate;
-    private final Runnable updateButtonVisibility = new Runnable() {
-        @Override
-        public void run() {
-            refreshUpdateButtonVisibility();
-            mainHandler.postDelayed(this, 250);
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,23 +49,12 @@ public class MainActivity extends Activity {
         view.setFocusable(true);
         view.setFocusableInTouchMode(true);
         setContentView(view);
-        updateButton = new Button(this);
-        updateButton.setText("Check for update");
-        updateButton.setAllCaps(false);
-        updateButton.setMinHeight(dp(48));
-        updateButton.setMinimumHeight(dp(48));
-        updateButton.setVisibility(View.GONE);
-        updateButton.setOnClickListener(new View.OnClickListener() {
+        Apparatmobile.registerUpdater(new com.cjtrowbridge.apparat.apparatmobile.Updater() {
             @Override
-            public void onClick(View button) {
-                checkForUpdate();
+            public void checkForUpdate() {
+                MainActivity.this.checkForUpdate();
             }
         });
-        FrameLayout.LayoutParams updateLayout = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                dp(48),
-                Gravity.TOP | Gravity.START);
-        addContentView(updateButton, updateLayout);
     }
 
     @Override
@@ -82,57 +63,19 @@ public class MainActivity extends Activity {
         if (view != null) {
             view.resumeGame();
         }
-        if (mainHandler != null) {
-            mainHandler.removeCallbacks(updateButtonVisibility);
-            mainHandler.post(updateButtonVisibility);
-        }
+
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (mainHandler != null) {
-            mainHandler.removeCallbacks(updateButtonVisibility);
-        }
+
         if (view != null) {
             view.suspendGame();
         }
     }
 
-    private void refreshUpdateButtonVisibility() {
-        if (updateButton == null) {
-            return;
-        }
-        try {
-            boolean settingsActive = "settings".equals(Apparatmobile.activeTab());
-            boolean slotVisible = false;
-            if (settingsActive) {
-                int width = view.getWidth();
-                int height = view.getHeight();
-                slotVisible = width > 0 && height > 0 && Apparatmobile.updateButtonVisible(width, height);
-            }
-            if (settingsActive && slotVisible) {
-                positionUpdateButton();
-            }
-            updateButton.setVisibility(settingsActive && slotVisible ? View.VISIBLE : View.GONE);
-        } catch (Exception error) {
-            updateButton.setVisibility(View.GONE);
-        }
-    }
 
-    private void positionUpdateButton() {
-        int width = view.getWidth();
-        int height = view.getHeight();
-        if (width <= 0 || height <= 0) {
-            return;
-        }
-        FrameLayout.LayoutParams layout = (FrameLayout.LayoutParams) updateButton.getLayoutParams();
-        layout.width = Math.max(dp(160), (int) Apparatmobile.updateButtonW(width, height));
-        layout.height = Math.max(dp(48), (int) Apparatmobile.updateButtonH(width, height));
-        layout.leftMargin = (int) Apparatmobile.updateButtonX(width, height);
-        layout.topMargin = (int) Apparatmobile.updateButtonY(width, height);
-        updateButton.setLayoutParams(layout);
-    }
 
     private void checkForUpdate() {
         Toast.makeText(this, "Checking Apparat update...", Toast.LENGTH_SHORT).show();

@@ -15,18 +15,17 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 
 ## Layout Rules
 
-1. **Use Structured Body Elements**
-   * A tab body is a layout surface, not a free-form text canvas.
-   * Put related content in separate bounded elements such as fieldsets, lists, detail panes, forms, tables, or toolbars.
+1. **Use Structured Body Elements via EbitenUI**
+   * EbitenUI is the mandatory UI toolkit for the Apparat HUD. All layout and widgets must use `github.com/ebitenui/ebitenui`.
+   * Do not use raw imperative coordinates (`ebitenutil.DebugPrintAt`, `ebitenutil.DrawRect`), custom `SubImage` clipping, or custom drag-scroll loops.
+   * Put related content in EbitenUI layout containers (like `widget.RowLayout` or `widget.GridLayout`) and `widget.ScrollContainer`.
    * Each bounded element must own its title, explanation, controls, and body content.
 
 2. **Prevent Overlap By Construction**
    * Do not place controls as floating overlays unless they correspond to a reserved body element.
    * Stack vertical elements using measured heights and fixed gaps.
    * Split horizontal elements using explicit columns and a divider.
-   * Clip, wrap, scroll, or truncate overflowing content inside its owning element; never let it draw over the next element.
-   * Native platform controls must be backed by a stable HUD slot id and a measured slot rectangle from the same layout pass as the owning element.
-   * If the owning element scrolls, native platform controls must use live scrolled slot geometry and must be hidden when their slot is clipped out of view.
+   * Let EbitenUI handle clipping, wrapping, and scrolling for overflowing content inside its owning element container.
 
 3. **Be Responsive By Default**
    * Every tab body must work down to the current minimum supported body width for the target surface.
@@ -64,11 +63,10 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Ensure every section has a meaningful title and rows or controls that can be rendered without overlap.
    * Mark unavailable backend actions as disabled or future until their backing systems exist.
 
-3. **Render With Measured Layout**
-   * Compute body, element, pane, row, and control rectangles before drawing.
-   * Keep padding and gaps as named constants.
-   * Clip or truncate text to the element width.
-   * Reserve space for native bridge controls before placing them.
+3. **Render Using EbitenUI Widget Trees**
+   * Construct the EbitenUI widget hierarchy using appropriate containers and layout managers.
+   * Use the central theme configuration for padding, margins, gaps, fonts, and colors.
+   * Let EbitenUI handle dynamic text wrapping and layout calculation.
 
 4. **Handle Responsiveness**
    * Test narrow body widths in unit tests where possible.
@@ -83,6 +81,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 
 6. **Verify**
    * Run focused HUD/GUI tests.
+   * For visual layout changes, capture actual rendered screenshots on the target surface before marking the work complete; geometry/unit tests alone are not sufficient.
    * Run `make check-docs`.
    * Run `python3 scripts/check_code_file_lines.py`.
    * Run `git diff --check`.

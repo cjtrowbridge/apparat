@@ -4,7 +4,6 @@ package gui
 
 import (
 	"fmt"
-	"image"
 	"image/color"
 	"strings"
 
@@ -56,14 +55,6 @@ func (area rect) intersects(other rect) bool {
 	return area.x < other.x+other.w && area.x+area.w > other.x && area.y < other.y+other.h && area.y+area.h > other.y
 }
 
-func (area rect) inset(inset int) rect {
-	return rect{x: area.x + inset, y: area.y + inset, w: area.w - inset*2, h: area.h - inset*2}
-}
-
-func (area rect) localTo(parent rect) rect {
-	return rect{x: area.x - parent.x, y: area.y - parent.y, w: area.w, h: area.h}
-}
-
 func (game *Game) drawActiveTab(screen *ebiten.Image, snapshot hud.Snapshot) {
 	body := tabBodyRect(game.width, game.height)
 	ebitenutil.DrawRect(screen, float64(body.x), float64(body.y), float64(body.w), float64(body.h), panelColor)
@@ -81,27 +72,26 @@ func tabBodyRect(width int, height int) rect {
 }
 
 func (game *Game) drawSettingsBody(screen *ebiten.Image, tab hud.Tab, body rect) {
-	game.bodyScroll.settings = clampScroll(game.bodyScroll.settings, settingsContentHeight(tab)-body.h)
-	pane := clippedImage(screen, body)
 	x := body.x + bodyInset
-	y := body.y + bodyInset - game.bodyScroll.settings
+	y := body.y + bodyInset
 	w := body.w - bodyInset*2
-	drawTextAt(pane, body, tab.Title(), x, y)
-	drawTextBlock(pane, body, tab.Summary, rect{x: x, y: y + 24, w: w, h: fieldsetDescH * 2})
+	ebitenutil.DebugPrintAt(screen, tab.Title(), x, y)
+	drawTextBlock(screen, tab.Summary, rect{x: x, y: y + 24, w: w, h: fieldsetDescH * 2})
 	y += 58
 	for _, section := range tab.Sections {
 		h := fieldsetHeight(section)
-		drawFieldset(pane, body, rect{x: x, y: y, w: w, h: h}, section)
+		drawFieldset(screen, rect{x: x, y: y, w: w, h: h}, section)
 		y += h + bodySectionGap
+		if y > body.y+body.h-fieldsetMinH {
+			break
+		}
 	}
 }
 
 func (game *Game) drawMasterDetailBody(screen *ebiten.Image, tab hud.Tab, body rect) {
 	list, detail := masterDetailRects(body)
-	game.bodyScroll.list = clampScroll(game.bodyScroll.list, listContentHeight(tab)-list.h)
-	game.bodyScroll.detail = clampScroll(game.bodyScroll.detail, detailContentHeight(tab)-detail.h)
-	drawListPane(screen, tab, list, game.bodyScroll.list)
-	drawDetailPane(screen, tab, detail, game.bodyScroll.detail)
+	drawListPane(screen, tab, list)
+	drawDetailPane(screen, tab, detail)
 }
 
 func masterDetailRects(body rect) (rect, rect) {
@@ -122,54 +112,55 @@ func masterDetailRects(body rect) (rect, rect) {
 	return list, detail
 }
 
-func drawListPane(screen *ebiten.Image, tab hud.Tab, pane rect, scroll int) {
+func drawListPane(screen *ebiten.Image, tab hud.Tab, pane rect) {
 	ebitenutil.DrawRect(screen, float64(pane.x), float64(pane.y), float64(pane.w), float64(pane.h), listPaneColor)
 	drawBorder(screen, pane)
-	clipped := clippedImage(screen, pane)
-	drawTextAt(clipped, pane, tab.Title(), pane.x+fieldsetPadding, pane.y+fieldsetPadding-scroll)
-	y := pane.y + fieldsetPadding + 28 - scroll
+	ebitenutil.DebugPrintAt(screen, tab.Title(), pane.x+fieldsetPadding, pane.y+fieldsetPadding)
+	y := pane.y + fieldsetPadding + 28
 	items := listItemsForTab(tab)
 	for index, item := range items {
-		itemArea := rect{x: pane.x + 6, y: y - 6, w: pane.w - 12, h: touchTargetH}
 		if index == 0 {
-			local := itemArea.localTo(pane)
-			ebitenutil.DrawRect(clipped, float64(local.x), float64(local.y), float64(local.w), float64(local.h), selectedItemColor)
+			ebitenutil.DrawRect(screen, float64(pane.x+6), float64(y-6), float64(pane.w-12), float64(touchTargetH), selectedItemColor)
 		}
-		drawTextAt(clipped, pane, truncateText(item, pane.w-fieldsetPadding*2), pane.x+fieldsetPadding, y)
+		ebitenutil.DebugPrintAt(screen, truncateText(item, pane.w-fieldsetPadding*2), pane.x+fieldsetPadding, y)
 		y += touchTargetH
+		if y > pane.y+pane.h-touchTargetH {
+			break
+		}
 	}
 }
 
-func drawDetailPane(screen *ebiten.Image, tab hud.Tab, pane rect, scroll int) {
+func drawDetailPane(screen *ebiten.Image, tab hud.Tab, pane rect) {
 	ebitenutil.DrawRect(screen, float64(pane.x), float64(pane.y), float64(pane.w), float64(pane.h), fieldsetColor)
 	drawBorder(screen, pane)
-	clipped := clippedImage(screen, pane)
 	x := pane.x + fieldsetPadding
-	y := pane.y + fieldsetPadding - scroll
-	drawTextAt(clipped, pane, "Placeholder Detail", x, y)
-	drawTextBlock(clipped, pane, tab.Summary, rect{x: x, y: y + 24, w: pane.w - fieldsetPadding*2, h: fieldsetDescH * 2})
+	y := pane.y + fieldsetPadding
+	ebitenutil.DebugPrintAt(screen, "Placeholder Detail", x, y)
+	drawTextBlock(screen, tab.Summary, rect{x: x, y: y + 24, w: pane.w - fieldsetPadding*2, h: fieldsetDescH * 2})
 	y += 58
 	for _, section := range tab.Sections {
 		h := fieldsetHeight(section)
-		drawFieldset(clipped, pane, rect{x: x, y: y, w: pane.w - fieldsetPadding*2, h: h}, section)
+		drawFieldset(screen, rect{x: x, y: y, w: pane.w - fieldsetPadding*2, h: h}, section)
 		y += h + bodySectionGap
+		if y > pane.y+pane.h-fieldsetMinH {
+			break
+		}
 	}
 }
 
-func drawFieldset(screen *ebiten.Image, origin rect, area rect, section hud.Section) {
-	localArea := area.localTo(origin)
-	ebitenutil.DrawRect(screen, float64(localArea.x), float64(localArea.y), float64(localArea.w), float64(localArea.h), fieldsetColor)
-	drawBorder(screen, localArea)
+func drawFieldset(screen *ebiten.Image, area rect, section hud.Section) {
+	ebitenutil.DrawRect(screen, float64(area.x), float64(area.y), float64(area.w), float64(area.h), fieldsetColor)
+	drawBorder(screen, area)
 	x := area.x + fieldsetPadding
 	y := area.y + fieldsetPadding
-	drawTextAt(screen, origin, strings.ToUpper(section.Title), x, y)
+	ebitenutil.DebugPrintAt(screen, strings.ToUpper(section.Title), x, y)
 	y += fieldsetTitleH
 	if section.Description != "" {
-		lines := drawTextBlock(screen, origin, section.Description, rect{x: x, y: y, w: area.w - fieldsetPadding*2, h: fieldsetDescH * 2})
+		lines := drawTextBlock(screen, section.Description, rect{x: x, y: y, w: area.w - fieldsetPadding*2, h: fieldsetDescH * 2})
 		y += lines * fieldsetDescH
 	}
 	for _, row := range section.Rows {
-		drawTextAt(screen, origin, truncateText(rowLine(row), area.w-fieldsetPadding*2), x, y)
+		ebitenutil.DebugPrintAt(screen, truncateText(rowLine(row), area.w-fieldsetPadding*2), x, y)
 		y += fieldsetRowH
 		if y > area.y+area.h-fieldsetRowH {
 			break
@@ -263,11 +254,7 @@ func wrapText(text string, maxWidth int) []string {
 	return lines
 }
 
-func drawTextAt(screen *ebiten.Image, origin rect, text string, x int, y int) {
-	ebitenutil.DebugPrintAt(screen, text, x-origin.x, y-origin.y)
-}
-
-func drawTextBlock(screen *ebiten.Image, origin rect, text string, area rect) int {
+func drawTextBlock(screen *ebiten.Image, text string, area rect) int {
 	lines := wrapText(text, area.w)
 	maxLines := area.h / fieldsetDescH
 	if maxLines <= 0 {
@@ -277,13 +264,9 @@ func drawTextBlock(screen *ebiten.Image, origin rect, text string, area rect) in
 		lines = lines[:maxLines]
 	}
 	for index, line := range lines {
-		drawTextAt(screen, origin, truncateText(line, area.w), area.x, area.y+index*fieldsetDescH)
+		ebitenutil.DebugPrintAt(screen, truncateText(line, area.w), area.x, area.y+index*fieldsetDescH)
 	}
 	return len(lines)
-}
-
-func clippedImage(screen *ebiten.Image, area rect) *ebiten.Image {
-	return screen.SubImage(image.Rect(area.x, area.y, area.x+area.w, area.y+area.h)).(*ebiten.Image)
 }
 
 func settingsContentHeight(tab hud.Tab) int {
@@ -323,63 +306,11 @@ func nativeControlSlotRect(id string, width int, height int) (rect, bool) {
 
 func settingsUpdateSlotRect(width int, height int, scroll int) rect {
 	body := tabBodyRect(width, height)
-	y := body.y + bodyInset + 58
-	sections := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6].Sections
-	for _, section := range sections {
-		if section.Title == "Updates" {
-			break
-		}
-		y += fieldsetHeight(section) + bodySectionGap
-	}
-	return rect{x: body.x + bodyInset + fieldsetPadding, y: y + fieldsetPadding + fieldsetTitleH + fieldsetDescH*2 - scroll, w: 190, h: touchTargetH}
+	_ = scroll
+	return rect{x: body.x + body.w - bodyInset - 210, y: body.y + bodyInset + 22, w: 210, h: touchTargetH}
 }
 
 func updateButtonRect(width int, height int) rect {
 	slot, _ := nativeControlSlotRect(nativeSlotUpdate, width, height)
 	return slot
-}
-
-func UpdateButtonX(width int, height int) int {
-	return updateButtonRect(width, height).x
-}
-
-func UpdateButtonY(width int, height int) int {
-	return updateButtonRect(width, height).y
-}
-
-func UpdateButtonW(width int, height int) int {
-	return updateButtonRect(width, height).w
-}
-
-func UpdateButtonH(width int, height int) int {
-	return updateButtonRect(width, height).h
-}
-
-func (game *Game) updateButtonSlot(width int, height int) nativeSlot {
-	body := tabBodyRect(width, height)
-	slot := settingsUpdateSlotRect(width, height, game.bodyScroll.settings)
-	return nativeSlot{area: slot, visible: slot.intersects(body)}
-}
-
-func (game *Game) UpdateButtonVisible(width int, height int) bool {
-	if game == nil || game.ActiveTabID() != string(hud.TabSettings) {
-		return false
-	}
-	return game.updateButtonSlot(width, height).visible
-}
-
-func (game *Game) UpdateButtonX(width int, height int) int {
-	return game.updateButtonSlot(width, height).area.x
-}
-
-func (game *Game) UpdateButtonY(width int, height int) int {
-	return game.updateButtonSlot(width, height).area.y
-}
-
-func (game *Game) UpdateButtonW(width int, height int) int {
-	return game.updateButtonSlot(width, height).area.w
-}
-
-func (game *Game) UpdateButtonH(width int, height int) int {
-	return game.updateButtonSlot(width, height).area.h
 }

@@ -47,37 +47,18 @@ func ActiveTab() string {
 	return game.ActiveTabID()
 }
 
-func UpdateButtonX(width int, height int) int {
-	if game == nil {
-		return 0
-	}
-	return game.UpdateButtonX(width, height)
+type Updater interface {
+	CheckForUpdate()
 }
 
-func UpdateButtonY(width int, height int) int {
-	if game == nil {
-		return 0
-	}
-	return game.UpdateButtonY(width, height)
+var updater Updater
+
+func RegisterUpdater(u Updater) {
+	updater = u
 }
 
-func UpdateButtonW(width int, height int) int {
-	if game == nil {
-		return 0
+func TriggerCheckForUpdate() {
+	if updater != nil {
+		updater.CheckForUpdate()
 	}
-	return game.UpdateButtonW(width, height)
-}
-
-func UpdateButtonH(width int, height int) int {
-	if game == nil {
-		return 0
-	}
-	return game.UpdateButtonH(width, height)
-}
-
-func UpdateButtonVisible(width int, height int) bool {
-	if game == nil {
-		return false
-	}
-	return game.UpdateButtonVisible(width, height)
 }
