@@ -48,7 +48,10 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	}
 
 	// Update the game UI instance
-	game.ui = &ebitenui.UI{Container: root}
+	game.ui = &ebitenui.UI{
+		Container:    root,
+		PrimaryTheme: game.theme,
+	}
 }
 
 func (game *Game) buildTabs(snapshot hud.Snapshot) []*widget.TabBookTab {
