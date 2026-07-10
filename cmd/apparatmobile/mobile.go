@@ -32,6 +32,11 @@ func init() {
 	}
 	_ = runtime.RecordLastRun("info", "android", "mobile_game_ready", "Ebitengine mobile game registered", map[string]any{"root": cfg.RootDir})
 	game = gui.NewGame()
+	game.SetOnCheckForUpdate(func() {
+		if updater != nil {
+			updater.CheckForUpdate()
+		}
+	})
 	mobile.SetGame(game)
 	_ = fmt.Sprintf("%p", runtime)
 }
@@ -55,10 +60,4 @@ var updater Updater
 
 func RegisterUpdater(u Updater) {
 	updater = u
-}
-
-func TriggerCheckForUpdate() {
-	if updater != nil {
-		updater.CheckForUpdate()
-	}
 }
