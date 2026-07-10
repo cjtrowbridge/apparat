@@ -59,25 +59,24 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 ## 3. Problem: Broken Characters in Tab Names
 **Issue:** The old `body_layout.go` did not prefix tab titles with glyphs (it just used `tab.Title()`), but the new `ui_builder.go` explicitly prepends `tabData.Descriptor.Glyph`. The default `GoXFace` font does not contain these Unicode icons, rendering them as broken "tofu" boxes.
 **Fix:**
-- Revert the tab label construction in `buildTabs` to strictly use `tabData.Title()` without the missing glyph, OR load an external font that supports those glyphs. For parity with the previous implementation, stripping the unsupported glyph is the correct immediate fix.
+- Load an external TrueType font that supports the Unicode glyphs (e.g., Ebiten's bundled MPlus font `github.com/hajimehoshi/ebiten/v2/examples/resources/fonts` or `golang.org/x/image/font/gofont/goregular`).
+- Re-enable `tabData.Descriptor.Glyph` rendering in `ui_builder.go` and bind this new font face in `theme.go` to restore the correct icon displays.
 
 **Execution Tasks:**
 - [ ] 3. Fix broken Unicode tab labels.
-  - [ ] 3.1 Revert `ui_builder.go` `buildTabs` logic to strictly use `tabData.Title()`.
-  - [ ] 3.2 Drop the unsupported `tabData.Descriptor.Glyph` from the layout configuration.
+  - [ ] 3.1 Load `fonts.MPlus1pRegular_ttf` (or similar) into an Ebiten `text.Face` in `theme.go`.
+  - [ ] 3.2 Ensure `ui_builder.go` `buildTabs` concatenates the `tabData.Descriptor.Glyph` and `tabData.Title()` so the icons are visible.
 
-## 4. Problem: Missing Outlines
-**Issue:** The legacy UI explicitly drew borders around panels using `bodyBorderColor`. The new EbitenUI theme relies on `image.NewNineSliceColor(bgColor)`, which paints a flat, borderless rectangle.
+## 4. Problem: Missing Outlines & Flat Backgrounds
+**Issue:** The legacy UI explicitly drew borders around panels using `bodyBorderColor`. The new EbitenUI theme relies on `image.NewNineSliceColor(bgColor)`, which paints a flat, borderless rectangle that blends into the background.
 **Fix:**
-- Create a new helper function in `theme.go`: `createBorderedNineSlice(fill color.Color, border color.Color) *image.NineSlice`.
-- This function will generate an actual `ebiten.Image` (e.g., a 3x3 or larger square) where the outer pixels are `bodyBorderColor` and the inner pixels are the `fill` color, then slice it appropriately.
-- Apply this bordered NineSlice to `theme.PanelTheme`, `ScrollContainerImage`, and relevant `ButtonTheme` states to restore the crisp outlines.
+- Instead of manually rendering borders, we will use flat, contrasting colors for buttons and panels to distinguish them from the root background.
+- Apply `image.NewNineSliceColor(panelBgColor)` or `image.NewNineSliceColor(accentColor)` to `theme.PanelTheme` and `theme.ButtonTheme` so layout panes and buttons have crisp, distinct bounds.
 
 **Execution Tasks:**
-- [ ] 4. Introduce bordered graphics.
-  - [ ] 4.1 Introduce `createBorderedNineSlice` in `theme.go`.
-    - [ ] 4.1.1 Programmatically create a 3x3 graphic using `bodyBorderColor` for the outer edge and a distinct fill color for the inner square.
-  - [ ] 4.2 Apply this bordered NineSlice to `theme.PanelTheme` and `ScrollContainerImage` so layout panes have crisp borders.
+- [ ] 4. Introduce distinct flat background colors.
+  - [ ] 4.1 Delete the custom `createBorderedNineSlice` helper from `theme.go`.
+  - [ ] 4.2 Apply `image.NewNineSliceColor(panelBgColor)` to `theme.PanelTheme` and `ScrollContainerImage` to create distinct pane backgrounds.
 
 ## 5. Problem: Update Button No Longer Works and Looks Like Plain Text
 **Issue:** 
@@ -85,13 +84,13 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 2. It is hardcoded at the top of the settings page rather than correctly mapped to the `Updates` section from the snapshot data.
 3. If `onCheckForUpdate` is `nil` (e.g., when testing on the Linux desktop environment), the button silently does nothing, appearing broken.
 **Fix:**
-- **Visuals:** Ensure `theme.ButtonTheme.Image` utilizes `createBorderedNineSlice` with a contrasting fill color (like `fieldsetColor` or `accentColor`) so buttons look like distinct UI elements.
+- **Visuals:** Ensure `theme.ButtonTheme.Image` utilizes `image.NewNineSliceColor` with a contrasting fill color (like `panelBgColor` or `accentColor`) so buttons look like distinct UI elements.
 - **Dynamic Placement:** Inside the new dynamic `buildSettingsTab` loop, when encountering a section with `Title: "Updates"`, render the `widget.Button` in that section container.
 - **Feedback:** Provide fallback behavior: if `game.onCheckForUpdate == nil`, update an on-screen status text or the button label itself to provide immediate visual feedback that the button was pressed.
 
 **Execution Tasks:**
 - [ ] 5. Fix update button logic and aesthetics.
-  - [ ] 5.1 Apply the bordered NineSlice to `theme.ButtonTheme` (with a contrasting fill like `accentColor` or `fieldsetColor`) so buttons look like physical buttons.
+  - [ ] 5.1 Apply `image.NewNineSliceColor` to `theme.ButtonTheme` (with a contrasting fill like `accentColor` or `panelBgColor`) so buttons look like physical buttons.
   - [ ] 5.2 Map the "Check for update" button to the correct dynamic section.
     - [ ] 5.2.1 Add conditional logic in the `tab.Sections` loop to intercept `section.Title == "Updates"`.
     - [ ] 5.2.2 Create the interactive EbitenUI update button at that specific section.
@@ -110,7 +109,7 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 - [ ] 6. Update playbooks and documentation.
   - [ ] 6.1 Edit `playbooks/how_to_add_or_modify_hud_tab_contents.md`.
     - [ ] 6.1.1 Document the strict 44px minimum touch target requirement (`MinSize: (0, 44)`).
-    - [ ] 6.1.2 Document the requirement to use bordered NineSlice graphics for buttons so they are visually distinct.
+    - [ ] 6.1.2 Document the requirement to use distinct background colors (e.g. `image.NewNineSliceColor`) for buttons so they are visually distinct.
     - [ ] 6.1.3 Prohibit hardcoding UI layouts outside of the data-driven `tab.Sections` and `section.Rows` loop pattern.
 
 ## 7. Verification and Finalization
