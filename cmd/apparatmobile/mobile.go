@@ -62,3 +62,33 @@ func UpdateButtonW(width int, height int) int {
 func UpdateButtonH(width int, height int) int {
 	return gui.UpdateButtonH(width, height)
 }
+
+func GameWidth() int {
+	if game == nil {
+		return 0
+	}
+	return game.LayoutWidth()
+}
+
+func GameHeight() int {
+	if game == nil {
+		return 0
+	}
+	return game.LayoutHeight()
+}
+
+func UpdateButtonViewX(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
+	return gui.UpdateButtonViewX(viewWidth, viewHeight, gameWidth, gameHeight)
+}
+
+func UpdateButtonViewY(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
+	return gui.UpdateButtonViewY(viewWidth, viewHeight, gameWidth, gameHeight)
+}
+
+func UpdateButtonViewW(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
+	return gui.UpdateButtonViewW(viewWidth, viewHeight, gameWidth, gameHeight)
+}
+
+func UpdateButtonViewH(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
+	return gui.UpdateButtonViewH(viewWidth, viewHeight, gameWidth, gameHeight)
+}

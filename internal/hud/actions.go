@@ -19,6 +19,8 @@ const (
 	ActionContextMenu     Action = "context_menu"
 	ActionCommandPalette  Action = "command_palette"
 	ActionScroll          Action = "scroll"
+	ActionScrollUp        Action = "scroll_up"
+	ActionScrollDown      Action = "scroll_down"
 	ActionCollectionNext  Action = "collection_next"
 	ActionCollectionPrev  Action = "collection_previous"
 )
@@ -38,7 +40,9 @@ func DefaultBindings() BindingConfig {
 		ActionBack:            {{Device: "controller", Input: "B"}, {Device: "keyboard", Input: "Escape"}},
 		ActionContextMenu:     {{Device: "controller", Input: "Menu"}, {Device: "keyboard", Input: "Shift+F10"}},
 		ActionCommandPalette:  {{Device: "keyboard", Input: "Ctrl+Shift+P"}},
-		ActionScroll:          {{Device: "controller", Input: "RightStick"}, {Device: "pointer", Input: "Wheel"}},
+		ActionScroll:          {{Device: "controller", Input: "RightStick"}, {Device: "pointer", Input: "Wheel"}, {Device: "pointer", Input: "Drag"}, {Device: "touch", Input: "Drag"}},
+		ActionScrollUp:        {{Device: "keyboard", Input: "PageUp"}, {Device: "controller", Input: "RightStickUp"}},
+		ActionScrollDown:      {{Device: "keyboard", Input: "PageDown"}, {Device: "controller", Input: "RightStickDown"}},
 		ActionCollectionNext:  {{Device: "keyboard", Input: "PageDown"}},
 		ActionCollectionPrev:  {{Device: "keyboard", Input: "PageUp"}},
 	}}
@@ -54,9 +58,9 @@ func (shell *Shell) ApplyAction(action Action) error {
 		shell.PreviousTab()
 	case ActionNextTab:
 		shell.NextTab()
-	case ActionFocusUp, ActionFocusLeft, ActionCollectionPrev:
+	case ActionFocusUp, ActionFocusLeft, ActionCollectionPrev, ActionScrollUp:
 		shell.MoveFocus(-1)
-	case ActionFocusDown, ActionFocusRight, ActionCollectionNext:
+	case ActionFocusDown, ActionFocusRight, ActionCollectionNext, ActionScrollDown:
 		shell.MoveFocus(1)
 	case ActionCancelRecording:
 		shell.CancelVoiceCapture()

@@ -1518,6 +1518,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Debian mouse and touchpad behavior.
   - [ ] Debian right-`Ctrl` push-to-talk and cancellation.
   - [ ] Configurable binding persistence and conflict reporting.
+  - [ ] Settings UI for viewing and reassigning scroll, pane, pointer-drag, touch-drag, keyboard, and controller bindings.
   - [ ] Gamescope/fullscreen/window behavior.
   - [ ] Hi-DPI/readability.
   - [ ] `Steam+X` keyboard.

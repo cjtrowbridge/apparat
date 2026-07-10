@@ -111,14 +111,14 @@ func TestMasterDetailRectsStaySeparatedAtNarrowWidth(t *testing.T) {
 	}
 }
 
-func TestSettingsUpdatesSectionIsLast(t *testing.T) {
+func TestSettingsUpdatesSectionIsFirst(t *testing.T) {
 	tab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
-	last := tab.Sections[len(tab.Sections)-1]
-	if last.Title != "Updates" {
-		t.Fatalf("last settings section = %q, want Updates", last.Title)
+	first := tab.Sections[0]
+	if first.Title != "Updates" {
+		t.Fatalf("first settings section = %q, want Updates", first.Title)
 	}
-	if len(last.Rows) != 0 {
-		t.Fatalf("updates rows = %d, want native button to own control row", len(last.Rows))
+	if len(first.Rows) != 0 {
+		t.Fatalf("updates rows = %d, want native button to own control row", len(first.Rows))
 	}
 }
 
@@ -126,6 +126,45 @@ func TestTruncateTextUsesASCIIEllipsis(t *testing.T) {
 	got := truncateText("abcdefghijklmnopqrstuvwxyz", debugGlyphWidth*8)
 	if got != "abcde..." {
 		t.Fatalf("truncateText = %q, want ASCII ellipsis", got)
+	}
+}
+
+func TestWrapTextKeepsTextInsideBlockWidth(t *testing.T) {
+	lines := wrapText("alpha beta gamma delta", debugGlyphWidth*11)
+	if len(lines) < 2 {
+		t.Fatalf("wrapText lines = %+v, want multiple lines", lines)
+	}
+	for _, line := range lines {
+		if labelWidth(line) > debugGlyphWidth*11 {
+			t.Fatalf("line %q exceeds block width", line)
+		}
+	}
+}
+
+func TestClampScroll(t *testing.T) {
+	if got := clampScroll(-5, 200); got != 0 {
+		t.Fatalf("negative scroll = %d, want 0", got)
+	}
+	if got := clampScroll(300, 200); got != 200 {
+		t.Fatalf("overscroll = %d, want 200", got)
+	}
+	if got := clampScroll(20, -1); got != 0 {
+		t.Fatalf("short content scroll = %d, want 0", got)
+	}
+}
+
+func TestDragBodyPaneStartsSmoothlyAfterThreshold(t *testing.T) {
+	game := NewGame()
+	game.width = 420
+	game.height = 320
+	state := bodyDragState{active: true, pane: scrollPaneSettings, startY: 100, startScroll: 50}
+	game.bodyScroll.settings = 50
+	game.dragBodyPane(&state, 100+bodyDragThreshold+1)
+	if !state.dragged {
+		t.Fatal("body drag should start after threshold")
+	}
+	if game.bodyScroll.settings != 50 {
+		t.Fatalf("settings scroll = %d, want no threshold jump", game.bodyScroll.settings)
 	}
 }
 
@@ -137,6 +176,38 @@ func TestUpdateButtonRectSitsInsideSettingsBody(t *testing.T) {
 	}
 	if button.h < touchTargetH {
 		t.Fatalf("button height = %d, want at least %d", button.h, touchTargetH)
+	}
+}
+
+func TestNativeUpdateSlotUsesStableID(t *testing.T) {
+	button, ok := nativeControlSlotRect(nativeSlotUpdate, 1600, 1260)
+	if !ok {
+		t.Fatal("update native slot missing")
+	}
+	if _, ok := nativeControlSlotRect("missing.slot", 1600, 1260); ok {
+		t.Fatal("unexpected native slot for unknown id")
+	}
+	if button.h < touchTargetH || button.w <= button.h {
+		t.Fatalf("button slot should be touch-sized and wider than tall: %+v", button)
+	}
+}
+
+func TestInputPlaceholderRectStaysInsideFieldset(t *testing.T) {
+	fieldset := rect{x: 10, y: 20, w: 240, h: 160}
+	input := inputPlaceholderRect(fieldset, 1)
+	if input.x < fieldset.x || input.x+input.w > fieldset.x+fieldset.w {
+		t.Fatalf("input rect %+v outside fieldset %+v", input, fieldset)
+	}
+	if input.h < touchTargetH {
+		t.Fatalf("input height = %d, want at least %d", input.h, touchTargetH)
+	}
+}
+
+func TestUpdateButtonViewScaleUsesRenderedLayout(t *testing.T) {
+	viewX := UpdateButtonViewX(800, 630, 1600, 1260)
+	logicalX := UpdateButtonX(1600, 1260)
+	if viewX != logicalX/2 {
+		t.Fatalf("scaled x = %d, want %d", viewX, logicalX/2)
 	}
 }
 
