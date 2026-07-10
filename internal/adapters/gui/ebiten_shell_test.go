@@ -111,6 +111,28 @@ func TestMasterDetailRectsStaySeparatedAtNarrowWidth(t *testing.T) {
 	}
 }
 
+func TestLocalRectConversionUsesPaneOrigin(t *testing.T) {
+	pane := rect{x: 100, y: 200, w: 300, h: 400}
+	child := rect{x: 112, y: 244, w: 80, h: 44}
+	local := child.localTo(pane)
+	if local.x != 12 || local.y != 44 || local.w != child.w || local.h != child.h {
+		t.Fatalf("local rect = %+v, want x=12 y=44 w=%d h=%d", local, child.w, child.h)
+	}
+}
+
+func TestMasterDetailTextRectsAreInsideExpectedPanes(t *testing.T) {
+	body := tabBodyRect(1280, 800)
+	list, detail := masterDetailRects(body)
+	listText := rect{x: list.x + fieldsetPadding, y: list.y + fieldsetPadding + 28, w: list.w - fieldsetPadding*2, h: touchTargetH}
+	detailText := rect{x: detail.x + fieldsetPadding, y: detail.y + fieldsetPadding, w: detail.w - fieldsetPadding*2, h: fieldsetDescH}
+	if !list.contains(listText.x, listText.y) || !list.contains(listText.x+listText.w-1, listText.y+listText.h-1) {
+		t.Fatalf("list text rect %+v outside list pane %+v", listText, list)
+	}
+	if !detail.contains(detailText.x, detailText.y) || !detail.contains(detailText.x+detailText.w-1, detailText.y+detailText.h-1) {
+		t.Fatalf("detail text rect %+v outside detail pane %+v", detailText, detail)
+	}
+}
+
 func TestSettingsUpdatesSectionIsFirst(t *testing.T) {
 	tab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
 	first := tab.Sections[0]
@@ -203,11 +225,30 @@ func TestInputPlaceholderRectStaysInsideFieldset(t *testing.T) {
 	}
 }
 
-func TestUpdateButtonViewScaleUsesRenderedLayout(t *testing.T) {
-	viewX := UpdateButtonViewX(800, 630, 1600, 1260)
-	logicalX := UpdateButtonX(1600, 1260)
-	if viewX != logicalX/2 {
-		t.Fatalf("scaled x = %d, want %d", viewX, logicalX/2)
+func TestLiveUpdateButtonSlotMovesWithSettingsScroll(t *testing.T) {
+	game := NewGame()
+	if err := game.shell.SelectTab(6); err != nil {
+		t.Fatal(err)
+	}
+	game.bodyScroll.settings = 30
+	live := game.UpdateButtonY(1280, 800)
+	static := UpdateButtonY(1280, 800)
+	if live != static-30 {
+		t.Fatalf("live button y = %d, want static y %d minus scroll", live, static)
+	}
+}
+
+func TestLiveUpdateButtonSlotHidesWhenScrolledOutOfView(t *testing.T) {
+	game := NewGame()
+	if err := game.shell.SelectTab(6); err != nil {
+		t.Fatal(err)
+	}
+	if !game.UpdateButtonVisible(1280, 800) {
+		t.Fatal("update button should be visible before Settings scroll")
+	}
+	game.bodyScroll.settings = 10000
+	if game.UpdateButtonVisible(1280, 800) {
+		t.Fatal("update button should be hidden after its slot scrolls out of the body")
 	}
 }
 

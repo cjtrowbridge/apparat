@@ -48,47 +48,36 @@ func ActiveTab() string {
 }
 
 func UpdateButtonX(width int, height int) int {
-	return gui.UpdateButtonX(width, height)
+	if game == nil {
+		return 0
+	}
+	return game.UpdateButtonX(width, height)
 }
 
 func UpdateButtonY(width int, height int) int {
-	return gui.UpdateButtonY(width, height)
+	if game == nil {
+		return 0
+	}
+	return game.UpdateButtonY(width, height)
 }
 
 func UpdateButtonW(width int, height int) int {
-	return gui.UpdateButtonW(width, height)
+	if game == nil {
+		return 0
+	}
+	return game.UpdateButtonW(width, height)
 }
 
 func UpdateButtonH(width int, height int) int {
-	return gui.UpdateButtonH(width, height)
-}
-
-func GameWidth() int {
 	if game == nil {
 		return 0
 	}
-	return game.LayoutWidth()
+	return game.UpdateButtonH(width, height)
 }
 
-func GameHeight() int {
+func UpdateButtonVisible(width int, height int) bool {
 	if game == nil {
-		return 0
+		return false
 	}
-	return game.LayoutHeight()
-}
-
-func UpdateButtonViewX(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
-	return gui.UpdateButtonViewX(viewWidth, viewHeight, gameWidth, gameHeight)
-}
-
-func UpdateButtonViewY(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
-	return gui.UpdateButtonViewY(viewWidth, viewHeight, gameWidth, gameHeight)
-}
-
-func UpdateButtonViewW(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
-	return gui.UpdateButtonViewW(viewWidth, viewHeight, gameWidth, gameHeight)
-}
-
-func UpdateButtonViewH(viewWidth int, viewHeight int, gameWidth int, gameHeight int) int {
-	return gui.UpdateButtonViewH(viewWidth, viewHeight, gameWidth, gameHeight)
+	return game.UpdateButtonVisible(width, height)
 }
