@@ -9,6 +9,7 @@ Read `./agents/RULES.md` in its entirety before doing anything in this repositor
 - Fall back to `./agents/playbooks/`, `./agents/references/`, `./agents/templates/`, and `./agents/scripts/` when host copies are missing.
 - Treat `./plans/`, `./journal/`, `./kanban/`, and `./downtime/reports/` as host-owned operational state.
 - Keep agent-facing operating instructions in `AGENTS.md`, not the human-facing `README.md`.
+- Agents should be aware of TODO.md but only act on it or pull things out of it to work on when the user directly instructs the agent to do that. 
 
 ## Product Documentation And Planning
 
