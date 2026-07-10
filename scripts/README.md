@@ -66,12 +66,13 @@ Android prerequisites:
 - Android NDK `27.2.12479018`, discovered through `ANDROID_NDK_HOME` or the SDK `ndk/27.2.12479018` directory.
 - Ebitengine `github.com/ebitengine/gomobile v0.0.0-20250923094054-ea854a63cce1` in the Go module cache.
 
-`scripts/build.py --check-android-env` checks those prerequisites and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner, supports local module replacement for wrapper binding, and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35. The pipeline binds `cmd/apparatmobile`, generates Ebitengine mobile view classes, compiles tracked `android/apparat` wrapper sources, then zipaligns/signs the APK with a generated debug keystore. It does not fork application source.
+`scripts/build.py --check-android-env` checks those prerequisites and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner, supports local module replacement for wrapper binding, and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35. The pipeline temporarily applies an Android Ebitengine display-metric guard during `gomobile bind`, restores the Ebitengine checkout afterward, binds `cmd/apparatmobile`, generates Ebitengine mobile view classes, compiles tracked `android/apparat` wrapper sources, then zipaligns/signs the APK with a generated debug keystore. It does not fork application source.
 
 Android build side effects:
 
 - Creates or updates `.tools/bin/gomobile-apparat` when the helper is missing.
 - Uses `.tmp/gomobile-apparat-src` as disposable patched-tool source.
+- Temporarily patches and restores `third_party/game/ebiten/internal/ui/ui_android.go` during Android binding so clean checkouts reproduce the Pixel display-metric guard without carrying a dirty submodule.
 - Writes the APK to `releases/android/arm64/apparat/latest.apk`.
 - Removes temporary unsigned/aligned APKs and optional signing sidecars after the final signed APK is verified.
 - Does not read from or reference `third_party/salvagecore`.

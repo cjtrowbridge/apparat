@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 JAVA_PACKAGE = "com.cjtrowbridge.apparat"
 PREFIX = "apparatmobile"
 PREFIX_UPPER = "Apparatmobile"
+EBITEN_DISPLAY_INFO_GUARD = """\tif scale <= 0 || cWidth <= 0 || cHeight <= 0 {
+\t\treturn 0, 0, 1, false
+\t}
+"""
 
 
 def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: dict[str, str]) -> None:
@@ -26,12 +31,13 @@ def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: d
         path.mkdir(parents=True, exist_ok=True)
     aar = work / "apparat.aar"
     env = wrapper_env(toolchain, settings)
-    subprocess.run([
-        str(toolchain.gomobile), "bind", "-target", "android/arm64", "-androidapi", settings["api"],
-        "-javapkg", JAVA_PACKAGE, "-o", str(aar), "-tags", "gui",
-        "-ldflags", f"-extldflags=-Wl,-z,max-page-size={settings['page_size']}", "./cmd/apparatmobile",
-        "github.com/hajimehoshi/ebiten/v2/mobile/ebitenmobileview",
-    ], cwd=ROOT, env=env, check=True)
+    with patched_ebiten_android_display_info():
+        subprocess.run([
+            str(toolchain.gomobile), "bind", "-target", "android/arm64", "-androidapi", settings["api"],
+            "-javapkg", JAVA_PACKAGE, "-o", str(aar), "-tags", "gui",
+            "-ldflags", f"-extldflags=-Wl,-z,max-page-size={settings['page_size']}", "./cmd/apparatmobile",
+            "github.com/hajimehoshi/ebiten/v2/mobile/ebitenmobileview",
+        ], cwd=ROOT, env=env, check=True)
     write_ebiten_view_sources(source_dir)
     shutil.copy2(ROOT / "android" / "apparat" / "src" / "com" / "cjtrowbridge" / "apparat" / "MainActivity.java", source_dir.parent / "MainActivity.java")
     run = lambda args: subprocess.run(args, cwd=ROOT, env=env, check=True)
@@ -92,6 +98,23 @@ def write_ebiten_view_sources(source_dir: Path) -> None:
                 "setEGLConfigChooser(8, 8, 8, 8, 0, 0);\n        getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);"
             )
         (source_dir / name).write_text(text, encoding="utf-8")
+
+
+@contextmanager
+def patched_ebiten_android_display_info():
+    path = ROOT / "third_party" / "game" / "ebiten" / "internal" / "ui" / "ui_android.go"
+    original = path.read_text(encoding="utf-8")
+    if EBITEN_DISPLAY_INFO_GUARD in original:
+        yield
+        return
+    needle = "\tscale := float64(cScale)\n"
+    if needle not in original:
+        raise RuntimeError(f"expected Android display-info patch target not found in {path}")
+    path.write_text(original.replace(needle, needle + EBITEN_DISPLAY_INFO_GUARD, 1), encoding="utf-8")
+    try:
+        yield
+    finally:
+        path.write_text(original, encoding="utf-8")
 
 
 def read_zip_member(path: Path, member: str) -> bytes:
