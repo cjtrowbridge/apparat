@@ -120,31 +120,31 @@ func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateab
 		}
 
 		for _, row := range section.Rows {
-			if row.ID == "settings.updates.check_for_update" {
-				updateBtn := widget.NewButton(
-					widget.ButtonOpts.Text(row.Label, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
-					widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
-					widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
-					widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
-					widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-						if game.onCheckForUpdate != nil {
-							game.onCheckForUpdate()
-						} else {
-							args.Button.Text().Label = "Update check simulated"
-						}
-					}),
-				)
-				sectionContainer.AddChild(updateBtn)
-			} else {
-				rowText := row.Label
-				if row.Detail != "" {
-					rowText = fmt.Sprintf("%s: %s", row.Label, row.Detail)
-				}
-				label := widget.NewText(
-					widget.TextOpts.Text(rowText, game.theme.ButtonTheme.TextFace, color.White),
-				)
-				sectionContainer.AddChild(label)
+			rowText := row.Label
+			if row.Detail != "" {
+				rowText = fmt.Sprintf("%s: %s", row.Label, row.Detail)
 			}
+			label := widget.NewText(
+				widget.TextOpts.Text(rowText, game.theme.ButtonTheme.TextFace, color.White),
+			)
+			sectionContainer.AddChild(label)
+		}
+
+		if strings.ToLower(section.Title) == "updates" {
+			updateBtn := widget.NewButton(
+				widget.ButtonOpts.Text("Check for update", game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+				widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+				widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
+				widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
+				widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+					if game.onCheckForUpdate != nil {
+						game.onCheckForUpdate()
+					} else {
+						args.Button.Text().Label = "Update check simulated"
+					}
+				}),
+			)
+			sectionContainer.AddChild(updateBtn)
 		}
 		content.AddChild(sectionContainer)
 	}

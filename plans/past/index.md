@@ -2,7 +2,6 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-07-10-16-44-56 | plans/past/2026-07-10-16-33-53_fix-ebitenui-regressions.md | Fix EbitenUI Layout Regressions | Restores the canonical layout, master-detail UI, sizing constraints, and dynamic update logic missing after EbitenUI migration.
 2026-07-10-16-39-10 | plans/past/2026-07-10-16-16-31_fix-ebitenui-scrollcontainer-panic.md | Fix EbitenUI ScrollContainer Panic | Solves the black screen panic by correctly assigning PrimaryTheme.
 2026-07-08-13-18-21 | plans/past/2026-07-08-08-49-21_execute-phase-4-basic-hud-tabs.md | Execute Phase 4 Basic HUD Tabs | Implement the Phase 4 data-driven HUD tab system, temporary configuration manager, basic tab content, verification, and documentation before backend networking work.
 2026-07-08-08-54-13 | plans/past/2026-07-07-10-59-06_split-artifacts-last-run-log-code-size-governance.md | Split Artifacts Last Run Log Code Size Governance | Split GUI/headless release artifacts, add runtime-specific last_run.log diagnostics, and enforce code-file line limits in the build.
