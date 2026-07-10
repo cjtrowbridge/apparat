@@ -88,6 +88,7 @@ func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateab
 
 	scrollContainer := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(content),
+		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
 	)
 
 	// Example: Add an Update Check section manually for now
