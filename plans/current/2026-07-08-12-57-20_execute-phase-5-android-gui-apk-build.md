@@ -177,6 +177,8 @@ The duplicate current plan `plans/current/2026-07-09-14-25-00_refactor-android-r
   - [x] 13.14 Make the top tab strip horizontally scrollable with mouse drag and touchscreen drag while preserving tap/click tab selection.
   - [x] 13.15 Keep the active tab visible when controller, keyboard, mouse, or touch input changes the selected tab.
   - [?] 13.16 Validate the responsive scrollable tab strip on Debian and the attached Android tablet; Android tablet build/install/launch/screenshot validation passed, Debian build/runtime validation passed, and interactive Debian window validation remains environment-limited.
+  - [x] 13.17 Move the Android Ebitengine display-info guard out of the local dirty submodule checkout and into the Apparat-owned Android wrapper build pipeline.
+  - [x] 13.18 Restore `third_party/game/ebiten` to a clean worktree after the Apparat-owned build-pipeline guard is verified.
 
 - [?] 14. Verify and complete.
   - [x] 14.1 Run `make fmt` equivalent through local Go path.

@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest import mock
 
 from scripts import build
+from scripts import android_wrapper
 
 
 class BuildPipelineTest(unittest.TestCase):
@@ -62,9 +63,9 @@ class BuildPipelineTest(unittest.TestCase):
             ("minSdkVersion:'23'", "targetSdkVersion:'30'", "native-code: 'arm64-v8a'"),
         )
 
-    def test_android_manifest_defaults_to_portrait(self):
+    def test_android_manifest_does_not_force_orientation(self):
         manifest = Path("android/apparat/AndroidManifest.xml").read_text(encoding="utf-8")
-        self.assertIn('android:screenOrientation="portrait"', manifest)
+        self.assertNotIn("android:screenOrientation", manifest)
         self.assertNotIn('android:screenOrientation="landscape"', manifest)
         self.assertIn('android:name=".MainActivity"', manifest)
 
@@ -123,6 +124,11 @@ class BuildPipelineTest(unittest.TestCase):
     def test_android_pipeline_does_not_reference_salvagecore(self):
         text = Path("scripts/build.py").read_text(encoding="utf-8")
         self.assertNotIn("third_party/salvagecore", text)
+
+    def test_android_wrapper_owns_temporary_ebiten_display_guard(self):
+        self.assertIn("scale <= 0", android_wrapper.EBITEN_DISPLAY_INFO_GUARD)
+        text = Path("scripts/android_wrapper.py").read_text(encoding="utf-8")
+        self.assertIn("patched_ebiten_android_display_info", text)
 
 
 if __name__ == "__main__":

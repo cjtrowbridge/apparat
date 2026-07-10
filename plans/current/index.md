@@ -2,4 +2,4 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-07-09-18-52-18 | plans/current/2026-07-08-12-57-20_execute-phase-5-android-gui-apk-build.md | Execute Phase 5 Android GUI APK Build | Build an Apparat-owned Android GUI APK pipeline that emits `releases/android/arm64/apparat/latest.apk` without depending on the temporary salvagecore checkout or producing an Android headless artifact.
+2026-07-09-19-07-32 | plans/current/2026-07-08-12-57-20_execute-phase-5-android-gui-apk-build.md | Execute Phase 5 Android GUI APK Build | Build an Apparat-owned Android GUI APK pipeline that emits `releases/android/arm64/apparat/latest.apk` without depending on the temporary salvagecore checkout or producing an Android headless artifact.
