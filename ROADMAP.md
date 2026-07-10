@@ -1058,7 +1058,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Goal:** Produce a working Android GUI APK artifact for Apparat in the canonical release directory without adding or claiming an Android headless target.
 
-**Current status:** Build pipeline, package inspection, Pixel install, process-liveness validation, app-private runtime storage, and Android `last_run.log` creation are implemented for Linux-hosted `android/arm64` GUI APK builds. Direct `GoNativeActivity` paths can initialize Apparat runtime state but stay on the Android splash/default icon instead of attaching Ebitengine's view. The current APK now uses tracked Apparat wrapper sources under `android/apparat`, `cmd/apparatmobile`, and Ebitengine's generated mobile view classes. Phase 5 remains incomplete until on-device visual validation confirms the wrapper APK renders the HUD and tabs are touch-clickable like Debian.
+**Current status:** Build pipeline, package inspection, Pixel install, process-liveness validation, app-private runtime storage, Android `last_run.log` creation, wrapper HUD rendering, full-screen Android view sizing, touch tab selection, and screenshot evidence are implemented for Linux-hosted `android/arm64` GUI APK builds. Direct `GoNativeActivity` paths can initialize Apparat runtime state but stay on the Android splash/default icon instead of attaching Ebitengine's view. The current APK now uses tracked Apparat wrapper sources under `android/apparat`, `cmd/apparatmobile`, and Ebitengine's generated mobile view classes. Phase 5 remains incomplete until additional device testing, Android safe-area and density hardening, runtime-path validation depth, release-hardening deferrals, and any local Ebitengine patch/submodule reproducibility work are resolved or explicitly deferred.
 
 **Dependencies:** Phase 4 HUD shell and Apparat-owned tracked dependencies. Salvagecore may be inspected temporarily, but the final build pipeline must not require it.
 
@@ -1126,16 +1126,16 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Define app package/application ID: `com.cjtrowbridge.apparat`.
   - [x] Define app label and launcher metadata: `Apparat`, `com.cjtrowbridge.apparat.MainActivity`.
   - [x] Define current version metadata: `versionCode=1`, `versionName=0.1.0`.
-  - [x] Define orientation behavior: default phone launch is portrait; landscape/tablet/controller layouts remain supported as later validation targets.
+  - [x] Define orientation behavior: the wrapper no longer forces portrait and should fill the available screen in supported orientations.
   - [x] Define debug signing behavior: direct `gomobile build` emits a debug APK.
   - [ ] Define release signing, store packaging, and automated version generation in a later release-hardening phase.
   - [x] Define explicit SDK metadata through the patched helper: `minSdkVersion=23`, `targetSdkVersion=30`, and platform build version `35`.
 - [x] Add Android permissions and platform behavior.
   - [x] Request `android.permission.INTERNET` for HTTPS over external WireGuard/local network.
   - [x] Avoid broad storage permissions; runtime data remains app-scoped by default.
-  - [x] Defer microphone permission until voice capture is enabled and tested.
+  - [x] Request microphone permission for the existing push-to-talk state path while keeping real Android audio capture validation as future Phase 10 work.
   - [x] Defer VPN-service permissions and app-managed WireGuard to the later transport/platform phase.
-  - [x] Keep controller, keyboard, touch, and text-input expectations tied to the Phase 4 HUD rather than claiming Android-specific validation yet.
+  - [x] Validate touch tab selection on Android while keeping keyboard, controller, and text-input coverage as follow-up testing.
   - [x] Defer Android audio/TTS behavior beyond package startup.
 - [ ] Adapt runtime paths for Android GUI.
   - [x] Reuse the existing runtime startup path so `last_run.log` creation is part of Android app startup.
@@ -1149,10 +1149,10 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Install the APK on a physical Pixel device with `adb`.
   - [x] Launch the app and verify the process remains alive after startup.
   - [x] Verify Android package/startup fixes discovered during Pixel testing: modern SDK metadata, v2/v3 signing, 16 KB native page alignment, and app-private runtime storage.
-  - [x] Record that the current APK still shows only the Android splash/default icon even though the process remains alive.
+  - [x] Record that the first wrapper APK showed only the Android splash/default icon even though the process remained alive.
   - [x] Replace the direct `GoNativeActivity` startup path with an Apparat-owned wrapper activity that attaches Ebitengine's generated `EbitenView`.
-  - [ ] Verify the app opens to the Apparat HUD instead of the Android splash/default icon.
-  - [ ] Verify the seven tabs render and remain clickable/touchable on Android.
+  - [x] Verify the app opens to the Apparat HUD instead of the Android splash/default icon.
+  - [x] Verify the seven tabs render and remain clickable/touchable on Android.
   - [ ] Verify keyboard/controller navigation where the device supports it.
   - [x] Verify `last_run.log` exists in the Android app-private runtime root after launch.
   - [x] Capture `adb logcat` and `last_run.log` evidence for install/startup failures and fixes.
@@ -1164,9 +1164,9 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Ensure the Android UI uses the same HUD tab model, tab order, clickable tabs, disabled-placeholder states, runtime diagnostics, and logging behavior as Debian.
   - [ ] Add Android safe-area/status-bar/navigation-bar layout handling so the HUD is readable on phone screens.
   - [ ] Add Android scale/density handling so tab buttons and body text remain usable on Pixel-class devices.
-  - [x] Default Android phone launch to portrait and document any intentional landscape/controller override separately.
-  - [ ] Validate portrait startup, optional landscape rotation, touch tab selection, process liveness, and `last_run.log` on a real Pixel device.
-  - [ ] Capture visual evidence that the Phase 4 HUD renders on Android like it does on Debian.
+  - [x] Remove fixed portrait orientation and allow the wrapper view to fill the Android screen in supported orientations.
+  - [ ] Validate additional phone, tablet, portrait, landscape, keyboard, controller, process-liveness, and `last_run.log` behavior on real Android devices.
+  - [x] Capture visual evidence that the Phase 4 HUD renders on Android like it does on Debian.
 - [x] Add Android build tests.
   - [x] Unit-test Android artifact path selection.
   - [x] Unit-test that Android supports only the `apparat` target in this phase.
@@ -1190,9 +1190,9 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [x] `--print-path` reports the Android APK path without building.
 - [x] The APK installs and launches on at least one physical Android device.
 - [x] The APK no longer fails modern Pixel install gates for obsolete SDK metadata, missing v2/v3 signing, or 16 KB page-size compatibility.
-- [ ] The Android wrapper GUI displays the Phase 4 tab HUD and supports touch/click tab selection on Android.
-- [ ] The Android wrapper app opens to the Apparat HUD instead of remaining on the Android splash/default icon.
-- [x] Android phone startup defaults to portrait mode unless a later user setting or device class explicitly selects landscape.
+- [x] The Android wrapper GUI displays the Phase 4 tab HUD and supports touch/click tab selection on Android.
+- [x] The Android wrapper app opens to the Apparat HUD instead of remaining on the Android splash/default icon.
+- [x] The Android wrapper no longer forces portrait orientation and can fill the available screen in supported orientations.
 - [ ] Android safe-area, density, and touch handling make the HUD readable and usable on a Pixel-class device.
 - [x] Android startup creates a fresh `last_run.log` in the runtime root and exposes enough diagnostics to debug failures.
 - [x] The Android build, tests, and documentation do not require `third_party/salvagecore`.

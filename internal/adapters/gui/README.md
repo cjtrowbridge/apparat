@@ -18,7 +18,7 @@ EbitenUI is an active dependency and should be used for standard GUI widgets whe
 
 Phase 4 starts with an Ebitengine-rendered shell driven by `internal/hud` snapshots, plus an EbitenUI root container for standard widget integration. The current tab bar is custom-rendered so it can share the controller-first tab descriptor model and support pointer-click tab selection immediately. As widgets become interactive, prefer EbitenUI when it preserves the HUD action/focus model. If additional custom Ebitengine widgets are required for Steam Deck/controller behavior, document the reason in this README and keep their state in HUD view models.
 
-The current custom shell uses taller tab buttons with compact outer margins and a small tab-to-body gap so the HUD wastes less screen area on Steam Deck and Debian desktop windows. Keep layout constants named in the adapter until they move into the user-editable HUD configuration manager.
+The current custom shell uses taller tab buttons with compact outer margins and a small tab-to-body gap so the HUD wastes less screen area on Steam Deck and Debian desktop windows. The top tab strip sizes every tab from the widest measured label plus balanced horizontal padding, and it supports horizontal mouse and touchscreen drag scrolling when the tabs exceed the viewport. Keep layout constants named in the adapter until they move into the user-editable HUD configuration manager.
 
 ## Native GUI Validation
 

@@ -35,17 +35,17 @@ Current evidence:
 - Package ID: `com.cjtrowbridge.apparat`.
 - App label: `Apparat`.
 - Native ABI: `arm64-v8a`.
-- Permission: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks.
-- Activity: `com.cjtrowbridge.apparat.MainActivity` with portrait phone orientation and Ebitengine `EbitenView`.
+- Permissions: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks and `android.permission.RECORD_AUDIO` for the push-to-talk state path.
+- Activity: `com.cjtrowbridge.apparat.MainActivity` with Ebitengine `EbitenView`; the wrapper does not force portrait orientation.
 - Toolchain: JDK 21, Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
 - SDK metadata: `minSdkVersion=23`, `targetSdkVersion=30`, and `platformBuildVersionCode=35`.
 - Signing: debug keystore generated under ignored `.tools/android/debug.keystore`; APK verifies with v1, v2, and v3 signature schemes.
 - Native page alignment: `lib/arm64-v8a/libapparat.so` LOAD segments align to `0x4000` for 16 KB page-size devices.
-- Device validation: installed successfully on connected Pixel device `58051FDCQ002T9`, Android release `16`, SDK `36`; process remained alive after launch and wrote `last_run.log` under app-private storage.
+- Device validation: installed successfully on connected Pixel device `58051FDCQ002T9`, Android release `16`, SDK `36`; process remained alive after launch, wrote `last_run.log` under app-private storage, rendered the Apparat HUD, and accepted touch tab selection.
 
 Known caveats:
 
-- Visual confirmation of the Android wrapper APK is still pending because ADB escalation is currently blocked by the environment usage limit. Earlier ADB evidence confirmed direct package install, process start, runtime initialization, SQLite migration, and `last_run.log` creation, but direct `GoNativeActivity` paths stayed on the Android splash/default icon.
+- Additional Android device coverage is still pending for safe-area handling, density/readability hardening, keyboard/controller input, portrait and landscape behavior across form factors, and deeper runtime-path validation.
 - The current APK uses the wrapper/AAR-style path. Future release-hardening still needs signing, icons, store packaging, additional ABI decisions, and broader Android device validation.
 - Android `apparatd` is intentionally unsupported; headless Android work requires a later Termux/service-worker strategy.
-- App-managed WireGuard/VPN-service, microphone capture, broad storage, background execution, release signing, store packaging, and additional Android ABIs are future work.
+- App-managed WireGuard/VPN-service, real microphone capture, broad storage, background execution, release signing, store packaging, and additional Android ABIs are future work.
