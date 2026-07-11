@@ -19,6 +19,7 @@ func RunWithRuntimeInfo(ctx context.Context, info RuntimeInfo) error {
 	default:
 	}
 	ebiten.SetWindowTitle("Apparat")
+	ebiten.SetWindowIcon(appIconImages())
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	return ebiten.RunGame(NewGameWithRuntimeInfo(info))
 }

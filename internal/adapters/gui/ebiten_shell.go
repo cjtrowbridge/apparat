@@ -12,6 +12,7 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 var (
@@ -32,6 +33,8 @@ const (
 	tabDragThreshold  = 18
 	bodyGap           = 8
 	diagnosticsHeight = 58
+	pttRadius         = 36
+	pttMargin         = 22
 	collapsedWidth    = 760
 	defaultSplitWidth = 260
 	minSplitWidth     = 170
@@ -61,6 +64,7 @@ type Game struct {
 	debugTouchID     ebiten.TouchID
 	tabScroll        *widget.ScrollContainer
 	tabButtonCount   int
+	tabButtons       []*widget.Button
 	tabStripDragging bool
 	tabStripLastX    int
 	tabTouchActive   bool
@@ -69,6 +73,9 @@ type Game struct {
 	detailOpen       map[hud.TabID]bool
 	splitWidth       int
 	splitDragging    bool
+	pttHeld          bool
+	pttTouchActive   bool
+	pttTouchID       ebiten.TouchID
 	runtimeInfo      RuntimeInfo
 	activeTabID      atomic.Value
 	updateStatus     atomic.Value
@@ -149,6 +156,7 @@ func (game *Game) Update() error {
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		game.shell.CancelVoiceCapture()
+		game.setPTTHeld(false)
 	}
 	game.rightCtrlHeld = rightCtrl
 	game.updateGamepad()
@@ -214,6 +222,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	if game.ui != nil {
 		game.ui.Draw(screen)
 	}
+	game.drawPTTButton(screen)
 	if game.debugOverlayOpen {
 		game.drawDebugOverlay(screen)
 	}
@@ -227,6 +236,41 @@ func drawDiagnostics(screen *ebiten.Image, snapshot hud.Snapshot, height int) {
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("config tabPlacement=%s theme=%s scale=%.1f", snapshot.Config.TabView.Placement, snapshot.Config.Display.Theme, snapshot.Config.Display.Scale), windowMargin, y+18)
 	ebitenutil.DebugPrintAt(screen, "L1/R1 or Ctrl+PageUp/PageDown switch tabs • R2/right Ctrl push-to-talk", windowMargin, y+36)
 	_ = mutedTextColor
+}
+
+func (game *Game) drawPTTButton(screen *ebiten.Image) {
+	x, y := game.pttCenter()
+	fill := color.RGBA{R: 38, G: 90, B: 156, A: 230}
+	if game.pttHeld {
+		fill = color.RGBA{R: 30, G: 150, B: 110, A: 240}
+	}
+	vector.DrawFilledCircle(screen, float32(x), float32(y), float32(pttRadius), fill, true)
+	vector.StrokeCircle(screen, float32(x), float32(y), float32(pttRadius), 2, color.RGBA{R: 220, G: 232, B: 255, A: 255}, true)
+	ebitenutil.DebugPrintAt(screen, "PTT", x-10, y-4)
+}
+
+func (game *Game) pttCenter() (int, int) {
+	x := game.width - pttMargin - pttRadius
+	y := game.height - diagnosticsHeight - pttMargin - pttRadius
+	return x, y
+}
+
+func (game *Game) pointInPTT(x int, y int) bool {
+	cx, cy := game.pttCenter()
+	dx, dy := x-cx, y-cy
+	return dx*dx+dy*dy <= pttRadius*pttRadius
+}
+
+func (game *Game) setPTTHeld(held bool) {
+	if held == game.pttHeld {
+		return
+	}
+	game.pttHeld = held
+	if held {
+		game.shell.StartVoiceCapture("floating-ptt")
+		return
+	}
+	game.shell.ReleaseVoiceCapture()
 }
 
 func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {

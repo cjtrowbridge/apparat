@@ -7,6 +7,7 @@ Run scripts from the repository root unless a script explicitly says otherwise. 
 ## Inventory
 
 - `build.py`: Builds canonical local release artifacts for `apparat`, `apparatd`, and the Android GUI APK.
+- `build_orchestrator.py`: Implements the no-flag target detection/report/build loop used by `build.py`.
 - `android_wrapper.py`: Assembles the Android GUI wrapper APK from Ebitengine mobile binding output and tracked Apparat Android sources.
 - `check_code_file_lines.py`: Fails when included code files exceed the 400-line limit.
 - `check_directory_docs.py`: Fails when source directories or scripts are missing required documentation.
@@ -15,16 +16,14 @@ Run scripts from the repository root unless a script explicitly says otherwise. 
 
 ## Desktop Build Script
 
-Canonical desktop build commands:
+Canonical build commands:
 
 ```bash
 make build
 python3 scripts/build.py
-python3 scripts/build.py --target apparatd
-python3 scripts/build.py --target apparat --print-path
 ```
 
-`make build` is preferred because it applies repo-local Go cache settings. `python3 build.py` at the repository root is a compatibility wrapper that delegates to `python3 scripts/build.py`.
+`make build` is preferred because it applies repo-local Go cache settings. `python3 build.py` at the repository root is a compatibility wrapper that delegates to `python3 scripts/build.py`. The build script intentionally has one no-flag entry point: it detects the host, prints possible and impossible targets with reasons, and builds every possible target.
 
 Desktop outputs:
 
@@ -39,14 +38,11 @@ The `apparatd` target avoids the GUI build tag and is the correct target for hea
 
 ## Android Build Script
 
-Canonical Android commands:
+Android is part of the same no-flag build pass:
 
 ```bash
-make check-android-build-env
-make build-android
-python3 scripts/build.py --check-android-env
-python3 scripts/build.py --os android --arch arm64 --target apparat
-python3 scripts/build.py --os android --arch arm64 --target apparat --print-path
+make build
+python3 scripts/build.py
 ```
 
 Android output:
@@ -55,7 +51,7 @@ Android output:
 releases/android/arm64/apparat/latest.apk
 ```
 
-Phase 5 intentionally supports only `--os android --arch arm64 --target apparat`. Android `apparatd` builds fail with an explicit headless-out-of-scope message because Android headless needs a later Termux/service-worker strategy.
+Phase 5 intentionally supports only the Android arm64 GUI APK. Android `apparatd` is reported as impossible with an explicit headless-out-of-scope message because Android headless needs a later Termux/service-worker strategy.
 
 Android prerequisites:
 
@@ -66,7 +62,9 @@ Android prerequisites:
 - Android NDK `27.2.12479018`, discovered through `ANDROID_NDK_HOME` or the SDK `ndk/27.2.12479018` directory.
 - Ebitengine `github.com/ebitengine/gomobile v0.0.0-20250923094054-ea854a63cce1` in the Go module cache.
 
-`scripts/build.py --check-android-env` checks those prerequisites and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner, supports local module replacement for wrapper binding, and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35. The pipeline temporarily applies an Android Ebitengine display-metric guard during `gomobile bind`, restores the Ebitengine checkout afterward, binds `cmd/apparatmobile`, generates Ebitengine mobile view classes, compiles tracked `android/apparat` wrapper sources, then zipaligns/signs the APK with a generated debug keystore. It does not fork application source.
+`scripts/build.py` checks those prerequisites while producing the target report and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner, supports local module replacement for wrapper binding, and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35. The pipeline temporarily applies an Android Ebitengine display-metric guard during `gomobile bind`, restores the Ebitengine checkout afterward, binds `cmd/apparatmobile`, generates Ebitengine mobile view classes, compiles tracked `android/apparat` wrapper sources and resources, then zipaligns/signs the APK with a generated debug keystore. It does not fork application source.
+
+For local machine-specific paths, copy `build_environment.sample.py` to ignored `build_environment.py` and update environment values there. The build script loads that file opportunistically before target detection.
 
 Android build side effects:
 
@@ -93,7 +91,7 @@ make test-build
 
 - Missing Go modules: rerun through `make build` or allow network access so Go can populate the module cache.
 - Missing Linux GUI headers: install the native desktop development packages listed above, then rerun `make build`.
-- Missing Android SDK/JDK/NDK: set `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, then rerun `make check-android-build-env`.
+- Missing Android SDK/JDK/NDK: set `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, or configure ignored `build_environment.py`, then rerun `make build`.
 - Missing Android gomobile module: run `go mod download github.com/ebitengine/gomobile` with writable `GOMODCACHE`, then rerun the Android preflight.
 - Missing `adb` or sandbox-blocked `adb`: APK builds can still pass, but install/launch validation must be performed from an environment where `adb devices`, `adb install`, and `adb logcat` work.
 - Missing directory docs: add a `README.md` to the source directory reported by `check_directory_docs.py`.

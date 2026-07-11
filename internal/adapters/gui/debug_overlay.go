@@ -111,6 +111,7 @@ func (game *Game) updatePointerState() {
 	x, y := ebiten.CursorPosition()
 	game.updateDebugOverlayDrag(x, y)
 	game.updateTabStripDrag(x, y)
+	game.updatePTTMouse(x, y)
 	game.updateTouchDrag()
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		game.splitDragging = false
@@ -153,12 +154,21 @@ func (game *Game) updateTouchDrag() {
 			game.tabStripLastX = x
 			return
 		}
+		if game.pointInPTT(x, y) {
+			game.pttTouchActive = true
+			game.pttTouchID = id
+			game.setPTTHeld(true)
+			return
+		}
 	}
 	if game.debugTouchActive {
 		game.updateDebugTouch()
 	}
 	if game.tabTouchActive {
 		game.updateTabTouch()
+	}
+	if game.pttTouchActive {
+		game.updatePTTTouch()
 	}
 }
 
@@ -210,6 +220,22 @@ func (game *Game) updateTabStripDrag(x int, y int) {
 		if wheelX != 0 || wheelY != 0 {
 			game.tabScroll.ScrollLeft -= (wheelX + wheelY) / 12
 		}
+	}
+}
+
+func (game *Game) updatePTTMouse(x int, y int) {
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && game.pointInPTT(x, y) {
+		game.setPTTHeld(true)
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) && game.pttHeld && !game.pttTouchActive {
+		game.setPTTHeld(false)
+	}
+}
+
+func (game *Game) updatePTTTouch() {
+	if inpututil.IsTouchJustReleased(game.pttTouchID) {
+		game.pttTouchActive = false
+		game.setPTTHeld(false)
 	}
 }
 

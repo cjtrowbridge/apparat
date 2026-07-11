@@ -564,18 +564,13 @@ Common commands:
 ```bash
 make verify
 make build
-make build-android
-make check-android-build-env
 make run-built
 make run-built-headless
+python3 scripts/build.py
 python3 scripts/build.py --help
-python3 scripts/build.py --target apparatd
-python3 scripts/build.py --target apparat --print-path
-python3 scripts/build.py --os android --arch arm64 --target apparat
-python3 scripts/build.py --os android --arch arm64 --target apparat --print-path
 ```
 
-`make build` runs the Python build pipeline and writes both latest local binaries to:
+`make build` runs the Python build pipeline. The pipeline has one no-flag entry point: it detects the current machine, reports possible and impossible targets with reasons, then builds every possible target. On a Linux host with desktop build prerequisites, it writes both latest local binaries to:
 
 ```text
 releases/<goos>/<goarch>/apparat/latest[.exe]
@@ -590,13 +585,13 @@ Android Phase 5 builds the GUI APK only. The canonical Android artifact is:
 releases/android/arm64/apparat/latest.apk
 ```
 
-Use `make check-android-build-env` to validate Android prerequisites and `make build-android` to produce the APK. The Android pipeline requires JDK 21, Android SDK command-line tools, platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and Ebitengine's `github.com/ebitengine/gomobile` module. Tools are discovered from `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, with ignored repo-local `.tools/` fallbacks when present; `.tmp/` is used only for disposable patched-tool source.
+The same no-flag build pass reports whether Android is possible and builds the APK when the prerequisites are present. The Android pipeline requires JDK 21, Android SDK command-line tools, platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and Ebitengine's `github.com/ebitengine/gomobile` module. Tools are discovered from `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, with ignored repo-local `.tools/` fallbacks when present; `.tmp/` is used only for disposable patched-tool source. If a machine needs custom local paths, copy `build_environment.sample.py` to ignored `build_environment.py` and update environment values there.
 
 The pipeline binds `cmd/apparatmobile` with Ebitengine's generated Android mobile view classes, compiles the tracked wrapper in `android/apparat`, and writes a signed APK to the canonical release path. The wrapper is the current Android render path: on-device evidence shows it opens to the Phase 4 HUD and accepts touch tab selection. It generates an ignored patched local `gomobile-apparat` helper under `.tools/bin` because the pinned Ebitengine `gomobile` package scanner checks for `github.com/ebitengine/gomobile/app` while its regular expression only recognizes `golang.org/x` package symbols. This patch broadens the scanner, supports local Apparat/Ebitengine module replacement for AAR binding, and preserves modern Android SDK metadata (`minSdkVersion=23`, `targetSdkVersion=30`) while compiling/package-building against Android platform 35. It also signs the APK with a generated debug keystore and keeps the Android build independent from the ignored `third_party/salvagecore` checkout.
 
-During Phase 5, the Settings tab also exposes a temporary `Updates` fieldset. The HUD renders the fieldset title and explanation, while the Android wrapper places the native `Check for update` button into that reserved fieldset only while Settings is active. The action downloads the tracked GitHub `latest.apk`, compares that file's SHA-256 with the installed APK, opens Android's per-app unknown-source permission screen only when an update is needed and permission is missing, and then launches the system package installer for user approval. A later Android release-hardening phase replaces this hash-only bridge with installed-version versus latest-version display before offering an update.
+During Phase 5, the Settings tab also exposes a temporary `Updates` fieldset with an EbitenUI `Check for update` button. On Android, that button calls the wrapper updater through the Gomobile bridge. The action downloads the tracked GitHub `latest.apk`, compares that file's SHA-256 with the installed APK, opens Android's per-app unknown-source permission screen only when an update is needed and permission is missing, then launches the system package installer for user approval. A silent startup check follows the same path but only surfaces user-facing state when action is needed. A later Android release-hardening phase replaces this hash-only bridge with installed-version versus latest-version display before offering an update.
 
-Android headless is intentionally out of scope for Phase 5: `python3 scripts/build.py --os android --arch arm64 --target apparatd` fails with a clear message. Users who want headless behavior on Android should use a future Termux/service-worker strategy rather than expecting an APK for `apparatd`.
+Android headless is intentionally out of scope for Phase 5: the build report marks `android/arm64/apparatd` impossible with a clear message. Users who want headless behavior on Android should use a future Termux/service-worker strategy rather than expecting an APK for `apparatd`.
 
 Use `make run-built` for the GUI artifact smoke test and `make run-built-headless` for the headless artifact smoke test.
 
@@ -607,8 +602,8 @@ Build troubleshooting:
 - If Go tries to write under a read-only home cache, rerun through `make build` or set `GOCACHE` and `GOMODCACHE` to writable paths.
 - If module downloads fail, allow network access or pre-populate the Go module cache.
 - If the GUI artifact fails with `X11/Xlib.h` or similar missing headers, install the Linux GUI development packages listed above.
-- If only the headless worker is needed, use `python3 scripts/build.py --target apparatd` or `make run-built-headless`.
-- If Android preflight fails, install or point `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME` at the pinned toolchain versions, then rerun `make check-android-build-env`.
+- If only the headless worker is needed, run `make build` first and then `make run-built-headless`.
+- If Android preflight fails, install or point `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME` at the pinned toolchain versions, optionally through ignored `build_environment.py`, then rerun `make build`.
 - If Android device validation fails, verify `adb devices` outside restricted sandboxes and capture `adb logcat` before treating the APK as launched.
 - If documentation checks fail, add or update the closest relevant directory `README.md` and ensure new scripts are listed in `scripts/README.md`.
 

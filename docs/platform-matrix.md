@@ -29,8 +29,8 @@ Phase 5 adds the first Android build artifact but does not yet claim full Androi
 Current evidence:
 
 - Build host: Linux `amd64` development environment.
-- Build command: `python3 scripts/build.py --os android --arch arm64 --target apparat`.
-- Preflight command: `python3 scripts/build.py --check-android-env`.
+- Build command: `python3 scripts/build.py`.
+- Preflight command: `python3 scripts/build.py` target report.
 - Artifact: `releases/android/arm64/apparat/latest.apk`.
 - Package ID: `com.cjtrowbridge.apparat`.
 - App label: `Apparat`.

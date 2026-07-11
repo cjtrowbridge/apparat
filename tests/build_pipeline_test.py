@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest import mock
 
 from scripts import build
+from scripts import build_orchestrator
 from scripts import android_wrapper
 
 
@@ -77,6 +78,7 @@ class BuildPipelineTest(unittest.TestCase):
     def test_android_manifest_declares_temporary_update_installer_boundary(self):
         manifest = Path("android/apparat/AndroidManifest.xml").read_text(encoding="utf-8")
         self.assertIn("android.permission.REQUEST_INSTALL_PACKAGES", manifest)
+        self.assertIn('android:icon="@drawable/app_icon"', manifest)
         self.assertIn("UpdateApkProvider", manifest)
         self.assertIn("com.cjtrowbridge.apparat.update", manifest)
 
@@ -97,35 +99,39 @@ class BuildPipelineTest(unittest.TestCase):
             [["apparat", "latest"], ["apparatd", "latest"]],
         )
 
-    def test_print_path_does_not_build(self):
-        with mock.patch("subprocess.run") as run:
+    def test_build_script_rejects_target_flags(self):
+        with self.assertRaises(SystemExit):
+            with redirect_stderr(StringIO()):
+                build.main(["--target", "apparat"])
+
+    def test_build_plan_reports_android_headless_impossible(self):
+        with mock.patch("scripts.build.resolve_android_toolchain", return_value=(None, ["missing sdk"], [])):
+            plans = build_orchestrator.build_plans("go")
+        headless = [plan for plan in plans if plan.name == "android/arm64/apparatd"][0]
+        self.assertFalse(headless.possible)
+        self.assertIn("GUI `apparat` APK", headless.reasons[0])
+
+    def test_build_plan_reports_android_prerequisite_failures(self):
+        with mock.patch("scripts.build.resolve_android_toolchain", return_value=(None, ["missing sdk"], [])):
+            plans = build_orchestrator.build_plans("go")
+        android = [plan for plan in plans if plan.name == "android/arm64/apparat"][0]
+        self.assertFalse(android.possible)
+        self.assertIn("missing sdk", android.reasons)
+
+    def test_main_runs_all_possible_targets(self):
+        plans = [
+            build_orchestrator.BuildPlan("linux/amd64/apparat", "linux", "amd64", "apparat", Path("out"), True),
+            build_orchestrator.BuildPlan(
+                "android/arm64/apparat", "android", "arm64", "apparat", Path("apk"), False, ("missing sdk",)
+            ),
+        ]
+        with mock.patch("scripts.build_orchestrator.load_build_environment", return_value=[]), mock.patch(
+            "scripts.build_orchestrator.build_plans", return_value=plans
+        ), mock.patch("scripts.build_orchestrator.run_plan", return_value=0) as run:
             with redirect_stdout(StringIO()):
-                result = build.main(["--os", "linux", "--arch", "amd64", "--target", "apparat", "--print-path"])
+                result = build_orchestrator.main([])
         self.assertEqual(result, 0)
-        run.assert_not_called()
-
-    def test_android_print_path_does_not_build(self):
-        with mock.patch("subprocess.run") as run:
-            output = StringIO()
-            with redirect_stdout(output):
-                result = build.main(["--os", "android", "--arch", "arm64", "--target", "apparat", "--print-path"])
-        self.assertEqual(result, 0)
-        run.assert_not_called()
-        self.assertTrue(output.getvalue().strip().endswith("releases/android/arm64/apparat/latest.apk"))
-
-    def test_android_headless_is_rejected(self):
-        with mock.patch("subprocess.run") as run:
-            error = StringIO()
-            with redirect_stderr(error):
-                result = build.main(["--os", "android", "--arch", "arm64", "--target", "apparatd"])
-        self.assertEqual(result, 2)
-        run.assert_not_called()
-        self.assertIn("GUI `apparat` APK", error.getvalue())
-
-    def test_android_unsupported_arch_is_rejected(self):
-        with redirect_stderr(StringIO()):
-            result = build.main(["--os", "android", "--arch", "amd64", "--target", "apparat"])
-        self.assertEqual(result, 2)
+        run.assert_called_once_with("go", plans[0])
 
     def test_android_env_reports_missing_prerequisites(self):
         with mock.patch("scripts.build.default_sdk_root", return_value=Path("/missing-sdk")), mock.patch(
