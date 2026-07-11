@@ -47,10 +47,11 @@ public class MainActivity extends Activity {
             @Override
             public void checkForUpdate() {
                 Log.i(TAG, "checkForUpdate bridge invoked");
-                MainActivity.this.checkForUpdate();
+                MainActivity.this.checkForUpdate(true);
             }
         });
         Log.i(TAG, "Updater bridge registered");
+        checkForUpdate(false);
     }
 
     @Override
@@ -73,10 +74,12 @@ public class MainActivity extends Activity {
 
 
 
-    private void checkForUpdate() {
-        Log.i(TAG, "Starting update check");
-        reportUpdateStatus("Checking...");
-        showToast("Checking Apparat update...");
+    private void checkForUpdate(final boolean userInitiated) {
+        Log.i(TAG, "Starting update check userInitiated=" + userInitiated);
+        if (userInitiated) {
+            reportUpdateStatus("Checking...");
+            showToast("Checking Apparat update...");
+        }
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -86,8 +89,12 @@ public class MainActivity extends Activity {
                     String installedHash = sha256(new File(getApplicationInfo().sourceDir));
                     String downloadedHash = sha256(apk);
                     if (installedHash.equals(downloadedHash)) {
-                        reportUpdateStatus("Already current");
-                        showToast("Already current: installed and GitHub APK hashes match (" + shortHash(installedHash) + ")");
+                        if (userInitiated) {
+                            reportUpdateStatus("Already current");
+                            showToast("Already current: installed and GitHub APK hashes match (" + shortHash(installedHash) + ")");
+                        } else {
+                            Log.i(TAG, "Startup update check found current APK " + shortHash(installedHash));
+                        }
                         return;
                     }
                     runOnUiThread(new Runnable() {
@@ -97,8 +104,11 @@ public class MainActivity extends Activity {
                         }
                     });
                 } catch (Exception error) {
-                    reportUpdateStatus("Update failed");
-                    showToast("Update check failed: " + error.getMessage());
+                    Log.w(TAG, "Update check failed", error);
+                    if (userInitiated) {
+                        reportUpdateStatus("Update failed");
+                        showToast("Update check failed: " + error.getMessage());
+                    }
                 }
             }
         }).start();
