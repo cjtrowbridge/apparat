@@ -4,7 +4,6 @@ package gui
 
 import (
 	"fmt"
-	img "image"
 	"image/color"
 	"strings"
 
@@ -17,6 +16,10 @@ import (
 // In the future, this should intelligently update existing widgets instead of rebuilding
 // from scratch, but for this initial migration, rebuilding ensures layout correctness.
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
+	game.updateButton = nil
+	game.tabScroll = nil
+	game.tabButtonCount = 0
+	game.clampSplitWidth()
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
 			widget.AnchorLayoutOpts.Padding(&widget.Insets{
@@ -28,59 +31,86 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		)),
 	)
 
-	tabs := game.buildTabs(snapshot)
-	tabBookOpts := []widget.TabBookOpt{
-		widget.TabBookOpts.Tabs(tabs...),
-		widget.TabBookOpts.TabButtonSpacing(tabGap),
-		widget.TabBookOpts.TabButtonMinSize(&img.Point{X: 0, Y: tabHeight}),
-		widget.TabBookOpts.ContainerOpts(widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				StretchHorizontal: true,
-				StretchVertical:   true,
-			}),
+	shell := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(1),
+			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true}),
+			widget.GridLayoutOpts.Spacing(0, bodyGap),
 		)),
-		widget.TabBookOpts.TabSelectedHandler(func(args *widget.TabBookTabSelectedEventArgs) {
-			for i, t := range tabs {
-				if t == args.Tab {
-					_ = game.shell.SelectTab(i)
-					break
-				}
-			}
-		}),
-	}
-	if len(tabs) > 0 && snapshot.ActiveIndex >= 0 && snapshot.ActiveIndex < len(tabs) {
-		tabBookOpts = append(tabBookOpts, widget.TabBookOpts.InitialTab(tabs[snapshot.ActiveIndex]))
-	}
-	tabBook := widget.NewTabBook(tabBookOpts...)
-	root.AddChild(tabBook)
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+			StretchHorizontal: true,
+			StretchVertical:   true,
+		})),
+	)
+	shell.AddChild(game.buildTabStrip(snapshot))
+	body := game.buildActiveTabBody(snapshot)
+	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0}
+	shell.AddChild(body)
+	root.AddChild(shell)
 
 	game.ui = &ebitenui.UI{
 		Container:    root,
 		PrimaryTheme: game.theme,
 	}
+	game.ensureActiveTabVisible()
 }
 
-func (game *Game) buildTabs(snapshot hud.Snapshot) []*widget.TabBookTab {
-	tabs := make([]*widget.TabBookTab, 0, len(snapshot.Tabs))
-	for _, tabData := range snapshot.Tabs {
+func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {
+	row := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
+			widget.RowLayoutOpts.Spacing(tabGap),
+		)),
+	)
+	game.tabButtonCount = len(snapshot.Tabs)
+	for index, tabData := range snapshot.Tabs {
 		label := fmt.Sprintf("%s %s", tabData.Descriptor.Glyph, tabData.Title())
-
-		tab := widget.NewTabBookTab(
-			widget.TabBookTabOpts.Label(label),
-			widget.TabBookTabOpts.ContainerOpts(
-				widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+		tabIndex := index
+		button := widget.NewButton(
+			widget.ButtonOpts.Text(label, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+			widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+			widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
+			widget.ButtonOpts.ToggleMode(),
+			widget.ButtonOpts.WidgetOpts(
+				widget.WidgetOpts.MinSize(tabButtonWidth(label), tabHeight),
+				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 			),
+			widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+				_ = game.shell.SelectTab(tabIndex)
+				game.rebuildUI(game.shell.Snapshot())
+			}),
 		)
-
-		if tabData.Descriptor.ID == hud.TabSettings {
-			tab.AddChild(game.buildSettingsTab(tabData))
-		} else {
-			tab.AddChild(game.buildMasterDetailTab(tabData))
+		if index == snapshot.ActiveIndex {
+			button.SetState(widget.WidgetChecked)
 		}
-
-		tabs = append(tabs, tab)
+		row.AddChild(button)
 	}
-	return tabs
+	scroll := widget.NewScrollContainer(
+		widget.ScrollContainerOpts.Content(row),
+		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
+		widget.ScrollContainerOpts.WidgetOpts(
+			widget.WidgetOpts.MinSize(0, tabHeight),
+			widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight}),
+		),
+	)
+	game.tabScroll = scroll
+	return scroll
+}
+
+func tabButtonWidth(label string) int {
+	width := 42 + len([]rune(label))*10
+	if width < 130 {
+		return 130
+	}
+	return width
+}
+
+func (game *Game) buildActiveTabBody(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {
+	tabData := snapshot.ActiveTab()
+	if tabData.Descriptor.ID == hud.TabSettings {
+		return game.buildSettingsTab(tabData)
+	}
+	return game.buildMasterDetailTab(tabData)
 }
 
 func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
@@ -172,124 +202,27 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 			game.updateButton = updateBtn
 			sectionContainer.AddChild(updateBtn)
 		}
+		if strings.ToLower(section.Title) == "diagnostics" {
+			debugToggle := widget.NewCheckbox(
+				widget.CheckboxOpts.Text("Open Debug UI overlay", game.theme.ButtonTheme.TextFace, game.theme.LabelTheme.Color),
+				widget.CheckboxOpts.Image(game.theme.CheckboxTheme.Image),
+				widget.CheckboxOpts.InitialState(checkedState(game.debugOverlayOpen)),
+				widget.CheckboxOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
+				widget.CheckboxOpts.StateChangedHandler(func(args *widget.CheckboxChangedEventArgs) {
+					game.debugOverlayOpen = args.State == widget.WidgetChecked
+				}),
+			)
+			sectionContainer.AddChild(debugToggle)
+		}
 		content.AddChild(sectionContainer)
 	}
 
 	return content
 }
 
-func (game *Game) buildMasterDetailTab(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
-	root := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewGridLayout(
-			widget.GridLayoutOpts.Columns(2),
-			widget.GridLayoutOpts.Stretch([]bool{false, true}, []bool{true}),
-			widget.GridLayoutOpts.Spacing(8, 0),
-		)),
-		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true})),
-	)
-
-	// Left List Pane
-	listContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Spacing(4),
-			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 8, Right: 8, Top: 8, Bottom: 8}),
-		)),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.MinSize(170, 0),
-			widget.WidgetOpts.LayoutData(widget.GridLayoutData{
-				MaxHeight: 0,
-			}),
-		),
-	)
-
-	for _, section := range tabData.Sections {
-		btn := widget.NewButton(
-			widget.ButtonOpts.Text(section.Title, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
-			widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
-			widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
-			widget.ButtonOpts.WidgetOpts(
-				widget.WidgetOpts.MinSize(0, 44),
-				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
-			),
-			widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-				// Detail update logic placeholder
-			}),
-		)
-		listContainer.AddChild(btn)
+func checkedState(checked bool) widget.WidgetState {
+	if checked {
+		return widget.WidgetChecked
 	}
-
-	listScroll := widget.NewScrollContainer(
-		widget.ScrollContainerOpts.Content(listContainer),
-		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
-		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.GridLayoutData{
-			MaxHeight: 0,
-		})),
-	)
-	root.AddChild(listScroll)
-
-	// Right Detail Pane
-	detailContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Spacing(bodyGap),
-			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
-		)),
-	)
-
-	if tabData.Summary != "" {
-		summary := widget.NewText(
-			widget.TextOpts.Text(tabData.Summary, game.theme.ButtonTheme.TextFace, color.White),
-		)
-		detailContainer.AddChild(summary)
-	}
-
-	for _, section := range tabData.Sections {
-		sectionContainer := widget.NewContainer(
-			widget.ContainerOpts.BackgroundImage(game.theme.PanelTheme.BackgroundImage),
-			widget.ContainerOpts.Layout(widget.NewRowLayout(
-				widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-				widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
-				widget.RowLayoutOpts.Spacing(4),
-			)),
-			widget.ContainerOpts.WidgetOpts(
-				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
-			),
-		)
-
-		title := widget.NewText(
-			widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.ButtonTheme.TextFace, color.White),
-		)
-		sectionContainer.AddChild(title)
-
-		if section.Description != "" {
-			desc := widget.NewText(
-				widget.TextOpts.Text(section.Description, game.theme.ButtonTheme.TextFace, color.White),
-			)
-			sectionContainer.AddChild(desc)
-		}
-
-		for _, row := range section.Rows {
-			rowText := row.Label
-			if row.Detail != "" {
-				rowText = fmt.Sprintf("%s: %s", row.Label, row.Detail)
-			}
-			label := widget.NewText(
-				widget.TextOpts.Text(rowText, game.theme.ButtonTheme.TextFace, color.White),
-			)
-			sectionContainer.AddChild(label)
-		}
-		detailContainer.AddChild(sectionContainer)
-	}
-
-	detailScroll := widget.NewScrollContainer(
-		widget.ScrollContainerOpts.Content(detailContainer),
-		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
-		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.GridLayoutData{
-			MaxHeight: 0,
-		})),
-	)
-	root.AddChild(detailScroll)
-
-	return root
+	return widget.WidgetUnchecked
 }

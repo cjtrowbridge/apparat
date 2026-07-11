@@ -17,7 +17,8 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 
 1. **Use Structured Body Elements via EbitenUI**
    * EbitenUI is the mandatory UI toolkit for the Apparat HUD. All layout and widgets must use `github.com/ebitenui/ebitenui`.
-   * Do not use raw imperative coordinates (`ebitenutil.DebugPrintAt`, `ebitenutil.DrawRect`), custom `SubImage` clipping, or custom drag-scroll loops.
+   * Do not use raw imperative coordinates (`ebitenutil.DebugPrintAt`, `ebitenutil.DrawRect`), custom `SubImage` clipping, or custom drag-scroll loops for ordinary tab body content.
+   * Shell-level development overlays, tab-strip overflow input, and divider dragging may use small Ebitengine input/rendering shims only when an active plan explicitly authorizes them and the user-facing controls remain EbitenUI widgets.
    * Put related content in EbitenUI layout containers (like `widget.RowLayout` or `widget.GridLayout`) and `widget.ScrollContainer`.
    * Each bounded element must own its title, explanation, controls, and body content.
    * Tab content must remain strictly data-driven (dynamically iterating through `tab.Sections` and `section.Rows`); do not hardcode EbitenUI containers or widgets outside of this loop pattern.
@@ -25,7 +26,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 2. **Prevent Overlap By Construction**
    * Do not place controls as floating overlays unless they correspond to a reserved body element.
    * Stack vertical elements using measured heights and fixed gaps.
-   * Split horizontal elements using explicit columns and a divider.
+   * Split horizontal elements using explicit columns and a visible divider.
    * Let EbitenUI handle clipping, wrapping, and scrolling for overflowing content inside its owning element container.
 
 3. **Be Responsive By Default**
@@ -74,7 +75,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Test narrow body widths in unit tests where possible.
    * Confirm every fieldset or pane has a minimum width.
    * Confirm interactive rows and buttons keep minimum touch-target height.
-   * For master-detail layouts, define divider bounds and fallback behavior when the body is too narrow.
+   * For master-detail layouts, define divider bounds and fallback behavior when the body is too narrow. Narrow layouts should show the list first, switch to detail after selection, and expose a touch-sized Back button at the top of detail.
 
 5. **Document The Change**
    * Update `internal/hud/README.md` for view-model or tab-content rules.

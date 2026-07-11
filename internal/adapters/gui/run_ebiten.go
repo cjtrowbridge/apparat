@@ -9,6 +9,10 @@ import (
 )
 
 func Run(ctx context.Context) error {
+	return RunWithRuntimeInfo(ctx, defaultRuntimeInfo())
+}
+
+func RunWithRuntimeInfo(ctx context.Context, info RuntimeInfo) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -16,5 +20,5 @@ func Run(ctx context.Context) error {
 	}
 	ebiten.SetWindowTitle("Apparat")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	return ebiten.RunGame(NewGame())
+	return ebiten.RunGame(NewGameWithRuntimeInfo(info))
 }

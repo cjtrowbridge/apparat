@@ -6,6 +6,12 @@ type Adapter struct {
 	shell hud.Shell
 }
 
+type RuntimeInfo struct {
+	WorkingDir  string
+	RuntimePath string
+	BinaryPath  string
+}
+
 func NewAdapter() Adapter {
 	return Adapter{shell: hud.NewShell()}
 }
