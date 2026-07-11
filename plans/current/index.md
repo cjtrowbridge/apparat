@@ -2,4 +2,4 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-07-10-19-36-36 | plans/current/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md | Recover EbitenUI HUD Settings First | Rebuild the blank EbitenUI HUD from the Settings tab outward, restore the update button path, and sweep stale custom-layout code, tests, docs, and plans.
+2026-07-10-19-49-08 | plans/current/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md | Recover EbitenUI HUD Settings First | Rebuild the blank EbitenUI HUD from the Settings tab outward, restore the update button path, and sweep stale custom-layout code, tests, docs, and plans.
