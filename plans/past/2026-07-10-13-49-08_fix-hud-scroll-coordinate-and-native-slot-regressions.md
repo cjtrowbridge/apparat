@@ -2,7 +2,7 @@
 plan_id: 2026-07-10-13-49-08_fix-hud-scroll-coordinate-and-native-slot-regressions
 title: Fix HUD Scroll Coordinate And Native Slot Regressions
 summary: Repair the HUD body layout regressions caused by mixed coordinate spaces and unsynchronized native Android controls in scrollable content.
-status: current
+status: past
 created_at: 2026-07-10-13-49-08
 ---
 
@@ -109,3 +109,7 @@ The suspected root cause is not a single bad margin. The current implementation 
   - [ ] 10.2 Review staged diff and confirm no `agents/` or `third_party/salvagecore/` files are staged.
   - [ ] 10.3 Suggest commit message: `Fix HUD scroll layout regressions`.
   - [ ] 10.4 Commit and push only after user approval.
+
+## Archive Note
+
+- 2026-07-10: Archived as superseded by `plans/current/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md`. The native-slot and custom-scroll coordinate strategy was replaced by an EbitenUI-first recovery direction.

@@ -2,7 +2,7 @@
 plan_id: 2026-07-10-13-16-00_hud-body-layout-primitives
 title: HUD Body Layout Primitives
 summary: Add reusable responsive HUD body layout primitives for native control slots, block-level text/input wrapping, and scrollable master/detail panes.
-status: current
+status: past
 created_at: 2026-07-10-13-16-00
 ---
 
@@ -95,3 +95,4 @@ This plan pulls the first three items from `TODO.md` into executable planning sc
 - 2026-07-10: Closed item 4.6 because the current mock rows do not yet expose a real selected item/focus model; future selectable panes should implement keep-visible behavior when that model lands.
 - 2026-07-10: Focused `internal/hud` tests passed. `go test -tags gui ./internal/adapters/gui` remains blocked in this headless environment by Ebitengine/GLFW failing to open X display `:1`; compile coverage is provided by `make build` and `make build-android`.
 - 2026-07-10: Corrected Android test feedback by moving the high-priority `Updates` fieldset to the top of Settings, removing fragile native-button view scaling, enforcing Android dp-based touch height, cache-busting GitHub APK downloads, and making the "already current" toast include the matching hash prefix.
+- 2026-07-10: Archived as superseded by `plans/current/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md`; useful intent should be reimplemented through EbitenUI rather than custom body layout primitives.
