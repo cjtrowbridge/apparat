@@ -58,7 +58,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 func (game *Game) buildTabs(snapshot hud.Snapshot) []*widget.TabBookTab {
 	tabs := make([]*widget.TabBookTab, 0, len(snapshot.Tabs))
 	for _, tabData := range snapshot.Tabs {
-		label := tabData.Title()
+		label := fmt.Sprintf("%s %s", tabData.Descriptor.Glyph, tabData.Title())
 
 		tab := widget.NewTabBookTab(
 			widget.TabBookTabOpts.Label(label),

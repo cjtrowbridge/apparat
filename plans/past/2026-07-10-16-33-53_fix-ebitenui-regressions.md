@@ -1,0 +1,124 @@
+---
+plan_id: 2026-07-10-16-33-53_fix-ebitenui-regressions
+title: Fix EbitenUI Layout Regressions
+summary: Restores the canonical layout, master-detail UI, sizing constraints, and dynamic update logic missing after EbitenUI migration.
+status: past
+created_at: 2026-07-10-16-33-53
+---
+
+# Plan: Fix EbitenUI Layout Regressions
+
+Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` closed task
+
+## Product Binding
+- **ROADMAP.md:** This plan binds to **Phase 5: Android GUI APK Build Pipeline**, specifically resolving regressions in "wrapper HUD rendering" and "touch tab selection" introduced during the recent layout framework migration. It fulfills the phase requirement to correctly render a cross-platform HUD with proper safe-area and density hardening (44px touch targets).
+- **README.md:** This plan restores the canonical Apparat tab model and multi-pane information architecture (Comrades, Projects, Research, Cluster, Routing, Tasks, Settings) as defined in the README. It also ensures EbitenUI adheres to the controller-friendly and touch-accessible constraints mandated for the application shell.
+
+## 1. Problem: Deleted UI / Missing Content
+**Issue:** During the migration, `ui_builder.go` was written with placeholders for both the master-detail tabs and the dynamic contents of the Settings tab. The original logic that iterated over `tab.Sections` and `section.Rows` was discarded.
+**Fix:**
+- **Settings Tab:** Rewrite `buildSettingsTab` to dynamically iterate through `tab.Sections`. For each section, generate a `widget.Container` (with the new bordered panel background), add a title `widget.Text`, and iterate through `section.Rows` to generate `widget.Text` (or buttons/inputs based on the row ID).
+
+**Execution Tasks:**
+- [x] 1. Restore dynamic Settings tab.
+  - [x] 1.1 Update `internal/adapters/gui/ui_builder.go` to recreate the dynamic Settings loop.
+    - [x] 1.1.1 Implement a loop over `tab.Sections` in `buildSettingsTab` to generate EbitenUI containers for each fieldset.
+    - [x] 1.1.2 Implement an inner loop over `section.Rows` to generate EbitenUI text widgets for each row.
+
+## 1.5. Problem: Master-Detail Layout Deleted for All Other Tabs
+**Issue:** The UI for all other tabs (`Comrades`, `Projects`, `Research`, `Cluster`, `Routing`, `Tasks`) was completely replaced with a generic "Placeholder for other tabs" text widget. The original `drawMasterDetailBody` logic, which rendered a complex split-pane interface with calculated ratios, borders, and dynamic lists, was discarded.
+**Fix:**
+- **Rebuild `buildMasterDetailTab`:** Recreate the split-pane layout using EbitenUI's `GridLayout` or a horizontal `RowLayout`.
+- **Left List Pane:** Implement the list pane to replicate `drawListPane`. It needs a minimum width of 170px (`masterMinListW`), the dark `listPaneColor` background, and the `bodyBorderColor` outline. It should dynamically list all `section.Title`s from `tab.Sections`. Create a `widget.List` or vertical layout of interactive 44px buttons for these items. The first item must default to a selected visual state.
+- **Right Detail Pane:** Implement the detail pane to replicate `drawDetailPane`. It must use the `fieldsetColor` background and have a border. It should display a "Placeholder Detail" header, a wrapped text block for `tab.Summary`, and then dynamically loop over `tab.Sections` (just like the Settings pane) to render the fieldsets, titles, descriptions, and rows within the available scrolling area.
+- **Responsive Sizing:** Ensure the left pane dynamically respects the `3/10` ratio logic (`masterListRatioNum` / `masterListRatioDen`) while constraining to the `170px` minimum.
+
+**Execution Tasks:**
+- [x] 1.5 Restore Master-Detail Layout for all non-Settings tabs.
+  - [x] 1.5.1 Implement `buildMasterDetailTab` in `ui_builder.go`.
+    - [x] 1.5.1.1 Create a horizontal split-pane EbitenUI Grid or RowLayout.
+  - [x] 1.5.2 Recreate the left list pane.
+    - [x] 1.5.2.1 Apply `masterListRatioNum` (3) / `masterListRatioDen` (10) sizing with a minimum width constraint of 170px.
+    - [x] 1.5.2.2 Loop over `tab.Sections` to populate the left list pane with buttons for each section title.
+  - [x] 1.5.3 Recreate the right detail pane.
+    - [x] 1.5.3.1 Provide a placeholder text block showing `tab.Summary`.
+    - [x] 1.5.3.2 Dynamically loop over `tab.Sections` to render the fieldsets in the right pane exactly as they render in Settings.
+    - [x] 1.5.3.3 Implement an event handler so clicking an item in the left list pane updates the scroll position or visibility of the right detail pane.
+
+## 2. Problem: Button Touch Targets Too Small
+**Issue:** The Android UX guidelines in this project enforce a minimum `touchTargetH = 44`. The current EbitenUI buttons auto-size based on padding and text height, making them too small to reliably tap on a tablet or phone.
+**Fix:**
+- Apply `widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44))` to all generated interactive buttons, including the "Check for update" button and the master list items.
+- Update `TabbookTheme` in `theme.go` to ensure `TabButton` instances also respect the minimum height requirements.
+
+**Execution Tasks:**
+- [x] 2. Apply minimum touch target dimensions.
+  - [x] 2.1 Apply `MinSize: (0, 44)` to all EbitenUI button definitions in `ui_builder.go`.
+  - [x] 2.2 Update `TabbookTheme` in `theme.go` to inject minimum sizing constraints.
+
+## 3. Problem: Broken Characters in Tab Names
+**Issue:** The old `body_layout.go` did not prefix tab titles with glyphs (it just used `tab.Title()`), but the new `ui_builder.go` explicitly prepends `tabData.Descriptor.Glyph`. The default `GoXFace` font does not contain these Unicode icons, rendering them as broken "tofu" boxes.
+**Fix:**
+- Load an external TrueType font that supports the Unicode glyphs (e.g., Ebiten's bundled MPlus font `github.com/hajimehoshi/ebiten/v2/examples/resources/fonts` or `golang.org/x/image/font/gofont/goregular`).
+- Re-enable `tabData.Descriptor.Glyph` rendering in `ui_builder.go` and bind this new font face in `theme.go` to restore the correct icon displays.
+
+**Execution Tasks:**
+- [x] 3. Fix broken Unicode tab labels.
+  - [x] 3.1 Load `fonts.MPlus1pRegular_ttf` (or similar) into an Ebiten `text.Face` in `theme.go`.
+  - [x] 3.2 Ensure `ui_builder.go` `buildTabs` concatenates the `tabData.Descriptor.Glyph` and `tabData.Title()` so the icons are visible.
+
+## 4. Problem: Missing Outlines & Flat Backgrounds
+**Issue:** The legacy UI explicitly drew borders around panels using `bodyBorderColor`. The new EbitenUI theme relies on `image.NewNineSliceColor(bgColor)`, which paints a flat, borderless rectangle that blends into the background.
+**Fix:**
+- Instead of manually rendering borders, we will use flat, contrasting colors for buttons and panels to distinguish them from the root background.
+- Apply `image.NewNineSliceColor(panelBgColor)` or `image.NewNineSliceColor(accentColor)` to `theme.PanelTheme` and `theme.ButtonTheme` so layout panes and buttons have crisp, distinct bounds.
+
+**Execution Tasks:**
+- [x] 4. Introduce distinct flat background colors.
+  - [x] 4.1 Delete the custom `createBorderedNineSlice` helper from `theme.go`.
+  - [x] 4.2 Apply `image.NewNineSliceColor(panelBgColor)` to `theme.PanelTheme` and `ScrollContainerImage` to create distinct pane backgrounds.
+
+## 5. Problem: Update Button No Longer Works and Looks Like Plain Text
+**Issue:** 
+1. The "Check for update" button blends into the background because `theme.ButtonTheme.Image` uses `bgColor`, making it look like floating, clickable text rather than a distinct button.
+2. It is hardcoded at the top of the settings page rather than correctly mapped to the `Updates` section from the snapshot data.
+3. If `onCheckForUpdate` is `nil` (e.g., when testing on the Linux desktop environment), the button silently does nothing, appearing broken.
+**Fix:**
+- **Visuals:** Ensure `theme.ButtonTheme.Image` utilizes `image.NewNineSliceColor` with a contrasting fill color (like `panelBgColor` or `accentColor`) so buttons look like distinct UI elements.
+- **Dynamic Placement:** Inside the new dynamic `buildSettingsTab` loop, when encountering a section with `Title: "Updates"`, render the `widget.Button` in that section container.
+- **Feedback:** Provide fallback behavior: if `game.onCheckForUpdate == nil`, update an on-screen status text or the button label itself to provide immediate visual feedback that the button was pressed.
+
+**Execution Tasks:**
+- [x] 5. Fix update button logic and aesthetics.
+  - [x] 5.1 Apply `image.NewNineSliceColor` to `theme.ButtonTheme` (with a contrasting fill like `accentColor` or `panelBgColor`) so buttons look like physical buttons.
+  - [x] 5.2 Map the "Check for update" button to the correct dynamic section.
+    - [x] 5.2.1 Add conditional logic in the `tab.Sections` loop to intercept `section.Title == "Updates"`.
+    - [x] 5.2.2 Create the interactive EbitenUI update button at that specific section.
+  - [x] 5.3 Add a local UI fallback for when `game.onCheckForUpdate` is nil (non-Android environments).
+    - [x] 5.3.1 Ensure the button updates its own label or logs to the screen when clicked if the Gomobile bridge is unavailable.
+
+## 6. Playbook Governance
+**Issue:** The UI framework migration lacked clear documentation for the specific constraints of the EbitenUI implementation, directly leading to these regressions.
+**Fix:**
+- Update `playbooks/how_to_add_or_modify_hud_tab_contents.md` to formally document these new EbitenUI standards.
+- Explicitly dictate that all interactive elements *must* enforce the 44px minimum touch target via `MinSize`.
+- Explicitly dictate that buttons must use bordered NineSlice images (not solid transparent/background colors) to ensure they are visually distinct from text.
+- Reiterate that all tab content must remain data-driven (rendered by looping over `tab.Sections` and `section.Rows`) rather than hardcoding EbitenUI containers manually in `ui_builder.go`.
+
+**Execution Tasks:**
+- [x] 6. Update playbooks and documentation.
+  - [x] 6.1 Edit `playbooks/how_to_add_or_modify_hud_tab_contents.md`.
+    - [x] 6.1.1 Document the strict 44px minimum touch target requirement (`MinSize: (0, 44)`).
+    - [x] 6.1.2 Document the requirement to use distinct background colors (e.g. `image.NewNineSliceColor`) for buttons so they are visually distinct.
+    - [x] 6.1.3 Prohibit hardcoding UI layouts outside of the data-driven `tab.Sections` and `section.Rows` loop pattern.
+
+## 7. Verification and Finalization
+**Execution Tasks:**
+- [x] 7.1 Verification.
+  - [x] 7.1.1 Verify layout aesthetics and rendering locally on Linux (`make verify`).
+  - [x] 7.1.2 Build the Android APK (`make build-android`).
+  - [x] 7.1.3 Deploy to the Android tablet (`adb install -r releases/android/arm64/apparat/latest.apk`).
+  - [x] 7.1.4 Visually verify layout logic, 44px touch targets, and pane borders on the tablet.
+- [x] 7.2 Finalization.
+  - [x] 7.2.1 Update the daily journal (`journal/2026-07-10.md`) detailing the UI restorations.
+  - [x] 7.2.2 Commit and push the final fixes to `main`.
