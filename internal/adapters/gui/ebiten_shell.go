@@ -32,6 +32,10 @@ const (
 	tabDragThreshold  = 18
 	bodyGap           = 8
 	diagnosticsHeight = 58
+	collapsedWidth    = 760
+	defaultSplitWidth = 260
+	minSplitWidth     = 170
+	maxSplitWidth     = 520
 )
 
 type Game struct {
@@ -40,12 +44,32 @@ type Game struct {
 	theme            *widget.Theme
 	width            int
 	height           int
+	layoutDirty      bool
 	rightCtrlHeld    bool
 	pageDownWasHit   bool
 	pageUpWasHit     bool
 	l1WasPressed     bool
 	r1WasPressed     bool
 	r2Held           bool
+	debugOverlayOpen bool
+	debugOverlayX    int
+	debugOverlayY    int
+	debugDrag        bool
+	debugDragDX      int
+	debugDragDY      int
+	debugTouchActive bool
+	debugTouchID     ebiten.TouchID
+	tabScroll        *widget.ScrollContainer
+	tabButtonCount   int
+	tabStripDragging bool
+	tabStripLastX    int
+	tabTouchActive   bool
+	tabTouchID       ebiten.TouchID
+	selectedSections map[hud.TabID]int
+	detailOpen       map[hud.TabID]bool
+	splitWidth       int
+	splitDragging    bool
+	runtimeInfo      RuntimeInfo
 	activeTabID      atomic.Value
 	updateStatus     atomic.Value
 	updateButton     *widget.Button
@@ -68,12 +92,22 @@ func (game *Game) UpdateStatus() string {
 }
 
 func NewGame() *Game {
+	return NewGameWithRuntimeInfo(defaultRuntimeInfo())
+}
+
+func NewGameWithRuntimeInfo(info RuntimeInfo) *Game {
 	theme := createUITheme()
 	game := &Game{
-		shell:  hud.NewShell(),
-		theme:  theme,
-		width:  1280,
-		height: 800,
+		shell:            hud.NewShell(),
+		theme:            theme,
+		width:            1280,
+		height:           800,
+		debugOverlayX:    24,
+		debugOverlayY:    96,
+		selectedSections: map[hud.TabID]int{},
+		detailOpen:       map[hud.TabID]bool{},
+		splitWidth:       defaultSplitWidth,
+		runtimeInfo:      info,
 	}
 	game.rebuildUI(game.shell.Snapshot())
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
@@ -81,9 +115,14 @@ func NewGame() *Game {
 }
 
 func (game *Game) Update() error {
+	if game.layoutDirty {
+		game.layoutDirty = false
+		game.rebuildUI(game.shell.Snapshot())
+	}
 	game.ui.Update()
 	game.applyUpdateStatus()
 	startIndex := game.shell.Snapshot().ActiveIndex
+	game.updatePointerState()
 	ctrlPressed := ebiten.IsKeyPressed(ebiten.KeyControl)
 	pageDownPressed := ebiten.IsKeyPressed(ebiten.KeyPageDown)
 	pageUpPressed := ebiten.IsKeyPressed(ebiten.KeyPageUp)
@@ -116,6 +155,7 @@ func (game *Game) Update() error {
 	if activeIndex := game.shell.Snapshot().ActiveIndex; activeIndex != startIndex {
 		game.rebuildUI(game.shell.Snapshot())
 	}
+	game.ensureActiveTabVisible()
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
 	return nil
 }
@@ -174,6 +214,9 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	if game.ui != nil {
 		game.ui.Draw(screen)
 	}
+	if game.debugOverlayOpen {
+		game.drawDebugOverlay(screen)
+	}
 	snapshot := game.shell.Snapshot()
 	drawDiagnostics(screen, snapshot, game.height)
 }
@@ -188,9 +231,11 @@ func drawDiagnostics(screen *ebiten.Image, snapshot hud.Snapshot, height int) {
 
 func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {
 	if outsideWidth > 0 {
+		game.layoutDirty = game.layoutDirty || outsideWidth != game.width
 		game.width = outsideWidth
 	}
 	if outsideHeight > 0 {
+		game.layoutDirty = game.layoutDirty || outsideHeight != game.height
 		game.height = outsideHeight
 	}
 	return game.width, game.height

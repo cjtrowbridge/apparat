@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/gui"
 	"github.com/cjtrowbridge/apparat/internal/app"
@@ -31,7 +32,13 @@ func init() {
 		return
 	}
 	_ = runtime.RecordLastRun("info", "android", "mobile_game_ready", "Ebitengine mobile game registered", map[string]any{"root": cfg.RootDir})
-	game = gui.NewGame()
+	binaryPath, _ := os.Executable()
+	workingDir, _ := os.Getwd()
+	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
+		WorkingDir:  workingDir,
+		RuntimePath: cfg.RootDir,
+		BinaryPath:  binaryPath,
+	})
 	game.SetOnCheckForUpdate(func() bool {
 		if updater == nil {
 			slog.Warn("android update check requested before updater registration")

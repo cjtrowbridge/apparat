@@ -79,7 +79,11 @@ func (runtime *Runtime) Start(ctx context.Context) error {
 		return err
 	}
 	if runtime.mode == ModeGUI {
-		return gui.Run(ctx)
+		return gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{
+			WorkingDir:  mustGetwd(),
+			RuntimePath: runtime.config.RootDir,
+			BinaryPath:  mustExecutable(),
+		})
 	}
 	<-ctx.Done()
 	if errors.Is(ctx.Err(), context.Canceled) {
@@ -205,3 +209,13 @@ CREATE TABLE IF NOT EXISTS local_runtime (
 `
 
 func MillisNow() int64 { return time.Now().UTC().UnixMilli() }
+
+func mustGetwd() string {
+	wd, _ := os.Getwd()
+	return wd
+}
+
+func mustExecutable() string {
+	path, _ := os.Executable()
+	return path
+}

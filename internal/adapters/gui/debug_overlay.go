@@ -1,0 +1,232 @@
+//go:build gui
+
+package gui
+
+import (
+	"fmt"
+	"image"
+	"image/color"
+	"os"
+	"path/filepath"
+
+	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+)
+
+func defaultRuntimeInfo() RuntimeInfo {
+	wd, _ := os.Getwd()
+	binary, _ := os.Executable()
+	return RuntimeInfo{
+		WorkingDir:  wd,
+		RuntimePath: os.Getenv("APPARAT_RUNTIME_DIR"),
+		BinaryPath:  binary,
+	}
+}
+
+func (game *Game) drawDebugOverlay(screen *ebiten.Image) {
+	x, y := game.debugOverlayX, game.debugOverlayY
+	width, height := game.debugOverlaySize()
+	ebitenutil.DrawRect(screen, float64(x), float64(y), float64(width), float64(height), color.RGBA{R: 12, G: 16, B: 24, A: 232})
+	ebitenutil.DrawRect(screen, float64(x), float64(y), float64(width), 30, activeTabColor)
+	ebitenutil.DebugPrintAt(screen, "Debug UI", x+10, y+8)
+	for index, line := range game.debugOverlayLines() {
+		ebitenutil.DebugPrintAt(screen, line, x+10, y+42+(index*22))
+	}
+}
+
+func (game *Game) debugOverlaySize() (int, int) {
+	width := 520
+	if game.width > 0 && game.width-24 < width {
+		width = game.width - 24
+	}
+	if width < 260 {
+		width = 260
+	}
+	return width, 220
+}
+
+func (game *Game) debugOverlayLines() []string {
+	snapshot := game.shell.Snapshot()
+	return []string{
+		fmt.Sprintf("screen=%dx%d fps=%.1f ups=%.1f", game.width, game.height, ebiten.ActualFPS(), ebiten.ActualTPS()),
+		fmt.Sprintf("active=%s route=%s input=%s", snapshot.ActiveTab().ID(), snapshot.Diagnostics.ActiveRoute, snapshot.Diagnostics.Input),
+		fmt.Sprintf("voice=%s focus=%s queue=%d", snapshot.VoiceState, snapshot.Diagnostics.Focused, snapshot.Diagnostics.EventQueueSize),
+		fmt.Sprintf("working=%s", fallback(game.runtimeInfo.WorkingDir, "unknown")),
+		fmt.Sprintf("runtime=%s", fallback(game.runtimeInfo.RuntimePath, "not configured")),
+		fmt.Sprintf("binary=%s", fallback(game.runtimeInfo.BinaryPath, "unknown")),
+	}
+}
+
+func fallback(value string, replacement string) string {
+	if value == "" {
+		return replacement
+	}
+	return filepath.Clean(value)
+}
+
+func (game *Game) collapsed() bool {
+	return game.width < collapsedWidth
+}
+
+func (game *Game) selectSection(tabID hud.TabID, index int) {
+	game.selectedSections[tabID] = index
+	if game.collapsed() {
+		game.detailOpen[tabID] = true
+	}
+	game.rebuildUI(game.shell.Snapshot())
+}
+
+func (game *Game) showList(tabID hud.TabID) {
+	game.detailOpen[tabID] = false
+	game.rebuildUI(game.shell.Snapshot())
+}
+
+func (game *Game) clampSplitWidth() {
+	if game.splitWidth < minSplitWidth {
+		game.splitWidth = minSplitWidth
+	}
+	limit := game.width - 220
+	if limit > maxSplitWidth {
+		limit = maxSplitWidth
+	}
+	if limit < minSplitWidth {
+		limit = minSplitWidth
+	}
+	if game.splitWidth > limit {
+		game.splitWidth = limit
+	}
+}
+
+func (game *Game) ensureActiveTabVisible() {
+	if game.tabScroll == nil || game.tabButtonCount <= 1 {
+		return
+	}
+	active := game.shell.Snapshot().ActiveIndex
+	game.tabScroll.ScrollLeft = float64(active) / float64(game.tabButtonCount-1)
+}
+
+func (game *Game) updatePointerState() {
+	x, y := ebiten.CursorPosition()
+	game.updateDebugOverlayDrag(x, y)
+	game.updateTabStripDrag(x, y)
+	game.updateTouchDrag()
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		game.splitDragging = false
+	}
+}
+
+func (game *Game) updateDebugOverlayDrag(x int, y int) {
+	if !game.debugOverlayOpen {
+		game.debugDrag = false
+		return
+	}
+	width, _ := game.debugOverlaySize()
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30) {
+		game.debugDrag = true
+		game.debugDragDX = x - game.debugOverlayX
+		game.debugDragDY = y - game.debugOverlayY
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		game.debugDrag = false
+	}
+	if game.debugDrag {
+		game.clampDebugOverlay(x-game.debugDragDX, y-game.debugDragDY)
+	}
+}
+
+func (game *Game) updateTouchDrag() {
+	for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
+		x, y := ebiten.TouchPosition(id)
+		width, _ := game.debugOverlaySize()
+		if game.debugOverlayOpen && pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30) {
+			game.debugTouchActive = true
+			game.debugTouchID = id
+			game.debugDragDX = x - game.debugOverlayX
+			game.debugDragDY = y - game.debugOverlayY
+			return
+		}
+		if game.tabScroll != nil && imagePoint(x, y).In(game.tabScroll.GetWidget().Rect) {
+			game.tabTouchActive = true
+			game.tabTouchID = id
+			game.tabStripLastX = x
+			return
+		}
+	}
+	if game.debugTouchActive {
+		game.updateDebugTouch()
+	}
+	if game.tabTouchActive {
+		game.updateTabTouch()
+	}
+}
+
+func (game *Game) updateDebugTouch() {
+	if inpututil.IsTouchJustReleased(game.debugTouchID) {
+		game.debugTouchActive = false
+		return
+	}
+	x, y := ebiten.TouchPosition(game.debugTouchID)
+	game.clampDebugOverlay(x-game.debugDragDX, y-game.debugDragDY)
+}
+
+func (game *Game) clampDebugOverlay(x int, y int) {
+	width, height := game.debugOverlaySize()
+	game.debugOverlayX = clamp(x, 0, max(0, game.width-width))
+	game.debugOverlayY = clamp(y, 0, max(0, game.height-height))
+}
+
+func (game *Game) updateTabTouch() {
+	if inpututil.IsTouchJustReleased(game.tabTouchID) || game.tabScroll == nil {
+		game.tabTouchActive = false
+		return
+	}
+	x, _ := ebiten.TouchPosition(game.tabTouchID)
+	dx := x - game.tabStripLastX
+	game.tabStripLastX = x
+	game.tabScroll.ScrollLeft -= float64(dx) / 360.0
+}
+
+func (game *Game) updateTabStripDrag(x int, y int) {
+	if game.tabScroll == nil {
+		return
+	}
+	rect := game.tabScroll.GetWidget().Rect
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && imagePoint(x, y).In(rect) {
+		game.tabStripDragging = true
+		game.tabStripLastX = x
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		game.tabStripDragging = false
+	}
+	if game.tabStripDragging && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		dx := x - game.tabStripLastX
+		game.tabStripLastX = x
+		game.tabScroll.ScrollLeft -= float64(dx) / 360.0
+	}
+	if imagePoint(x, y).In(rect) {
+		wheelX, wheelY := ebiten.Wheel()
+		if wheelX != 0 || wheelY != 0 {
+			game.tabScroll.ScrollLeft -= (wheelX + wheelY) / 12
+		}
+	}
+}
+
+func pointInRect(px int, py int, x int, y int, w int, h int) bool {
+	return px >= x && px <= x+w && py >= y && py <= y+h
+}
+
+func imagePoint(x int, y int) image.Point {
+	return image.Point{X: x, Y: y}
+}
+
+func clamp(value int, low int, high int) int {
+	if value < low {
+		return low
+	}
+	if value > high {
+		return high
+	}
+	return value
+}

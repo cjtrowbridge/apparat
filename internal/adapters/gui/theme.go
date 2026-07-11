@@ -89,6 +89,14 @@ func createUITheme() *widget.Theme {
 	theme.PanelTheme = &widget.PanelParams{
 		BackgroundImage: image.NewNineSliceColor(panelBgColor),
 	}
+	theme.LabelTheme = &widget.LabelParams{
+		Color: &widget.LabelColor{
+			Idle:     textColor,
+			Disabled: disabledTextColor,
+		},
+		Face:    facePtr,
+		Padding: &widget.Insets{Left: 8, Right: 8, Top: 8, Bottom: 8},
+	}
 
 	theme.SliderTheme = &widget.SliderParams{
 		TrackImage: &widget.SliderTrackImage{
