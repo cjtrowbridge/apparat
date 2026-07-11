@@ -37,7 +37,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Fieldsets use a visible border, compact title, short explanatory text when helpful, and a clear content area.
    * Rows use consistent label/detail spacing and disabled/future markers.
    * All interactive UI elements (list items, rows, buttons, and form controls) *must* enforce a strict minimum touch target height of 44px by configuring `MinSize: (0, 44)` on the widget options.
-   * Buttons must be visually distinct from plain text and backgrounds by using bordered NineSlice graphics (e.g., via `createBorderedNineSlice`) instead of solid/transparent colors.
+   * Buttons must be visually distinct from plain text and backgrounds by using distinct background colors (e.g., via `image.NewNineSliceColor(buttonBgColor)`) instead of solid/transparent colors that match the parent panel.
    * Buttons and form controls appear inside the fieldset or toolbar that explains their purpose.
    * Text fields and input-like placeholders are block-level controls; they keep touch target height and clip or wrap content within their own rectangle.
 
