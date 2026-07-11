@@ -14,21 +14,21 @@ Default non-GUI builds use the stub runner so headless validation can run on sys
 
 ## EbitenUI Boundary
 
-EbitenUI is an active dependency and should be used for standard GUI widgets where it fits controller-first focus and layout requirements: panels, buttons, lists, forms, tab bars or rails, and focusable controls.
+EbitenUI is the active HUD widget and layout layer for standard GUI surfaces: panels, buttons, lists, forms, tab bars or rails, focusable controls, and scroll containers.
 
-Phase 4 starts with an Ebitengine-rendered shell driven by `internal/hud` snapshots, plus an EbitenUI root container for standard widget integration. The current tab bar is custom-rendered so it can share the controller-first tab descriptor model and support pointer-click tab selection immediately. As widgets become interactive, prefer EbitenUI when it preserves the HUD action/focus model. If additional custom Ebitengine widgets are required for Steam Deck/controller behavior, document the reason in this README and keep their state in HUD view models.
+The GUI adapter builds an EbitenUI root container from `internal/hud` snapshots. The root uses an `AnchorLayout` with HUD margins and diagnostics clearance, and the top-level `TabBook` stretches to the remaining game surface. Top-level tab selection is initialized with `TabBookOpts.InitialTab` from the current HUD snapshot so controller, keyboard, touch, and pointer tab changes stay synchronized with `hud.Shell`.
 
-The current custom shell uses taller tab buttons with compact outer margins and a small tab-to-body gap so the HUD wastes less screen area on Steam Deck and Debian desktop windows. The top tab strip sizes every tab from the widest measured label plus balanced horizontal padding, and it supports horizontal mouse and touchscreen drag scrolling when the tabs exceed the viewport. Keep layout constants named in the adapter until they move into the user-editable HUD configuration manager.
+If additional custom Ebitengine rendering is required for dense visualizations or platform diagnostics, document the reason here and keep authoritative state in HUD view models. Do not reintroduce custom coordinate layout loops for ordinary tab bodies or controls.
 
 ## Tab Body Layout
 
-Tab bodies are rendered from measured rectangles. Do not draw new content as unconstrained text or floating overlays. During the HUD layout recovery checkpoint, body content uses direct screen-space drawing with bounded static panes and fieldsets. Reintroduce clipped pane drawing only with screenshot evidence that each tab still renders in the correct place.
+Tab bodies are rendered as EbitenUI widget trees. Do not draw new content as unconstrained text or floating overlays. Settings uses a scrollable vertical fieldset stack. Non-Settings tabs use an EbitenUI master-detail pattern while their durable data remains placeholder/mock content.
 
-Settings renders as a vertical stack of fieldsets. Each fieldset owns its title, explanation, and content rows. The temporary Android update button is a native bridge only for the platform install action; the HUD still reserves and draws the owning `Updates` fieldset and exposes a stable native slot id, `settings.updates.check_for_update`, for Android placement. Until body scrolling is reintroduced with visual validation, the native button uses a stable Settings header slot rather than scrolled fieldset geometry.
+Settings renders each `internal/hud` section as a fieldset. The `Updates` section owns an EbitenUI-rendered `Check for update` button. The button calls the GUI adapter's update callback and then listens for coarse status text (`Checking...`, `Already current`, `Permission needed`, `Installer opened`, or failure states) through the game model. Android implements the request and status-report path through the mobile wrapper, while desktop builds use local fallback feedback. Do not add a native Android overlay button for this path.
 
-Comrades, Projects, Cluster, Routing, and Tasks render as master-detail bodies. The left pane lists selectable objects, and the right pane owns placeholder/detail content until real selection data exists. Future scrolling and adjustable dividers must preserve the same minimum-width and no-overlap rules, and must be validated with screenshots before release.
+Comrades, Projects, Cluster, Routing, and Tasks render as master-detail bodies. The left pane lists selectable objects, and the right pane owns placeholder/detail content until real selection data exists. Research uses the pattern that matches its current placeholder/review state. Future scrolling, tab overflow behavior, narrow-screen collapse, and adjustable dividers must preserve the same minimum-width and no-overlap rules, and must be validated with screenshots before release.
 
-Rows, list items, buttons, and input-like controls must remain large enough for touchscreens. Keep minimum touch target constants named and covered by tests when changing tab body layout. Text blocks wrap or truncate inside bounded rectangles; they must not draw over adjacent fieldsets or panes.
+Rows, list items, buttons, and input-like controls must remain large enough for touchscreens. Keep minimum touch target constants named and covered by tests when changing tab body layout. Text blocks must remain inside their owning EbitenUI container; they must not draw over adjacent fieldsets or panes.
 
 ## Native GUI Validation
 
@@ -36,11 +36,12 @@ GUI-specific validation must use:
 
 ```bash
 go test -tags gui ./internal/adapters/gui
+go test -c -tags gui -o /tmp/apparat-gui.test ./internal/adapters/gui
 make build
 make run-built
 ```
 
-Linux GUI builds require native desktop development headers used by Ebitengine/GLFW, including X11, cursor, randr, xinerama, xi, OpenGL, xxf86vm, and ALSA development packages. If those are missing, record the exact missing package/header and do not mark GUI validation complete.
+Linux GUI builds require native desktop development headers used by Ebitengine/GLFW, including X11, cursor, randr, xinerama, xi, OpenGL, xxf86vm, and ALSA development packages. Running GUI-tagged tests or the built GUI also requires a usable display server. If no display is available, use `go test -c -tags gui` as a compile gate, record the display limitation, and do not mark visual validation complete.
 
 ## Android Mobile Runner
 

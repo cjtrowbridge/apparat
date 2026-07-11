@@ -32,10 +32,14 @@ func init() {
 	}
 	_ = runtime.RecordLastRun("info", "android", "mobile_game_ready", "Ebitengine mobile game registered", map[string]any{"root": cfg.RootDir})
 	game = gui.NewGame()
-	game.SetOnCheckForUpdate(func() {
-		if updater != nil {
-			updater.CheckForUpdate()
+	game.SetOnCheckForUpdate(func() bool {
+		if updater == nil {
+			slog.Warn("android update check requested before updater registration")
+			return false
 		}
+		slog.Info("android update check requested")
+		updater.CheckForUpdate()
+		return true
 	})
 	mobile.SetGame(game)
 	_ = fmt.Sprintf("%p", runtime)
@@ -52,6 +56,15 @@ func ActiveTab() string {
 	return game.ActiveTabID()
 }
 
+func ReportUpdateStatus(message string) {
+	if game == nil {
+		slog.Warn("android update status before game registration", "message", message)
+		return
+	}
+	game.SetUpdateStatus(message)
+	slog.Info("android update status", "message", message)
+}
+
 type Updater interface {
 	CheckForUpdate()
 }
@@ -60,4 +73,5 @@ var updater Updater
 
 func RegisterUpdater(u Updater) {
 	updater = u
+	slog.Info("android updater registered")
 }

@@ -17,20 +17,28 @@ import (
 // In the future, this should intelligently update existing widgets instead of rebuilding
 // from scratch, but for this initial migration, rebuilding ensures layout correctness.
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
-	// Create the root container with a vertical layout
 	root := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Spacing(tabGap),
+		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
+			widget.AnchorLayoutOpts.Padding(&widget.Insets{
+				Left:   windowMargin,
+				Right:  windowMargin,
+				Top:    tabTop,
+				Bottom: diagnosticsHeight,
+			}),
 		)),
 	)
 
-	// Build the top tab bar
 	tabs := game.buildTabs(snapshot)
-	tabBook := widget.NewTabBook(
+	tabBookOpts := []widget.TabBookOpt{
 		widget.TabBookOpts.Tabs(tabs...),
 		widget.TabBookOpts.TabButtonSpacing(tabGap),
 		widget.TabBookOpts.TabButtonMinSize(&img.Point{X: 0, Y: tabHeight}),
+		widget.TabBookOpts.ContainerOpts(widget.ContainerOpts.WidgetOpts(
+			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+				StretchHorizontal: true,
+				StretchVertical:   true,
+			}),
+		)),
 		widget.TabBookOpts.TabSelectedHandler(func(args *widget.TabBookTabSelectedEventArgs) {
 			for i, t := range tabs {
 				if t == args.Tab {
@@ -39,16 +47,13 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 				}
 			}
 		}),
-	)
-
+	}
+	if len(tabs) > 0 && snapshot.ActiveIndex >= 0 && snapshot.ActiveIndex < len(tabs) {
+		tabBookOpts = append(tabBookOpts, widget.TabBookOpts.InitialTab(tabs[snapshot.ActiveIndex]))
+	}
+	tabBook := widget.NewTabBook(tabBookOpts...)
 	root.AddChild(tabBook)
 
-	// Set the tab book to the active index
-	if len(tabs) > 0 && snapshot.ActiveIndex >= 0 && snapshot.ActiveIndex < len(tabs) {
-		tabBook.SetTab(tabs[snapshot.ActiveIndex])
-	}
-
-	// Update the game UI instance
 	game.ui = &ebitenui.UI{
 		Container:    root,
 		PrimaryTheme: game.theme,
@@ -79,6 +84,21 @@ func (game *Game) buildTabs(snapshot hud.Snapshot) []*widget.TabBookTab {
 }
 
 func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
+	content := game.buildSettingsContent(tabData)
+	scrollContainer := widget.NewScrollContainer(
+		widget.ScrollContainerOpts.Content(content),
+		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
+		widget.ScrollContainerOpts.StretchContentWidth(),
+		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+			StretchHorizontal: true,
+			StretchVertical:   true,
+		})),
+	)
+
+	return scrollContainer
+}
+
+func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 	content := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
@@ -131,31 +151,31 @@ func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateab
 		}
 
 		if strings.ToLower(section.Title) == "updates" {
+			updateLabel := game.UpdateStatus()
+			if updateLabel == "" {
+				updateLabel = "Check for update"
+			}
 			updateBtn := widget.NewButton(
-				widget.ButtonOpts.Text("Check for update", game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+				widget.ButtonOpts.Text(updateLabel, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
 				widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
 				widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
 				widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
 				widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-					if game.onCheckForUpdate != nil {
-						game.onCheckForUpdate()
-					} else {
-						args.Button.Text().Label = "Update check simulated"
+					game.SetUpdateStatus("Checking...")
+					args.Button.SetText("Checking...")
+					if game.onCheckForUpdate == nil || !game.onCheckForUpdate() {
+						game.SetUpdateStatus("Update unavailable")
+						args.Button.SetText("Update unavailable")
 					}
 				}),
 			)
+			game.updateButton = updateBtn
 			sectionContainer.AddChild(updateBtn)
 		}
 		content.AddChild(sectionContainer)
 	}
 
-	scrollContainer := widget.NewScrollContainer(
-		widget.ScrollContainerOpts.Content(content),
-		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
-		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true})),
-	)
-
-	return scrollContainer
+	return content
 }
 
 func (game *Game) buildMasterDetailTab(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
