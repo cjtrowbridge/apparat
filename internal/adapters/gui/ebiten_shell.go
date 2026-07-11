@@ -47,11 +47,24 @@ type Game struct {
 	r1WasPressed     bool
 	r2Held           bool
 	activeTabID      atomic.Value
-	onCheckForUpdate func()
+	updateStatus     atomic.Value
+	updateButton     *widget.Button
+	onCheckForUpdate func() bool
 }
 
-func (game *Game) SetOnCheckForUpdate(f func()) {
+func (game *Game) SetOnCheckForUpdate(f func() bool) {
 	game.onCheckForUpdate = f
+}
+
+func (game *Game) SetUpdateStatus(status string) {
+	game.updateStatus.Store(status)
+}
+
+func (game *Game) UpdateStatus() string {
+	if status, ok := game.updateStatus.Load().(string); ok {
+		return status
+	}
+	return ""
 }
 
 func NewGame() *Game {
@@ -69,6 +82,7 @@ func NewGame() *Game {
 
 func (game *Game) Update() error {
 	game.ui.Update()
+	game.applyUpdateStatus()
 	startIndex := game.shell.Snapshot().ActiveIndex
 	ctrlPressed := ebiten.IsKeyPressed(ebiten.KeyControl)
 	pageDownPressed := ebiten.IsKeyPressed(ebiten.KeyPageDown)
@@ -104,6 +118,21 @@ func (game *Game) Update() error {
 	}
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
 	return nil
+}
+
+func (game *Game) applyUpdateStatus() {
+	if game.updateButton == nil {
+		return
+	}
+	status := game.UpdateStatus()
+	if status == "" {
+		return
+	}
+	text := game.updateButton.Text()
+	if text != nil && text.Label == status {
+		return
+	}
+	game.updateButton.SetText(status)
 }
 
 func (game *Game) ActiveTabID() string {

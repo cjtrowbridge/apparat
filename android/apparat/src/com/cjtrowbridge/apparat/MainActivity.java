@@ -5,15 +5,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
-import android.view.Gravity;
-import android.view.View;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -30,11 +25,11 @@ import com.cjtrowbridge.apparat.apparatmobile.Apparatmobile;
 import com.cjtrowbridge.apparat.apparatmobile.EbitenView;
 
 public class MainActivity extends Activity {
+    private static final String TAG = "ApparatUpdate";
     private static final String UPDATE_URL = "https://raw.githubusercontent.com/cjtrowbridge/apparat/main/releases/android/arm64/apparat/latest.apk";
     private static final String UPDATE_AUTHORITY = "com.cjtrowbridge.apparat.update";
     private static final String APK_MIME_TYPE = "application/vnd.android.package-archive";
     private EbitenView view;
-    private Handler mainHandler;
     private File downloadedUpdate;
 
     @Override
@@ -43,7 +38,6 @@ public class MainActivity extends Activity {
         Seq.setContext(getApplicationContext());
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        mainHandler = new Handler(Looper.getMainLooper());
         Apparatmobile.ready();
         view = new EbitenView(this);
         view.setFocusable(true);
@@ -52,9 +46,11 @@ public class MainActivity extends Activity {
         Apparatmobile.registerUpdater(new com.cjtrowbridge.apparat.apparatmobile.Updater() {
             @Override
             public void checkForUpdate() {
+                Log.i(TAG, "checkForUpdate bridge invoked");
                 MainActivity.this.checkForUpdate();
             }
         });
+        Log.i(TAG, "Updater bridge registered");
     }
 
     @Override
@@ -78,7 +74,9 @@ public class MainActivity extends Activity {
 
 
     private void checkForUpdate() {
-        Toast.makeText(this, "Checking Apparat update...", Toast.LENGTH_SHORT).show();
+        Log.i(TAG, "Starting update check");
+        reportUpdateStatus("Checking...");
+        showToast("Checking Apparat update...");
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -88,6 +86,7 @@ public class MainActivity extends Activity {
                     String installedHash = sha256(new File(getApplicationInfo().sourceDir));
                     String downloadedHash = sha256(apk);
                     if (installedHash.equals(downloadedHash)) {
+                        reportUpdateStatus("Already current");
                         showToast("Already current: installed and GitHub APK hashes match (" + shortHash(installedHash) + ")");
                         return;
                     }
@@ -98,6 +97,7 @@ public class MainActivity extends Activity {
                         }
                     });
                 } catch (Exception error) {
+                    reportUpdateStatus("Update failed");
                     showToast("Update check failed: " + error.getMessage());
                 }
             }
@@ -130,7 +130,8 @@ public class MainActivity extends Activity {
 
     private void requestPermissionOrInstall() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {
-            Toast.makeText(this, "Allow Apparat to install updates, then tap Update again.", Toast.LENGTH_LONG).show();
+            reportUpdateStatus("Permission needed");
+            showToast("Allow Apparat to install updates, then tap Update again.");
             Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
             intent.setData(Uri.parse("package:" + getPackageName()));
             startActivity(intent);
@@ -141,7 +142,8 @@ public class MainActivity extends Activity {
 
     private void installDownloadedUpdate() {
         if (downloadedUpdate == null || !downloadedUpdate.exists()) {
-            Toast.makeText(this, "No downloaded update is ready", Toast.LENGTH_LONG).show();
+            reportUpdateStatus("No update ready");
+            showToast("No downloaded update is ready");
             return;
         }
         Uri uri = Uri.parse("content://" + UPDATE_AUTHORITY + "/latest.apk");
@@ -151,8 +153,19 @@ public class MainActivity extends Activity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             startActivity(intent);
+            reportUpdateStatus("Installer opened");
         } catch (Exception error) {
-            Toast.makeText(this, "Could not open Android installer: " + error.getMessage(), Toast.LENGTH_LONG).show();
+            reportUpdateStatus("Installer failed");
+            showToast("Could not open Android installer: " + error.getMessage());
+        }
+    }
+
+    private void reportUpdateStatus(String message) {
+        Log.i(TAG, "Update status: " + message);
+        try {
+            Apparatmobile.reportUpdateStatus(message);
+        } catch (Exception error) {
+            Log.w(TAG, "Could not report update status to HUD", error);
         }
     }
 

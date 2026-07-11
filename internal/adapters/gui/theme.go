@@ -125,6 +125,6 @@ func createUITheme() *widget.Theme {
 func createScrollContainerImage() *widget.ScrollContainerImage {
 	return &widget.ScrollContainerImage{
 		Idle: image.NewNineSliceColor(color.RGBA{0, 0, 0, 0}),
-		Mask: image.NewNineSliceColor(color.RGBA{0, 0, 0, 0}),
+		Mask: image.NewNineSliceColor(color.RGBA{255, 255, 255, 255}),
 	}
 }

@@ -3,197 +3,192 @@
 package gui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/ebitenui/ebitenui/widget"
 )
 
-func TestTabIndexAtUsesDrawnTabRects(t *testing.T) {
-	game := &Game{width: 320, tabRects: []tabRect{{index: 2, x: windowMargin, y: tabTop, w: 90, h: tabHeight}}}
-	index, ok := game.tabIndexAt(windowMargin+20, tabTop+20)
-	if !ok || index != 2 {
-		t.Fatalf("hit = index %d ok %t, want index 2 ok true", index, ok)
-	}
-	if _, ok := game.tabIndexAt(4, 4); ok {
-		t.Fatal("unexpected hit outside tab rect")
-	}
-}
-
-func TestTabButtonWidthUsesLargestLabelWithBalancedPadding(t *testing.T) {
-	snapshot := hud.Snapshot{Tabs: []hud.Tab{
-		{Descriptor: hud.TabDescriptor{Label: "A", Glyph: "*"}},
-		{Descriptor: hud.TabDescriptor{Label: "Longest", Glyph: "*"}},
-	}}
-	got := tabButtonWidth(snapshot)
-	want := labelWidth("* Longest") + tabTextInsetX*2
-	if got != want {
-		t.Fatalf("tabButtonWidth = %d, want %d", got, want)
-	}
-}
-
-func TestClampTabScroll(t *testing.T) {
-	if got := clampTabScroll(-20, 300, 100); got != 0 {
-		t.Fatalf("negative scroll = %d, want 0", got)
-	}
-	if got := clampTabScroll(500, 300, 100); got != 200 {
-		t.Fatalf("overscroll = %d, want 200", got)
-	}
-	if got := clampTabScroll(40, 80, 100); got != 0 {
-		t.Fatalf("short content scroll = %d, want 0", got)
-	}
-}
-
-func TestEnsureTabVisibleScrollsActiveTabIntoViewport(t *testing.T) {
+func TestNewGameBuildsStretchedTabBookRoot(t *testing.T) {
 	game := NewGame()
-	game.width = 180
+	root, ok := game.ui.Container.(*widget.Container)
+	if !ok {
+		t.Fatalf("root type = %T, want *widget.Container", game.ui.Container)
+	}
+	children := root.Children()
+	if len(children) != 1 {
+		t.Fatalf("root children = %d, want 1", len(children))
+	}
+	tabBook, ok := children[0].(*widget.TabBook)
+	if !ok {
+		t.Fatalf("root child type = %T, want *widget.TabBook", children[0])
+	}
+	layoutData, ok := tabBook.GetWidget().LayoutData.(widget.AnchorLayoutData)
+	if !ok {
+		t.Fatalf("tabbook layout data = %T, want widget.AnchorLayoutData", tabBook.GetWidget().LayoutData)
+	}
+	if !layoutData.StretchHorizontal || !layoutData.StretchVertical {
+		t.Fatalf("tabbook stretch = horizontal %t vertical %t, want both true", layoutData.StretchHorizontal, layoutData.StretchVertical)
+	}
+}
+
+func TestTabBookInitialTabFollowsHUDSnapshot(t *testing.T) {
+	game := NewGame()
 	if err := game.shell.SelectTab(6); err != nil {
 		t.Fatal(err)
 	}
-	game.ensureTabVisible(6)
-	if game.tabScrollX <= 0 {
-		t.Fatalf("tabScrollX = %d, want positive scroll", game.tabScrollX)
-	}
-	if game.tabScrollX != clampTabScroll(game.tabScrollX, game.tabContentW, game.tabViewportWidth()) {
-		t.Fatalf("tabScrollX = %d outside clamp", game.tabScrollX)
+	game.rebuildUI(game.shell.Snapshot())
+	root := game.ui.Container.(*widget.Container)
+	tabBook := root.Children()[0].(*widget.TabBook)
+	game.ui.Container.GetWidget().SetTheme(game.theme)
+	game.ui.Container.Validate()
+	tabButton := tabBook.GetTabButton(tabBook.Tab())
+	if tabButton == nil || tabButton.Text() == nil || !strings.Contains(tabButton.Text().Label, "Settings") {
+		label := "<nil>"
+		if tabButton != nil && tabButton.Text() != nil {
+			label = tabButton.Text().Label
+		}
+		t.Fatalf("active tab label = %q, want Settings", label)
 	}
 }
 
-func TestDragTabsDoesNotScrollBeforeThreshold(t *testing.T) {
+func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 	game := NewGame()
-	game.width = 180
-	game.tabContentW = 600
-	state := dragState{active: true, startX: 100, startScroll: 50}
-	game.dragTabs(&state, 100+tabDragThreshold)
-	if state.dragged {
-		t.Fatal("drag should not start at the threshold")
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	content := game.buildSettingsContent(settings)
+	labels := collectTextLabels(content)
+
+	for _, want := range []string{"UPDATES", "HUD CONFIGURATION", "BINDINGS", "DIAGNOSTICS"} {
+		if !containsLabel(labels, want) {
+			t.Fatalf("settings labels missing %q in %#v", want, labels)
+		}
 	}
-	if game.tabScrollX != 0 {
-		t.Fatalf("tabScrollX = %d, want unchanged zero before drag starts", game.tabScrollX)
+	if findButtonByLabel(content, "Check for update") == nil {
+		t.Fatal("settings content missing Check for update button")
 	}
 }
 
-func TestDragTabsStartsSmoothlyAfterThreshold(t *testing.T) {
+func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
 	game := NewGame()
-	game.width = 180
-	game.tabContentW = 600
-	game.tabScrollX = 50
-	state := dragState{active: true, startX: 100, startScroll: 50}
-	game.dragTabs(&state, 100+tabDragThreshold+1)
-	if !state.dragged {
-		t.Fatal("drag should start after threshold")
+	called := false
+	game.SetOnCheckForUpdate(func() bool {
+		called = true
+		return true
+	})
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	content := game.buildSettingsContent(settings)
+	button := findButtonByLabel(content, "Check for update")
+	if button == nil {
+		t.Fatal("settings content missing Check for update button")
 	}
-	if game.tabScrollX != 50 {
-		t.Fatalf("tabScrollX = %d, want no threshold jump", game.tabScrollX)
+	button.Click()
+	if !called {
+		t.Fatal("update button did not invoke callback")
 	}
-	game.dragTabs(&state, 130)
-	if game.tabScrollX >= 50 {
-		t.Fatalf("tabScrollX = %d, want smooth incremental movement below 50", game.tabScrollX)
+	if got := button.Text().Label; got != "Checking..." {
+		t.Fatalf("button label after callback = %q, want Checking...", got)
+	}
+	if got := game.UpdateStatus(); got != "Checking..." {
+		t.Fatalf("game update status = %q, want Checking...", got)
 	}
 }
 
-func TestTabPressCanSelectBeforeDragStarts(t *testing.T) {
+func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 	game := NewGame()
-	game.width = 320
-	game.tabRects = []tabRect{{index: 1, x: windowMargin, y: tabTop, w: 90, h: tabHeight}}
-	index, ok := game.tabIndexAt(windowMargin+20, tabTop+20)
-	if !ok || index != 1 {
-		t.Fatalf("press target = index %d ok %t, want index 1 ok true", index, ok)
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	content := game.buildSettingsContent(settings)
+	button := findButtonByLabel(content, "Check for update")
+	if button == nil {
+		t.Fatal("settings content missing Check for update button")
+	}
+	game.SetUpdateStatus("Already current")
+	game.applyUpdateStatus()
+	if got := button.Text().Label; got != "Already current" {
+		t.Fatalf("button label after external status = %q, want Already current", got)
 	}
 }
 
-func TestMasterDetailRectsStaySeparatedAtNarrowWidth(t *testing.T) {
-	list, detail := masterDetailRects(rect{x: 0, y: 0, w: 420, h: 300})
-	if list.w <= 0 || detail.w <= 0 {
-		t.Fatalf("invalid pane widths: list=%+v detail=%+v", list, detail)
+func TestSettingsUpdateButtonShowsUnavailableWithoutCallback(t *testing.T) {
+	game := NewGame()
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	content := game.buildSettingsContent(settings)
+	button := findButtonByLabel(content, "Check for update")
+	if button == nil {
+		t.Fatal("settings content missing Check for update button")
 	}
-	if list.x+list.w+masterDividerW > detail.x {
-		t.Fatalf("panes overlap: list=%+v detail=%+v", list, detail)
+	button.Click()
+	if got := button.Text().Label; got != "Update unavailable" {
+		t.Fatalf("button label without callback = %q, want Update unavailable", got)
 	}
-}
-
-func TestMasterDetailTextRectsAreInsideExpectedPanes(t *testing.T) {
-	body := tabBodyRect(1280, 800)
-	list, detail := masterDetailRects(body)
-	listText := rect{x: list.x + fieldsetPadding, y: list.y + fieldsetPadding + 28, w: list.w - fieldsetPadding*2, h: touchTargetH}
-	detailText := rect{x: detail.x + fieldsetPadding, y: detail.y + fieldsetPadding, w: detail.w - fieldsetPadding*2, h: fieldsetDescH}
-	if !list.contains(listText.x, listText.y) || !list.contains(listText.x+listText.w-1, listText.y+listText.h-1) {
-		t.Fatalf("list text rect %+v outside list pane %+v", listText, list)
-	}
-	if !detail.contains(detailText.x, detailText.y) || !detail.contains(detailText.x+detailText.w-1, detailText.y+detailText.h-1) {
-		t.Fatalf("detail text rect %+v outside detail pane %+v", detailText, detail)
+	if got := game.UpdateStatus(); got != "Update unavailable" {
+		t.Fatalf("game update status = %q, want Update unavailable", got)
 	}
 }
 
-func TestSettingsUpdatesSectionIsFirst(t *testing.T) {
-	tab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
-	first := tab.Sections[0]
-	if first.Title != "Updates" {
-		t.Fatalf("first settings section = %q, want Updates", first.Title)
+func TestMasterDetailContentIncludesSectionButtonsAndSummary(t *testing.T) {
+	game := NewGame()
+	projectTab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[1]
+	body := game.buildMasterDetailTab(projectTab)
+	container, ok := body.(*widget.Container)
+	if !ok {
+		t.Fatalf("master-detail body type = %T, want *widget.Container", body)
 	}
-	if len(first.Rows) != 0 {
-		t.Fatalf("updates rows = %d, want native button to own control row", len(first.Rows))
+	if findButtonByLabel(container, "Projects") == nil {
+		t.Fatal("master-detail body missing left pane Projects button")
+	}
+	labels := collectTextLabels(container)
+	if !containsLabel(labels, projectTab.Summary) {
+		t.Fatalf("master-detail body missing summary %q in %#v", projectTab.Summary, labels)
 	}
 }
 
-func TestTruncateTextUsesASCIIEllipsis(t *testing.T) {
-	got := truncateText("abcdefghijklmnopqrstuvwxyz", debugGlyphWidth*8)
-	if got != "abcde..." {
-		t.Fatalf("truncateText = %q, want ASCII ellipsis", got)
-	}
+func collectTextLabels(root *widget.Container) []string {
+	var labels []string
+	walkWidget(root, func(node widget.PreferredSizeLocateableWidget) {
+		switch v := node.(type) {
+		case *widget.Text:
+			labels = append(labels, v.Label)
+		case *widget.Button:
+			if text := v.Text(); text != nil {
+				labels = append(labels, text.Label)
+			}
+		}
+	})
+	return labels
 }
 
-func TestWrapTextKeepsTextInsideBlockWidth(t *testing.T) {
-	lines := wrapText("alpha beta gamma delta", debugGlyphWidth*11)
-	if len(lines) < 2 {
-		t.Fatalf("wrapText lines = %+v, want multiple lines", lines)
-	}
-	for _, line := range lines {
-		if labelWidth(line) > debugGlyphWidth*11 {
-			t.Fatalf("line %q exceeds block width", line)
+func findButtonByLabel(root *widget.Container, label string) *widget.Button {
+	var found *widget.Button
+	walkWidget(root, func(node widget.PreferredSizeLocateableWidget) {
+		if found != nil {
+			return
+		}
+		button, ok := node.(*widget.Button)
+		if !ok {
+			return
+		}
+		if text := button.Text(); text != nil && text.Label == label {
+			found = button
+		}
+	})
+	return found
+}
+
+func walkWidget(node widget.PreferredSizeLocateableWidget, visit func(widget.PreferredSizeLocateableWidget)) {
+	visit(node)
+	if container, ok := node.(*widget.Container); ok {
+		for _, child := range container.Children() {
+			walkWidget(child, visit)
 		}
 	}
 }
 
-func TestClampScroll(t *testing.T) {
-	if got := clampScroll(-5, 200); got != 0 {
-		t.Fatalf("negative scroll = %d, want 0", got)
+func containsLabel(labels []string, want string) bool {
+	for _, label := range labels {
+		if label == want {
+			return true
+		}
 	}
-	if got := clampScroll(300, 200); got != 200 {
-		t.Fatalf("overscroll = %d, want 200", got)
-	}
-	if got := clampScroll(20, -1); got != 0 {
-		t.Fatalf("short content scroll = %d, want 0", got)
-	}
-}
-
-func TestDragBodyPaneStartsSmoothlyAfterThreshold(t *testing.T) {
-	game := NewGame()
-	game.width = 420
-	game.height = 320
-	state := bodyDragState{active: true, pane: scrollPaneSettings, startY: 100, startScroll: 50}
-	game.bodyScroll.settings = 50
-	game.dragBodyPane(&state, 100+bodyDragThreshold+1)
-	if !state.dragged {
-		t.Fatal("body drag should start after threshold")
-	}
-	if game.bodyScroll.settings != 50 {
-		t.Fatalf("settings scroll = %d, want no threshold jump", game.bodyScroll.settings)
-	}
-}
-
-func TestInputPlaceholderRectStaysInsideFieldset(t *testing.T) {
-	fieldset := rect{x: 10, y: 20, w: 240, h: 160}
-	input := inputPlaceholderRect(fieldset, 1)
-	if input.x < fieldset.x || input.x+input.w > fieldset.x+fieldset.w {
-		t.Fatalf("input rect %+v outside fieldset %+v", input, fieldset)
-	}
-	if input.h < touchTargetH {
-		t.Fatalf("input height = %d, want at least %d", input.h, touchTargetH)
-	}
-}
-
-func TestBodyRowsUseTouchTargetHeight(t *testing.T) {
-	if fieldsetRowH < 44 || touchTargetH < 44 {
-		t.Fatalf("touch target sizes too small: row=%d target=%d", fieldsetRowH, touchTargetH)
-	}
+	return false
 }
