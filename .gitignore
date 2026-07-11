@@ -1,5 +1,6 @@
 /third_party/salvagecore/
 /.tools/
 /.tmp/
+build_environment.py
 __pycache__/
 *.pyc

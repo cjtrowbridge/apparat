@@ -3,6 +3,9 @@ TOOLS_BIN ?= $(CURDIR)/.tools/bin
 GO_CACHE ?= $(CURDIR)/.tools/cache/go-build
 GO_MOD_CACHE ?= $(CURDIR)/.tools/cache/go-mod
 GO_ENV = GOCACHE=$(GO_CACHE) GOMODCACHE=$(GO_MOD_CACHE)
+HOST_GOOS = $(shell uname -s | tr A-Z a-z)
+HOST_GOARCH_RAW = $(shell uname -m)
+HOST_GOARCH = $(shell printf '%s' "$(HOST_GOARCH_RAW)" | sed 's/^x86_64$$/amd64/;s/^aarch64$$/arm64/')
 GOLANGCI_LINT_VERSION ?= v2.12.2
 GOVULNCHECK_VERSION ?= v1.5.0
 
@@ -35,16 +38,16 @@ build:
 	$(GO_ENV) python3 scripts/build.py
 
 check-android-build-env:
-	$(GO_ENV) python3 scripts/build.py --check-android-env
+	$(GO_ENV) python3 scripts/build.py
 
 build-android:
-	$(GO_ENV) python3 scripts/build.py --os android --arch arm64 --target apparat
+	$(GO_ENV) python3 scripts/build.py
 
 run-built:
-	artifact=$$(python3 scripts/build.py --target apparat --print-path); python3 scripts/run_artifact.py "$$artifact" -- --smoke-test --runtime-dir /tmp/apparat-run-built/apparat
+	python3 scripts/run_artifact.py "releases/$(HOST_GOOS)/$(HOST_GOARCH)/apparat/latest" -- --smoke-test --runtime-dir /tmp/apparat-run-built/apparat
 
 run-built-headless:
-	artifact=$$(python3 scripts/build.py --target apparatd --print-path); python3 scripts/run_artifact.py "$$artifact" -- --smoke-test --runtime-dir /tmp/apparat-run-built/apparatd
+	python3 scripts/run_artifact.py "releases/$(HOST_GOOS)/$(HOST_GOARCH)/apparatd/latest" -- --smoke-test --runtime-dir /tmp/apparat-run-built/apparatd
 
 lint:
 	$(GO_ENV) $(TOOLS_BIN)/golangci-lint run ./...

@@ -79,6 +79,16 @@ func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 	}
 }
 
+func TestSettingsDebugOverlayCheckboxLabelClosesWhenOpen(t *testing.T) {
+	game := NewGame()
+	game.debugOverlayOpen = true
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	content := game.buildSettingsContent(settings)
+	if findCheckboxByLabel(content, "Close Debug UI overlay") == nil {
+		t.Fatal("settings content missing close Debug UI overlay checkbox label")
+	}
+}
+
 func TestSettingsDebugOverlayCheckboxTogglesState(t *testing.T) {
 	game := NewGame()
 	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
@@ -192,6 +202,31 @@ func TestCollapsedMasterDetailStartsWithListAndCanBuildDetailBack(t *testing.T) 
 	}
 	if scroll.GetWidget().LayoutData == nil {
 		t.Fatal("collapsed detail missing layout data")
+	}
+}
+
+func TestCollapsedMasterListDoesNotKeepExpandedSplitWidth(t *testing.T) {
+	game := NewGame()
+	game.width = 640
+	if width := game.masterListWidth(); width != 0 {
+		t.Fatalf("collapsed master list width = %d, want 0", width)
+	}
+}
+
+func TestTabStripHasSingleCheckedButtonAfterSelection(t *testing.T) {
+	game := NewGame()
+	if len(game.tabButtons) < 2 {
+		t.Fatal("tab strip did not retain buttons")
+	}
+	game.selectTab(1, game.tabButtons[1])
+	checked := 0
+	for _, button := range game.tabButtons {
+		if button.State() == widget.WidgetChecked {
+			checked++
+		}
+	}
+	if checked != 1 {
+		t.Fatalf("checked tab buttons = %d, want 1", checked)
 	}
 }
 

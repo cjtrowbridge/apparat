@@ -51,11 +51,17 @@ def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: d
     wrapper_jar = work / "wrapper.jar"
     run([str(toolchain.java_home / "bin" / "jar"), "cf", str(wrapper_jar), "-C", str(classes_dir), "."])
     build_tools = toolchain.sdk_root / "build-tools" / settings["build_tools"]
+    resources = work / "resources.zip"
+    if (ROOT / "android" / "apparat" / "res").exists():
+        run([str(build_tools / exe("aapt2")), "compile", "--dir", "android/apparat/res", "-o", str(resources)])
     run([str(build_tools / exe("d8")), "--min-api", settings["min_api"], "--classpath", str(android_jar), "--output", str(dex_dir), str(base_jar), str(wrapper_jar)])
     unsigned = work / "unsigned.apk"
     apk = work / "apparat.apk"
     aligned = work / "aligned.apk"
-    run([str(build_tools / exe("aapt2")), "link", "-I", str(android_jar), "--manifest", "android/apparat/AndroidManifest.xml", "--min-sdk-version", settings["min_api"], "--target-sdk-version", settings["target_api"], "-o", str(unsigned)])
+    link_command = [str(build_tools / exe("aapt2")), "link", "-I", str(android_jar), "--manifest", "android/apparat/AndroidManifest.xml", "--min-sdk-version", settings["min_api"], "--target-sdk-version", settings["target_api"], "-o", str(unsigned)]
+    if resources.exists():
+        link_command.extend(["-R", str(resources)])
+    run(link_command)
     shutil.copy2(unsigned, apk)
     run([str(toolchain.java_home / "bin" / "jar"), "uf", str(apk), "-C", str(work / "apk"), "lib"])
     run([str(toolchain.java_home / "bin" / "jar"), "uf", str(apk), "-C", str(dex_dir), "classes.dex"])
@@ -140,4 +146,4 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Helper module used by scripts/build.py to assemble the Android GUI wrapper APK.")
     parser.parse_args()
-    print("Use `python3 scripts/build.py --os android --arch arm64 --target apparat`.")
+    print("Use `python3 scripts/build.py`.")

@@ -19,6 +19,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.updateButton = nil
 	game.tabScroll = nil
 	game.tabButtonCount = 0
+	game.tabButtons = nil
 	game.clampSplitWidth()
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
@@ -76,13 +77,13 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 			),
 			widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-				_ = game.shell.SelectTab(tabIndex)
-				game.rebuildUI(game.shell.Snapshot())
+				game.selectTab(tabIndex, args.Button)
 			}),
 		)
 		if index == snapshot.ActiveIndex {
 			button.SetState(widget.WidgetChecked)
 		}
+		game.tabButtons = append(game.tabButtons, button)
 		row.AddChild(button)
 	}
 	scroll := widget.NewScrollContainer(
@@ -95,6 +96,17 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 	)
 	game.tabScroll = scroll
 	return scroll
+}
+
+func (game *Game) selectTab(index int, button *widget.Button) {
+	for _, tabButton := range game.tabButtons {
+		tabButton.SetState(widget.WidgetUnchecked)
+	}
+	if button != nil {
+		button.SetState(widget.WidgetChecked)
+	}
+	_ = game.shell.SelectTab(index)
+	game.rebuildUI(game.shell.Snapshot())
 }
 
 func tabButtonWidth(label string) int {
@@ -203,13 +215,18 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 			sectionContainer.AddChild(updateBtn)
 		}
 		if strings.ToLower(section.Title) == "diagnostics" {
+			debugLabel := "Open Debug UI overlay"
+			if game.debugOverlayOpen {
+				debugLabel = "Close Debug UI overlay"
+			}
 			debugToggle := widget.NewCheckbox(
-				widget.CheckboxOpts.Text("Open Debug UI overlay", game.theme.ButtonTheme.TextFace, game.theme.LabelTheme.Color),
+				widget.CheckboxOpts.Text(debugLabel, game.theme.ButtonTheme.TextFace, game.theme.LabelTheme.Color),
 				widget.CheckboxOpts.Image(game.theme.CheckboxTheme.Image),
 				widget.CheckboxOpts.InitialState(checkedState(game.debugOverlayOpen)),
 				widget.CheckboxOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
 				widget.CheckboxOpts.StateChangedHandler(func(args *widget.CheckboxChangedEventArgs) {
 					game.debugOverlayOpen = args.State == widget.WidgetChecked
+					game.rebuildUI(game.shell.Snapshot())
 				}),
 			)
 			sectionContainer.AddChild(debugToggle)

@@ -48,7 +48,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 8, Right: 8, Top: 8, Bottom: 8}),
 		)),
 		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.MinSize(game.splitWidth, 0),
+			widget.WidgetOpts.MinSize(game.masterListWidth(), 0),
 			widget.WidgetOpts.LayoutData(layoutData),
 		),
 	)
@@ -72,10 +72,11 @@ func (game *Game) sectionButton(tabData hud.Tab, title string, sectionIndex int)
 	return widget.NewButton(
 		widget.ButtonOpts.Text(title, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
 		widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
-		widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
+		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 40, Right: 12, Top: 12, Bottom: 12}),
+		widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter),
 		widget.ButtonOpts.ToggleMode(),
 		widget.ButtonOpts.WidgetOpts(
-			widget.WidgetOpts.MinSize(0, 44),
+			widget.WidgetOpts.MinSize(0, tabHeight),
 			widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 		),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
@@ -117,7 +118,7 @@ func (game *Game) backButton(tabID hud.TabID) *widget.Button {
 		widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
 		widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
 		widget.ButtonOpts.WidgetOpts(
-			widget.WidgetOpts.MinSize(0, 44),
+			widget.WidgetOpts.MinSize(0, tabHeight),
 			widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 		),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
@@ -172,7 +173,7 @@ func (game *Game) buildDivider() widget.PreferredSizeLocateableWidget {
 		widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
 		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 4, Right: 4, Top: 8, Bottom: 8}),
 		widget.ButtonOpts.WidgetOpts(
-			widget.WidgetOpts.MinSize(24, 44),
+			widget.WidgetOpts.MinSize(24, tabHeight),
 			widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: 0}),
 			widget.WidgetOpts.MouseButtonPressedHandler(func(args *widget.WidgetMouseButtonPressedEventArgs) {
 				game.splitDragging = true
@@ -189,6 +190,13 @@ func (game *Game) buildDivider() widget.PreferredSizeLocateableWidget {
 			}),
 		),
 	)
+}
+
+func (game *Game) masterListWidth() int {
+	if game.collapsed() {
+		return 0
+	}
+	return game.splitWidth
 }
 
 func (game *Game) selectedSectionIndex(tabData hud.Tab) int {

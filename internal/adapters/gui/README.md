@@ -12,6 +12,8 @@ Ebitengine owns the window, game loop, input polling, and final drawing surface.
 
 Default non-GUI builds use the stub runner so headless validation can run on systems without native desktop headers.
 
+The desktop window icon is generated in code from the same simple blue gear motif as the tracked root `logo.svg`. `RunWithRuntimeInfo` applies the generated icon images through Ebitengine's `SetWindowIcon` on desktop platforms where Ebitengine supports it.
+
 ## EbitenUI Boundary
 
 EbitenUI is the active HUD widget and layout layer for standard GUI surfaces: panels, buttons, lists, forms, tab bars or rails, focusable controls, and scroll containers.
@@ -28,9 +30,11 @@ Settings renders each `internal/hud` section as a fieldset. The `Updates` sectio
 
 The Settings Diagnostics fieldset owns the Debug UI overlay toggle. The overlay is a development-only floating panel rendered by the Ebitengine game loop so it can report live screen size, FPS, UPS, runtime path, working directory, binary path, active tab, route, input, voice state, focus, and queue diagnostics. It is draggable by its title bar and must remain opt-in from Settings.
 
+The floating circular `PTT` button is a global Ebitengine overlay near the bottom-right of the app, above diagnostics. It holds the same HUD voice-capture state as right Ctrl and controller R2 while pressed and releases capture when the pointer/touch is released or Escape cancels voice capture.
+
 Comrades, Projects, Cluster, Routing, and Tasks render as responsive master-detail bodies. Expanded layouts show the left list, a visible draggable divider, and the right detail pane. Narrow layouts collapse to one pane: list first, selected section/thread switches to detail, and detail starts with an EbitenUI `<- Back` button. Research uses the pattern that matches its current placeholder/review state. Future scrolling, tab overflow behavior, narrow-screen collapse, and adjustable dividers must preserve the same minimum-width and no-overlap rules, and must be validated with screenshots before release.
 
-Rows, list items, buttons, and input-like controls must remain large enough for touchscreens. Keep minimum touch target constants named and covered by tests when changing tab body layout. Text blocks must remain inside their owning EbitenUI container; they must not draw over adjacent fieldsets or panes.
+Rows, list items, buttons, and input-like controls must remain large enough for touchscreens. Tab buttons, Back buttons, list rows, and divider handles use the same 54 px touch scale unless a future plan changes the shared constant. Master-list rows are left-aligned with leading room reserved for later avatars or status glyphs. Keep minimum touch target constants named and covered by tests when changing tab body layout. Text blocks must remain inside their owning EbitenUI container; they must not draw over adjacent fieldsets or panes.
 
 ## Native GUI Validation
 

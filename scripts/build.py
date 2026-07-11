@@ -6,7 +6,6 @@ The default desktop build produces both `apparat` and `apparatd`. Android
 builds are GUI-only and produce `releases/android/arm64/apparat/latest.apk`.
 """
 from __future__ import annotations
-import argparse
 import os
 import platform
 import shutil
@@ -28,6 +27,7 @@ ANDROID_BUILD_TOOLS = "35.0.0"
 ANDROID_NDK = "27.2.12479018"
 GOMOBILE_VERSION = "v0.0.0-20250923094054-ea854a63cce1"
 PATCHED_GOMOBILE = ROOT / ".tools" / "bin" / "gomobile-apparat"
+
 @dataclass(frozen=True)
 class Target:
     package: str
@@ -218,6 +218,7 @@ def build_patched_gomobile(go: str, source: Path) -> None:
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE), "./cmd/gomobile"], cwd=temp, check=True)
     subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE.parent / executable("gobind")), "./cmd/gobind"], cwd=temp, check=True)
+
 def patch_file(path: Path, replacements: dict[str, str]) -> None:
     text = path.read_text(encoding="utf-8")
     for old, new in replacements.items():
@@ -232,50 +233,12 @@ def make_writable(path: Path) -> None:
             item.chmod(item.stat().st_mode | stat.S_IWUSR)
         except OSError:
             pass
-def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Build Apparat GUI/headless binaries and Android GUI APKs into canonical release paths.",
-        epilog=(
-            "Examples: python3 scripts/build.py; python3 scripts/build.py --target apparatd; "
-            "python3 scripts/build.py --target apparat --print-path; "
-            "python3 scripts/build.py --os android --arch arm64 --target apparat; "
-            "python3 scripts/build.py --check-android-env\n\n"
-            "Outputs: releases/<goos>/<goarch>/apparat/latest[.exe], "
-            "releases/<goos>/<goarch>/apparatd/latest[.exe], "
-            "releases/android/arm64/apparat/latest.apk.\n\n"
-            "Linux GUI builds require Ebitengine/GLFW native headers. "
-            f"Android builds require JDK 21, API {ANDROID_API}, build-tools {ANDROID_BUILD_TOOLS}, "
-            f"NDK {ANDROID_NDK}, and Ebitengine gomobile."
-        ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--os", dest="goos", default=None, help="target GOOS; defaults to detected host")
-    parser.add_argument("--arch", dest="goarch", default=None, help="target GOARCH; defaults to detected host")
-    parser.add_argument("--target", choices=[*sorted(TARGETS), "all"], default="all", help="command target to build")
-    parser.add_argument("--go", default=os.environ.get("GO", "go"), help="go executable")
-    parser.add_argument("--print-path", action="store_true", help="print the expected artifact path without building")
-    parser.add_argument("--check-android-env", action="store_true", help="check Android APK prerequisites without building")
-    return parser.parse_args(argv)
 def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv or sys.argv[1:])
-    goos = args.goos or host_goos()
-    goarch = args.goarch or host_goarch()
-    targets = selected_targets(args.target, goos)
     try:
-        for target in targets:
-            validate_target(goos, goarch, target)
-    except BuildError as error:
-        print(error, file=sys.stderr)
-        return 2
-    if args.print_path:
-        for target in targets:
-            print(artifact_path(goos, goarch, target))
-        return 0
-    if args.check_android_env:
-        return check_android_env(args.go)
-    if goos == "android":
-        return build_android(args.go, goarch)
-    return build_desktop(args.go, goos, goarch, targets)
+        from scripts import build_orchestrator
+    except ModuleNotFoundError:
+        import build_orchestrator
+    return build_orchestrator.main(sys.argv[1:] if argv is None else argv)
 def check_android_env(go: str) -> int:
     toolchain, failures, warnings = resolve_android_toolchain(go)
     for warning in warnings:
@@ -311,7 +274,7 @@ def build_android(go: str, goarch: str) -> int:
         })
     except subprocess.CalledProcessError as error:
         print(f"Android APK build failed exit={error.returncode}", file=sys.stderr)
-        print("Run `python3 scripts/build.py --check-android-env` for prerequisite details.", file=sys.stderr)
+        print("Run `python3 scripts/build.py` to see prerequisite details for every target.", file=sys.stderr)
         return error.returncode
     try:
         sign_android_apk(toolchain, output)
