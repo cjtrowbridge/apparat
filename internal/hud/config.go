@@ -77,10 +77,12 @@ type Binding struct {
 type DisplayConfig struct {
 	Theme             Theme
 	AccentColor       string
-	Scale             float64
-	FontSize          int
-	FontFamily        string
-	ReducedMotion     bool
+	Scale                 float64
+	FontSize              int
+	FontFamily            string
+	ButtonBackgroundColor string
+	PanelBackgroundColor  string
+	ReducedMotion         bool
 	Contrast          string
 	FocusRingStrength string
 	PanelDensity      string
@@ -156,7 +158,7 @@ func (DefaultConfigManager) Config() HUDConfig {
 			Tabs:       tabs,
 		},
 		Bindings:      DefaultBindings(),
-		Display:       DisplayConfig{Theme: ThemeDark, AccentColor: "apparat-blue", Scale: 1.0, FontSize: 18, FontFamily: "default", Contrast: "normal", FocusRingStrength: "strong", PanelDensity: "comfortable", ListRowHeight: 32, CardSpacing: 12, TextOverflow: "wrap"},
+		Display:       DisplayConfig{Theme: ThemeDark, AccentColor: "apparat-blue", Scale: 1.0, FontSize: 18, FontFamily: "MPlus1pRegular", ButtonBackgroundColor: "accent_color", PanelBackgroundColor: "panel_color", Contrast: "normal", FocusRingStrength: "strong", PanelDensity: "comfortable", ListRowHeight: 32, CardSpacing: 12, TextOverflow: "wrap"},
 		Interaction:   InteractionConfig{ControllerRepeatDelayMS: 180, KeyboardRepeatDelayMS: 140, MouseScrollSpeed: 1.0, PushToTalkMode: "hold", ConfirmDestructive: true, CommandPaletteVisible: true, CommandPaletteShortcut: "Ctrl+Shift+P", LandingTab: TabComrades},
 		Notifications: NotificationConfig{Visibility: "important_local_events", Volume: 0.5, ToastMS: 5000, Categories: []string{"job_completion", "device_online", "device_offline", "task_failure", "comrade_request", "research_milestone", "security_warning"}, QuietHours: "not_configured"},
 		Diagnostics:   DiagnosticConfig{LogDetail: "info", ShowRuntimePaths: true, ShowBuildPaths: true, ShowFrameTiming: true, ShowMemory: true, ShowInputEvents: true, ShowFocusPath: true, ShowLayoutBounds: true},
