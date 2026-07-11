@@ -2,7 +2,7 @@
 plan_id: 2026-07-08-12-57-20_execute-phase-5-android-gui-apk-build
 title: Execute Phase 5 Android GUI APK Build
 summary: Build an Apparat-owned Android GUI APK pipeline that emits `releases/android/arm64/apparat/latest.apk` without depending on the temporary salvagecore checkout or producing an Android headless artifact.
-status: current
+status: past
 created_at: 2026-07-08-12-57-20
 ---
 
@@ -209,3 +209,7 @@ The duplicate current plan `plans/current/2026-07-09-14-25-00_refactor-android-r
 - Android HUD rendering and touch tab selection have on-device screenshot evidence; additional device, controller, keyboard, safe-area, and density testing still needs to be added to this Phase 5 plan.
 - The wrapper no longer forces portrait orientation; future testing should cover phone, tablet, portrait, landscape, keyboard, controller, and touch configurations explicitly.
 - Preserve the already discovered Pixel gates: target SDK compatibility workaround, v2/v3 signing, 16 KB page alignment, app-private runtime storage, process liveness, and fresh `last_run.log`.
+
+## Archive Note
+
+- 2026-07-10: Archived as superseded by `plans/current/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md`. Phase 5 remains the roadmap binding, but current execution now needs a Settings-first EbitenUI HUD recovery plan because the custom-coordinate UI plans no longer describe the active implementation paradigm.

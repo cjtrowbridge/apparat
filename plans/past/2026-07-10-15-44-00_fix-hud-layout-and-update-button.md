@@ -2,7 +2,7 @@
 plan_id: 2026-07-10-15-44-00_fix-hud-layout-and-update-button
 title: Fix HUD Layout and Android Update Button
 summary: Clean up the Ebitengine layout code to prevent text clumping on narrow screens, and replace the native Android update button overlay with a fully Ebitengine-rendered control triggered via JNI.
-status: current
+status: past
 created_at: 2026-07-10-15-44-00
 ---
 
@@ -123,3 +123,7 @@ To verify that the implementation completely and correctly resolves all layout a
   - `[ ]` Verify touch drag-scrolling behaves smoothly without snapping tabs or column items unexpectedly.
   - `[ ]` Navigate to Settings, verify the EbitenUI-drawn "Check for Update" button is rendered and scaled correctly matching the layout.
   - `[ ]` Tap the update button and confirm the background update download and intent triggers are called via JNI (verifying the JNI method executes without linker errors).
+
+## Archive Note
+
+- 2026-07-10: Archived as superseded by `plans/current/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md`. This plan captured the pivot to EbitenUI, but its checklist no longer matches the current blank-tab recovery needs and stale-code/test sweep.

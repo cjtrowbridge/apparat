@@ -2,7 +2,7 @@
 plan_id: 2026-07-10-14-12-58_recover-hud-layout-with-visual-validation
 title: Recover HUD Layout With Visual Validation
 summary: Recover from the recent HUD layout regressions by reverting unsafe assumptions, rebuilding layout around verifiable rendering evidence, and requiring Android/Debian screenshots before release.
-status: current
+status: past
 created_at: 2026-07-10-14-12-58
 ---
 
@@ -127,3 +127,4 @@ Preferred technical direction:
 - 2026-07-10: Recovered static body layout by disabling body scroll update hooks and drawing Settings/master-detail bodies directly in screen coordinates. Scrolling is intentionally deferred.
 - 2026-07-10: Moved the native Android update button to a stable Settings header slot rather than scrolled fieldset geometry.
 - 2026-07-10: Rebuilt Android APK after the recovery changes, but attached-tablet install/screenshot validation was blocked by the approval usage limiter before the rebuilt APK could be installed.
+- 2026-07-10: Archived as superseded by `plans/current/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md`. The evidence-first lesson remains binding, but the new plan starts from the EbitenUI implementation and the current blank-tab failure.
