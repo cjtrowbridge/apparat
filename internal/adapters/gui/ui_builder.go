@@ -4,7 +4,6 @@ package gui
 
 import (
 	"fmt"
-	"image/color"
 	"strings"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
@@ -45,7 +44,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	)
 	shell.AddChild(game.buildTabStrip(snapshot))
 	body := game.buildActiveTabBody(snapshot)
-	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0}
+	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0, MaxWidth: game.hudPreferredWidth()}
 	shell.AddChild(body)
 	root.AddChild(shell)
 
@@ -53,6 +52,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		Container:    root,
 		PrimaryTheme: game.theme,
 	}
+	game.requestActiveTabVisible()
 	game.ensureActiveTabVisible()
 }
 
@@ -77,7 +77,16 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 			),
 			widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+				if game.tabSelectionSuppressed() {
+					game.syncTabButtonStates()
+					return
+				}
 				game.selectTab(tabIndex, args.Button)
+			}),
+			widget.ButtonOpts.StateChangedHandler(func(args *widget.ButtonChangedEventArgs) {
+				if game.tabSelectionSuppressed() {
+					game.syncTabButtonStates()
+				}
 			}),
 		)
 		if index == snapshot.ActiveIndex {
@@ -91,11 +100,11 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
 		widget.ScrollContainerOpts.WidgetOpts(
 			widget.WidgetOpts.MinSize(0, tabHeight),
-			widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight}),
+			widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight, MaxWidth: game.hudPreferredWidth()}),
 		),
 	)
 	game.tabScroll = scroll
-	return scroll
+	return boundPreferredWidth(scroll, game.hudPreferredWidth)
 }
 
 func (game *Game) selectTab(index int, button *widget.Button) {
@@ -107,6 +116,24 @@ func (game *Game) selectTab(index int, button *widget.Button) {
 	}
 	_ = game.shell.SelectTab(index)
 	game.rebuildUI(game.shell.Snapshot())
+}
+
+func (game *Game) syncTabButtonStates() {
+	if game.syncingTabButtonStates {
+		return
+	}
+	game.syncingTabButtonStates = true
+	defer func() {
+		game.syncingTabButtonStates = false
+	}()
+	active := game.shell.Snapshot().ActiveIndex
+	for index, tabButton := range game.tabButtons {
+		if index == active {
+			tabButton.SetState(widget.WidgetChecked)
+			continue
+		}
+		tabButton.SetState(widget.WidgetUnchecked)
+	}
 }
 
 func tabButtonWidth(label string) int {
@@ -137,7 +164,7 @@ func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateab
 		})),
 	)
 
-	return scrollContainer
+	return boundPreferredWidth(scrollContainer, game.hudPreferredWidth)
 }
 
 func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
@@ -150,10 +177,7 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 	)
 
 	if tabData.Summary != "" {
-		summary := widget.NewText(
-			widget.TextOpts.Text(tabData.Summary, game.theme.ButtonTheme.TextFace, color.White),
-		)
-		content.AddChild(summary)
+		content.AddChild(game.hudText(tabData.Summary))
 	}
 
 	for _, section := range tabData.Sections {
@@ -169,16 +193,10 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 			),
 		)
 
-		title := widget.NewText(
-			widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.ButtonTheme.TextFace, color.White),
-		)
-		sectionContainer.AddChild(title)
+		sectionContainer.AddChild(game.hudText(strings.ToUpper(section.Title)))
 
 		if section.Description != "" {
-			desc := widget.NewText(
-				widget.TextOpts.Text(section.Description, game.theme.ButtonTheme.TextFace, color.White),
-			)
-			sectionContainer.AddChild(desc)
+			sectionContainer.AddChild(game.hudText(section.Description))
 		}
 
 		for _, row := range section.Rows {
@@ -186,10 +204,7 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 			if row.Detail != "" {
 				rowText = fmt.Sprintf("%s: %s", row.Label, row.Detail)
 			}
-			label := widget.NewText(
-				widget.TextOpts.Text(rowText, game.theme.ButtonTheme.TextFace, color.White),
-			)
-			sectionContainer.AddChild(label)
+			sectionContainer.AddChild(game.hudText(rowText))
 		}
 
 		if strings.ToLower(section.Title) == "updates" {

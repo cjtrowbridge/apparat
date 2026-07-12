@@ -1,0 +1,2 @@
+  mCurrentFocus=Window{8603aee u0 com.cjtrowbridge.apparat/com.cjtrowbridge.apparat.MainActivity}
+  mFocusedApp=ActivityRecord{153924287 u0 com.cjtrowbridge.apparat/.MainActivity t9802}

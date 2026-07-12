@@ -20,6 +20,14 @@ EbitenUI is the active HUD widget and layout layer for standard GUI surfaces: pa
 
 The GUI adapter builds an EbitenUI root container from `internal/hud` snapshots. The root uses an `AnchorLayout` with HUD margins and diagnostics clearance, then a one-column shell with a horizontally scrollable top tab strip and a stretched active-tab body. Tab buttons are ordinary EbitenUI buttons inside a `ScrollContainer`; pointer, wheel, touch, keyboard, and controller tab changes stay synchronized with `hud.Shell`, and non-pointer tab changes move the tab strip enough to keep the active tab visible.
 
+Scrollable HUD regions that can contain viewport-wide or wider content must bound their reported preferred width before parent layout. This adapter uses local bounded preferred-size wrappers for the tab strip, Settings body, collapsed master/detail panes, and expanded master/detail panes because EbitenUI calculates parent layout from child preferred sizes before scroll clipping is applied. `StretchContentWidth()` can still be used for final placement, but it is not a substitute for preferred-width bounds.
+
+HUD body text must wrap before preferred-size measurement. Use the local text helpers for summaries, section descriptions, titles, and row details so every `widget.Text` has a nonzero max width derived from the current viewport and owning pane. Do not add raw body text that can report a single-line width wider than the visible HUD area.
+
+The tab strip only auto-scrolls the active tab into view after a rebuild, resize, or programmatic tab selection. It must not continuously force `ScrollLeft` during the update loop, because that prevents mouse, wheel, and touch swipes from persisting on phone-width surfaces.
+
+Tab-strip drag and swipe gestures scroll only. They must not select a tab and must not leave the release target visually checked or pressed alongside the selected tab. When drag-threshold movement is detected, tab button state is resynchronized from the `hud.Shell` snapshot.
+
 If additional custom Ebitengine rendering is required for dense visualizations or platform diagnostics, document the reason here and keep authoritative state in HUD view models. Do not reintroduce custom coordinate layout loops for ordinary tab bodies or controls.
 
 ## Tab Body Layout
@@ -35,6 +43,8 @@ The floating circular `PTT` button is a global Ebitengine overlay near the botto
 Comrades, Projects, Cluster, Routing, and Tasks render as responsive master-detail bodies. Expanded layouts show the left list, a visible draggable divider, and the right detail pane. Narrow layouts collapse to one pane: list first, selected section/thread switches to detail, and detail starts with an EbitenUI `<- Back` button. Research uses the pattern that matches its current placeholder/review state. Future scrolling, tab overflow behavior, narrow-screen collapse, and adjustable dividers must preserve the same minimum-width and no-overlap rules, and must be validated with screenshots before release.
 
 Rows, list items, buttons, and input-like controls must remain large enough for touchscreens. Tab buttons, Back buttons, list rows, and divider handles use the same 54 px touch scale unless a future plan changes the shared constant. Master-list rows are left-aligned with leading room reserved for later avatars or status glyphs. Keep minimum touch target constants named and covered by tests when changing tab body layout. Text blocks must remain inside their owning EbitenUI container; they must not draw over adjacent fieldsets or panes.
+
+Phone-width layout fixes require rendered evidence before completion. Capture narrow screenshots that show bounded tab contents, swipeable tab overflow, and collapsed master-detail navigation behavior when those surfaces are touched.
 
 ## Native GUI Validation
 

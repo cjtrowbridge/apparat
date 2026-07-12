@@ -1,0 +1,2 @@
+  mCurrentFocus=Window{1ecba08 u0 NotificationShade}
+  mFocusedApp=ActivityRecord{117798121 u0 com.cjtrowbridge.apparat/.MainActivity t9803}
