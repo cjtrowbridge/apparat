@@ -42,45 +42,49 @@ const (
 )
 
 type Game struct {
-	shell            hud.Shell
-	ui               *ebitenui.UI
-	theme            *widget.Theme
-	width            int
-	height           int
-	layoutDirty      bool
-	rightCtrlHeld    bool
-	pageDownWasHit   bool
-	pageUpWasHit     bool
-	l1WasPressed     bool
-	r1WasPressed     bool
-	r2Held           bool
-	debugOverlayOpen bool
-	debugOverlayX    int
-	debugOverlayY    int
-	debugDrag        bool
-	debugDragDX      int
-	debugDragDY      int
-	debugTouchActive bool
-	debugTouchID     ebiten.TouchID
-	tabScroll        *widget.ScrollContainer
-	tabButtonCount   int
-	tabButtons       []*widget.Button
-	tabStripDragging bool
-	tabStripLastX    int
-	tabTouchActive   bool
-	tabTouchID       ebiten.TouchID
-	selectedSections map[hud.TabID]int
-	detailOpen       map[hud.TabID]bool
-	splitWidth       int
-	splitDragging    bool
-	pttHeld          bool
-	pttTouchActive   bool
-	pttTouchID       ebiten.TouchID
-	runtimeInfo      RuntimeInfo
-	activeTabID      atomic.Value
-	updateStatus     atomic.Value
-	updateButton     *widget.Button
-	onCheckForUpdate func() bool
+	shell                  hud.Shell
+	ui                     *ebitenui.UI
+	theme                  *widget.Theme
+	width                  int
+	height                 int
+	layoutDirty            bool
+	rightCtrlHeld          bool
+	pageDownWasHit         bool
+	pageUpWasHit           bool
+	l1WasPressed           bool
+	r1WasPressed           bool
+	r2Held                 bool
+	debugOverlayOpen       bool
+	debugOverlayX          int
+	debugOverlayY          int
+	debugDrag              bool
+	debugDragDX            int
+	debugDragDY            int
+	debugTouchActive       bool
+	debugTouchID           ebiten.TouchID
+	tabScroll              *widget.ScrollContainer
+	tabButtonCount         int
+	tabButtons             []*widget.Button
+	tabStripDragging       bool
+	tabStripDragDistance   int
+	tabStripDragMoved      bool
+	tabStripLastX          int
+	tabTouchActive         bool
+	tabTouchID             ebiten.TouchID
+	syncingTabButtonStates bool
+	activeTabScrollPending bool
+	selectedSections       map[hud.TabID]int
+	detailOpen             map[hud.TabID]bool
+	splitWidth             int
+	splitDragging          bool
+	pttHeld                bool
+	pttTouchActive         bool
+	pttTouchID             ebiten.TouchID
+	runtimeInfo            RuntimeInfo
+	activeTabID            atomic.Value
+	updateStatus           atomic.Value
+	updateButton           *widget.Button
+	onCheckForUpdate       func() bool
 }
 
 func (game *Game) SetOnCheckForUpdate(f func() bool) {
@@ -274,13 +278,19 @@ func (game *Game) setPTTHeld(held bool) {
 }
 
 func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {
+	changed := false
 	if outsideWidth > 0 {
-		game.layoutDirty = game.layoutDirty || outsideWidth != game.width
+		changed = changed || outsideWidth != game.width
+		game.layoutDirty = game.layoutDirty || changed
 		game.width = outsideWidth
 	}
 	if outsideHeight > 0 {
-		game.layoutDirty = game.layoutDirty || outsideHeight != game.height
+		changed = changed || outsideHeight != game.height
+		game.layoutDirty = game.layoutDirty || changed
 		game.height = outsideHeight
+	}
+	if changed {
+		game.requestActiveTabVisible()
 	}
 	return game.width, game.height
 }

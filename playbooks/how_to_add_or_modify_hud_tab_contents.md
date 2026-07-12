@@ -33,6 +33,10 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Every tab body must work down to the current minimum supported body width for the target surface.
    * If a tab uses columns, define a minimum width for each column and collapse or scroll when those minimums cannot fit.
    * Use bounded body dimensions, padding, gaps, and scroll areas instead of viewport-scaled fonts.
+   * HUD `ScrollContainer` widgets and master-detail panes must cap their reported preferred width before parent layout measurement when their content can be wider than the viewport. `StretchContentWidth()` is not enough by itself because clipping happens after parent layout.
+   * Descriptive HUD text, summaries, section descriptions, and row details must set a nonzero `widget.TextOpts.MaxWidth(...)` before preferred-size measurement so long strings wrap inside their owner instead of expanding the whole tree.
+   * Tab-strip active-tab auto-scroll must be one-shot after rebuilds, resizes, or programmatic tab changes. It must not run every update or overwrite pointer, wheel, mouse-drag, or touch-drag scrolling.
+   * Dragging or swiping the tab strip must be treated as scrolling, not selection. A drag gesture must not leave a non-selected tab checked, pressed, or visually selected after release.
 
 4. **Keep Visual Vocabulary Consistent**
    * Fieldsets use a visible border, compact title, short explanatory text when helpful, and a clear content area.
@@ -85,6 +89,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 6. **Verify**
    * Run focused HUD/GUI tests.
    * For visual layout changes, capture actual rendered screenshots on the target surface before marking the work complete; geometry/unit tests alone are not sufficient.
+   * For phone or narrow-surface HUD changes, capture screenshots proving content is bounded to the visible width and horizontally overflowing tab controls can be swiped.
    * Run `make check-docs`.
    * Run `python3 scripts/check_code_file_lines.py`.
    * Run `git diff --check`.

@@ -103,8 +103,16 @@ func (game *Game) ensureActiveTabVisible() {
 	if game.tabScroll == nil || game.tabButtonCount <= 1 {
 		return
 	}
+	if !game.activeTabScrollPending {
+		return
+	}
 	active := game.shell.Snapshot().ActiveIndex
 	game.tabScroll.ScrollLeft = float64(active) / float64(game.tabButtonCount-1)
+	game.activeTabScrollPending = false
+}
+
+func (game *Game) requestActiveTabVisible() {
+	game.activeTabScrollPending = true
 }
 
 func (game *Game) updatePointerState() {
@@ -152,6 +160,8 @@ func (game *Game) updateTouchDrag() {
 			game.tabTouchActive = true
 			game.tabTouchID = id
 			game.tabStripLastX = x
+			game.tabStripDragDistance = 0
+			game.tabStripDragMoved = false
 			return
 		}
 		if game.pointInPTT(x, y) {
@@ -189,12 +199,14 @@ func (game *Game) clampDebugOverlay(x int, y int) {
 
 func (game *Game) updateTabTouch() {
 	if inpututil.IsTouchJustReleased(game.tabTouchID) || game.tabScroll == nil {
+		game.finishTabStripDrag()
 		game.tabTouchActive = false
 		return
 	}
 	x, _ := ebiten.TouchPosition(game.tabTouchID)
 	dx := x - game.tabStripLastX
 	game.tabStripLastX = x
+	game.trackTabStripDrag(dx)
 	game.tabScroll.ScrollLeft -= float64(dx) / 360.0
 }
 
@@ -206,13 +218,17 @@ func (game *Game) updateTabStripDrag(x int, y int) {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && imagePoint(x, y).In(rect) {
 		game.tabStripDragging = true
 		game.tabStripLastX = x
+		game.tabStripDragDistance = 0
+		game.tabStripDragMoved = false
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		game.finishTabStripDrag()
 		game.tabStripDragging = false
 	}
 	if game.tabStripDragging && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		dx := x - game.tabStripLastX
 		game.tabStripLastX = x
+		game.trackTabStripDrag(dx)
 		game.tabScroll.ScrollLeft -= float64(dx) / 360.0
 	}
 	if imagePoint(x, y).In(rect) {
@@ -221,6 +237,28 @@ func (game *Game) updateTabStripDrag(x int, y int) {
 			game.tabScroll.ScrollLeft -= (wheelX + wheelY) / 12
 		}
 	}
+}
+
+func (game *Game) trackTabStripDrag(dx int) {
+	if dx < 0 {
+		dx = -dx
+	}
+	game.tabStripDragDistance += dx
+	if game.tabStripDragDistance >= tabDragThreshold {
+		game.tabStripDragMoved = true
+	}
+}
+
+func (game *Game) finishTabStripDrag() {
+	if game.tabStripDragMoved {
+		game.syncTabButtonStates()
+	}
+	game.tabStripDragDistance = 0
+	game.tabStripDragMoved = false
+}
+
+func (game *Game) tabSelectionSuppressed() bool {
+	return game.tabStripDragMoved
 }
 
 func (game *Game) updatePTTMouse(x int, y int) {

@@ -4,7 +4,6 @@ package gui
 
 import (
 	"fmt"
-	"image/color"
 	"strings"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
@@ -29,7 +28,7 @@ func (game *Game) buildMasterDetailTab(tabData hud.Tab) widget.PreferredSizeLoca
 	root.AddChild(game.buildMasterList(tabData, widget.GridLayoutData{MaxHeight: 0}))
 	root.AddChild(game.buildDivider())
 	root.AddChild(game.buildDetailScroll(tabData, false))
-	return root
+	return boundPreferredWidth(root, game.hudPreferredWidth)
 }
 
 func (game *Game) buildCollapsedList(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
@@ -60,12 +59,13 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 		}
 		listContainer.AddChild(btn)
 	}
-	return widget.NewScrollContainer(
+	scroll := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(listContainer),
 		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
 		widget.ScrollContainerOpts.StretchContentWidth(),
 		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(layoutData)),
 	)
+	return boundPreferredWidth(scroll, game.masterPanePreferredWidth)
 }
 
 func (game *Game) sectionButton(tabData hud.Tab, title string, sectionIndex int) *widget.Button {
@@ -97,19 +97,18 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		detailContainer.AddChild(game.backButton(tabData.ID()))
 	}
 	if tabData.Summary != "" {
-		detailContainer.AddChild(widget.NewText(
-			widget.TextOpts.Text(tabData.Summary, game.theme.ButtonTheme.TextFace, color.White),
-		))
+		detailContainer.AddChild(game.detailText(tabData.Summary))
 	}
 	for _, section := range game.detailSections(tabData) {
 		detailContainer.AddChild(game.buildSectionContainer(section))
 	}
-	return widget.NewScrollContainer(
+	scroll := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(detailContainer),
 		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
 		widget.ScrollContainerOpts.StretchContentWidth(),
 		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(game.detailLayoutData())),
 	)
+	return boundPreferredWidth(scroll, game.detailPanePreferredWidth)
 }
 
 func (game *Game) backButton(tabID hud.TabID) *widget.Button {
@@ -144,18 +143,12 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 		)),
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 	)
-	sectionContainer.AddChild(widget.NewText(
-		widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.ButtonTheme.TextFace, color.White),
-	))
+	sectionContainer.AddChild(game.detailText(strings.ToUpper(section.Title)))
 	if section.Description != "" {
-		sectionContainer.AddChild(widget.NewText(
-			widget.TextOpts.Text(section.Description, game.theme.ButtonTheme.TextFace, color.White),
-		))
+		sectionContainer.AddChild(game.detailText(section.Description))
 	}
 	for _, row := range section.Rows {
-		sectionContainer.AddChild(widget.NewText(
-			widget.TextOpts.Text(rowText(row), game.theme.ButtonTheme.TextFace, color.White),
-		))
+		sectionContainer.AddChild(game.detailText(rowText(row)))
 	}
 	return sectionContainer
 }
@@ -197,6 +190,20 @@ func (game *Game) masterListWidth() int {
 		return 0
 	}
 	return game.splitWidth
+}
+
+func (game *Game) masterPanePreferredWidth() int {
+	if game.collapsed() {
+		return game.hudPreferredWidth()
+	}
+	return min(game.masterListWidth(), game.hudPreferredWidth())
+}
+
+func (game *Game) detailPanePreferredWidth() int {
+	if game.collapsed() {
+		return game.hudPreferredWidth()
+	}
+	return max(120, game.hudPreferredWidth()-game.masterListWidth()-40)
 }
 
 func (game *Game) selectedSectionIndex(tabData hud.Tab) int {

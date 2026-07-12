@@ -60,6 +60,56 @@ func TestActiveTabStripFollowsHUDSnapshot(t *testing.T) {
 	}
 }
 
+func TestTabStripManualScrollIsNotOverwrittenWithoutRequest(t *testing.T) {
+	game := NewGame()
+	game.tabScroll.ScrollLeft = 0.42
+	game.ensureActiveTabVisible()
+	if got := game.tabScroll.ScrollLeft; got != 0.42 {
+		t.Fatalf("manual tab scroll = %.2f, want preserved 0.42", got)
+	}
+	game.requestActiveTabVisible()
+	game.ensureActiveTabVisible()
+	if got := game.tabScroll.ScrollLeft; got != 0 {
+		t.Fatalf("requested active tab scroll = %.2f, want 0 for first tab", got)
+	}
+}
+
+func TestTabStripDragStateChangeKeepsOnlySelectedButtonChecked(t *testing.T) {
+	game := NewGame()
+	if len(game.tabButtons) < 3 {
+		t.Fatal("tab strip did not retain enough buttons")
+	}
+	game.tabStripDragMoved = true
+	game.tabButtons[2].SetState(widget.WidgetChecked)
+	checked := 0
+	for index, button := range game.tabButtons {
+		if button.State() == widget.WidgetChecked {
+			checked++
+			if index != game.shell.Snapshot().ActiveIndex {
+				t.Fatalf("button %d checked after drag, want only active %d", index, game.shell.Snapshot().ActiveIndex)
+			}
+		}
+	}
+	if checked != 1 {
+		t.Fatalf("checked tab buttons after drag = %d, want 1", checked)
+	}
+}
+
+func TestTabStripDragReleaseClearsSelectionSuppression(t *testing.T) {
+	game := NewGame()
+	game.tabStripDragMoved = true
+	if !game.tabSelectionSuppressed() {
+		t.Fatal("tab selection was not suppressed during drag")
+	}
+	game.finishTabStripDrag()
+	if game.tabStripDragMoved {
+		t.Fatal("tab drag moved flag stayed set after release")
+	}
+	if game.tabSelectionSuppressed() {
+		t.Fatal("tab selection suppression stayed set after release")
+	}
+}
+
 func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 	game := NewGame()
 	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
@@ -168,7 +218,7 @@ func TestMasterDetailContentIncludesSectionButtonsAndSummary(t *testing.T) {
 	game := NewGame()
 	projectTab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[1]
 	body := game.buildMasterDetailTab(projectTab)
-	container, ok := body.(*widget.Container)
+	container, ok := unwrapBounded(body).(*widget.Container)
 	if !ok {
 		t.Fatalf("master-detail body type = %T, want *widget.Container", body)
 	}
@@ -189,14 +239,14 @@ func TestCollapsedMasterDetailStartsWithListAndCanBuildDetailBack(t *testing.T) 
 	game.width = 640
 	projectTab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[1]
 	body := game.buildMasterDetailTab(projectTab)
-	container, ok := body.(*widget.ScrollContainer)
+	container, ok := unwrapBounded(body).(*widget.ScrollContainer)
 	if !ok {
 		t.Fatalf("collapsed list body type = %T, want *widget.ScrollContainer", body)
 	}
 	_ = container
 	game.selectSection(projectTab.ID(), 0)
 	body = game.buildMasterDetailTab(projectTab)
-	scroll, ok := body.(*widget.ScrollContainer)
+	scroll, ok := unwrapBounded(body).(*widget.ScrollContainer)
 	if !ok {
 		t.Fatalf("collapsed detail body type = %T, want *widget.ScrollContainer", body)
 	}
@@ -230,6 +280,36 @@ func TestTabStripHasSingleCheckedButtonAfterSelection(t *testing.T) {
 	}
 }
 
+func TestNarrowBodyPreferredWidthsAreBounded(t *testing.T) {
+	game := NewGame()
+	game.width = 360
+	tabs := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())
+	for index, tabData := range tabs {
+		body := game.buildActiveTabBody(hud.Snapshot{Tabs: tabs, ActiveIndex: index})
+		width, _ := body.PreferredSize()
+		if maxWidth := game.hudPreferredWidth(); width > maxWidth {
+			t.Fatalf("%s preferred width = %d, want <= %d", tabData.ID(), width, maxWidth)
+		}
+	}
+}
+
+func TestHUDBodyTextUsesWrappingWidth(t *testing.T) {
+	game := NewGame()
+	game.width = 360
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	for _, text := range collectTextNodes(game.buildSettingsContent(settings)) {
+		if text.MaxWidth <= 0 {
+			t.Fatalf("settings text %q MaxWidth = %.1f, want positive", text.Label, text.MaxWidth)
+		}
+	}
+	section := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[1].Sections[0]
+	for _, text := range collectTextNodes(game.buildSectionContainer(section)) {
+		if text.MaxWidth <= 0 {
+			t.Fatalf("detail text %q MaxWidth = %.1f, want positive", text.Label, text.MaxWidth)
+		}
+	}
+}
+
 func collectTextLabels(root *widget.Container) []string {
 	var labels []string
 	walkWidget(root, func(node widget.PreferredSizeLocateableWidget) {
@@ -243,6 +323,16 @@ func collectTextLabels(root *widget.Container) []string {
 		}
 	})
 	return labels
+}
+
+func collectTextNodes(root widget.PreferredSizeLocateableWidget) []*widget.Text {
+	var texts []*widget.Text
+	walkWidget(root, func(node widget.PreferredSizeLocateableWidget) {
+		if text, ok := node.(*widget.Text); ok {
+			texts = append(texts, text)
+		}
+	})
+	return texts
 }
 
 func findButtonByLabel(root *widget.Container, label string) *widget.Button {
@@ -281,11 +371,22 @@ func findCheckboxByLabel(root *widget.Container, label string) *widget.Checkbox 
 
 func walkWidget(node widget.PreferredSizeLocateableWidget, visit func(widget.PreferredSizeLocateableWidget)) {
 	visit(node)
+	if bounded, ok := node.(*boundedPreferredWidget); ok {
+		walkWidget(bounded.child, visit)
+		return
+	}
 	if container, ok := node.(*widget.Container); ok {
 		for _, child := range container.Children() {
 			walkWidget(child, visit)
 		}
 	}
+}
+
+func unwrapBounded(node widget.PreferredSizeLocateableWidget) widget.PreferredSizeLocateableWidget {
+	if bounded, ok := node.(*boundedPreferredWidget); ok {
+		return bounded.child
+	}
+	return node
 }
 
 func containsLabel(labels []string, want string) bool {
