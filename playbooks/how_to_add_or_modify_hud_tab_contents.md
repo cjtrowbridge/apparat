@@ -36,7 +36,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * HUD `ScrollContainer` widgets and master-detail panes must cap their reported preferred width before parent layout measurement when their content can be wider than the viewport. `StretchContentWidth()` is not enough by itself because clipping happens after parent layout.
    * Descriptive HUD text, summaries, section descriptions, and row details must set a nonzero `widget.TextOpts.MaxWidth(...)` before preferred-size measurement so long strings wrap inside their owner instead of expanding the whole tree.
    * Tab-strip active-tab auto-scroll must be one-shot after rebuilds, resizes, or programmatic tab changes. It must not run every update or overwrite pointer, wheel, mouse-drag, or touch-drag scrolling.
-   * Dragging or swiping the tab strip must be treated as scrolling, not selection. A drag gesture must not leave a non-selected tab checked, pressed, or visually selected after release.
+   * Dragging or swiping the tab strip must be treated as scrolling, not selection. A drag gesture must not leave a non-selected tab checked, pressed, or visually selected after release. When a widget library defers click or state-change events, drag cancellation must remain active until that deferred event cycle has completed; do not clear it merely because the physical release frame ended.
 
 4. **Keep Visual Vocabulary Consistent**
    * Fieldsets use a visible border, compact title, short explanatory text when helpful, and a clear content area.

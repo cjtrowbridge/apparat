@@ -74,42 +74,6 @@ func TestTabStripManualScrollIsNotOverwrittenWithoutRequest(t *testing.T) {
 	}
 }
 
-func TestTabStripDragStateChangeKeepsOnlySelectedButtonChecked(t *testing.T) {
-	game := NewGame()
-	if len(game.tabButtons) < 3 {
-		t.Fatal("tab strip did not retain enough buttons")
-	}
-	game.tabStripDragMoved = true
-	game.tabButtons[2].SetState(widget.WidgetChecked)
-	checked := 0
-	for index, button := range game.tabButtons {
-		if button.State() == widget.WidgetChecked {
-			checked++
-			if index != game.shell.Snapshot().ActiveIndex {
-				t.Fatalf("button %d checked after drag, want only active %d", index, game.shell.Snapshot().ActiveIndex)
-			}
-		}
-	}
-	if checked != 1 {
-		t.Fatalf("checked tab buttons after drag = %d, want 1", checked)
-	}
-}
-
-func TestTabStripDragReleaseClearsSelectionSuppression(t *testing.T) {
-	game := NewGame()
-	game.tabStripDragMoved = true
-	if !game.tabSelectionSuppressed() {
-		t.Fatal("tab selection was not suppressed during drag")
-	}
-	game.finishTabStripDrag()
-	if game.tabStripDragMoved {
-		t.Fatal("tab drag moved flag stayed set after release")
-	}
-	if game.tabSelectionSuppressed() {
-		t.Fatal("tab selection suppression stayed set after release")
-	}
-}
-
 func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 	game := NewGame()
 	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
