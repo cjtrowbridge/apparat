@@ -42,51 +42,60 @@ const (
 )
 
 type Game struct {
-	shell                  hud.Shell
-	ui                     *ebitenui.UI
-	theme                  *widget.Theme
-	width                  int
-	height                 int
-	layoutDirty            bool
-	rightCtrlHeld          bool
-	pageDownWasHit         bool
-	pageUpWasHit           bool
-	l1WasPressed           bool
-	r1WasPressed           bool
-	r2Held                 bool
-	debugOverlayOpen       bool
-	debugOverlayX          int
-	debugOverlayY          int
-	debugDrag              bool
-	debugDragDX            int
-	debugDragDY            int
-	debugTouchActive       bool
-	debugTouchID           ebiten.TouchID
-	tabScroll              *widget.ScrollContainer
-	tabButtonCount         int
-	tabButtons             []*widget.Button
-	tabStripDragging       bool
-	tabStripDragDistance   int
-	tabStripDragMoved      bool
-	tabStripLastX          int
-	tabTouchActive         bool
-	tabTouchID             ebiten.TouchID
-	tabRadioGroup          *widget.RadioGroup
-	tabDragCancelUpdates   int
-	syncingTabButtonStates bool
-	activeTabScrollPending bool
-	selectedSections       map[hud.TabID]int
-	detailOpen             map[hud.TabID]bool
-	splitWidth             int
-	splitDragging          bool
-	pttHeld                bool
-	pttTouchActive         bool
-	pttTouchID             ebiten.TouchID
-	runtimeInfo            RuntimeInfo
-	activeTabID            atomic.Value
-	updateStatus           atomic.Value
-	updateButton           *widget.Button
-	onCheckForUpdate       func() bool
+	shell                   hud.Shell
+	ui                      *ebitenui.UI
+	theme                   *widget.Theme
+	width                   int
+	height                  int
+	layoutDirty             bool
+	rightCtrlHeld           bool
+	pageDownWasHit          bool
+	pageUpWasHit            bool
+	l1WasPressed            bool
+	r1WasPressed            bool
+	r2Held                  bool
+	debugOverlayOpen        bool
+	debugOverlayX           int
+	debugOverlayY           int
+	debugDrag               bool
+	debugDragDX             int
+	debugDragDY             int
+	debugTouchActive        bool
+	debugTouchID            ebiten.TouchID
+	tabScroll               *widget.ScrollContainer
+	tabButtonCount          int
+	tabButtons              []*widget.Button
+	tabStripDragging        bool
+	tabStripDragDistance    int
+	tabStripDragMoved       bool
+	tabStripLastX           int
+	tabTouchActive          bool
+	tabTouchID              ebiten.TouchID
+	tabRadioGroup           *widget.RadioGroup
+	tabDragCancelUpdates    int
+	verticalScrolls         []*widget.ScrollContainer
+	bodyScroll              *widget.ScrollContainer
+	bodyScrollDragging      bool
+	bodyScrollLastY         int
+	bodyScrollDragDistance  int
+	bodyScrollDragMoved     bool
+	bodyScrollCancelUpdates int
+	bodyTouchActive         bool
+	bodyTouchID             ebiten.TouchID
+	syncingTabButtonStates  bool
+	activeTabScrollPending  bool
+	selectedSections        map[hud.TabID]int
+	detailOpen              map[hud.TabID]bool
+	splitWidth              int
+	splitDragging           bool
+	pttHeld                 bool
+	pttTouchActive          bool
+	pttTouchID              ebiten.TouchID
+	runtimeInfo             RuntimeInfo
+	activeTabID             atomic.Value
+	updateStatus            atomic.Value
+	updateButton            *widget.Button
+	onCheckForUpdate        func() bool
 }
 
 func (game *Game) SetOnCheckForUpdate(f func() bool) {
@@ -133,6 +142,7 @@ func (game *Game) Update() error {
 		game.rebuildUI(game.shell.Snapshot())
 	}
 	game.advanceTabDragCancellation()
+	game.advanceBodyScrollCancellation()
 	game.ui.Update()
 	game.applyUpdateStatus()
 	startIndex := game.shell.Snapshot().ActiveIndex

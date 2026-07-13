@@ -37,7 +37,7 @@ Current evidence:
 - Native ABI: `arm64-v8a`.
 - Permissions: `android.permission.INTERNET` for HTTPS over external WireGuard/local networks, `android.permission.RECORD_AUDIO` for the push-to-talk state path, and temporary Phase 5 `android.permission.REQUEST_INSTALL_PACKAGES` for the dev Updates fieldset button.
 - Activity: `com.cjtrowbridge.apparat.MainActivity` with Ebitengine `EbitenView`; the wrapper does not force portrait orientation.
-- Toolchain: JDK 21, Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
+- Toolchain: OpenJDK 21 (Eclipse Temurin preferred; Oracle JDK prohibited), Android platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and pinned Ebitengine gomobile.
 - SDK metadata: `minSdkVersion=23`, `targetSdkVersion=30`, and `platformBuildVersionCode=35`.
 - Signing: debug keystore generated under ignored `.tools/android/debug.keystore`; APK verifies with v1, v2, and v3 signature schemes.
 - Native page alignment: `lib/arm64-v8a/libapparat.so` LOAD segments align to `0x4000` for 16 KB page-size devices.

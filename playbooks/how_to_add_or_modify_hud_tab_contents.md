@@ -37,6 +37,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Descriptive HUD text, summaries, section descriptions, and row details must set a nonzero `widget.TextOpts.MaxWidth(...)` before preferred-size measurement so long strings wrap inside their owner instead of expanding the whole tree.
    * Tab-strip active-tab auto-scroll must be one-shot after rebuilds, resizes, or programmatic tab changes. It must not run every update or overwrite pointer, wheel, mouse-drag, or touch-drag scrolling.
    * Dragging or swiping the tab strip must be treated as scrolling, not selection. A drag gesture must not leave a non-selected tab checked, pressed, or visually selected after release. When a widget library defers click or state-change events, drag cancellation must remain active until that deferred event cycle has completed; do not clear it merely because the physical release frame ended.
+   * Vertical body, master-list, and detail scroll containers must receive explicit wheel and drag/touch input that changes their `ScrollTop`; EbitenUI clipping alone does not make a container scroll. Target the innermost viewport, preserve tab-strip horizontal scrolling, and keep every body viewport between the tab row and diagnostics/status clearance.
 
 4. **Keep Visual Vocabulary Consistent**
    * Fieldsets use a visible border, compact title, short explanatory text when helpful, and a clear content area.

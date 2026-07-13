@@ -20,6 +20,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.tabButtonCount = 0
 	game.tabButtons = nil
 	game.tabRadioGroup = nil
+	game.verticalScrolls = nil
 	game.clampSplitWidth()
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
@@ -186,6 +187,7 @@ func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateab
 		})),
 	)
 
+	game.registerVerticalScroll(scrollContainer)
 	return boundPreferredWidth(scrollContainer, game.hudPreferredWidth)
 }
 
@@ -240,6 +242,9 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 				widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
 				widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
 				widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+					if game.bodySelectionSuppressed() {
+						return
+					}
 					game.SetUpdateStatus("Checking...")
 					args.Button.SetText("Checking...")
 					if game.onCheckForUpdate == nil || !game.onCheckForUpdate() {
@@ -262,6 +267,10 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 				widget.CheckboxOpts.InitialState(checkedState(game.debugOverlayOpen)),
 				widget.CheckboxOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
 				widget.CheckboxOpts.StateChangedHandler(func(args *widget.CheckboxChangedEventArgs) {
+					if game.bodySelectionSuppressed() {
+						game.rebuildUI(game.shell.Snapshot())
+						return
+					}
 					game.debugOverlayOpen = args.State == widget.WidgetChecked
 					game.rebuildUI(game.shell.Snapshot())
 				}),

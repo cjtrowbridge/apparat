@@ -26,6 +26,8 @@ HUD body text must wrap before preferred-size measurement. Use the local text he
 
 The tab strip only auto-scrolls the active tab into view after a rebuild, resize, or programmatic tab selection. It must not continuously force `ScrollLeft` during the update loop, because that prevents mouse, wheel, and touch swipes from persisting on phone-width surfaces.
 
+EbitenUI `ScrollContainer` clips and renders from `ScrollTop`, but does not supply wheel or drag behavior itself. Register every rebuilt Settings, master-list, and detail scroll container with the GUI adapter. Wheel and vertical drags target only the innermost body viewport under the pointer/touch, use a threshold to suppress release-target activation, and never expand the viewport beneath the tab strip or diagnostics bar.
+
 Tab-strip drag and swipe gestures scroll only. They must not select a tab and must not leave the release target visually checked or pressed alongside the selected tab. EbitenUI defers button click and state-change events until `UI.Update()` drains its event queue, so drag cancellation must survive the release frame long enough to reject those deferred events. The tab buttons belong to an EbitenUI `RadioGroup` as a second invariant layer: exactly one button may be checked, and a rejected drag restores that selection from the authoritative `hud.Shell` snapshot.
 
 If additional custom Ebitengine rendering is required for dense visualizations or platform diagnostics, document the reason here and keep authoritative state in HUD view models. Do not reintroduce custom coordinate layout loops for ordinary tab bodies or controls.

@@ -65,6 +65,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 		widget.ScrollContainerOpts.StretchContentWidth(),
 		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(layoutData)),
 	)
+	game.registerVerticalScroll(scroll)
 	return boundPreferredWidth(scroll, game.masterPanePreferredWidth)
 }
 
@@ -80,6 +81,9 @@ func (game *Game) sectionButton(tabData hud.Tab, title string, sectionIndex int)
 			widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 		),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			if game.bodySelectionSuppressed() {
+				return
+			}
 			game.selectSection(tabData.ID(), sectionIndex)
 		}),
 	)
@@ -108,6 +112,7 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		widget.ScrollContainerOpts.StretchContentWidth(),
 		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(game.detailLayoutData())),
 	)
+	game.registerVerticalScroll(scroll)
 	return boundPreferredWidth(scroll, game.detailPanePreferredWidth)
 }
 
@@ -121,6 +126,9 @@ func (game *Game) backButton(tabID hud.TabID) *widget.Button {
 			widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 		),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			if game.bodySelectionSuppressed() {
+				return
+			}
 			game.showList(tabID)
 		}),
 	)
