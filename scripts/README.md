@@ -64,6 +64,10 @@ Android prerequisites:
 
 `scripts/build.py` checks those prerequisites while producing the target report and prepares an ignored `.tools/bin/gomobile-apparat` helper if needed. That helper is a small local build-tool patch for the pinned Ebitengine gomobile scanner: the upstream tool checks for `github.com/ebitengine/gomobile/app` but its symbol-scanning regular expression only matches `golang.org/x` import paths. The patch broadens the scanner, supports local module replacement for wrapper binding, and synthesizes `minSdkVersion=23` plus `targetSdkVersion=30` while compiling/package-building against Android platform 35. The pipeline temporarily applies an Android Ebitengine display-metric guard during `gomobile bind`, restores the Ebitengine checkout afterward, binds `cmd/apparatmobile`, generates Ebitengine mobile view classes, compiles tracked `android/apparat` wrapper sources and resources, then zipaligns/signs the APK with a generated debug keystore. It does not fork application source.
 
+The pipeline creates that ignored development keystore before wrapper assembly, because the wrapper signs its intermediate APK before final alignment, signing, and verification. It never writes the keystore or its password to tracked files.
+
+On Windows, the pipeline resolves Android's actual launcher names: `sdkmanager.bat`, `apksigner.bat`, and `d8.bat`, alongside `aapt2.exe`, `zipalign.exe`, and `adb.exe`. It constructs child-process `PATH` values using the host path separator so the generated `gobind.exe` remains discoverable by Gomobile. Both `python scripts/build.py` and `python -m scripts.build` work from the repository root; use the normal no-flag `make build`/`python3 scripts/build.py` workflow on platforms where those commands are available.
+
 For local machine-specific paths, copy `build_environment.sample.py` to ignored `build_environment.py` and update environment values there. The build script loads that file opportunistically before target detection.
 
 Android build side effects:

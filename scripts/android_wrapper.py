@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import os
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -72,7 +73,7 @@ def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: d
 
 
 def wrapper_env(toolchain, settings: dict[str, str]) -> dict[str, str]:
-    env = dict(__import__("os").environ)
+    env = dict(os.environ)
     paths = [
         toolchain.java_home / "bin",
         ROOT / ".tools" / "go1.26.4" / "bin",
@@ -86,7 +87,7 @@ def wrapper_env(toolchain, settings: dict[str, str]) -> dict[str, str]:
     env["ANDROID_NDK_HOME"] = str(toolchain.ndk_root)
     env["GOFLAGS"] = "-buildvcs=false"
     env["GOCACHE"] = str(ROOT / ".tmp" / "go-build")
-    env["PATH"] = ":".join(str(path) for path in paths) + ":" + env.get("PATH", "")
+    env["PATH"] = os.pathsep.join(str(path) for path in paths) + os.pathsep + env.get("PATH", "")
     return env
 
 
@@ -139,7 +140,11 @@ def read_zip_member(path: Path, member: str) -> bytes:
 
 def exe(name: str) -> str:
     import platform
-    return f"{name}.exe" if platform.system().lower() == "windows" else name
+    if platform.system().lower() != "windows":
+        return name
+    if name in {"apksigner", "d8"}:
+        return f"{name}.bat"
+    return f"{name}.exe"
 
 
 if __name__ == "__main__":

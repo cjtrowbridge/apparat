@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 try:
     from scripts import android_wrapper
-except ModuleNotFoundError:
+except ImportError:
     import android_wrapper
 ROOT = Path(__file__).resolve().parents[1]
 ANDROID_API = "35"
@@ -115,10 +115,10 @@ def default_java_home() -> Path | None:
     return local if local.exists() else None
 def find_executable(name: str, extra_dirs: list[Path] | None = None) -> Path | None:
     for directory in extra_dirs or []:
-        candidate = directory / name
+        candidate = directory / executable(name)
         if candidate.is_file() and os.access(candidate, os.X_OK):
             return candidate
-    found = shutil.which(name)
+    found = shutil.which(executable(name))
     return Path(found) if found else None
 def android_tool_env(toolchain: AndroidToolchain) -> dict[str, str]:
     env = os.environ.copy()
@@ -165,7 +165,11 @@ def resolve_android_toolchain(go: str) -> tuple[AndroidToolchain | None, list[st
         return None, failures, warnings
     return AndroidToolchain(sdk_root, ndk_root, java_home, java, gomobile, adb), failures, warnings
 def executable(name: str) -> str:
-    return f"{name}.exe" if host_goos() == "windows" else name
+    if host_goos() != "windows":
+        return name
+    if name in {"sdkmanager", "apksigner"}:
+        return f"{name}.bat"
+    return f"{name}.exe"
 def module_cache_dir(go: str) -> Path:
     result = subprocess.run([go, "env", "GOMODCACHE"], cwd=ROOT, check=True, capture_output=True, text=True)
     return Path(result.stdout.strip())
@@ -213,7 +217,7 @@ def build_patched_gomobile(go: str, source: Path) -> None:
     })
     patch_file(temp / "cmd" / "gomobile" / "bind.go", {
         "if f == nil {\n\t\t\treturn nil\n\t\t}":
-        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo 1.26.4\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.9.9\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT}\\nreplace github.com/ebitengine/gomobile => {temp}\\nreplace github.com/hajimehoshi/ebiten/v2 => {ROOT / "third_party" / "game" / "ebiten"}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
+        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo 1.26.4\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.9.9\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {(ROOT / "third_party" / "game" / "ebiten").as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
     })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE), "./cmd/gomobile"], cwd=temp, check=True)
@@ -236,7 +240,7 @@ def make_writable(path: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     try:
         from scripts import build_orchestrator
-    except ModuleNotFoundError:
+    except ImportError:
         import build_orchestrator
     return build_orchestrator.main(sys.argv[1:] if argv is None else argv)
 def check_android_env(go: str) -> int:
@@ -265,6 +269,7 @@ def build_android(go: str, goarch: str) -> int:
         return 1
     output = artifact_path("android", goarch, "apparat")
     output.parent.mkdir(parents=True, exist_ok=True)
+    ensure_debug_keystore(toolchain, ROOT / ".tools" / "android" / "debug.keystore")
     print(f"building target=apparat goos=android goarch={goarch} output={output}")
     try:
         android_wrapper.build_wrapper_apk(toolchain, go, goarch, output, {
