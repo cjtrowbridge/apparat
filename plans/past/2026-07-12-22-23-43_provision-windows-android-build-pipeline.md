@@ -2,7 +2,7 @@
 plan_id: 2026-07-12-22-23-43_provision-windows-android-build-pipeline
 title: Provision and Validate the Windows Android Build Pipeline
 summary: Provision the pinned Android toolchain on Windows using OpenJDK only, build the GUI APK through the existing pipeline, and collect artifact and device evidence before claiming Windows Android-build support.
-status: current
+status: past
 created_at: 2026-07-12-22-23-43
 ---
 
@@ -41,17 +41,18 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 4.2 Verify the APK exists at the canonical path, contains the expected package/activity/ABI, and passes `aapt2`, `apksigner`, and `zipalign` checks supplied by the pinned build-tools.
   - [x] 4.3 Confirm signing uses only the ignored local debug keystore for this development checkpoint and does not expose passwords, certificate material, or raw device/project payloads in logs.
 
-- [?] 5. Gather device evidence before claiming Windows support.
-  - [?] 5.1 Connect an authorized Android device via ADB, install/replace the APK, launch the activity, and retain a redacted logcat/launch result. No device was attached to the Windows host.
-  - [?] 5.2 Capture screenshots demonstrating the tab strip and vertically scrollable content stay inside the body viewport, including the bottom diagnostics bar. Blocked pending a connected device.
-  - [?] 5.3 Record device model/Android API level, package/activity result, process liveness, and any visual/input discrepancies in the plan and journal. Blocked pending a connected device.
+- [x] 5. Gather device evidence before claiming Windows support.
+  - [x] 5.1 Connect an authorized Android device via ADB, install/replace the APK, launch the activity, and retain a redacted logcat/launch result.
+  - [x] 5.2 Capture screenshots demonstrating the tab strip and vertically scrollable content stay inside the body viewport, including the bottom diagnostics bar.
+  - [x] 5.3 Record device model/Android API level, package/activity result, process liveness, and any visual/input discrepancies in the plan and journal.
   - [x] 5.4 Update `docs/platform-matrix.md` only with evidence actually produced on the Windows host; otherwise retain the existing Linux-only build-host claim and record Windows as pending.
+  - [x] 5.5 Correct the on-device gesture-ownership regression: a vertical body touch must not displace the horizontal tab strip; add a focused regression and repeat tablet validation.
 
-- [ ] 6. Verify and publish the checkpoint.
+- [x] 6. Verify and publish the checkpoint.
   - [x] 6.1 Run focused build/preflight tests, APK verification, relevant GUI tests, repository tests, code-size, documentation, and diff checks; distinguish pre-existing failures from plan-caused failures.
   - [x] 6.2 Update this plan status/checklist and the current-day journal with commands, outcomes, paths, and remaining device-validation limits.
   - [x] 6.3 Regenerate and validate plan indexes; confirm no files beneath `third_party/salvagecore/` are staged.
-  - [ ] 6.4 Review pending downtime reports, then commit and push only after the user approves the verified checkpoint summary.
+  - [x] 6.4 Review pending downtime reports, then commit and push only after the user approves the verified checkpoint summary.
 
 ## Scope Boundaries
 
@@ -67,3 +68,5 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 - 2026-07-12: Installed the Google command-line tools under ignored `.tools/android`, verified the published command-line-tools SHA-1, accepted SDK licenses with Eclipse Temurin 21, and installed platform-tools/ADB, platform `android-35`, build-tools `35.0.0`, and NDK `27.2.12479018`. Configured the ignored local environment with the approved Temurin location and writable repo-local Go caches.
 - 2026-07-12: Corrected the Windows pipeline's `.bat`/`.exe` tool resolution, host `PATH` separator, forward-slash paths in generated Gomobile `go.mod`, early debug-keystore generation, and direct-script import fallback. `python -m scripts.build` produced `releases/android/arm64/apparat/latest.apk`; independent checks confirmed package `com.cjtrowbridge.apparat`, `MainActivity`, `arm64-v8a`, SDK 23/30 metadata, v1/v2/v3 signatures, and 16 KB zip alignment. `adb devices -l` showed no connected device, so installation, launch, and screenshots remain pending.
 - 2026-07-12: `python scripts/build.py --help` and `python -m scripts.build --help` both pass; focused GUI tests and `go test ./...` pass with ignored writable Go caches. Directory-documentation, 400-line code-size, plan-index, and diff checks pass. No `third_party/salvagecore` path is changed or staged, and no pending downtime report exists beyond its README.
+- 2026-07-12: Fresh-installed the Windows-built APK on a connected Pixel Tablet after removing the prior differently signed package. `MainActivity` became the resumed activity and the process remained alive. A body swipe visibly advanced the vertical content, but the captured post-swipe frame also showed an unintended horizontal tab-strip displacement; added item 5.5 before changing input routing.
+- 2026-07-12: Added a body-gesture tab-strip lock and a 30-update deferred-event guard, so delayed EbitenUI release handling cannot select a list row, rebuild the body, or mutate the tab strip's `ScrollLeft` after a vertical body drag. The focused GUI regression, full repository tests, docs, and code-size checks pass. Rebuilt the APK after pinning patched Gomobile/gobind to Go 1.26.4; Pixel Tablet install, resumed activity, process liveness, and pre/post-swipe screenshots verify the body advances vertically while all seven tabs remain stationary.

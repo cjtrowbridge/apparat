@@ -8,7 +8,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-const bodyScrollDragThreshold = 18
+const (
+	bodyScrollDragThreshold      = 18
+	bodyScrollCancelUpdateFrames = 30
+)
 
 func (game *Game) registerVerticalScroll(scroll *widget.ScrollContainer) {
 	game.verticalScrolls = append(game.verticalScrolls, scroll)
@@ -33,6 +36,7 @@ func (game *Game) updateBodyScrollMouse(x int, y int) {
 			game.bodyScrollLastY = y
 			game.bodyScrollDragDistance = 0
 			game.bodyScrollDragMoved = false
+			game.lockBodyTabScroll()
 		}
 	}
 	if game.bodyScrollDragging && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
@@ -61,6 +65,7 @@ func (game *Game) beginBodyTouch(id ebiten.TouchID, x int, y int) bool {
 	game.bodyScrollLastY = y
 	game.bodyScrollDragDistance = 0
 	game.bodyScrollDragMoved = false
+	game.lockBodyTabScroll()
 	return true
 }
 
@@ -92,7 +97,9 @@ func (game *Game) scrollBodyBy(dy int) {
 
 func (game *Game) finishBodyScroll() {
 	if game.bodyScrollDragMoved {
-		game.bodyScrollCancelUpdates = 2
+		game.bodyScrollCancelUpdates = bodyScrollCancelUpdateFrames
+	} else {
+		game.bodyTabScrollLocked = false
 	}
 	game.bodyScroll = nil
 	game.bodyScrollDragging = false
@@ -107,5 +114,22 @@ func (game *Game) bodySelectionSuppressed() bool {
 func (game *Game) advanceBodyScrollCancellation() {
 	if game.bodyScrollCancelUpdates > 0 {
 		game.bodyScrollCancelUpdates--
+		if game.bodyScrollCancelUpdates == 0 {
+			game.bodyTabScrollLocked = false
+		}
+	}
+}
+
+func (game *Game) lockBodyTabScroll() {
+	if game.tabScroll == nil {
+		return
+	}
+	game.bodyTabScrollLeft = game.tabScroll.ScrollLeft
+	game.bodyTabScrollLocked = true
+}
+
+func (game *Game) enforceBodyTabScrollLock() {
+	if game.bodyTabScrollLocked && game.tabScroll != nil {
+		game.tabScroll.ScrollLeft = game.bodyTabScrollLeft
 	}
 }

@@ -66,7 +66,7 @@ Android prerequisites:
 
 The pipeline creates that ignored development keystore before wrapper assembly, because the wrapper signs its intermediate APK before final alignment, signing, and verification. It never writes the keystore or its password to tracked files.
 
-On Windows, the pipeline resolves Android's actual launcher names: `sdkmanager.bat`, `apksigner.bat`, and `d8.bat`, alongside `aapt2.exe`, `zipalign.exe`, and `adb.exe`. It constructs child-process `PATH` values using the host path separator so the generated `gobind.exe` remains discoverable by Gomobile. Both `python scripts/build.py` and `python -m scripts.build` work from the repository root; use the normal no-flag `make build`/`python3 scripts/build.py` workflow on platforms where those commands are available.
+On Windows, the pipeline resolves Android's actual launcher names: `sdkmanager.bat`, `apksigner.bat`, and `d8.bat`, alongside `aapt2.exe`, `zipalign.exe`, and `adb.exe`. It constructs child-process `PATH` values using the host path separator so the generated `gobind.exe` remains discoverable by Gomobile, and pins the patched helper plus generated binding module to Go 1.26.4 even when Gomobile's own module declares an older Go version. Both `python scripts/build.py` and `python -m scripts.build` work from the repository root; use the normal no-flag `make build`/`python3 scripts/build.py` workflow on platforms where those commands are available.
 
 For local machine-specific paths, copy `build_environment.sample.py` to ignored `build_environment.py` and update environment values there. The build script loads that file opportunistically before target detection.
 

@@ -26,6 +26,7 @@ ANDROID_PAGE_SIZE = "0x4000"
 ANDROID_BUILD_TOOLS = "35.0.0"
 ANDROID_NDK = "27.2.12479018"
 GOMOBILE_VERSION = "v0.0.0-20250923094054-ea854a63cce1"
+GO_TOOLCHAIN = "go1.26.4"
 PATCHED_GOMOBILE = ROOT / ".tools" / "bin" / "gomobile-apparat"
 
 @dataclass(frozen=True)
@@ -217,11 +218,13 @@ def build_patched_gomobile(go: str, source: Path) -> None:
     })
     patch_file(temp / "cmd" / "gomobile" / "bind.go", {
         "if f == nil {\n\t\t\treturn nil\n\t\t}":
-        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo 1.26.4\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.9.9\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {(ROOT / "third_party" / "game" / "ebiten").as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
+        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo {GO_TOOLCHAIN.removeprefix("go")}\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.9.9\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {(ROOT / "third_party" / "game" / "ebiten").as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
     })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE), "./cmd/gomobile"], cwd=temp, check=True)
-    subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE.parent / executable("gobind")), "./cmd/gobind"], cwd=temp, check=True)
+    env = os.environ.copy()
+    env["GOTOOLCHAIN"] = GO_TOOLCHAIN
+    subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE), "./cmd/gomobile"], cwd=temp, env=env, check=True)
+    subprocess.run([go, "build", "-o", str(PATCHED_GOMOBILE.parent / executable("gobind")), "./cmd/gobind"], cwd=temp, env=env, check=True)
 
 def patch_file(path: Path, replacements: dict[str, str]) -> None:
     text = path.read_text(encoding="utf-8")

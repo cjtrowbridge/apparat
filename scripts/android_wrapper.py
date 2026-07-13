@@ -86,6 +86,7 @@ def wrapper_env(toolchain, settings: dict[str, str]) -> dict[str, str]:
     env["ANDROID_SDK_ROOT"] = str(toolchain.sdk_root)
     env["ANDROID_NDK_HOME"] = str(toolchain.ndk_root)
     env["GOFLAGS"] = "-buildvcs=false"
+    env["GOTOOLCHAIN"] = "go1.26.4"
     env["GOCACHE"] = str(ROOT / ".tmp" / "go-build")
     env["PATH"] = os.pathsep.join(str(path) for path in paths) + os.pathsep + env.get("PATH", "")
     return env

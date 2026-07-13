@@ -46,13 +46,29 @@ func TestBodyScrollDragSuppressesReleaseTarget(t *testing.T) {
 	if !game.bodySelectionSuppressed() {
 		t.Fatal("body selection was not suppressed after drag release")
 	}
-	game.advanceBodyScrollCancellation()
-	if !game.bodySelectionSuppressed() {
-		t.Fatal("body selection suppression ended before deferred events")
+	for range bodyScrollCancelUpdateFrames - 1 {
+		game.advanceBodyScrollCancellation()
+		if !game.bodySelectionSuppressed() {
+			t.Fatal("body selection suppression ended before deferred events")
+		}
 	}
 	game.advanceBodyScrollCancellation()
 	if game.bodySelectionSuppressed() {
 		t.Fatal("body selection suppression did not end after deferred event window")
+	}
+}
+
+func TestBodyScrollDragRetainsTabStripPosition(t *testing.T) {
+	game := NewGame()
+	game.tabScroll.ScrollLeft = 0.4
+	game.lockBodyTabScroll()
+	game.bodyScroll = game.verticalScrolls[0]
+	game.scrollBodyBy(-bodyScrollDragThreshold)
+	game.finishBodyScroll()
+	game.tabScroll.ScrollLeft = 0.8
+	game.enforceBodyTabScrollLock()
+	if got := game.tabScroll.ScrollLeft; got != 0.4 {
+		t.Fatalf("tab ScrollLeft = %.2f, want body-gesture snapshot 0.40", got)
 	}
 }
 
