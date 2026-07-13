@@ -29,7 +29,7 @@ Phase 5 adds the first Android build artifact but does not yet claim full Androi
 Current evidence:
 
 - Build host: Linux `amd64` development environment.
-- Additional build-host evidence: Windows `amd64` produced the canonical signed APK through `python -m scripts.build` with Eclipse Temurin OpenJDK 21 and the pinned repo-local SDK/NDK. No Android device was connected to that Windows host, so this is build/artifact evidence only, not Windows runtime support.
+- Additional Windows evidence: Windows `amd64` produced the canonical signed APK through `python -m scripts.build` with Eclipse Temurin OpenJDK 21 and the pinned repo-local SDK/NDK. A connected Pixel Tablet (Android 16, API 36) accepted a fresh install after removal of a differently signed prior build; `MainActivity` resumed and remained alive. A touch swipe advanced body content while leaving the top tab strip stationary. This is one-device GUI evidence, not full Windows Android runtime support.
 - Build command: `python3 scripts/build.py`.
 - Preflight command: `python3 scripts/build.py` target report.
 - Artifact: `releases/android/arm64/apparat/latest.apk`.

@@ -80,6 +80,8 @@ type Game struct {
 	bodyScrollDragDistance  int
 	bodyScrollDragMoved     bool
 	bodyScrollCancelUpdates int
+	bodyTabScrollLeft       float64
+	bodyTabScrollLocked     bool
 	bodyTouchActive         bool
 	bodyTouchID             ebiten.TouchID
 	syncingTabButtonStates  bool
@@ -141,9 +143,10 @@ func (game *Game) Update() error {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())
 	}
+	game.ui.Update()
+	game.enforceBodyTabScrollLock()
 	game.advanceTabDragCancellation()
 	game.advanceBodyScrollCancellation()
-	game.ui.Update()
 	game.applyUpdateStatus()
 	startIndex := game.shell.Snapshot().ActiveIndex
 	game.updatePointerState()
