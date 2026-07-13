@@ -71,6 +71,8 @@ type Game struct {
 	tabStripLastX          int
 	tabTouchActive         bool
 	tabTouchID             ebiten.TouchID
+	tabRadioGroup          *widget.RadioGroup
+	tabDragCancelUpdates   int
 	syncingTabButtonStates bool
 	activeTabScrollPending bool
 	selectedSections       map[hud.TabID]int
@@ -130,6 +132,7 @@ func (game *Game) Update() error {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())
 	}
+	game.advanceTabDragCancellation()
 	game.ui.Update()
 	game.applyUpdateStatus()
 	startIndex := game.shell.Snapshot().ActiveIndex

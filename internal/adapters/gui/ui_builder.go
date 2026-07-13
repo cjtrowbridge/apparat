@@ -19,6 +19,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.tabScroll = nil
 	game.tabButtonCount = 0
 	game.tabButtons = nil
+	game.tabRadioGroup = nil
 	game.clampSplitWidth()
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
@@ -66,7 +67,6 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 	game.tabButtonCount = len(snapshot.Tabs)
 	for index, tabData := range snapshot.Tabs {
 		label := fmt.Sprintf("%s %s", tabData.Descriptor.Glyph, tabData.Title())
-		tabIndex := index
 		button := widget.NewButton(
 			widget.ButtonOpts.Text(label, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
 			widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
@@ -76,18 +76,6 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 				widget.WidgetOpts.MinSize(tabButtonWidth(label), tabHeight),
 				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 			),
-			widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-				if game.tabSelectionSuppressed() {
-					game.syncTabButtonStates()
-					return
-				}
-				game.selectTab(tabIndex, args.Button)
-			}),
-			widget.ButtonOpts.StateChangedHandler(func(args *widget.ButtonChangedEventArgs) {
-				if game.tabSelectionSuppressed() {
-					game.syncTabButtonStates()
-				}
-			}),
 		)
 		if index == snapshot.ActiveIndex {
 			button.SetState(widget.WidgetChecked)
@@ -95,6 +83,13 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 		game.tabButtons = append(game.tabButtons, button)
 		row.AddChild(button)
 	}
+	game.tabRadioGroup = widget.NewRadioGroup(
+		widget.RadioGroupOpts.Elements(tabButtonsAsElements(game.tabButtons)...),
+		widget.RadioGroupOpts.InitialElement(game.tabButtons[snapshot.ActiveIndex]),
+		widget.RadioGroupOpts.ChangedHandler(func(args *widget.RadioGroupChangedEventArgs) {
+			game.handleTabRadioGroupChange(args.Active)
+		}),
+	)
 	scroll := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(row),
 		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
@@ -105,6 +100,29 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 	)
 	game.tabScroll = scroll
 	return boundPreferredWidth(scroll, game.hudPreferredWidth)
+}
+
+func tabButtonsAsElements(buttons []*widget.Button) []widget.RadioGroupElement {
+	elements := make([]widget.RadioGroupElement, len(buttons))
+	for index, button := range buttons {
+		elements[index] = button
+	}
+	return elements
+}
+
+func (game *Game) handleTabRadioGroupChange(active widget.RadioGroupElement) {
+	if game.syncingTabButtonStates || game.tabSelectionSuppressed() {
+		game.syncTabButtonStates()
+		return
+	}
+	for index, tabButton := range game.tabButtons {
+		if active == tabButton {
+			if index != game.shell.Snapshot().ActiveIndex {
+				game.selectTab(index, tabButton)
+			}
+			return
+		}
+	}
 }
 
 func (game *Game) selectTab(index int, button *widget.Button) {
@@ -127,6 +145,10 @@ func (game *Game) syncTabButtonStates() {
 		game.syncingTabButtonStates = false
 	}()
 	active := game.shell.Snapshot().ActiveIndex
+	if game.tabRadioGroup != nil && active < len(game.tabButtons) {
+		game.tabRadioGroup.SetActive(game.tabButtons[active])
+		return
+	}
 	for index, tabButton := range game.tabButtons {
 		if index == active {
 			tabButton.SetState(widget.WidgetChecked)

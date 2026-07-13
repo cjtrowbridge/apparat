@@ -206,8 +206,7 @@ func (game *Game) updateTabTouch() {
 	x, _ := ebiten.TouchPosition(game.tabTouchID)
 	dx := x - game.tabStripLastX
 	game.tabStripLastX = x
-	game.trackTabStripDrag(dx)
-	game.tabScroll.ScrollLeft -= float64(dx) / 360.0
+	game.scrollTabStripBy(dx)
 }
 
 func (game *Game) updateTabStripDrag(x int, y int) {
@@ -228,8 +227,7 @@ func (game *Game) updateTabStripDrag(x int, y int) {
 	if game.tabStripDragging && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		dx := x - game.tabStripLastX
 		game.tabStripLastX = x
-		game.trackTabStripDrag(dx)
-		game.tabScroll.ScrollLeft -= float64(dx) / 360.0
+		game.scrollTabStripBy(dx)
 	}
 	if imagePoint(x, y).In(rect) {
 		wheelX, wheelY := ebiten.Wheel()
@@ -249,8 +247,17 @@ func (game *Game) trackTabStripDrag(dx int) {
 	}
 }
 
+func (game *Game) scrollTabStripBy(dx int) {
+	if game.tabScroll == nil {
+		return
+	}
+	game.trackTabStripDrag(dx)
+	game.tabScroll.ScrollLeft -= float64(dx) / 360.0
+}
+
 func (game *Game) finishTabStripDrag() {
 	if game.tabStripDragMoved {
+		game.tabDragCancelUpdates = 2
 		game.syncTabButtonStates()
 	}
 	game.tabStripDragDistance = 0
@@ -258,7 +265,13 @@ func (game *Game) finishTabStripDrag() {
 }
 
 func (game *Game) tabSelectionSuppressed() bool {
-	return game.tabStripDragMoved
+	return game.tabStripDragMoved || game.tabDragCancelUpdates > 0
+}
+
+func (game *Game) advanceTabDragCancellation() {
+	if game.tabDragCancelUpdates > 0 {
+		game.tabDragCancelUpdates--
+	}
 }
 
 func (game *Game) updatePTTMouse(x int, y int) {

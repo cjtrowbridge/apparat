@@ -2,5 +2,6 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-07-12-21-25-55 | plans/current/2026-07-12-21-07-37_resolve-tab-drag-selection-race.md | Resolve Tab Drag Selection Race | Prevent tab-strip drag gestures from selecting or highlighting a release-target tab by combining persistent gesture arbitration with EbitenUI radio-group exclusivity.
 2026-07-12-11-15-29 | plans/current/2026-07-10-23-59-48_complete-ui-and-build-backlog.md | Complete UI And Build Backlog | Convert the remaining TODO inbox items into planned work for app icon integration, responsive HUD polish, Debug UI/PTT controls, and automatic build orchestration.
 2026-07-12-11-15-29 | plans/current/2026-07-11-09-33-26_fix-mobile-overflow-and-tab-scroll.md | Fix Mobile Overflow And Tab Scroll | Recover phone-sized HUD layout by bounding EbitenUI preferred widths, wrapping body text before measurement, and allowing user-driven tab-strip scrolling to persist.
