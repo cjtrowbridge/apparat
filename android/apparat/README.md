@@ -12,6 +12,8 @@ releases/android/arm64/apparat/latest.apk
 
 Android builds use OpenJDK 21 only (Eclipse Temurin preferred); Oracle JDK is prohibited by repository policy. The selected `JAVA_HOME` must expose `java`, `javac`, and `keytool`.
 
+Windows builds use the repository-local Android SDK fallback and invoke `sdkmanager.bat`, `d8.bat`, and `apksigner.bat` alongside executable build tools. The wrapper creates its ignored development keystore before intermediate signing. A Windows-produced APK still requires separate authorized-device install and launch evidence.
+
 The wrapper must preserve the existing Phase 5 gates: package ID `com.cjtrowbridge.apparat`, full-screen behavior without forced portrait orientation, `minSdkVersion=23`, `targetSdkVersion=30`, Android platform 35 packaging, `arm64-v8a`, v2/v3 signing, 16 KB native page alignment, app-private runtime storage, touch tab selection, and no dependency on `third_party/salvagecore`.
 
 The launcher icon is generated from the tracked root `logo.svg` concept into `res/drawable/app_icon.xml` and referenced by `AndroidManifest.xml`. The build pipeline compiles tracked Android resources before linking the wrapper APK.

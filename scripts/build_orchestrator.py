@@ -12,7 +12,7 @@ from pathlib import Path
 
 try:
     from scripts import build
-except ModuleNotFoundError:
+except ImportError:
     import build
 
 
