@@ -55,7 +55,7 @@ Phase 5 intentionally supports only the Android arm64 GUI APK. Android `apparatd
 
 Android prerequisites:
 
-- JDK 21, discovered through `JAVA_HOME` or the ignored repo-local `.tools/jdks/openjdk-21` path.
+- OpenJDK 21 (Eclipse Temurin preferred; Oracle JDK is prohibited), discovered through `JAVA_HOME` or the ignored repo-local `.tools/jdks/openjdk-21` path. The selected `JAVA_HOME` must provide `java`, `javac`, and `keytool`.
 - Android SDK command-line tools under `ANDROID_HOME`, `ANDROID_SDK_ROOT`, or ignored `.tools/android`.
 - Android platform `android-35`.
 - Android build-tools `35.0.0`.
@@ -91,7 +91,7 @@ make test-build
 
 - Missing Go modules: rerun through `make build` or allow network access so Go can populate the module cache.
 - Missing Linux GUI headers: install the native desktop development packages listed above, then rerun `make build`.
-- Missing Android SDK/JDK/NDK: set `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, or configure ignored `build_environment.py`, then rerun `make build`.
+- Missing Android SDK/OpenJDK/NDK: set `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, or configure ignored `build_environment.py`, then rerun `make build`. Use an OpenJDK 21 distribution, never Oracle JDK.
 - Missing Android gomobile module: run `go mod download github.com/ebitengine/gomobile` with writable `GOMODCACHE`, then rerun the Android preflight.
 - Missing `adb` or sandbox-blocked `adb`: APK builds can still pass, but install/launch validation must be performed from an environment where `adb devices`, `adb install`, and `adb logcat` work.
 - Missing directory docs: add a `README.md` to the source directory reported by `check_directory_docs.py`.

@@ -119,6 +119,7 @@ func (game *Game) updatePointerState() {
 	x, y := ebiten.CursorPosition()
 	game.updateDebugOverlayDrag(x, y)
 	game.updateTabStripDrag(x, y)
+	game.updateBodyScrollMouse(x, y)
 	game.updatePTTMouse(x, y)
 	game.updateTouchDrag()
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
@@ -164,6 +165,9 @@ func (game *Game) updateTouchDrag() {
 			game.tabStripDragMoved = false
 			return
 		}
+		if !game.pointInPTT(x, y) && !game.pointInDebugOverlay(x, y) && game.beginBodyTouch(id, x, y) {
+			return
+		}
 		if game.pointInPTT(x, y) {
 			game.pttTouchActive = true
 			game.pttTouchID = id
@@ -176,6 +180,9 @@ func (game *Game) updateTouchDrag() {
 	}
 	if game.tabTouchActive {
 		game.updateTabTouch()
+	}
+	if game.bodyTouchActive {
+		game.updateBodyTouch()
 	}
 	if game.pttTouchActive {
 		game.updatePTTTouch()
@@ -195,6 +202,14 @@ func (game *Game) clampDebugOverlay(x int, y int) {
 	width, height := game.debugOverlaySize()
 	game.debugOverlayX = clamp(x, 0, max(0, game.width-width))
 	game.debugOverlayY = clamp(y, 0, max(0, game.height-height))
+}
+
+func (game *Game) pointInDebugOverlay(x int, y int) bool {
+	if !game.debugOverlayOpen {
+		return false
+	}
+	width, height := game.debugOverlaySize()
+	return pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, height)
 }
 
 func (game *Game) updateTabTouch() {

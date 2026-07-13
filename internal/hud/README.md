@@ -65,6 +65,8 @@ Phase 4 tab content is local, mocked, or placeholder-only:
 
 Backend-dependent controls must be disabled or clearly marked future until their storage, transport, queue, or execution systems exist.
 
+The Phase 4 scenario data is intentionally fictional and visibly marked `mock`, `planned`, or disabled. It exists to exercise multi-page body/list/detail scrolling and does not represent persisted projects, enrolled devices, trusted comrades, live services, or scheduled tasks.
+
 ## Body Layout Patterns
 
 Tab bodies use structured layout patterns rather than free-form text placement:
@@ -75,3 +77,4 @@ Tab bodies use structured layout patterns rather than free-form text placement:
 - Native platform controls must correspond to a reserved HUD element and stay hidden outside the owning tab.
 - List rows, fieldset rows, buttons, and form controls must keep touch-first target sizing comparable to tab buttons.
 - Text and input-like controls are block-level elements. Text wraps, truncates, clips, or scrolls inside the owning fieldset or pane instead of drawing over neighboring content.
+- Every body/list/detail viewport starts below the fixed top tab row and ends above the bottom diagnostics/status area. Wheel and vertical drag/touch input scroll the innermost owning viewport; tab-strip horizontal swipes remain separate.

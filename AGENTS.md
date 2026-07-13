@@ -37,6 +37,7 @@ Read `./agents/RULES.md` in its entirety before doing anything in this repositor
 - Add or update a local `README.md` for every code, script, tool, test, or build directory that gains source files.
 - When adding or changing a script, update `scripts/README.md`, provide useful `--help` output, and document prerequisites, side effects, outputs, and common failures.
 - When adding or changing build/runtime behavior, update the root `README.md` if normal users or contributors need to run, configure, observe, or troubleshoot it.
+- Use an OpenJDK 21 distribution for Android development, CI, and release tooling. Oracle JDK is prohibited for this repository; Eclipse Temurin is the preferred distribution unless a documented compatibility need requires another OpenJDK distribution.
 - Keep executable application code under `cmd/` and `internal/`.
 - Keep source-reference checkouts under `third_party/`; application imports must not depend on `third_party/salvagecore`.
 - Use `cmd/apparat` for the GUI console and `cmd/apparatd` for the headless worker/service entry point.

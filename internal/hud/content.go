@@ -44,8 +44,8 @@ func tab(config HUDConfig, id TabID, summary string, sections []Section) Tab {
 	descriptors := config.TabView.Tabs
 	for _, descriptor := range descriptors {
 		if descriptor.ID == id {
-			return Tab{Descriptor: descriptor, Summary: summary, Sections: sections}
+			return Tab{Descriptor: descriptor, Summary: summary, Sections: append(sections, scenarioSections(id)...)}
 		}
 	}
-	return Tab{Descriptor: TabDescriptor{ID: id, Label: string(id), Visible: true, Enabled: true}, Summary: summary, Sections: sections}
+	return Tab{Descriptor: TabDescriptor{ID: id, Label: string(id), Visible: true, Enabled: true}, Summary: summary, Sections: append(sections, scenarioSections(id)...)}
 }
