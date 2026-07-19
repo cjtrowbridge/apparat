@@ -130,6 +130,18 @@ func createUITheme() *widget.Theme {
 	return &theme
 }
 
+func tabButtonImage() *widget.ButtonImage {
+	idle := color.RGBA{R: 45, G: 55, B: 78, A: 255}
+	hover := color.RGBA{R: 54, G: 67, B: 93, A: 255}
+	selected := color.RGBA{R: 62, G: 96, B: 150, A: 255}
+	return &widget.ButtonImage{
+		Idle:     image.NewNineSliceColor(idle),
+		Hover:    image.NewNineSliceColor(hover),
+		Pressed:  image.NewNineSliceColor(selected),
+		Disabled: image.NewNineSliceColor(color.RGBA{R: 15, G: 18, B: 28, A: 255}),
+	}
+}
+
 func createScrollContainerImage() *widget.ScrollContainerImage {
 	return &widget.ScrollContainerImage{
 		Idle: image.NewNineSliceColor(color.RGBA{0, 0, 0, 0}),

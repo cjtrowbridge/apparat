@@ -35,6 +35,8 @@ func TestTabStripDragStateChangeKeepsOnlySelectedButtonChecked(t *testing.T) {
 
 func TestTabStripDragScrollsWithoutSelectingReleaseTarget(t *testing.T) {
 	game := NewGame()
+	game.width = 360
+	game.rebuildUI(game.shell.Snapshot())
 	event.ExecuteDeferred()
 	game.tabScroll.ScrollLeft = 0.5
 	game.scrollTabStripBy(-tabDragThreshold)

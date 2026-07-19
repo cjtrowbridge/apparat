@@ -55,8 +55,8 @@ func TestActiveTabStripFollowsHUDSnapshot(t *testing.T) {
 	if game.tabScroll == nil {
 		t.Fatal("tab scroll missing after rebuild")
 	}
-	if got := game.tabScroll.ScrollLeft; got != 1 {
-		t.Fatalf("settings tab scroll = %.2f, want 1", got)
+	if got := game.tabScroll.ScrollLeft; got != 0 {
+		t.Fatalf("settings tab scroll = %.2f, want left-aligned 0 when tabs fit", got)
 	}
 }
 
