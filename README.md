@@ -49,9 +49,8 @@ The canonical tab order is:
 2. Projects
 3. Research
 4. Cluster
-5. Routing
-6. Tasks
-7. Settings
+5. Tasks
+6. Settings
 
 ### Comrades
 
@@ -82,6 +81,7 @@ Cluster shows:
 - Running and queued work.
 - Queue depth, utilization, failures, and recent activity.
 - Logs, health checks, diagnostics, and cluster operations.
+- Routing detail for typed workload queues, compatibility filters, priorities, fallbacks, and service health.
 
 ### Projects
 
@@ -93,10 +93,11 @@ Projects contains project folders and opens workspace views with:
 - Project-specific inference routes.
 - Safe Git status, diff, stage, commit, branch, history, and conflict views.
 - Offline drafts and owner-device transaction state.
+- A future-facing Pipelines detail for mock triggers, typed inputs and steps, approvals, routing, and run history.
 
 Project operations use constrained application APIs. Apparat does not expose an unrestricted remote shell.
 
-### Routing
+### Routing (Cluster detail)
 
 Routing manages:
 
@@ -185,7 +186,7 @@ Debian GUI mode supports the Steam Deck controller mapping unchanged when a comp
 
 - `Ctrl+PageUp`: previous top-level tab.
 - `Ctrl+PageDown`: next top-level tab.
-- `Alt+1` through `Alt+7`: open Comrades, Projects, Research, Cluster, Routing, Tasks, or Settings directly.
+- `Alt+1` through `Alt+6`: open Comrades, Projects, Research, Cluster, Tasks, or Settings directly.
 - `Tab` and `Shift+Tab`: move to the next or previous focusable control.
 - Arrow keys: move within lists, trees, grids, menus, and spatial focus groups.
 - `Enter`: activate the focused control or submit the current form.

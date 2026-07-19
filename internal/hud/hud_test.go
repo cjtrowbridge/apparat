@@ -5,7 +5,7 @@ import "testing"
 func TestCanonicalTabOrder(t *testing.T) {
 	shell := NewShell()
 	got := shell.Snapshot().TabTitles()
-	want := []string{"Comrades", "Projects", "Research", "Cluster", "Routing", "Tasks", "Settings"}
+	want := []string{"Comrades", "Projects", "Research", "Cluster", "Tasks", "Settings"}
 	if len(got) != len(want) {
 		t.Fatalf("got %d tabs, want %d", len(got), len(want))
 	}
@@ -34,7 +34,7 @@ func TestDefaultHUDConfig(t *testing.T) {
 
 func TestTabDescriptorsAreStableAndAccessible(t *testing.T) {
 	descriptors := DefaultTabDescriptors()
-	ids := []TabID{TabComrades, TabProjects, TabResearch, TabCluster, TabRouting, TabTasks, TabSettings}
+	ids := []TabID{TabComrades, TabProjects, TabResearch, TabCluster, TabTasks, TabSettings}
 	for index, id := range ids {
 		descriptor := descriptors[index]
 		if descriptor.ID != id {
@@ -134,6 +134,45 @@ func TestEachTabHasContentAndBackendActionsDisabled(t *testing.T) {
 	}
 }
 
+func TestClusterRoutingAndProjectPipelinesAreGroupedDetailSelectors(t *testing.T) {
+	tabs := DefaultTabs(DefaultConfigManager{}.Config())
+	cluster := tabByID(t, tabs, TabCluster)
+	routing := sectionByTitle(t, cluster.Sections, "Routing")
+	if len(routing.DetailSections) < 8 {
+		t.Fatalf("routing detail sections = %d, want grouped former routing content", len(routing.DetailSections))
+	}
+	projects := tabByID(t, tabs, TabProjects)
+	pipelines := sectionByTitle(t, projects.Sections, "Pipelines")
+	if len(pipelines.DetailSections) != 3 {
+		t.Fatalf("pipeline detail sections = %d, want 3", len(pipelines.DetailSections))
+	}
+	if !hasDisabledFutureRow([]Tab{projects}, TabProjects) {
+		t.Fatal("pipelines should keep backend-dependent controls disabled")
+	}
+}
+
+func tabByID(t *testing.T, tabs []Tab, id TabID) Tab {
+	t.Helper()
+	for _, tab := range tabs {
+		if tab.ID() == id {
+			return tab
+		}
+	}
+	t.Fatalf("missing tab %q", id)
+	return Tab{}
+}
+
+func sectionByTitle(t *testing.T, sections []Section, title string) Section {
+	t.Helper()
+	for _, section := range sections {
+		if section.Title == title {
+			return section
+		}
+	}
+	t.Fatalf("missing section %q", title)
+	return Section{}
+}
+
 func hasDisabledFutureRow(tabs []Tab, id TabID) bool {
 	for _, tab := range tabs {
 		if tab.ID() != id {
@@ -143,6 +182,13 @@ func hasDisabledFutureRow(tabs []Tab, id TabID) bool {
 			for _, row := range section.Rows {
 				if row.Disabled && row.Future {
 					return true
+				}
+			}
+			for _, detail := range section.DetailSections {
+				for _, row := range detail.Rows {
+					if row.Disabled && row.Future {
+						return true
+					}
 				}
 			}
 		}

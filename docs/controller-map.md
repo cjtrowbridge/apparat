@@ -18,7 +18,7 @@ All GUI targets dispatch the same application actions for tabs, focus, activatio
 ## Debian GUI
 
 - `Ctrl+PageUp` / `Ctrl+PageDown`: previous/next top-level tab.
-- `Alt+1` through `Alt+7`: Comrades, Projects, Research, Cluster, Routing, Tasks, Settings.
+- `Alt+1` through `Alt+6`: Comrades, Projects, Research, Cluster, Tasks, Settings. Routing is selected within Cluster.
 - `Tab` / `Shift+Tab`: next/previous focusable control.
 - Arrows: list, tree, grid, menu, and spatial focus movement.
 - `Enter`: activate or submit.

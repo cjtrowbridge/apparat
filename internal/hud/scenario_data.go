@@ -32,13 +32,6 @@ func scenarioSections(id TabID) []Section {
 			scenario("Recent Activity", "Mock operations timeline.", "09:44|mock capability refresh", "09:41|mock queue lease returned", "09:32|mock worker restart observed", "Yesterday|mock directory snapshot cached"),
 			scenario("Queue Ownership", "Authoritative-owner examples.", "personal-text|mock worker owned", "image-lab|mock workstation owned", "research-night|mock owner policy paused", "comrade-low|mock no grants active"),
 			scenario("Diagnostics", "Future repair and export surfaces.", "Connection doctor|mock no transport configured", "Directory signature|mock cached sample", "Log bundle|mock ready for review", "Recovery check|mock not scheduled")}
-	case TabRouting:
-		return []Section{scenario("Routing Profiles", "Mock policy profiles for different work types.", "Personal chat|mock text route preferred", "Project review|mock privacy constrained", "Image workshop|mock workstation first", "Voice capture|mock worker ASR fallback"),
-			scenario("Compatible Destinations", "Compatibility filters run before priority.", "text_generation|mock worker then workstation", "image_generation|mock workstation only", "speech_to_text|mock worker only", "research_boinc|mock schedule-gated pool"),
-			scenario("Queue State", "Mock queue ownership and pressure.", "personal-text|mock depth 2, owner worker", "image-lab|mock depth 0, owner workstation", "voice-asr|mock depth 1, retry ready", "research-night|mock paused by schedule"),
-			scenario("Fallback Order", "Ordered examples, not dynamic optimization.", "Project chat|mock worker -> workstation -> local draft", "ASR|mock worker -> offline capture", "Image|mock workstation -> deferred queue", "Research|mock budget hold -> skipped"),
-			scenario("Service Health", "Mock adapter diagnostics.", "OpenAI-compatible|mock endpoint unchecked", "Ollama|mock inventory stale", "llama.cpp|mock local adapter planned", "whisper.cpp|mock portable reference"),
-			scenario("Policy Events", "Mock routing explanations.", "09:43|mock image request rejected: capability", "09:35|mock text request admitted", "Yesterday|mock fallback profile changed", "Last week|mock privacy rule reviewed")}
 	case TabTasks:
 		return []Section{scenario("Task Catalog", "Mock durable-task definitions.", "Morning summary|mock schedule 08:00", "Release watcher|mock webhook trigger", "Research window|mock quiet-hours schedule", "Project backup|mock approval required"),
 			scenario("Pending Approvals", "Human authorization examples.", "Publish artifact|mock awaiting owner", "Rotate device key|mock requires confirmation", "Run backup|mock storage cost estimate", "Share compute grant|mock policy review"),
@@ -56,6 +49,15 @@ func scenarioSections(id TabID) []Section {
 	default:
 		return nil
 	}
+}
+
+func routingScenarioSections() []Section {
+	return []Section{scenario("Routing Profiles", "Mock policy profiles for different work types.", "Personal chat|mock text route preferred", "Project review|mock privacy constrained", "Image workshop|mock workstation first", "Voice capture|mock worker ASR fallback"),
+		scenario("Compatible Destinations", "Compatibility filters run before priority.", "text_generation|mock worker then workstation", "image_generation|mock workstation only", "speech_to_text|mock worker only", "research_boinc|mock schedule-gated pool"),
+		scenario("Queue State", "Mock queue ownership and pressure.", "personal-text|mock depth 2, owner worker", "image-lab|mock depth 0, owner workstation", "voice-asr|mock depth 1, retry ready", "research-night|mock paused by schedule"),
+		scenario("Fallback Order", "Ordered examples, not dynamic optimization.", "Project chat|mock worker -> workstation -> local draft", "ASR|mock worker -> offline capture", "Image|mock workstation -> deferred queue", "Research|mock budget hold -> skipped"),
+		scenario("Service Health", "Mock adapter diagnostics.", "OpenAI-compatible|mock endpoint unchecked", "Ollama|mock inventory stale", "llama.cpp|mock local adapter planned", "whisper.cpp|mock portable reference"),
+		scenario("Policy Events", "Mock routing explanations.", "09:43|mock image request rejected: capability", "09:35|mock text request admitted", "Yesterday|mock fallback profile changed", "Last week|mock privacy rule reviewed")}
 }
 
 func scenario(title string, description string, entries ...string) Section {

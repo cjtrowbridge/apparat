@@ -75,20 +75,20 @@ type Binding struct {
 }
 
 type DisplayConfig struct {
-	Theme             Theme
-	AccentColor       string
+	Theme                 Theme
+	AccentColor           string
 	Scale                 float64
 	FontSize              int
 	FontFamily            string
 	ButtonBackgroundColor string
 	PanelBackgroundColor  string
 	ReducedMotion         bool
-	Contrast          string
-	FocusRingStrength string
-	PanelDensity      string
-	ListRowHeight     int
-	CardSpacing       int
-	TextOverflow      string
+	Contrast              string
+	FocusRingStrength     string
+	PanelDensity          string
+	ListRowHeight         int
+	CardSpacing           int
+	TextOverflow          string
 }
 
 type InteractionConfig struct {
@@ -128,7 +128,6 @@ type DiagnosticConfig struct {
 type DefaultViewConfig struct {
 	Projects string
 	Cluster  string
-	Routing  string
 	Tasks    string
 	Comrades string
 	Research string
@@ -162,7 +161,7 @@ func (DefaultConfigManager) Config() HUDConfig {
 		Interaction:   InteractionConfig{ControllerRepeatDelayMS: 180, KeyboardRepeatDelayMS: 140, MouseScrollSpeed: 1.0, PushToTalkMode: "hold", ConfirmDestructive: true, CommandPaletteVisible: true, CommandPaletteShortcut: "Ctrl+Shift+P", LandingTab: TabComrades},
 		Notifications: NotificationConfig{Visibility: "important_local_events", Volume: 0.5, ToastMS: 5000, Categories: []string{"job_completion", "device_online", "device_offline", "task_failure", "comrade_request", "research_milestone", "security_warning"}, QuietHours: "not_configured"},
 		Diagnostics:   DiagnosticConfig{LogDetail: "info", ShowRuntimePaths: true, ShowBuildPaths: true, ShowFrameTiming: true, ShowMemory: true, ShowInputEvents: true, ShowFocusPath: true, ShowLayoutBounds: true},
-		DefaultViews:  DefaultViewConfig{Projects: "recent_projects", Cluster: "device_health_summary", Routing: "workload_class_overview", Tasks: "active_and_failed_runs", Comrades: "placeholder_relationships", Research: "validated_project_catalog"},
+		DefaultViews:  DefaultViewConfig{Projects: "recent_projects", Cluster: "device_health_summary", Tasks: "active_and_failed_runs", Comrades: "placeholder_relationships", Research: "validated_project_catalog"},
 		Privacy:       PrivacyConfig{HideSensitivePresentation: true, RequireRevealForSecrets: true, SharingDefault: "disabled"},
 	}
 }

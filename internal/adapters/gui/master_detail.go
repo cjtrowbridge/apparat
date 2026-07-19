@@ -158,6 +158,9 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	for _, row := range section.Rows {
 		sectionContainer.AddChild(game.detailText(rowText(row)))
 	}
+	for _, detail := range section.DetailSections {
+		sectionContainer.AddChild(game.buildSectionContainer(detail))
+	}
 	return sectionContainer
 }
 
@@ -226,9 +229,6 @@ func (game *Game) detailSections(tabData hud.Tab) []hud.Section {
 	if len(tabData.Sections) == 0 {
 		return nil
 	}
-	if game.collapsed() {
-		index := game.selectedSectionIndex(tabData)
-		return []hud.Section{tabData.Sections[index]}
-	}
-	return tabData.Sections
+	index := game.selectedSectionIndex(tabData)
+	return []hud.Section{tabData.Sections[index]}
 }
