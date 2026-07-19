@@ -39,14 +39,14 @@ The roadmap assumes these decisions:
   - The canonical tab order is:
     1. Comrades
     2. Projects
-    3. Research
-    4. Cluster
+    3. Cluster
+    4. Research
     5. Settings
   - Cluster uses a selector panel and content panel for device and operations context. Routing and Tasks are Cluster selector items, not top-level tabs.
   - Comrades is visible first but remains a navigable placeholder during the MVP.
     - It eventually supports real-friend chat.
     - It eventually supports revocable low-priority inference sharing through owner-controlled comrade queues.
-  - Research is visible third but remains a navigable placeholder during the MVP.
+  - Research follows Cluster and remains a navigable placeholder during the MVP.
     - It eventually delegates explicitly budgeted compute to validated BOINC projects.
     - Research-project validation eventually participates in gameplay mechanics.
   - Settings remains the final tab.
@@ -802,7 +802,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [x] Implement top-level tabs.
   - [x] Add Comrades as the first tab.
   - [x] Add Projects.
-  - [x] Add Research as the third tab.
+  - [x] Add Research after Cluster.
   - [x] Add Cluster.
   - [x] Add Routing.
   - [x] Add Tasks as Cluster selector/content-panel content.
@@ -928,7 +928,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 **Dependencies:** Phases 1–3.
 
 - [x] Establish the tab shell as the next implementation focus.
-  - [x] Keep the canonical tab order: Comrades, Projects, Research, Cluster, Settings; render Routing and Tasks as Cluster selector/content-panel content.
+  - [x] Keep the canonical tab order: Comrades, Projects, Cluster, Research, Settings; render Routing and Tasks as Cluster selector/content-panel content.
   - [x] Represent tabs as data from a tab-view model rather than hard-coding a single visual strip.
   - [x] Store the tab list as ordered tab descriptors with stable IDs, labels, icons or glyph slots, accessibility labels, visibility state, and future badge/status metadata.
   - [x] Default to a top tab bar for the MVP.
@@ -1826,7 +1826,7 @@ The MVP is complete only when:
 - [ ] Steam Deck HUD and input
   - [ ] Controller navigation works across all primary tabs.
   - [ ] Comrades is present as the first navigable future-facing tab.
-  - [ ] Research is present as the third navigable future-facing tab.
+  - [ ] Research is present after Cluster as a navigable future-facing tab.
   - [ ] Settings is present as the final navigable tab.
   - [ ] `R2` push-to-talk state works and can route to ASR.
 - [ ] Shared runtime and secure connectivity

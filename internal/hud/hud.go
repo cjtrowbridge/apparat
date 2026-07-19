@@ -36,6 +36,8 @@ type Section struct {
 	Rows           []Row
 	DetailSections []Section
 	SelectorKind   SelectorKind
+	SelectorColor  string
+	ContentKind    ContentKind
 }
 
 type SelectorKind string
@@ -44,6 +46,17 @@ const (
 	SelectorItem    SelectorKind = "item"
 	SelectorHeading SelectorKind = "heading"
 )
+
+type ContentKind string
+
+const (
+	ContentStandard ContentKind = "standard"
+	ContentChat     ContentKind = "chat"
+	ContentProject  ContentKind = "project"
+	ContentPipeline ContentKind = "pipeline"
+)
+
+var SelectorPalette = []string{"#0032AB", "#6028A7", "#8C159F", "#AF0093", "#CB0084", "#E10072", "#F10060"}
 
 func (section Section) IsSelectorHeading() bool { return section.SelectorKind == SelectorHeading }
 

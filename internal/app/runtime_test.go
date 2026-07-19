@@ -21,8 +21,8 @@ func TestRuntimeSnapshotUsesCanonicalHUD(t *testing.T) {
 	if tabs[0] != "Comrades" {
 		t.Fatalf("first tab = %q, want Comrades", tabs[0])
 	}
-	if tabs[2] != "Research" {
-		t.Fatalf("third tab = %q, want Research", tabs[2])
+	if tabs[2] != "Cluster" {
+		t.Fatalf("third tab = %q, want Cluster", tabs[2])
 	}
 }
 

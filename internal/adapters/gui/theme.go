@@ -5,10 +5,12 @@ package gui
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"image/color"
 
 	"github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/v2"
 	ebitentext "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/basicfont"
 )
@@ -143,6 +145,30 @@ func tabButtonImage() *widget.ButtonImage {
 		Hover:    image.NewNineSliceColor(hover),
 		Pressed:  image.NewNineSliceColor(selected),
 		Disabled: image.NewNineSliceColor(color.RGBA{R: 15, G: 18, B: 28, A: 255}),
+	}
+}
+
+func selectorColor(value string) color.RGBA {
+	var red, green, blue uint8
+	if _, err := fmt.Sscanf(value, "#%02x%02x%02x", &red, &green, &blue); err != nil {
+		return mutedTextColor
+	}
+	return color.RGBA{R: red, G: green, B: blue, A: 255}
+}
+
+func selectorButtonImage(value string) *widget.ButtonImage {
+	border := selectorColor(value)
+	makeSlice := func(fill color.Color) *image.NineSlice {
+		canvas := ebiten.NewImage(3, 3)
+		canvas.Fill(border)
+		canvas.Set(1, 1, fill)
+		return image.NewNineSliceSimple(canvas, 1, 1)
+	}
+	return &widget.ButtonImage{
+		Idle:     makeSlice(panelColor),
+		Hover:    makeSlice(color.RGBA{R: 38, G: 46, B: 67, A: 255}),
+		Pressed:  makeSlice(activeTabColor),
+		Disabled: makeSlice(backgroundColor),
 	}
 }
 

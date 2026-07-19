@@ -12,8 +12,8 @@ The canonical tab order is:
 
 1. Comrades
 2. Projects
-3. Research
-4. Cluster
+3. Cluster
+4. Research
 5. Settings
 
 Each tab is represented by data rather than a hard-coded visual strip. `TabDescriptor` records stable IDs, labels, glyph slots, accessibility labels, visibility, enabled state, and future badge/status metadata. This lets the GUI render tabs across the top today and later realign them into side rails or responsive layouts without rewriting tab content.
