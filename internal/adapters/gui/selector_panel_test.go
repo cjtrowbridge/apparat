@@ -20,8 +20,15 @@ func TestClusterSelectorHeadingsAreTextAndTasksOwnsTheContentPanel(t *testing.T)
 	if _, ok := unwrapBounded(body).(*widget.Container); !ok {
 		t.Fatalf("cluster body type = %T, want *widget.Container", body)
 	}
-	if heading := game.selectorHeading("Devices"); heading.Label != "DEVICES" || heading.MaxWidth <= 0 {
-		t.Fatalf("selector heading = %#v, want visible bounded text", heading)
+	heading := game.selectorHeading(cluster.Sections[0])
+	texts := collectTextNodes(heading)
+	if len(texts) != 2 || texts[0].Label != "DEVICES" || texts[1].Label != cluster.Sections[0].Description {
+		t.Fatalf("selector heading texts = %#v, want title and description", texts)
+	}
+	for _, text := range texts {
+		if text.MaxWidth <= 0 {
+			t.Fatalf("selector heading text %q MaxWidth = %.1f, want positive", text.Label, text.MaxWidth)
+		}
 	}
 	game.selectSection(cluster.ID(), 5)
 	details := game.detailSections(cluster)

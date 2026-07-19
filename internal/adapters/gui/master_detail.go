@@ -53,7 +53,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 	)
 	for index, section := range tabData.Sections {
 		if section.IsSelectorHeading() {
-			listContainer.AddChild(game.selectorHeading(section.Title))
+			listContainer.AddChild(game.selectorHeading(section))
 			continue
 		}
 		sectionIndex := index
@@ -73,13 +73,27 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 	return boundPreferredWidth(scroll, game.masterPanePreferredWidth)
 }
 
-func (game *Game) selectorHeading(title string) *widget.Text {
-	return widget.NewText(
-		widget.TextOpts.Text(strings.ToUpper(title), game.theme.LabelTheme.Face, mutedTextColor),
-		widget.TextOpts.MaxWidth(float64(game.masterPanePreferredWidth()-24)),
-		widget.TextOpts.Position(widget.TextPositionStart, widget.TextPositionCenter),
-		widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
+func (game *Game) selectorHeading(section hud.Section) *widget.Container {
+	width := float64(game.masterPanePreferredWidth() - 24)
+	heading := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
+			widget.RowLayoutOpts.Spacing(2),
+			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 8, Right: 8, Top: 6, Bottom: 2}),
+		)),
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 	)
+	heading.AddChild(widget.NewText(
+		widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.LabelTheme.Face, mutedTextColor),
+		widget.TextOpts.MaxWidth(width),
+	))
+	if section.Description != "" {
+		heading.AddChild(widget.NewText(
+			widget.TextOpts.Text(section.Description, game.selectorDescriptionFace, mutedTextColor),
+			widget.TextOpts.MaxWidth(width),
+		))
+	}
+	return heading
 }
 
 func (game *Game) sectionButton(tabData hud.Tab, title string, sectionIndex int) *widget.Button {

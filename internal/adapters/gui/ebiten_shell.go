@@ -12,6 +12,7 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	ebitentext "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -45,6 +46,7 @@ type Game struct {
 	shell                   hud.Shell
 	ui                      *ebitenui.UI
 	theme                   *widget.Theme
+	selectorDescriptionFace *ebitentext.Face
 	width                   int
 	height                  int
 	layoutDirty             bool
@@ -126,16 +128,17 @@ func NewGame() *Game {
 func NewGameWithRuntimeInfo(info RuntimeInfo) *Game {
 	theme := createUITheme()
 	game := &Game{
-		shell:            hud.NewShell(),
-		theme:            theme,
-		width:            1280,
-		height:           800,
-		debugOverlayX:    24,
-		debugOverlayY:    96,
-		selectedSections: map[hud.TabID]int{},
-		detailOpen:       map[hud.TabID]bool{},
-		splitWidth:       defaultSplitWidth,
-		runtimeInfo:      info,
+		shell:                   hud.NewShell(),
+		theme:                   theme,
+		selectorDescriptionFace: createTextFace(11),
+		width:                   1280,
+		height:                  800,
+		debugOverlayX:           24,
+		debugOverlayY:           96,
+		selectedSections:        map[hud.TabID]int{},
+		detailOpen:              map[hud.TabID]bool{},
+		splitWidth:              defaultSplitWidth,
+		runtimeInfo:             info,
 	}
 	game.rebuildUI(game.shell.Snapshot())
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
