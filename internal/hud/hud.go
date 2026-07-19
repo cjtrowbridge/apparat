@@ -9,7 +9,6 @@ const (
 	TabProjects TabID = "projects"
 	TabResearch TabID = "research"
 	TabCluster  TabID = "cluster"
-	TabTasks    TabID = "tasks"
 	TabSettings TabID = "settings"
 )
 
@@ -36,6 +35,29 @@ type Section struct {
 	Description    string
 	Rows           []Row
 	DetailSections []Section
+	SelectorKind   SelectorKind
+}
+
+type SelectorKind string
+
+const (
+	SelectorItem    SelectorKind = "item"
+	SelectorHeading SelectorKind = "heading"
+)
+
+func (section Section) IsSelectorHeading() bool { return section.SelectorKind == SelectorHeading }
+
+func (tab Tab) FirstSelectableSectionIndex() int {
+	for index, section := range tab.Sections {
+		if !section.IsSelectorHeading() {
+			return index
+		}
+	}
+	return -1
+}
+
+func (tab Tab) IsSelectableSection(index int) bool {
+	return index >= 0 && index < len(tab.Sections) && !tab.Sections[index].IsSelectorHeading()
 }
 
 type Tab struct {
