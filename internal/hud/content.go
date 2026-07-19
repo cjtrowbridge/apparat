@@ -4,26 +4,26 @@ func DefaultTabs(config HUDConfig) []Tab {
 	return []Tab{
 		comradesTab(config),
 		projectsTab(),
-		researchTab(),
 		clusterTab(),
+		researchTab(),
 		settingsTab(config),
 	}
 }
 
 func comradesTab(config HUDConfig) Tab {
-	return tab(config, TabComrades, "Future friend chat and owner-controlled shared compute.", []Section{{Title: "Future Capabilities", Description: "Comrades will become a two-pane thread list and conversation surface.", Rows: []Row{{Label: "Real-friend chat", Detail: "planned secure conversations", Future: true}, {Label: "Comrade queues", Detail: "low-priority inference access when owner capacity is idle", Future: true}, {Label: "Sharing posture", Detail: config.Privacy.SharingDefault, Disabled: true}}}, {Title: "Controls", Description: "Backend-dependent sharing actions stay disabled until durable permissions exist.", Rows: []Row{{Label: "Grant access", Detail: "disabled until sharing backend exists", Disabled: true, Future: true}, {Label: "Revoke access", Detail: "planned audited action", Disabled: true, Future: true}}}})
+	return tab(config, TabComrades, "Mock conversations with NPCs and trusted comrades; replies stay local to the input field.", comradesMockSections())
 }
 
 func projectsTab() Tab {
-	return tab(DefaultConfigManager{}.Config(), TabProjects, "Local project workspace preview with mock chats, files, artifacts, Git state, and pipelines.", []Section{{Title: "Projects", Description: "This will become a project list with selected project context beside it.", Rows: []Row{{Label: "apparat", Detail: "selected local project mock"}, {Label: "offline draft", Detail: "transaction concept only", Future: true}}}, {Title: "Workspace", Description: "Selected project context groups chats, files, artifacts, and safe Git status.", Rows: []Row{{Label: "Chat preview", Detail: "architecture sketch"}, {Label: "Files", Detail: "README.md, ROADMAP.md placeholders"}, {Label: "Artifacts", Detail: "mock transcript"}, {Label: "Git", Detail: "clean placeholder"}}}, {Title: "Pipelines", Description: "Mock pipeline-building tasks stay future-facing until durable workflows exist.", DetailSections: pipelineSections()}})
+	return tab(DefaultConfigManager{}.Config(), TabProjects, "Mock workspaces with Git and Chat panels; pipelines add mock task entry points.", projectsMockSections())
 }
 
 func researchTab() Tab {
-	return tab(DefaultConfigManager{}.Config(), TabResearch, "Future BOINC delegation and validated public-interest compute.", []Section{{Title: "Validated Research", Description: "Research starts as review content and later becomes selectable project catalog work.", Rows: []Row{{Label: "Project catalog", Detail: "placeholder validated BOINC projects", Future: true}, {Label: "Budget", Detail: "opt-in only", Disabled: true}, {Label: "Schedule", Detail: "future quiet-hours compute", Future: true}, {Label: "Gameplay validation", Detail: "planned contribution proof", Future: true}}}, {Title: "Execution", Description: "Execution controls stay grouped with their validation context.", Rows: []Row{{Label: "Start BOINC work", Detail: "disabled until Research phase", Disabled: true, Future: true}}}})
+	return tab(DefaultConfigManager{}.Config(), TabResearch, "Mock research contribution and opportunity records; no research work is enrolled or running.", researchMockSections())
 }
 
 func clusterTab() Tab {
-	return tab(DefaultConfigManager{}.Config(), TabCluster, "Local diagnostics, mock device capability inventory, typed workload routing, and future task automation.", []Section{selectorHeading("Devices", "Local diagnostics and capability inventory."), {Title: "Local Runtime", Description: "Runtime diagnostics summarize this device before real cluster enrollment exists.", Rows: []Row{{Label: "Identity", Detail: "classified by doctor"}, {Label: "Runtime root", Detail: "shown in Settings"}, {Label: "last_run.log", Detail: "reset on each start"}}}, {Title: "Mock Devices", Description: "Cluster will become a device list with selected-device context.", Rows: []Row{{Label: "steamdeck", Detail: "GUI console"}, {Label: "worker", Detail: "text_generation, speech_to_text"}, {Label: "workstation", Detail: "image_generation, video_generation, research_boinc"}}}, selectorHeading("Operations", "Routing and future task automation."), {Title: "Routing", Description: "Typed workload queues, compatibility filters, and fallback routing belong to Cluster.", DetailSections: routingSections()}, tasksSection()})
+	return tab(DefaultConfigManager{}.Config(), TabCluster, "Mock devices, pool policy, schedules, and inference capabilities; no Cluster operation is live.", clusterMockSections())
 }
 
 func routingSections() []Section {
@@ -34,8 +34,8 @@ func pipelineSections() []Section {
 	return []Section{{Title: "Pipeline Builder", Description: "Mock composition stages for a future durable workflow editor.", Rows: []Row{{Label: "Trigger", Detail: "manual, schedule, webhook, or event", Future: true}, {Label: "Inputs", Detail: "typed project, chat, artifact, or form data", Future: true}, {Label: "Steps", Detail: "mock ordered transforms and typed workload submissions", Future: true}}}, {Title: "Safety And Routing", Description: "Future pipeline execution must keep approval and compatible destinations explicit.", Rows: []Row{{Label: "Approval gate", Detail: "mock owner confirmation before side effects", Disabled: true, Future: true}, {Label: "Workload route", Detail: "mock Cluster routing profile selection", Future: true}, {Label: "Fallback", Detail: "mock compatible queue order", Future: true}}}, {Title: "Run History", Description: "Mock durable execution records until Tasks owns real workflows.", Rows: []Row{{Label: "Draft pipeline", Detail: "mock editable, not persisted", Future: true}, {Label: "Validation run", Detail: "mock waiting for owner", Future: true}, {Label: "Published run", Detail: "mock disabled until durable task storage", Disabled: true, Future: true}}}}
 }
 
-func selectorHeading(title, description string) Section {
-	return Section{Title: title, Description: description, SelectorKind: SelectorHeading}
+func selectorHeading(title, description, selectorColor string) Section {
+	return Section{Title: title, Description: description, SelectorKind: SelectorHeading, SelectorColor: selectorColor}
 }
 
 func tasksSection() Section {
@@ -50,8 +50,15 @@ func tab(config HUDConfig, id TabID, summary string, sections []Section) Tab {
 	descriptors := config.TabView.Tabs
 	for _, descriptor := range descriptors {
 		if descriptor.ID == id {
-			return Tab{Descriptor: descriptor, Summary: summary, Sections: append(sections, scenarioSections(id)...)}
+			return Tab{Descriptor: descriptor, Summary: summary, Sections: appendScenarioSections(id, sections)}
 		}
 	}
-	return Tab{Descriptor: TabDescriptor{ID: id, Label: string(id), Visible: true, Enabled: true}, Summary: summary, Sections: append(sections, scenarioSections(id)...)}
+	return Tab{Descriptor: TabDescriptor{ID: id, Label: string(id), Visible: true, Enabled: true}, Summary: summary, Sections: appendScenarioSections(id, sections)}
+}
+
+func appendScenarioSections(id TabID, sections []Section) []Section {
+	if id == TabSettings {
+		return append(sections, scenarioSections(id)...)
+	}
+	return sections
 }

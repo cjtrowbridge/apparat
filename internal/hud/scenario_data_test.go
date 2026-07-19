@@ -2,17 +2,22 @@ package hud
 
 import "testing"
 
-func TestDefaultTabsIncludeMultiPageScenarioData(t *testing.T) {
+func TestDefaultTabsUseMockupSelectorData(t *testing.T) {
 	for _, tab := range DefaultTabs(DefaultConfigManager{}.Config()) {
-		if len(tab.Sections) < 8 {
-			t.Fatalf("%s sections = %d, want at least 8", tab.ID(), len(tab.Sections))
+		if tab.ID() == TabSettings {
+			continue
 		}
-		rows := 0
+		headings, colored := 0, 0
 		for _, section := range tab.Sections {
-			rows += len(section.Rows)
+			if section.IsSelectorHeading() {
+				headings++
+			}
+			if section.SelectorColor != "" {
+				colored++
+			}
 		}
-		if rows < 24 {
-			t.Fatalf("%s rows = %d, want at least 24", tab.ID(), rows)
+		if headings == 0 || colored != len(tab.Sections) {
+			t.Fatalf("%s headings=%d colored=%d sections=%d", tab.ID(), headings, colored, len(tab.Sections))
 		}
 	}
 }

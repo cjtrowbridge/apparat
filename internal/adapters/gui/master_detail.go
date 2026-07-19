@@ -4,9 +4,11 @@ package gui
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	uiimage "github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
 )
 
@@ -57,7 +59,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			continue
 		}
 		sectionIndex := index
-		btn := game.sectionButton(tabData, section.Title, sectionIndex)
+		btn := game.sectionButton(tabData, section, sectionIndex)
 		if game.selectedSectionIndex(tabData) == index {
 			btn.SetState(widget.WidgetChecked)
 		}
@@ -84,7 +86,7 @@ func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 	)
 	heading.AddChild(widget.NewText(
-		widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.LabelTheme.Face, mutedTextColor),
+		widget.TextOpts.Text(strings.ToUpper(section.Title), game.theme.LabelTheme.Face, selectorColor(section.SelectorColor)),
 		widget.TextOpts.MaxWidth(width),
 	))
 	if section.Description != "" {
@@ -96,10 +98,10 @@ func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 	return heading
 }
 
-func (game *Game) sectionButton(tabData hud.Tab, title string, sectionIndex int) *widget.Button {
+func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionIndex int) *widget.Button {
 	return widget.NewButton(
-		widget.ButtonOpts.Text(title, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
-		widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+		widget.ButtonOpts.Text(section.Title, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+		widget.ButtonOpts.Image(selectorButtonImage(section.SelectorColor)),
 		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 40, Right: 12, Top: 12, Bottom: 12}),
 		widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter),
 		widget.ButtonOpts.ToggleMode(),
@@ -124,10 +126,11 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
 		)),
 	)
-	if withBack {
+	selected := game.selectedSectionIndex(tabData)
+	if withBack && selected >= 0 {
 		detailContainer.AddChild(game.backButton(tabData.ID()))
 	}
-	if tabData.Summary != "" {
+	if selected >= 0 && tabData.Summary != "" {
 		detailContainer.AddChild(game.detailText(tabData.Summary))
 	}
 	for _, section := range game.detailSections(tabData) {
@@ -188,7 +191,57 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	for _, detail := range section.DetailSections {
 		sectionContainer.AddChild(game.buildSectionContainer(detail))
 	}
+	switch section.ContentKind {
+	case hud.ContentChat:
+		sectionContainer.AddChild(game.chatComposer())
+	case hud.ContentProject, hud.ContentPipeline:
+		sectionContainer.AddChild(game.workspaceControls(section.ContentKind))
+	}
 	return sectionContainer
+}
+
+func (game *Game) chatComposer() *widget.Container {
+	composer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(2),
+			widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{true}),
+			widget.GridLayoutOpts.Spacing(6, 0),
+		)),
+	)
+	input := widget.NewTextInput(
+		widget.TextInputOpts.Face(game.theme.ButtonTheme.TextFace),
+		widget.TextInputOpts.Placeholder("Type a mock reply…"),
+		widget.TextInputOpts.SubmitOnEnter(false),
+		widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(panelColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}),
+		widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}),
+		widget.TextInputOpts.Padding(&widget.Insets{Left: 10, Right: 10, Top: 8, Bottom: 8}),
+		widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, tabHeight), widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight})),
+	)
+	composer.AddChild(input)
+	composer.AddChild(widget.NewButton(
+		widget.ButtonOpts.Text("Send", game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+		widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(88, tabHeight), widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight})),
+		widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {}),
+	))
+	return composer
+}
+
+func (game *Game) workspaceControls(kind hud.ContentKind) *widget.Container {
+	labels := []string{"Git", "Chat"}
+	if kind == hud.ContentPipeline {
+		labels = append(labels, "Run")
+	}
+	controls := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal), widget.RowLayoutOpts.Spacing(6))))
+	for _, label := range labels {
+		controls.AddChild(widget.NewButton(
+			widget.ButtonOpts.Text(label, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+			widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+			widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(72, 44)),
+			widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {}),
+		))
+	}
+	return controls
 }
 
 func rowText(row hud.Row) string {
@@ -245,9 +298,12 @@ func (game *Game) detailPanePreferredWidth() int {
 }
 
 func (game *Game) selectedSectionIndex(tabData hud.Tab) int {
-	index := game.selectedSections[tabData.ID()]
+	index, selected := game.selectedSections[tabData.ID()]
+	if !selected {
+		return -1
+	}
 	if !tabData.IsSelectableSection(index) {
-		return tabData.FirstSelectableSectionIndex()
+		return -1
 	}
 	return index
 }
@@ -257,5 +313,8 @@ func (game *Game) detailSections(tabData hud.Tab) []hud.Section {
 		return nil
 	}
 	index := game.selectedSectionIndex(tabData)
+	if index < 0 {
+		return nil
+	}
 	return []hud.Section{tabData.Sections[index]}
 }

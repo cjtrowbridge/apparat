@@ -4,10 +4,10 @@ This file is an asynchronous inbox for user-captured tasks and questions. It is 
 
 Key: `[ ]` pending, `[-]` in progress, `[x]` complete
 
-- [ ] move the research tab to after the cluster tab
-- [ ] remove placeholder content across all tabs. do not remove any of the content on the settings page. we are going to create placeholder content that is more like a mockup of what we are actually intending to implement.
-- [ ] flesh out a plan here so that each selector panel sub-list's buttons have a separate outline color which matches the text color of the heading for that list, so they can always be easily identified. Let's create a specific pallette of bisexual-lighting-adjacent colors like pink, blue, purple so that the colors will match the overall theme/concept of the app. So maybe lists in each tab go like #0032AB, #6028A7, #8C159F, #AF0093, #CB0084, #E10072, #F10060 . These colors can probably loop since it seems unlikely that we will have more than three or for lists to a tab.
-- [ ] cluster tab's selector panel should look like this:
+- [x] move the research tab to after the cluster tab
+- [x] remove placeholder content across all tabs. do not remove any of the content on the settings page. we are going to create placeholder content that is more like a mockup of what we are actually intending to implement.
+- [x] flesh out a plan here so that each selector panel sub-list's buttons have a separate outline color which matches the text color of the heading for that list, so they can always be easily identified. Let's create a specific pallette of bisexual-lighting-adjacent colors like pink, blue, purple so that the colors will match the overall theme/concept of the app. So maybe lists in each tab go like #0032AB, #6028A7, #8C159F, #AF0093, #CB0084, #E10072, #F10060 . These colors can probably loop since it seems unlikely that we will have more than three or for lists to a tab.
+- [x] cluster tab's selector panel should look like this:
     - Heading: NPCs
         - Button: Librarian
     - Heading: Comrades
@@ -28,7 +28,7 @@ Key: `[ ]` pending, `[-]` in progress, `[x]` complete
         - Button: Veda
         - Button: Aura
     - These should all open generic chat conversations with these people in the content panel, with a ebitenui text entry field at the bottom for replies (this shouldn't actually do anything yet)
-- [ ] projects tab's selector panel should look like this
+- [x] projects tab's selector panel should look like this
     - Heading: Projects
         - Button: Solving Incompleteness
         - Button: Invent Quantum AI
@@ -40,7 +40,7 @@ Key: `[ ]` pending, `[-]` in progress, `[x]` complete
         - Button: Oppo Analysis
     - Lets talk about what the projects content pane should look like
     - Lets talk about what the pipeline content pane should look like
-- [ ] Cluster tab's selector panel shoud look like this
+- [x] Cluster tab's selector panel shoud look like this
     - Heading: Cluster Devices
         - Button: Pixel 2 AI Server (4gb ram)
         - Button: Trash Can Mac Pro (256gb ram)
@@ -65,7 +65,7 @@ Key: `[ ]` pending, `[-]` in progress, `[x]` complete
         - Button: Text-to-Speech
         - Button: Speech-to-Text
         - Button: Video Generation
-- [ ] Research tab's selector panel should look like this
+- [x] Research tab's selector panel should look like this
     - Heading: Your Research
     - Description: The total compute power you've donated to each type of research.
         - Button: Curing Cancer (2.4 pflops)

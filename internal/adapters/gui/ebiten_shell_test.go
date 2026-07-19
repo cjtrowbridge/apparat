@@ -178,46 +178,26 @@ func TestSettingsUpdateButtonShowsUnavailableWithoutCallback(t *testing.T) {
 	}
 }
 
-func TestMasterDetailContentIncludesSectionButtonsAndSummary(t *testing.T) {
-	game := NewGame()
-	projectTab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[1]
-	body := game.buildMasterDetailTab(projectTab)
-	container, ok := unwrapBounded(body).(*widget.Container)
-	if !ok {
-		t.Fatalf("master-detail body type = %T, want *widget.Container", body)
-	}
-	if findButtonByLabel(container, "Projects") == nil {
-		t.Fatal("selector panel missing Projects button")
-	}
-	labels := collectTextLabels(container)
-	if !containsLabel(labels, projectTab.Summary) {
-		t.Fatalf("master-detail body missing summary %q in %#v", projectTab.Summary, labels)
-	}
-	if findButtonByLabel(container, "|") == nil {
-		t.Fatal("expanded master-detail body missing draggable divider")
-	}
-}
-
 func TestMasterDetailShowsOnlyTheSelectedGroupedDetail(t *testing.T) {
 	game := NewGame()
 	tabs := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())
-	cluster := tabs[3]
-	game.selectSection(cluster.ID(), 4)
+	cluster := tabs[2]
+	game.selectSection(cluster.ID(), 5)
 	details := game.detailSections(cluster)
-	if len(details) != 1 || details[0].Title != "Routing" {
-		t.Fatalf("selected cluster details = %#v, want only Routing", details)
+	if len(details) != 1 || details[0].Title != "Chat Pool (High priority)" {
+		t.Fatalf("selected cluster details = %#v, want Chat Pool", details)
 	}
 	labels := collectTextLabels(game.buildSectionContainer(details[0]))
-	for _, want := range []string{"ROUTING", "WORKLOAD CLASSES", "ROUTING PROFILES"} {
+	for _, want := range []string{"CHAT POOL (HIGH PRIORITY)", "Priority: high"} {
 		if !containsLabel(labels, want) {
 			t.Fatalf("routing detail missing %q in %#v", want, labels)
 		}
 	}
 	projects := tabs[1]
-	game.selectSection(projects.ID(), 2)
+	game.selectSection(projects.ID(), 6)
 	details = game.detailSections(projects)
-	if len(details) != 1 || details[0].Title != "Pipelines" {
-		t.Fatalf("selected project details = %#v, want only Pipelines", details)
+	if len(details) != 1 || details[0].Title != "What's in the news?" {
+		t.Fatalf("selected project details = %#v, want What's in the news?", details)
 	}
 }
 

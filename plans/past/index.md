@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-07-19-00-04-06 | plans/past/2026-07-18-22-06-37_restructure-hud-selector-content-mockups.md | Restructure HUD Selector And Content Mockups | Reorder Research, replace generic placeholder surfaces with faithful mockups, and define color-grouped selector panels for Comrades, Projects, Cluster, and Research.
 2026-07-18-20-22-09 | plans/past/2026-07-18-19-58-30_restructure-cluster-routing-and-project-pipelines.md | Restructure Cluster Routing And Project Pipelines | Move the mock Routing surface into Cluster detail content and add a mock Pipelines detail surface under Projects while preserving the left-selector/right-detail HUD pattern.
 2026-07-18-15-29-42 | plans/past/2026-07-12-22-23-43_provision-windows-android-build-pipeline.md | Provision and Validate the Windows Android Build Pipeline | Provision the pinned Android toolchain on Windows using OpenJDK only, build the GUI APK through the existing pipeline, and collect artifact and device evidence before claiming Windows Android-build support.
 2026-07-11-00-49-48 | plans/past/2026-07-10-18-58-38_recover-ebitenui-hud-settings-first.md | Recover EbitenUI HUD Settings First | Rebuild the blank EbitenUI HUD from the Settings tab outward, restore the update button path, and sweep stale custom-layout code, tests, docs, and plans.

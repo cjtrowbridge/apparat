@@ -47,8 +47,8 @@ The canonical tab order is:
 
 1. Comrades
 2. Projects
-3. Research
-4. Cluster
+3. Cluster
+4. Research
 5. Settings
 
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
@@ -142,7 +142,7 @@ Settings contains:
 
 ### Research
 
-Research is the third HUD tab, placed alongside the people and projects that give the cluster its purpose. It will allow users to delegate explicitly budgeted compute resources to validated BOINC projects and other future public-interest research systems.
+Research follows Cluster in the HUD tab order, placed alongside the people, projects, and local infrastructure that give the cluster its purpose. It will allow users to delegate explicitly budgeted compute resources to validated BOINC projects and other future public-interest research systems.
 
 Research will show:
 
@@ -187,7 +187,7 @@ Debian GUI mode supports the Steam Deck controller mapping unchanged when a comp
 
 - `Ctrl+PageUp`: previous top-level tab.
 - `Ctrl+PageDown`: next top-level tab.
-- `Alt+1` through `Alt+5`: open Comrades, Projects, Research, Cluster, or Settings directly.
+- `Alt+1` through `Alt+5`: open Comrades, Projects, Cluster, Research, or Settings directly.
 - `Tab` and `Shift+Tab`: move to the next or previous focusable control.
 - Arrow keys: move within lists, trees, grids, menus, and spatial focus groups.
 - `Enter`: activate the focused control or submit the current form.

@@ -5,7 +5,7 @@ import "testing"
 func TestCanonicalTabOrder(t *testing.T) {
 	shell := NewShell()
 	got := shell.Snapshot().TabTitles()
-	want := []string{"Comrades", "Projects", "Research", "Cluster", "Settings"}
+	want := []string{"Comrades", "Projects", "Cluster", "Research", "Settings"}
 	if len(got) != len(want) {
 		t.Fatalf("got %d tabs, want %d", len(got), len(want))
 	}
@@ -34,7 +34,7 @@ func TestDefaultHUDConfig(t *testing.T) {
 
 func TestTabDescriptorsAreStableAndAccessible(t *testing.T) {
 	descriptors := DefaultTabDescriptors()
-	ids := []TabID{TabComrades, TabProjects, TabResearch, TabCluster, TabSettings}
+	ids := []TabID{TabComrades, TabProjects, TabCluster, TabResearch, TabSettings}
 	for index, id := range ids {
 		descriptor := descriptors[index]
 		if descriptor.ID != id {
@@ -63,8 +63,8 @@ func TestDirectTabSelection(t *testing.T) {
 	if err := shell.SelectTab(2); err != nil {
 		t.Fatal(err)
 	}
-	if shell.Snapshot().ActiveTab().ID() != TabResearch {
-		t.Fatalf("selected tab = %q, want research", shell.Snapshot().ActiveTab().ID())
+	if shell.Snapshot().ActiveTab().ID() != TabCluster {
+		t.Fatalf("selected tab = %q, want cluster", shell.Snapshot().ActiveTab().ID())
 	}
 }
 
@@ -119,51 +119,45 @@ func TestReleaseVoiceCaptureQueuesSubmission(t *testing.T) {
 	}
 }
 
-func TestEachTabHasContentAndBackendActionsDisabled(t *testing.T) {
+func TestEachTabHasMockContent(t *testing.T) {
 	shell := NewShell()
 	for _, tab := range shell.Snapshot().Tabs {
 		if tab.Summary == "" || len(tab.Rows()) == 0 {
 			t.Fatalf("tab missing content: %+v", tab.Descriptor)
 		}
 	}
-	if !hasDisabledFutureRow(shell.Snapshot().Tabs, TabComrades) {
-		t.Fatal("comrades tab should contain disabled future controls")
-	}
-	if !hasDisabledFutureRow(shell.Snapshot().Tabs, TabCluster) {
-		t.Fatal("cluster tasks selector should contain disabled future controls")
+	if !hasFutureRow(shell.Snapshot().Tabs, TabComrades) || !hasFutureRow(shell.Snapshot().Tabs, TabCluster) {
+		t.Fatal("mock tabs should retain explicit future/mock truthfulness")
 	}
 }
 
-func TestClusterSelectorsUseHeadingsAndKeepRoutingTasksAndPipelinesGrouped(t *testing.T) {
+func TestMockSelectorGroupsUseHeadingsColorsAndContentKinds(t *testing.T) {
 	tabs := DefaultTabs(DefaultConfigManager{}.Config())
 	cluster := tabByID(t, tabs, TabCluster)
-	if !cluster.Sections[0].IsSelectorHeading() || cluster.Sections[0].Title != "Devices" {
-		t.Fatalf("first cluster selector = %#v, want Devices heading", cluster.Sections[0])
+	if !cluster.Sections[0].IsSelectorHeading() || cluster.Sections[0].Title != "Cluster Devices" {
+		t.Fatalf("first cluster selector = %#v, want Cluster Devices heading", cluster.Sections[0])
 	}
 	if cluster.Sections[0].Description == "" {
-		t.Fatal("Devices heading should have a selector-panel description")
+		t.Fatal("Cluster Devices heading should have a selector-panel description")
 	}
-	if !cluster.Sections[3].IsSelectorHeading() || cluster.Sections[3].Title != "Operations" {
-		t.Fatalf("operations selector = %#v, want Operations heading", cluster.Sections[3])
+	if cluster.Sections[0].SelectorColor != SelectorPalette[0] {
+		t.Fatalf("first selector color = %q, want %q", cluster.Sections[0].SelectorColor, SelectorPalette[0])
 	}
-	routing := sectionByTitle(t, cluster.Sections, "Routing")
-	if len(routing.DetailSections) < 8 {
-		t.Fatalf("routing detail sections = %d, want grouped former routing content", len(routing.DetailSections))
+	routing := sectionByTitle(t, cluster.Sections, "Chat Pool (High priority)")
+	if routing.SelectorColor != SelectorPalette[1] {
+		t.Fatalf("routing selector color = %q, want %q", routing.SelectorColor, SelectorPalette[1])
 	}
-	tasks := sectionByTitle(t, cluster.Sections, "Tasks")
-	if len(tasks.DetailSections) < 8 {
-		t.Fatalf("tasks detail sections = %d, want grouped former Tasks content", len(tasks.DetailSections))
+	tasks := sectionByTitle(t, cluster.Sections, "Every Hour")
+	if tasks.SelectorColor != SelectorPalette[2] {
+		t.Fatalf("tasks selector color = %q, want %q", tasks.SelectorColor, SelectorPalette[2])
 	}
 	if cluster.FirstSelectableSectionIndex() != 1 || cluster.IsSelectableSection(0) {
 		t.Fatalf("cluster selector heading must not be selectable: %#v", cluster.Sections)
 	}
 	projects := tabByID(t, tabs, TabProjects)
-	pipelines := sectionByTitle(t, projects.Sections, "Pipelines")
-	if len(pipelines.DetailSections) != 3 {
-		t.Fatalf("pipeline detail sections = %d, want 3", len(pipelines.DetailSections))
-	}
-	if !hasDisabledFutureRow([]Tab{projects}, TabProjects) {
-		t.Fatal("pipelines should keep backend-dependent controls disabled")
+	pipeline := sectionByTitle(t, projects.Sections, "What's in the news?")
+	if pipeline.ContentKind != ContentPipeline {
+		t.Fatalf("pipeline content kind = %q, want %q", pipeline.ContentKind, ContentPipeline)
 	}
 }
 
@@ -189,20 +183,20 @@ func sectionByTitle(t *testing.T, sections []Section, title string) Section {
 	return Section{}
 }
 
-func hasDisabledFutureRow(tabs []Tab, id TabID) bool {
+func hasFutureRow(tabs []Tab, id TabID) bool {
 	for _, tab := range tabs {
 		if tab.ID() != id {
 			continue
 		}
 		for _, section := range tab.Sections {
 			for _, row := range section.Rows {
-				if row.Disabled && row.Future {
+				if row.Future {
 					return true
 				}
 			}
 			for _, detail := range section.DetailSections {
 				for _, row := range detail.Rows {
-					if row.Disabled && row.Future {
+					if row.Future {
 						return true
 					}
 				}
