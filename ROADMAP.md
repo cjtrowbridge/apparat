@@ -26,7 +26,7 @@ The roadmap assumes these decisions:
     - `R2` is hold-to-talk; releasing it submits captured audio to ASR.
   - Debian/Linux GUI mode is a first-class desktop target.
     - `Ctrl+PageUp` and `Ctrl+PageDown` switch top-level tabs.
-    - `Alt+1` through `Alt+7` open the seven canonical tabs directly.
+    - `Alt+1` through `Alt+6` open the six canonical tabs directly; Routing is selected within Cluster.
     - `Tab`, `Shift+Tab`, arrow keys, `Enter`, `Space`, `Escape`, Menu or `Shift+F10`, and `Ctrl+Shift+P` provide focus, activation, cancellation, contextual-action, and command-palette controls.
     - Holding right `Ctrl` starts push-to-talk; releasing it submits audio, while `Escape` cancels the held recording.
     - Mouse and touchpad input support ordinary desktop activation, context menus, scrolling, and explicit drag operations without making any essential workflow pointer-only.
@@ -41,9 +41,8 @@ The roadmap assumes these decisions:
     2. Projects
     3. Research
     4. Cluster
-    5. Routing
-    6. Tasks
-    7. Settings
+    5. Tasks
+    6. Settings
   - Comrades is visible first but remains a navigable placeholder during the MVP.
     - It eventually supports real-friend chat.
     - It eventually supports revocable low-priority inference sharing through owner-controlled comrade queues.
@@ -501,7 +500,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
     - Transport choice must not define the product's identity or durable data model.
     - Local-first durability and explicit authority are more important than pretending every device is always online.
   - **Corrected MVP sequence**
-    1. Prove the seven-tab shell, controller focus, and push-to-talk interaction with mock data.
+    1. Prove the six-tab shell, controller focus, and push-to-talk interaction with mock data.
     2. Prove shared GUI/headless startup, logging, SQLite migrations, and diagnostics.
     3. Establish the minimum user/device identity and TLS trust needed for two authorized devices.
     4. Send one signed, idempotent HTTPS echo job over a trusted LAN or externally configured WireGuard.
@@ -929,14 +928,14 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 **Dependencies:** Phases 1–3.
 
 - [x] Establish the tab shell as the next implementation focus.
-  - [x] Keep the canonical tab order: Comrades, Projects, Research, Cluster, Routing, Tasks, Settings.
+  - [x] Keep the canonical tab order: Comrades, Projects, Research, Cluster, Tasks, Settings; render Routing as Cluster detail content.
   - [x] Represent tabs as data from a tab-view model rather than hard-coding a single visual strip.
   - [x] Store the tab list as ordered tab descriptors with stable IDs, labels, icons or glyph slots, accessibility labels, visibility state, and future badge/status metadata.
   - [x] Default to a top tab bar for the MVP.
   - [x] Design the tab-view model so a later setting can realign tabs from the top edge to a side rail without changing tab content implementations.
   - [x] Keep tab content independent from tab placement so top, left, right, compact, and future responsive layouts can share the same selected-tab state.
   - [x] Keep `L1` and `R1` tab switching for Steam Deck/controller input.
-  - [x] Keep Debian/Linux keyboard tab switching through `Ctrl+PageUp`, `Ctrl+PageDown`, and `Alt+1` through `Alt+7`.
+  - [x] Keep Debian/Linux keyboard tab switching through `Ctrl+PageUp`, `Ctrl+PageDown`, and `Alt+1` through `Alt+6`.
   - [x] Represent input actions as named bindings from the configuration manager rather than scattering hard-coded key checks through tab code.
   - [x] Keep default bindings hard-coded for now while preserving a path to user-editable bindings later.
   - [x] Preserve mouse/touch activation without making essential workflows pointer-only.
@@ -954,7 +953,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Include key-binding defaults.
     - [x] Previous tab: `L1` and `Ctrl+PageUp`.
     - [x] Next tab: `R1` and `Ctrl+PageDown`.
-    - [x] Direct tab selection: `Alt+1` through `Alt+7`.
+    - [x] Direct tab selection: `Alt+1` through `Alt+6`.
     - [x] Push-to-talk: `R2` and right `Ctrl`.
     - [x] Cancel recording: `Escape`.
     - [x] Focus, activation, back, context menu, command palette, scroll, and collection-navigation actions.
@@ -992,7 +991,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Include default view preferences.
     - [x] Projects default view: recent projects first.
     - [x] Cluster default view: device health summary first.
-    - [x] Routing default view: workload-class overview first.
+    - [x] Cluster includes Routing detail: workload-class overview first.
     - [x] Tasks default view: active and failed runs first.
     - [x] Comrades default view: placeholder relationship list first until chat exists.
     - [x] Research default view: placeholder validated-project catalog first until BOINC integration exists.
@@ -1026,7 +1025,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Show local device identity status, runtime mode, runtime root, database path, and `last_run.log` status.
   - [x] Show mock device cards with roles, reachability, health, typed capabilities, and queue/service ownership.
   - [x] Surface doctor status and recent diagnostics in a human-readable panel.
-- [x] Implement the Routing tab basic content.
+- [x] Implement Routing as Cluster detail content.
   - [x] Show workload classes: text generation, image generation, video generation, STT, TTS, and BOINC research compute.
   - [x] Show mock queues, priorities, device assignments, compatibility filtering, fallback routes, and policy constraints.
   - [x] Make it clear that BOINC is schedulable research compute, not model inference.
@@ -1046,7 +1045,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Exit criteria**
 
-- The GUI opens into a usable seven-tab HUD with readable basic content for every canonical tab.
+- The GUI opens into a usable six-tab HUD with readable basic content for every canonical tab, including Routing under Cluster and Pipelines under Projects.
 - The tab system is data-driven enough to support future top/side realignment without rewriting tab contents.
 - Key bindings and user-facing display defaults come from a temporary configuration manager rather than scattered literals.
 - Controller, keyboard, mouse, and touch can navigate the basic tab content without backend services.

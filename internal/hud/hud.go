@@ -9,7 +9,6 @@ const (
 	TabProjects TabID = "projects"
 	TabResearch TabID = "research"
 	TabCluster  TabID = "cluster"
-	TabRouting  TabID = "routing"
 	TabTasks    TabID = "tasks"
 	TabSettings TabID = "settings"
 )
@@ -33,9 +32,10 @@ type Row struct {
 }
 
 type Section struct {
-	Title       string
-	Description string
-	Rows        []Row
+	Title          string
+	Description    string
+	Rows           []Row
+	DetailSections []Section
 }
 
 type Tab struct {
@@ -50,13 +50,22 @@ func (tab Tab) Title() string { return tab.Descriptor.Label }
 func (tab Tab) Rows() []string {
 	rows := []string{}
 	for _, section := range tab.Sections {
-		for _, row := range section.Rows {
-			if row.Detail == "" {
-				rows = append(rows, row.Label)
-				continue
-			}
-			rows = append(rows, fmt.Sprintf("%s: %s", row.Label, row.Detail))
+		rows = append(rows, sectionRows(section)...)
+	}
+	return rows
+}
+
+func sectionRows(section Section) []string {
+	rows := make([]string, 0, len(section.Rows))
+	for _, row := range section.Rows {
+		if row.Detail == "" {
+			rows = append(rows, row.Label)
+			continue
 		}
+		rows = append(rows, fmt.Sprintf("%s: %s", row.Label, row.Detail))
+	}
+	for _, detail := range section.DetailSections {
+		rows = append(rows, sectionRows(detail)...)
 	}
 	return rows
 }

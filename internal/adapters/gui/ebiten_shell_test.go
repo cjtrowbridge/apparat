@@ -40,7 +40,7 @@ func TestNewGameBuildsScrollableTabStripRoot(t *testing.T) {
 
 func TestActiveTabStripFollowsHUDSnapshot(t *testing.T) {
 	game := NewGame()
-	if err := game.shell.SelectTab(6); err != nil {
+	if err := game.shell.SelectTab(5); err != nil {
 		t.Fatal(err)
 	}
 	game.rebuildUI(game.shell.Snapshot())
@@ -76,7 +76,7 @@ func TestTabStripManualScrollIsNotOverwrittenWithoutRequest(t *testing.T) {
 
 func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	content := game.buildSettingsContent(settings)
 	labels := collectTextLabels(content)
 
@@ -96,7 +96,7 @@ func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 func TestSettingsDebugOverlayCheckboxLabelClosesWhenOpen(t *testing.T) {
 	game := NewGame()
 	game.debugOverlayOpen = true
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	content := game.buildSettingsContent(settings)
 	if findCheckboxByLabel(content, "Close Debug UI overlay") == nil {
 		t.Fatal("settings content missing close Debug UI overlay checkbox label")
@@ -105,7 +105,7 @@ func TestSettingsDebugOverlayCheckboxLabelClosesWhenOpen(t *testing.T) {
 
 func TestSettingsDebugOverlayCheckboxTogglesState(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	content := game.buildSettingsContent(settings)
 	checkbox := findCheckboxByLabel(content, "Open Debug UI overlay")
 	if checkbox == nil {
@@ -128,7 +128,7 @@ func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
 		called = true
 		return true
 	})
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	content := game.buildSettingsContent(settings)
 	button := findButtonByLabel(content, "Check for update")
 	if button == nil {
@@ -148,7 +148,7 @@ func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
 
 func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	content := game.buildSettingsContent(settings)
 	button := findButtonByLabel(content, "Check for update")
 	if button == nil {
@@ -163,7 +163,7 @@ func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 
 func TestSettingsUpdateButtonShowsUnavailableWithoutCallback(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	content := game.buildSettingsContent(settings)
 	button := findButtonByLabel(content, "Check for update")
 	if button == nil {
@@ -195,6 +195,29 @@ func TestMasterDetailContentIncludesSectionButtonsAndSummary(t *testing.T) {
 	}
 	if findButtonByLabel(container, "|") == nil {
 		t.Fatal("expanded master-detail body missing draggable divider")
+	}
+}
+
+func TestMasterDetailShowsOnlyTheSelectedGroupedDetail(t *testing.T) {
+	game := NewGame()
+	tabs := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())
+	cluster := tabs[3]
+	game.selectSection(cluster.ID(), 2)
+	details := game.detailSections(cluster)
+	if len(details) != 1 || details[0].Title != "Routing" {
+		t.Fatalf("selected cluster details = %#v, want only Routing", details)
+	}
+	labels := collectTextLabels(game.buildSectionContainer(details[0]))
+	for _, want := range []string{"ROUTING", "WORKLOAD CLASSES", "ROUTING PROFILES"} {
+		if !containsLabel(labels, want) {
+			t.Fatalf("routing detail missing %q in %#v", want, labels)
+		}
+	}
+	projects := tabs[1]
+	game.selectSection(projects.ID(), 2)
+	details = game.detailSections(projects)
+	if len(details) != 1 || details[0].Title != "Pipelines" {
+		t.Fatalf("selected project details = %#v, want only Pipelines", details)
 	}
 }
 
@@ -260,7 +283,7 @@ func TestNarrowBodyPreferredWidthsAreBounded(t *testing.T) {
 func TestHUDBodyTextUsesWrappingWidth(t *testing.T) {
 	game := NewGame()
 	game.width = 360
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[6]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	for _, text := range collectTextNodes(game.buildSettingsContent(settings)) {
 		if text.MaxWidth <= 0 {
 			t.Fatalf("settings text %q MaxWidth = %.1f, want positive", text.Label, text.MaxWidth)
