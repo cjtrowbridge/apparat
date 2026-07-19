@@ -100,15 +100,36 @@ func (game *Game) clampSplitWidth() {
 }
 
 func (game *Game) ensureActiveTabVisible() {
-	if game.tabScroll == nil || game.tabButtonCount <= 1 {
+	if game.tabScroll == nil || game.tabButtonCount <= 1 || !game.activeTabScrollPending {
 		return
 	}
-	if !game.activeTabScrollPending {
+	game.activeTabScrollPending = false
+	if !game.tabStripOverflows() {
+		game.tabScroll.ScrollLeft = 0
+		game.tabStripScrollLeft = 0
 		return
 	}
 	active := game.shell.Snapshot().ActiveIndex
-	game.tabScroll.ScrollLeft = float64(active) / float64(game.tabButtonCount-1)
-	game.activeTabScrollPending = false
+	if active < 0 || active >= len(game.tabButtonLefts) {
+		return
+	}
+	viewportWidth := game.hudPreferredWidth()
+	maxOffset := game.tabStripContentWidth - viewportWidth
+	if maxOffset <= 0 {
+		return
+	}
+	offset := game.tabStripScrollLeft * float64(maxOffset)
+	left := float64(game.tabButtonLefts[active])
+	right := float64(game.tabButtonRights[active])
+	switch {
+	case left < offset:
+		offset = left
+	case right > offset+float64(viewportWidth):
+		offset = right - float64(viewportWidth)
+	}
+	offset = float64(max(0, min(int(offset), maxOffset)))
+	game.tabStripScrollLeft = float64(offset) / float64(maxOffset)
+	game.tabScroll.ScrollLeft = game.tabStripScrollLeft
 }
 
 func (game *Game) requestActiveTabVisible() {
@@ -263,11 +284,27 @@ func (game *Game) trackTabStripDrag(dx int) {
 }
 
 func (game *Game) scrollTabStripBy(dx int) {
-	if game.tabScroll == nil {
+	if game.tabScroll == nil || !game.tabStripOverflows() {
 		return
 	}
 	game.trackTabStripDrag(dx)
 	game.tabScroll.ScrollLeft -= float64(dx) / 360.0
+	game.tabStripScrollLeft = clampScrollLeft(game.tabScroll.ScrollLeft)
+	game.tabScroll.ScrollLeft = game.tabStripScrollLeft
+}
+
+func (game *Game) tabStripOverflows() bool {
+	return game.tabStripContentWidth > game.hudPreferredWidth()
+}
+
+func clampScrollLeft(value float64) float64 {
+	if value < 0 {
+		return 0
+	}
+	if value > 1 {
+		return 1
+	}
+	return value
 }
 
 func (game *Game) finishTabStripDrag() {

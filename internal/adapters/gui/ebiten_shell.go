@@ -64,6 +64,10 @@ type Game struct {
 	debugTouchID            ebiten.TouchID
 	tabScroll               *widget.ScrollContainer
 	tabButtonCount          int
+	tabStripContentWidth    int
+	tabButtonLefts          []int
+	tabButtonRights         []int
+	tabStripScrollLeft      float64
 	tabButtons              []*widget.Button
 	tabStripDragging        bool
 	tabStripDragDistance    int
@@ -154,17 +158,17 @@ func (game *Game) Update() error {
 	pageDownPressed := ebiten.IsKeyPressed(ebiten.KeyPageDown)
 	pageUpPressed := ebiten.IsKeyPressed(ebiten.KeyPageUp)
 	if ctrlPressed && pageDownPressed && !game.pageDownWasHit {
-		_ = game.shell.ApplyAction(hud.ActionNextTab)
+		game.applyTabAction(hud.ActionNextTab)
 	}
 	if ctrlPressed && pageUpPressed && !game.pageUpWasHit {
-		_ = game.shell.ApplyAction(hud.ActionPreviousTab)
+		game.applyTabAction(hud.ActionPreviousTab)
 	}
 	game.pageDownWasHit = pageDownPressed
 	game.pageUpWasHit = pageUpPressed
 
-	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6, ebiten.Key7} {
+	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
-			_ = game.shell.SelectTab(index)
+			game.selectTabWithReveal(index)
 		}
 	}
 	rightCtrl := ebiten.IsKeyPressed(ebiten.KeyControlRight)
@@ -219,10 +223,10 @@ func (game *Game) updateGamepad() {
 		r1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopRight)
 		r2 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontBottomRight)
 		if r1 && !game.r1WasPressed {
-			_ = game.shell.ApplyAction(hud.ActionNextTab)
+			game.applyTabAction(hud.ActionNextTab)
 		}
 		if l1 && !game.l1WasPressed {
-			_ = game.shell.ApplyAction(hud.ActionPreviousTab)
+			game.applyTabAction(hud.ActionPreviousTab)
 		}
 		if r2 && !game.r2Held {
 			game.shell.StartVoiceCapture("gamepad-r2")
@@ -234,6 +238,20 @@ func (game *Game) updateGamepad() {
 		game.r1WasPressed = r1
 		game.r2Held = r2
 		break // Use only the first standard-layout gamepad.
+	}
+}
+
+func (game *Game) applyTabAction(action hud.Action) {
+	active := game.shell.Snapshot().ActiveIndex
+	if err := game.shell.ApplyAction(action); err == nil && game.shell.Snapshot().ActiveIndex != active {
+		game.requestActiveTabVisible()
+	}
+}
+
+func (game *Game) selectTabWithReveal(index int) {
+	active := game.shell.Snapshot().ActiveIndex
+	if err := game.shell.SelectTab(index); err == nil && game.shell.Snapshot().ActiveIndex != active {
+		game.requestActiveTabVisible()
 	}
 }
 

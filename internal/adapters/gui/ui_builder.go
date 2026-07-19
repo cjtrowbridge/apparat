@@ -15,9 +15,15 @@ import (
 // In the future, this should intelligently update existing widgets instead of rebuilding
 // from scratch, but for this initial migration, rebuilding ensures layout correctness.
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
+	if game.tabScroll != nil {
+		game.tabStripScrollLeft = clampScrollLeft(game.tabScroll.ScrollLeft)
+	}
 	game.updateButton = nil
 	game.tabScroll = nil
 	game.tabButtonCount = 0
+	game.tabStripContentWidth = 0
+	game.tabButtonLefts = nil
+	game.tabButtonRights = nil
 	game.tabButtons = nil
 	game.tabRadioGroup = nil
 	game.verticalScrolls = nil
@@ -54,8 +60,6 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		Container:    root,
 		PrimaryTheme: game.theme,
 	}
-	game.requestActiveTabVisible()
-	game.ensureActiveTabVisible()
 }
 
 func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {
@@ -66,15 +70,17 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 		)),
 	)
 	game.tabButtonCount = len(snapshot.Tabs)
+	left := 0
 	for index, tabData := range snapshot.Tabs {
 		label := fmt.Sprintf("%s %s", tabData.Descriptor.Glyph, tabData.Title())
+		width := tabButtonWidth(label)
 		button := widget.NewButton(
 			widget.ButtonOpts.Text(label, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
-			widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
+			widget.ButtonOpts.Image(tabButtonImage()),
 			widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
 			widget.ButtonOpts.ToggleMode(),
 			widget.ButtonOpts.WidgetOpts(
-				widget.WidgetOpts.MinSize(tabButtonWidth(label), tabHeight),
+				widget.WidgetOpts.MinSize(width, tabHeight),
 				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 			),
 		)
@@ -82,8 +88,14 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 			button.SetState(widget.WidgetChecked)
 		}
 		game.tabButtons = append(game.tabButtons, button)
+		game.tabButtonLefts = append(game.tabButtonLefts, left)
+		left += width
+		game.tabButtonRights = append(game.tabButtonRights, left)
+		left += tabGap
 		row.AddChild(button)
 	}
+	contentWidth, _ := row.PreferredSize()
+	game.tabStripContentWidth = contentWidth
 	game.tabRadioGroup = widget.NewRadioGroup(
 		widget.RadioGroupOpts.Elements(tabButtonsAsElements(game.tabButtons)...),
 		widget.RadioGroupOpts.InitialElement(game.tabButtons[snapshot.ActiveIndex]),
@@ -99,6 +111,10 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 			widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight, MaxWidth: game.hudPreferredWidth()}),
 		),
 	)
+	if !game.tabStripOverflows() {
+		game.tabStripScrollLeft = 0
+	}
+	scroll.ScrollLeft = game.tabStripScrollLeft
 	game.tabScroll = scroll
 	return boundPreferredWidth(scroll, game.hudPreferredWidth)
 }

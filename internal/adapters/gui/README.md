@@ -24,7 +24,9 @@ Scrollable HUD regions that can contain viewport-wide or wider content must boun
 
 HUD body text must wrap before preferred-size measurement. Use the local text helpers for summaries, section descriptions, titles, and row details so every `widget.Text` has a nonzero max width derived from the current viewport and owning pane. Do not add raw body text that can report a single-line width wider than the visible HUD area.
 
-The tab strip only auto-scrolls the active tab into view after a rebuild, resize, or programmatic tab selection. It must not continuously force `ScrollLeft` during the update loop, because that prevents mouse, wheel, and touch swipes from persisting on phone-width surfaces.
+When all tab buttons fit in the viewport, the strip is always left-aligned. When they overflow, rebuilds preserve the user's `ScrollLeft`; pointer/touch selection does not reposition it. Keyboard, controller, resize, and other non-pointer selection paths may move it only enough to make a clipped selected tab fully visible—never by normalized-index centering. Tab hover uses a distinct background from selected/pressed state, so a pointer over an inactive tab cannot look like a second selected tab.
+
+`tab_strip_interaction_test.go` covers drag arbitration and radio-group state; `tab_strip_scroll_test.go` covers fit/overflow position preservation, minimal reveal, and hover-versus-selected visuals. Keep these contracts separate so either interaction path can evolve without exceeding the code-file size limit.
 
 EbitenUI `ScrollContainer` clips and renders from `ScrollTop`, but does not supply wheel or drag behavior itself. Register every rebuilt Settings, master-list, and detail scroll container with the GUI adapter. Wheel and vertical drags target only the innermost body viewport under the pointer/touch, use a threshold to suppress release-target activation, and never expand the viewport beneath the tab strip or diagnostics bar. A body drag snapshots and holds the tab strip's horizontal `ScrollLeft` through the deferred release-event window, so touch scrolling cannot select a release target, rebuild the body, or displace tabs horizontally.
 

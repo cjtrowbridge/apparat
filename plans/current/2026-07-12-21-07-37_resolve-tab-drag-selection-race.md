@@ -13,7 +13,7 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 ## Roadmap Binding
 
 - Roadmap section: `ROADMAP.md` Phase 4 HUD tab shell expectations and Phase 5 Android GUI parity validation.
-- Product contract: preserve the seven canonical HUD tabs, allow horizontal touch dragging on narrow screens, treat a drag as scrolling rather than tab activation, and display exactly one selected tab at all times.
+- Product contract: preserve the six canonical HUD tabs, left-align the strip whenever all tabs fit, preserve user-driven drag position only when tabs overflow, minimally reveal an off-screen selected tab without centering it, treat a drag as scrolling rather than tab activation, and display exactly one selected tab at all times.
 - Governing playbook: `playbooks/how_to_add_or_modify_hud_tab_contents.md`.
 - Parent recovery plan: `plans/current/2026-07-11-09-33-26_fix-mobile-overflow-and-tab-scroll.md`.
 - User validation: on 2026-07-12, the user confirmed that the mobile HUD is much better but dragging across tab buttons can still leave both the active tab and the drag-release tab highlighted.
@@ -61,6 +61,22 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [ ] 6.4 Confirm no files beneath `third_party/salvagecore/` are staged.
   - [ ] 6.5 Review pending downtime reports before the final summary.
   - [ ] 6.6 Commit and push after the user-approved checkpoint summary.
+
+## Approved Plan Revision: 2026-07-18 Tab Strip Position And Visual State
+
+- [x] 7. Repair the tab-strip position and visual-state behaviors found in the Android screenshots.
+  - [x] 7.1 Preserve the tab-strip's left-aligned position when all tab buttons fit in the viewport; do not apply normalized active-index centering during ordinary rebuilds.
+  - [x] 7.2 When the buttons overflow, preserve the user's drag position across rebuilds and move only enough to make a newly selected, clipped tab completely visible.
+  - [x] 7.3 Give an unselected hovered tab a distinct visual state from the selected/pressed tab so a pointer cannot look like a second active selection.
+  - [x] 7.4 Keep the HUD snapshot and radio group authoritative so a drag/release cannot create a second checked tab.
+- [x] 8. Prove and document the corrected contract.
+  - [x] 8.1 Add focused GUI regression tests for left alignment when tabs fit, persisted overflow scroll, minimal selected-tab reveal, and distinct hover/selected appearance.
+  - [x] 8.2 Update the local GUI README and HUD playbook with the precise strip-position and visual-state rules.
+  - [x] 8.3 Run focused GUI tests, repository tests, documentation/code-size checks, and `git diff --check`.
+  - [x] 8.4 Rebuild/install the Android APK and capture phone screenshots showing one selected visual state and the corrected strip position. On Pixel 10 Pro XL, Comrades and Cluster both rendered left-aligned on the wide surface, and only Cluster used selected blue after touch selection.
+- [ ] 9. Publish the follow-up checkpoint.
+  - [x] 9.1 Update/archival status, indexes, and the append-only journal; confirm no Salvagecore files or pending downtime reports are included.
+  - [x] 9.2 Commit and push directly to `main` after the user-approved checkpoint summary; do not open a pull request.
 
 ## Scope Boundaries
 
