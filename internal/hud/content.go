@@ -23,7 +23,7 @@ func researchTab() Tab {
 }
 
 func clusterTab() Tab {
-	return tab(DefaultConfigManager{}.Config(), TabCluster, "Local diagnostics, mock device capability inventory, typed workload routing, and future task automation.", []Section{selectorHeading("Devices"), {Title: "Local Runtime", Description: "Runtime diagnostics summarize this device before real cluster enrollment exists.", Rows: []Row{{Label: "Identity", Detail: "classified by doctor"}, {Label: "Runtime root", Detail: "shown in Settings"}, {Label: "last_run.log", Detail: "reset on each start"}}}, {Title: "Mock Devices", Description: "Cluster will become a device list with selected-device context.", Rows: []Row{{Label: "steamdeck", Detail: "GUI console"}, {Label: "worker", Detail: "text_generation, speech_to_text"}, {Label: "workstation", Detail: "image_generation, video_generation, research_boinc"}}}, selectorHeading("Operations"), {Title: "Routing", Description: "Typed workload queues, compatibility filters, and fallback routing belong to Cluster.", DetailSections: routingSections()}, tasksSection()})
+	return tab(DefaultConfigManager{}.Config(), TabCluster, "Local diagnostics, mock device capability inventory, typed workload routing, and future task automation.", []Section{selectorHeading("Devices", "Local diagnostics and capability inventory."), {Title: "Local Runtime", Description: "Runtime diagnostics summarize this device before real cluster enrollment exists.", Rows: []Row{{Label: "Identity", Detail: "classified by doctor"}, {Label: "Runtime root", Detail: "shown in Settings"}, {Label: "last_run.log", Detail: "reset on each start"}}}, {Title: "Mock Devices", Description: "Cluster will become a device list with selected-device context.", Rows: []Row{{Label: "steamdeck", Detail: "GUI console"}, {Label: "worker", Detail: "text_generation, speech_to_text"}, {Label: "workstation", Detail: "image_generation, video_generation, research_boinc"}}}, selectorHeading("Operations", "Routing and future task automation."), {Title: "Routing", Description: "Typed workload queues, compatibility filters, and fallback routing belong to Cluster.", DetailSections: routingSections()}, tasksSection()})
 }
 
 func routingSections() []Section {
@@ -34,8 +34,8 @@ func pipelineSections() []Section {
 	return []Section{{Title: "Pipeline Builder", Description: "Mock composition stages for a future durable workflow editor.", Rows: []Row{{Label: "Trigger", Detail: "manual, schedule, webhook, or event", Future: true}, {Label: "Inputs", Detail: "typed project, chat, artifact, or form data", Future: true}, {Label: "Steps", Detail: "mock ordered transforms and typed workload submissions", Future: true}}}, {Title: "Safety And Routing", Description: "Future pipeline execution must keep approval and compatible destinations explicit.", Rows: []Row{{Label: "Approval gate", Detail: "mock owner confirmation before side effects", Disabled: true, Future: true}, {Label: "Workload route", Detail: "mock Cluster routing profile selection", Future: true}, {Label: "Fallback", Detail: "mock compatible queue order", Future: true}}}, {Title: "Run History", Description: "Mock durable execution records until Tasks owns real workflows.", Rows: []Row{{Label: "Draft pipeline", Detail: "mock editable, not persisted", Future: true}, {Label: "Validation run", Detail: "mock waiting for owner", Future: true}, {Label: "Published run", Detail: "mock disabled until durable task storage", Disabled: true, Future: true}}}}
 }
 
-func selectorHeading(title string) Section {
-	return Section{Title: title, SelectorKind: SelectorHeading}
+func selectorHeading(title, description string) Section {
+	return Section{Title: title, Description: description, SelectorKind: SelectorHeading}
 }
 
 func tasksSection() Section {

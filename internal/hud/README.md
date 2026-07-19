@@ -68,7 +68,7 @@ The Phase 4 scenario data is intentionally fictional and visibly marked `mock`, 
 Tab bodies use structured layout patterns rather than free-form text placement:
 
 - Settings is a vertical list of fieldsets. Each fieldset owns its title, explanation, and rows or controls. The temporary `Updates` fieldset stays first while update-in-place is a high-priority Phase 5 test surface; ordinary new Settings groups are appended as fieldsets.
-- Comrades, Projects, and Cluster use a selector/content-panel structure. The selector panel lists relevant objects or semantic headings; the content panel shows only the selected-object context. Headings are non-selectable and non-focusable. Cluster's Routing and Tasks selectors and Projects' Pipelines selector own grouped nested detail sections without becoming top-level tabs.
+- Comrades, Projects, and Cluster use a selector/content-panel structure. The selector panel lists relevant objects or semantic headings; the content panel shows only the selected-object context. Headings are non-selectable and non-focusable, and may include a short presentation-only description beneath their title. Cluster's Routing and Tasks selectors and Projects' Pipelines selector own grouped nested detail sections without becoming top-level tabs.
 - Research can use fieldsets while it remains review/placeholder content, then move to master-detail when selectable research projects exist.
 - Native platform controls must correspond to a reserved HUD element and stay hidden outside the owning tab.
 - List rows, fieldset rows, buttons, and form controls must keep touch-first target sizing comparable to tab buttons.

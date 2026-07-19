@@ -140,6 +140,9 @@ func TestClusterSelectorsUseHeadingsAndKeepRoutingTasksAndPipelinesGrouped(t *te
 	if !cluster.Sections[0].IsSelectorHeading() || cluster.Sections[0].Title != "Devices" {
 		t.Fatalf("first cluster selector = %#v, want Devices heading", cluster.Sections[0])
 	}
+	if cluster.Sections[0].Description == "" {
+		t.Fatal("Devices heading should have a selector-panel description")
+	}
 	if !cluster.Sections[3].IsSelectorHeading() || cluster.Sections[3].Title != "Operations" {
 		t.Fatalf("operations selector = %#v, want Operations heading", cluster.Sections[3])
 	}

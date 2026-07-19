@@ -19,19 +19,7 @@ var dejavuSansTTF []byte
 func createUITheme() *widget.Theme {
 	theme := widget.Theme{}
 
-	// TTF Font Setup using embedded DejaVu Sans for full Unicode support
-	var face ebitentext.Face
-	source, err := ebitentext.NewGoTextFaceSource(bytes.NewReader(dejavuSansTTF))
-	if err == nil {
-		face = &ebitentext.GoTextFace{
-			Source: source,
-			Size:   14,
-		}
-	} else {
-		// Fallback to basic font if loading fails
-		face = ebitentext.NewGoXFace(basicfont.Face7x13)
-	}
-	facePtr := &face
+	facePtr := createTextFace(14)
 
 	// Define colors from existing definitions
 	bgColor := color.RGBA{R: 15, G: 18, B: 28, A: 255}
@@ -128,6 +116,22 @@ func createUITheme() *widget.Theme {
 	}
 
 	return &theme
+}
+
+func createTextFace(size float64) *ebitentext.Face {
+	// TTF Font Setup using embedded DejaVu Sans for full Unicode support.
+	var face ebitentext.Face
+	source, err := ebitentext.NewGoTextFaceSource(bytes.NewReader(dejavuSansTTF))
+	if err == nil {
+		face = &ebitentext.GoTextFace{
+			Source: source,
+			Size:   size,
+		}
+	} else {
+		// Fallback to basic font if loading fails
+		face = ebitentext.NewGoXFace(basicfont.Face7x13)
+	}
+	return &face
 }
 
 func tabButtonImage() *widget.ButtonImage {

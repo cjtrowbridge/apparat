@@ -57,3 +57,15 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 ## Execution Notes
 
 - 2026-07-18: Implemented a `SelectorKind` model with non-selectable `SelectorHeading` text, moved Tasks into Cluster under an Operations heading, and reduced top-level navigation/direct selection to five tabs. Focused HUD/GUI tests, `make test`, GUI compile, documentation, code-size, diff, and plan-index checks passed. Linux and Android release artifacts rebuilt successfully. The connected Pixel 10 Pro XL was absent; a Pixel Tablet is connected but has not been updated without explicit device authorization, so on-device screenshots and TODO completion remain pending.
+
+## Approved Plan Revision: 2026-07-18 Selector Heading Descriptions
+
+- [?] 6. Add optional descriptive text beneath selector-heading titles.
+  - [x] 6.1 Model a heading description as presentation-only data and populate concise descriptions for Cluster's Devices and Operations groups.
+  - [x] 6.2 Render each description as small muted, wrapped text beneath its title without creating a focusable or clickable control.
+  - [x] 6.3 Add focused HUD/GUI coverage that proves descriptions render and selector headings remain non-selectable.
+  - [?] 6.4 Update local HUD/GUI documentation, run applicable checks, rebuild the APK, and update the current plan/journal evidence.
+
+## Revision Execution Notes
+
+- 2026-07-18: Focused HUD/GUI tests, `make test`, GUI compile, documentation, and code-size checks passed. `git diff --check` reports trailing whitespace only in concurrently added user-authored `TODO.md` lines; those immutable task lines were deliberately not changed. APK rebuild/install and visual evidence remain pending.
