@@ -4,12 +4,6 @@ This file is an asynchronous inbox for user-captured tasks and questions. It is 
 
 Key: `[ ]` pending, `[-]` in progress, `[x]` complete
 
-- [x] integrate ./logo.svg as the icon for the app
-- [-] the tab buttons and the tab contents are overflowing off the page instead of wrapping ass block-level elements and stretching downwards. The columns should essentially be able to scroll infinitely up and down but be strictly limited to the width of the screen. The exception is the list of tabs which should scroll side-to-side and doesn't currently.
- - [-] The "<- Back" button for the left column in collapsed mode shows up with the text to the right of center. It should be centered. Probably it is, but the button is stretching off the side of the screen. This might be fixed by the earlier point above.
 - [-] Currently, selecting a tab that is partially off the screen centers that tab and selects it, but also highlights the one after it as though both are selected at the same time. This is probably some kind of race condition during the switching process.
-- [x] The back buttons and the right-column buttons are all too short. They should be similarly sized to the tab buttons so they are easy to click on.
-- [x] The right-column button text should be left-aligned like a threaded chat app would be. Later, we will add avatars for projects, clusters, research, comrades, etc.
-- [x] the open debug ui button should change to saying close debug ui while it's open
-- [x] it's not going to work yet, but i want to add a floating circular PTT button close to the bottom-right of the app that's always there. This will eventually invoke push-to-talk while it's held down, and dictate text into whatever field is selected in the app.
-- [x] change the build process to always automatically build all the targets that are possible on the current system, and have it determine that automatically, reporting the results rather than using flags to set the entry points. A sample local environment script should exist (build_environment.sample.py) that is copied to (build_environment.py) which is ignored by git. This should contain functions that handle whatever local environmental path things or whatever are necessary. It should just be one entry point, a single build.py script with no flags that figures out the environent, reports what builds are possible and impossible and why, and then runs all possible builds, and reports the results. No more complicated multi-step build commands with flags.
+- [ ] move the entire current routing tab into the cluster tab as a new right-column option which selects a left-column with the current contents of the routing tab.
+- [ ] add a "Pipelines" right-column option inside the Projects tab which opens a left-column that details pipeline-building tasks
