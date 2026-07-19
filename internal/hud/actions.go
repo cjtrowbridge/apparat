@@ -29,7 +29,7 @@ func DefaultBindings() BindingConfig {
 	return BindingConfig{Bindings: map[Action][]Binding{
 		ActionPreviousTab:     {{Device: "controller", Input: "L1"}, {Device: "keyboard", Input: "Ctrl+PageUp"}},
 		ActionNextTab:         {{Device: "controller", Input: "R1"}, {Device: "keyboard", Input: "Ctrl+PageDown"}},
-		ActionDirectTab:       {{Device: "keyboard", Input: "Alt+1..Alt+6"}},
+		ActionDirectTab:       {{Device: "keyboard", Input: "Alt+1..Alt+5"}},
 		ActionPushToTalk:      {{Device: "controller", Input: "R2"}, {Device: "keyboard", Input: "RightCtrl"}},
 		ActionCancelRecording: {{Device: "keyboard", Input: "Escape"}},
 		ActionFocusUp:         {{Device: "controller", Input: "DPadUp"}, {Device: "keyboard", Input: "ArrowUp"}},

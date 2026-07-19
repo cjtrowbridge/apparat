@@ -15,8 +15,8 @@ func TestRuntimeSnapshotUsesCanonicalHUD(t *testing.T) {
 		t.Fatal(err)
 	}
 	tabs := runtime.Snapshot().TabTitles()
-	if len(tabs) != 6 {
-		t.Fatalf("tab count = %d, want 6", len(tabs))
+	if len(tabs) != 5 {
+		t.Fatalf("tab count = %d, want 5", len(tabs))
 	}
 	if tabs[0] != "Comrades" {
 		t.Fatalf("first tab = %q, want Comrades", tabs[0])

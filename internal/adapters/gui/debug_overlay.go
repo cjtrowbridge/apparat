@@ -71,6 +71,11 @@ func (game *Game) collapsed() bool {
 }
 
 func (game *Game) selectSection(tabID hud.TabID, index int) {
+	for _, tabData := range game.shell.Snapshot().Tabs {
+		if tabData.ID() == tabID && !tabData.IsSelectableSection(index) {
+			return
+		}
+	}
 	game.selectedSections[tabID] = index
 	if game.collapsed() {
 		game.detailOpen[tabID] = true

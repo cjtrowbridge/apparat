@@ -32,13 +32,6 @@ func scenarioSections(id TabID) []Section {
 			scenario("Recent Activity", "Mock operations timeline.", "09:44|mock capability refresh", "09:41|mock queue lease returned", "09:32|mock worker restart observed", "Yesterday|mock directory snapshot cached"),
 			scenario("Queue Ownership", "Authoritative-owner examples.", "personal-text|mock worker owned", "image-lab|mock workstation owned", "research-night|mock owner policy paused", "comrade-low|mock no grants active"),
 			scenario("Diagnostics", "Future repair and export surfaces.", "Connection doctor|mock no transport configured", "Directory signature|mock cached sample", "Log bundle|mock ready for review", "Recovery check|mock not scheduled")}
-	case TabTasks:
-		return []Section{scenario("Task Catalog", "Mock durable-task definitions.", "Morning summary|mock schedule 08:00", "Release watcher|mock webhook trigger", "Research window|mock quiet-hours schedule", "Project backup|mock approval required"),
-			scenario("Pending Approvals", "Human authorization examples.", "Publish artifact|mock awaiting owner", "Rotate device key|mock requires confirmation", "Run backup|mock storage cost estimate", "Share compute grant|mock policy review"),
-			scenario("Run History", "Mock workflow and retry records.", "run-204|mock completed in 14 seconds", "run-203|mock waiting for worker", "run-202|mock retry scheduled", "run-201|mock cancelled safely"),
-			scenario("Webhook Inbox", "Future authenticated trigger examples.", "Build completed|mock source CI", "Sensor alert|mock local bridge", "Calendar event|mock deferred adapter", "Issue mention|mock approval policy"),
-			scenario("Failure Review", "Mock durable failure context.", "run-199|mock timeout, retry allowed", "run-198|mock permission denied", "run-197|mock route unavailable", "run-196|mock user cancelled"),
-			scenario("Task Controls", "Disabled until scheduler ownership exists.", "Create workflow|mock disabled", "Pause scheduler|mock disabled", "Replay run|mock disabled", "Export history|mock disabled")}
 	case TabSettings:
 		return []Section{scenario("Display And Accessibility", "Mock settings that will become durable user preferences.", "Contrast mode|mock high contrast available", "Text scale|mock 100 percent", "Focus ring|mock controller-first", "Safe-area inset|mock platform measured"),
 			scenario("Storage And Backup", "Mock local maintenance surfaces.", "Database path|mock runtime-relative", "Backup schedule|mock weekly reminder", "Artifact retention|mock 30 day policy", "Repair mode|mock dry run only"),
@@ -49,6 +42,15 @@ func scenarioSections(id TabID) []Section {
 	default:
 		return nil
 	}
+}
+
+func taskScenarioSections() []Section {
+	return []Section{scenario("Task Catalog", "Mock durable-task definitions.", "Morning summary|mock schedule 08:00", "Release watcher|mock webhook trigger", "Research window|mock quiet-hours schedule", "Project backup|mock approval required"),
+		scenario("Pending Approvals", "Human authorization examples.", "Publish artifact|mock awaiting owner", "Rotate device key|mock requires confirmation", "Run backup|mock storage cost estimate", "Share compute grant|mock policy review"),
+		scenario("Run History", "Mock workflow and retry records.", "run-204|mock completed in 14 seconds", "run-203|mock waiting for worker", "run-202|mock retry scheduled", "run-201|mock cancelled safely"),
+		scenario("Webhook Inbox", "Future authenticated trigger examples.", "Build completed|mock source CI", "Sensor alert|mock local bridge", "Calendar event|mock deferred adapter", "Issue mention|mock approval policy"),
+		scenario("Failure Review", "Mock durable failure context.", "run-199|mock timeout, retry allowed", "run-198|mock permission denied", "run-197|mock route unavailable", "run-196|mock user cancelled"),
+		scenario("Task Controls", "Disabled until scheduler ownership exists.", "Create workflow|mock disabled", "Pause scheduler|mock disabled", "Replay run|mock disabled", "Export history|mock disabled")}
 }
 
 func routingScenarioSections() []Section {

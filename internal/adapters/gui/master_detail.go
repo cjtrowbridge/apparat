@@ -52,6 +52,10 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 		),
 	)
 	for index, section := range tabData.Sections {
+		if section.IsSelectorHeading() {
+			listContainer.AddChild(game.selectorHeading(section.Title))
+			continue
+		}
 		sectionIndex := index
 		btn := game.sectionButton(tabData, section.Title, sectionIndex)
 		if game.selectedSectionIndex(tabData) == index {
@@ -67,6 +71,15 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 	)
 	game.registerVerticalScroll(scroll)
 	return boundPreferredWidth(scroll, game.masterPanePreferredWidth)
+}
+
+func (game *Game) selectorHeading(title string) *widget.Text {
+	return widget.NewText(
+		widget.TextOpts.Text(strings.ToUpper(title), game.theme.LabelTheme.Face, mutedTextColor),
+		widget.TextOpts.MaxWidth(float64(game.masterPanePreferredWidth()-24)),
+		widget.TextOpts.Position(widget.TextPositionStart, widget.TextPositionCenter),
+		widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
+	)
 }
 
 func (game *Game) sectionButton(tabData hud.Tab, title string, sectionIndex int) *widget.Button {
@@ -219,8 +232,8 @@ func (game *Game) detailPanePreferredWidth() int {
 
 func (game *Game) selectedSectionIndex(tabData hud.Tab) int {
 	index := game.selectedSections[tabData.ID()]
-	if index < 0 || index >= len(tabData.Sections) {
-		return 0
+	if !tabData.IsSelectableSection(index) {
+		return tabData.FirstSelectableSectionIndex()
 	}
 	return index
 }

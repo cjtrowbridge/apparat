@@ -49,8 +49,9 @@ The canonical tab order is:
 2. Projects
 3. Research
 4. Cluster
-5. Tasks
-6. Settings
+5. Settings
+
+Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 
 ### Comrades
 
@@ -186,7 +187,7 @@ Debian GUI mode supports the Steam Deck controller mapping unchanged when a comp
 
 - `Ctrl+PageUp`: previous top-level tab.
 - `Ctrl+PageDown`: next top-level tab.
-- `Alt+1` through `Alt+6`: open Comrades, Projects, Research, Cluster, Tasks, or Settings directly.
+- `Alt+1` through `Alt+5`: open Comrades, Projects, Research, Cluster, or Settings directly.
 - `Tab` and `Shift+Tab`: move to the next or previous focusable control.
 - Arrow keys: move within lists, trees, grids, menus, and spatial focus groups.
 - `Enter`: activate the focused control or submit the current form.

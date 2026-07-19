@@ -13,7 +13,7 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 ## Roadmap Binding
 
 - Roadmap section: `ROADMAP.md` Phase 4 HUD tab shell expectations and Phase 5 Android GUI parity validation.
-- Product contract: preserve the six canonical HUD tabs, left-align the strip whenever all tabs fit, preserve user-driven drag position only when tabs overflow, minimally reveal an off-screen selected tab without centering it, treat a drag as scrolling rather than tab activation, and display exactly one selected tab at all times.
+- Product contract: preserve the five canonical HUD tabs, left-align the strip whenever all tabs fit, preserve user-driven drag position only when tabs overflow, minimally reveal an off-screen selected tab without centering it, treat a drag as scrolling rather than tab activation, and display exactly one selected tab at all times.
 - Governing playbook: `playbooks/how_to_add_or_modify_hud_tab_contents.md`.
 - Parent recovery plan: `plans/current/2026-07-11-09-33-26_fix-mobile-overflow-and-tab-scroll.md`.
 - User validation: on 2026-07-12, the user confirmed that the mobile HUD is much better but dragging across tab buttons can still leave both the active tab and the drag-release tab highlighted.

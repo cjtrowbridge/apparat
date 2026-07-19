@@ -5,7 +5,7 @@ import "testing"
 func TestCanonicalTabOrder(t *testing.T) {
 	shell := NewShell()
 	got := shell.Snapshot().TabTitles()
-	want := []string{"Comrades", "Projects", "Research", "Cluster", "Tasks", "Settings"}
+	want := []string{"Comrades", "Projects", "Research", "Cluster", "Settings"}
 	if len(got) != len(want) {
 		t.Fatalf("got %d tabs, want %d", len(got), len(want))
 	}
@@ -34,7 +34,7 @@ func TestDefaultHUDConfig(t *testing.T) {
 
 func TestTabDescriptorsAreStableAndAccessible(t *testing.T) {
 	descriptors := DefaultTabDescriptors()
-	ids := []TabID{TabComrades, TabProjects, TabResearch, TabCluster, TabTasks, TabSettings}
+	ids := []TabID{TabComrades, TabProjects, TabResearch, TabCluster, TabSettings}
 	for index, id := range ids {
 		descriptor := descriptors[index]
 		if descriptor.ID != id {
@@ -129,17 +129,30 @@ func TestEachTabHasContentAndBackendActionsDisabled(t *testing.T) {
 	if !hasDisabledFutureRow(shell.Snapshot().Tabs, TabComrades) {
 		t.Fatal("comrades tab should contain disabled future controls")
 	}
-	if !hasDisabledFutureRow(shell.Snapshot().Tabs, TabTasks) {
-		t.Fatal("tasks tab should contain disabled future controls")
+	if !hasDisabledFutureRow(shell.Snapshot().Tabs, TabCluster) {
+		t.Fatal("cluster tasks selector should contain disabled future controls")
 	}
 }
 
-func TestClusterRoutingAndProjectPipelinesAreGroupedDetailSelectors(t *testing.T) {
+func TestClusterSelectorsUseHeadingsAndKeepRoutingTasksAndPipelinesGrouped(t *testing.T) {
 	tabs := DefaultTabs(DefaultConfigManager{}.Config())
 	cluster := tabByID(t, tabs, TabCluster)
+	if !cluster.Sections[0].IsSelectorHeading() || cluster.Sections[0].Title != "Devices" {
+		t.Fatalf("first cluster selector = %#v, want Devices heading", cluster.Sections[0])
+	}
+	if !cluster.Sections[3].IsSelectorHeading() || cluster.Sections[3].Title != "Operations" {
+		t.Fatalf("operations selector = %#v, want Operations heading", cluster.Sections[3])
+	}
 	routing := sectionByTitle(t, cluster.Sections, "Routing")
 	if len(routing.DetailSections) < 8 {
 		t.Fatalf("routing detail sections = %d, want grouped former routing content", len(routing.DetailSections))
+	}
+	tasks := sectionByTitle(t, cluster.Sections, "Tasks")
+	if len(tasks.DetailSections) < 8 {
+		t.Fatalf("tasks detail sections = %d, want grouped former Tasks content", len(tasks.DetailSections))
+	}
+	if cluster.FirstSelectableSectionIndex() != 1 || cluster.IsSelectableSection(0) {
+		t.Fatalf("cluster selector heading must not be selectable: %#v", cluster.Sections)
 	}
 	projects := tabByID(t, tabs, TabProjects)
 	pipelines := sectionByTitle(t, projects.Sections, "Pipelines")

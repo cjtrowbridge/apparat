@@ -166,7 +166,7 @@ func (game *Game) Update() error {
 	game.pageDownWasHit = pageDownPressed
 	game.pageUpWasHit = pageUpPressed
 
-	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6} {
+	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
 			game.selectTabWithReveal(index)
 		}
