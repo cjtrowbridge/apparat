@@ -2,7 +2,7 @@
 plan_id: 2026-07-18-19-14-49_repair-android-self-update
 title: Repair Android Self Update
 summary: Diagnose the Package Installer rejection, report its actual result, and make the tracked Android latest APK a compatible update artifact.
-status: current
+status: past
 created_at: 2026-07-18-19-14-49
 ---
 
@@ -24,30 +24,30 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 1.2 Record the initial byte, certificate, installed-package, and prior-updater evidence.
   - [x] 1.3 Keep this plan current and its index entry regenerated before device or implementation work.
 
-- [ ] 2. Reproduce and classify the Android installer outcome on the connected device.
+- [x] 2. Reproduce and classify the Android installer outcome on the connected device.
   - [x] 2.1 Preserve the currently installed package/data long enough to identify the installed signer and capture the incompatible-update failure; no tracked prior APK shares that signer.
   - [x] 2.2 When an explicitly user-approved migration is required, uninstall only the incompatible `com.cjtrowbridge.apparat` package, record the resulting local-data loss, and fresh-install the current laptop/GitHub APK.
-  - [ ] 2.3 Build a controlled older-code APK with the configured canonical signer, then trigger the in-app updater against the current `latest.apk` without clearing data.
-  - [ ] 2.4 Capture Package Installer and Apparat updater logs through the full permission, scan, confirmation, and completion path.
+  - [x] 2.3 Build a controlled older-code APK with the configured canonical signer, then trigger the in-app updater against the current `latest.apk` without clearing data.
+  - [x] 2.4 Capture Package Installer and Apparat updater logs through the full permission, scan, confirmation, and completion path.
   - [x] 2.5 Verify package identity, initial startup, and updater-cache bytes after the signer-migration installation or controlled update.
 
-- [ ] 3. Make update outcomes observable and truthful.
-  - [ ] 3.1 Replace the fire-and-forget installer launch with a PackageInstaller result path that reports pending user action, success, or Android's exact failure code/message to the HUD and structured logs.
-  - [ ] 3.2 Keep downloaded APK access private, grant only the installer read access needed for the chosen install mechanism, and preserve Android unknown-source permission behavior.
-  - [ ] 3.3 Add focused tests or deterministic seams for package-status mapping and updater state transitions.
+- [x] 3. Make update outcomes observable and truthful.
+  - [x] 3.1 Replace the fire-and-forget installer launch with a PackageInstaller result path that reports pending user action, success, or Android's exact failure code/message to the HUD and structured logs.
+  - [x] 3.2 Keep downloaded APK access private, grant only the installer read access needed for the chosen install mechanism, and preserve Android unknown-source permission behavior.
+  - [x] 3.3 Add focused tests or deterministic seams for package-status mapping and updater state transitions.
 
-- [ ] 4. Make the GitHub artifact a valid forward update target.
-  - [ ] 4.1 Define deterministic monotonically increasing Android version-code/version-name generation for tracked `latest.apk` builds.
-  - [ ] 4.2 Require a stable configured signing identity for artifacts intended to update an installed Apparat package; never track a private keystore or secret in Git.
-  - [ ] 4.3 Make build preflight fail clearly when a release/update artifact would be signed with an incompatible or unspecified identity.
-  - [ ] 4.4 Document key custody, build configuration, versioning, update limitations, and recovery from a prior differently signed development install.
+- [x] 4. Make the GitHub artifact a valid forward update target.
+  - [x] 4.1 Define deterministic monotonically increasing Android version-code/version-name generation for tracked `latest.apk` builds.
+  - [x] 4.2 Require a stable configured signing identity for artifacts intended to update an installed Apparat package; never track a private keystore or secret in Git.
+  - [x] 4.3 Make build preflight fail clearly when a release/update artifact would be signed with an incompatible or unspecified identity.
+  - [x] 4.4 Document key custody, build configuration, versioning, update limitations, and recovery from a prior differently signed development install.
 
-- [ ] 5. Verify and publish the repair.
-  - [ ] 5.1 Run focused Java/build tests, Android package/signature inspection, repository checks, and diff checks.
-  - [ ] 5.2 Build the new APK and perform a real in-place device update from an earlier compatible build without clearing app data.
-  - [ ] 5.3 Capture installer-result and post-update version/signature evidence.
-  - [ ] 5.4 Update this plan, regenerate indexes, append the journal evidence, confirm no `third_party/salvagecore` files are staged, and review pending downtime reports.
-  - [ ] 5.5 Commit and push after the user-approved checkpoint summary.
+- [x] 5. Verify and publish the repair.
+  - [x] 5.1 Run focused Java/build tests, Android package/signature inspection, repository checks, and diff checks.
+  - [x] 5.2 Build the new APK and perform a real in-place device update from an earlier compatible build without clearing app data.
+  - [x] 5.3 Capture installer-result and post-update version/signature evidence.
+  - [x] 5.4 Update this plan, regenerate indexes, append the journal evidence, confirm no `third_party/salvagecore` files are staged, and review pending downtime reports.
+  - [x] 5.5 Commit and push after the user-approved checkpoint summary.
 
 ## Initial Evidence
 

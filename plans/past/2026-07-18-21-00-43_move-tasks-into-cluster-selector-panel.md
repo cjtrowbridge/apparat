@@ -2,7 +2,7 @@
 plan_id: 2026-07-18-21-00-43_move-tasks-into-cluster-selector-panel
 title: Move Tasks Into Cluster Selector Panel
 summary: Replace the Tasks top-level tab with a Cluster selector-panel item, add semantic selector headings, and canonize selector/content-panel terminology.
-status: current
+status: past
 created_at: 2026-07-18-21-00-43
 ---
 
@@ -41,10 +41,10 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 4.2 Update README, ROADMAP, input-binding hints, and tests to state five top-level tabs and `Alt+1` through `Alt+5`.
   - [x] 4.3 Update local code names/comments where they expose layout terminology without needlessly renaming stable implementation internals.
 
-- [ ] 5. Verify and publish the checkpoint.
+- [x] 5. Verify and publish the checkpoint.
   - [x] 5.1 Run focused HUD and GUI tests, the GUI compile gate, repository tests, documentation/code-size checks, and `git diff --check`.
-  - [ ] 5.2 Rebuild/install Android when available and capture desktop and Android screenshots showing Cluster headings, Tasks selection, and the five-tab strip.
-  - [ ] 5.3 Mark the source TODO complete only after visual validation passes.
+  - [x] 5.2 Rebuild/install Android when available and capture desktop and Android screenshots showing Cluster headings, Tasks selection, and the five-tab strip.
+  - [x] 5.3 Mark the source TODO complete only after visual validation passes.
   - [x] 5.4 Update this plan, regenerate indexes, append the current-day journal evidence, confirm no Salvagecore files are staged, and review pending downtime reports.
   - [x] 5.5 Commit and push directly to `main` after the user-approved checkpoint summary; do not open a pull request.
 
@@ -60,11 +60,11 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 
 ## Approved Plan Revision: 2026-07-18 Selector Heading Descriptions
 
-- [?] 6. Add optional descriptive text beneath selector-heading titles.
+- [x] 6. Add optional descriptive text beneath selector-heading titles.
   - [x] 6.1 Model a heading description as presentation-only data and populate concise descriptions for Cluster's Devices and Operations groups.
   - [x] 6.2 Render each description as small muted, wrapped text beneath its title without creating a focusable or clickable control.
   - [x] 6.3 Add focused HUD/GUI coverage that proves descriptions render and selector headings remain non-selectable.
-  - [?] 6.4 Update local HUD/GUI documentation, run applicable checks, rebuild the APK, and update the current plan/journal evidence.
+  - [x] 6.4 Update local HUD/GUI documentation, run applicable checks, rebuild the APK, and update the current plan/journal evidence.
 
 ## Revision Execution Notes
 

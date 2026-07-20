@@ -25,6 +25,42 @@ paths:
       responses:
         "200":
           description: Capabilities for text, image, video, STT, TTS, BOINC, and future classes
+  /v1/projects:
+    get:
+      summary: List projects authoritatively owned by this device
+      responses:
+        "200":
+          description: Authorized owner-local project summaries; callers merge owners into a cluster-wide catalog
+  /v1/projects/{project_id}:
+    get:
+      summary: Get an owner-local project summary
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+      responses:
+        "200":
+          description: Authorized project summary and availability
+  /v1/projects/{project_id}/tasks:
+    get:
+      summary: List Apparat Task entrypoints for an owned project
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+      responses:
+        "200":
+          description: Task entrypoints and trigger summaries; the project is a Pipeline when this list is non-empty
+  /v1/projects/{project_id}/tasks/{task_id}/runs:
+    post:
+      summary: Manually request execution of a project Task entrypoint
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+        - $ref: "#/components/parameters/TaskID"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Task run accepted by the project owner
+          headers:
+            Location:
+              schema:
+                type: string
   /v1/jobs:
     post:
       summary: Submit an asynchronous workload job
@@ -54,6 +90,50 @@ paths:
       responses:
         "202":
           description: Cancellation accepted
+  /v1/queues/{queue_id}/jobs:
+    post:
+      summary: Submit a job to the authoritative queue owner
+      parameters:
+        - $ref: "#/components/parameters/QueueID"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Queue owner validated, persisted, and accepted the job
+          headers:
+            Location:
+              schema:
+                type: string
+  /v1/queues/{queue_id}/claims:
+    post:
+      summary: Poll or long-poll the queue owner for a compatible worker lease
+      parameters:
+        - $ref: "#/components/parameters/QueueID"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: One bounded lease selected by the queue owner
+        "204":
+          description: No compatible work is currently available
+  /v1/queues/{queue_id}/leases/{lease_id}/heartbeat:
+    post:
+      summary: Renew or report bounded progress for an active worker lease
+      parameters:
+        - $ref: "#/components/parameters/QueueID"
+        - $ref: "#/components/parameters/LeaseID"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Heartbeat accepted by the queue owner
+  /v1/queues/{queue_id}/leases/{lease_id}/complete:
+    post:
+      summary: Submit a signed terminal result or failure to the queue owner
+      parameters:
+        - $ref: "#/components/parameters/QueueID"
+        - $ref: "#/components/parameters/LeaseID"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Result accepted for authoritative validation and idempotent completion
   /v1/events:
     get:
       summary: Cursor-based long polling
@@ -84,6 +164,30 @@ components:
   parameters:
     ID:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    ProjectID:
+      name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    TaskID:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        type: string
+    QueueID:
+      name: queue_id
+      in: path
+      required: true
+      schema:
+        type: string
+    LeaseID:
+      name: lease_id
       in: path
       required: true
       schema:

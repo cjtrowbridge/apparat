@@ -20,12 +20,45 @@ Domain packages must not import GUI, SQLite, HTTP, WireGuard, model runtime, BOI
 - GUI console: renders HUD state and dispatches user commands.
 - Headless worker: runs without Ebitengine initialization and hosts queues, services, tasks, or API endpoints.
 - Service host: advertises typed workload capabilities and executes leased work.
-- Queue owner: authoritatively admits, schedules, leases, cancels, audits, and records jobs for one queue.
-- Project owner: authoritatively applies project transactions and keeps rejected edits durable.
-- Scheduler owner: authoritatively runs a task schedule and persists run state.
+- Queue owner: receives REST submissions, authoritatively validates and admits jobs, answers worker lease requests, schedules, cancels, audits, and records authoritative results for one queue.
+- Project owner: stores and runs a project's Git working tree, advertises its project summary, serves authorized project REST operations, owns its Task entrypoints, authoritatively applies project transactions, and keeps rejected edits durable.
+- Scheduler owner: evaluates trigger bindings for owner-local project Tasks and persists their run state. During the MVP this authority is the Task's project owner rather than an independently elected scheduler.
 - Enrollment authority: issues short-lived invites and signs directory updates.
 
 One device may hold several roles.
+
+## Project, Pipeline, And Task Ownership
+
+- A Project is a Git repository with one authoritative owner: the device on which its working tree lives and runs.
+- Every enrolled device projects one cluster-wide Projects list containing its local projects plus all authorized remote project summaries. Remote projects retain their owning device identity and online/stale/unavailable state.
+- Project summaries may be replicated or cached for discovery and offline display. Files, Git state, Task definitions, and authoritative run state remain on the owner and are accessed through that owner's authenticated REST API.
+- A Pipeline is a Project that declares at least one Apparat-executable entrypoint. Pipeline identity and ownership are the Project's identity and ownership; it is not a separate repository or scheduler object.
+- A project entrypoint is a Task. A Task belongs to exactly one Project in the MVP and is authoritatively defined, validated, invoked, and recorded by that Project's owner.
+- A Task may have zero or more trigger bindings. Zero means manual execution only. Trigger bindings may represent intervals/cron-like schedules, authenticated webhooks, internal application events, or cluster events.
+- Trigger delivery creates or requests a Task run; it does not move the Task definition or Project authority to the triggering device.
+- Task steps may call owner-local constrained project operations and may submit typed jobs to separately owned routing queues.
+
+## Owner-Directed REST Request Flows
+
+All cross-device application requests use the authenticated REST API. Devices do not read or write another device's SQLite database or project working tree directly.
+
+Project flow:
+
+1. Project owners advertise signed, authorization-filtered summaries.
+2. Each device merges local summaries with cached/refreshable remote summaries into its cluster-wide Projects projection.
+3. A remote read, Git action, Task invocation, or mutation is sent to the Project owner.
+4. The owner authenticates, authorizes, validates, executes or persists the request, and returns the authoritative state or durable rejection.
+
+Queue flow:
+
+1. A requester submits a job by REST to the queue-owning device with stable job, message, correlation, and idempotency identity.
+2. The owner validates the requester, schema, workload/capability requirements, policy, limits, quota, and queue state before durably accepting or rejecting it.
+3. An authorized inference worker in the queue polls or long-polls the owner for work and presents its identity and current capabilities.
+4. The owner chooses compatible work and returns a lease with a lease ID, attempt identity, fencing token, deadline, and bounded payload/artifact references.
+5. The worker executes the lease and sends heartbeat/progress only as allowed, then posts a signed terminal result or failure to the owner.
+6. The owner validates the worker, active lease/fencing token, result schema, artifacts, and idempotency before recording authoritative completion.
+
+The queue owner never relies on a worker's local database as queue truth. Lease expiration permits recovery or reassignment, and late or duplicated completion requests cannot complete the logical job twice.
 
 ## Binary And Runtime Boundaries
 
