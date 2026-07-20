@@ -245,6 +245,10 @@ An interactive terminal UI is not part of the MVP. Adding one later requires a s
 
 GUI and headless modes share the same domain, persistence, identity, networking, queue, task, and logging layers.
 
+The shared core exposes a transport-neutral internal application API made of typed commands and queries. The GUI calls that API directly in-process; it does not send HTTP requests to its embedded core. The REST server is an external adapter that maps versioned HTTP resources onto selected operations from the same internal API. GUI adapters and REST handlers do not access SQLite directly or maintain parallel product rules.
+
+SQLite is the authoritative durable store behind the internal application API. Before cluster identity and request signing are established, the REST adapter is loopback-only and exposes selected read operations. The GUI may still use internal commands directly. After authentication, authorization, signing, replay protection, and audit are active, the REST adapter may expose selected existing commands to trusted remote devices without creating REST-specific setters or state transitions.
+
 A device may hold several roles:
 
 - GUI console
@@ -442,6 +446,8 @@ Enrollment is out-of-band through a short-lived QR code or invite containing the
 The connection layer uses TLS 1.3 mutual device authentication. Mutating requests do not use TLS 0-RTT. Certificate issuance, expiration, revocation, rotation, lost-device handling, and trust-store updates are first-class lifecycle operations.
 
 ### REST Resources
+
+The API is introduced in two steps. The first backend slice exposes a loopback-only, read-only subset for health, readiness, safe local device state, services, and capabilities. Identity and signing then admit configured LAN/WireGuard access and authenticated mutations. The complete target surface below includes both steps; its write resources are not part of the pre-identity listener.
 
 The initial API surface is:
 

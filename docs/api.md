@@ -6,6 +6,10 @@ This file is the target API contract. The OpenAPI source is a planning skeleton 
 
 All cross-device project access, Task invocation, queue submission, worker leasing, progress/heartbeat, and result delivery use this API. No device accesses another device's project filesystem or SQLite database directly.
 
+REST is an external adapter, not the GUI-to-core boundary. The GUI invokes the transport-neutral internal application commands and queries directly in-process. REST handlers invoke selected operations from that same internal API; neither adapter accesses SQLite directly or implements parallel product rules.
+
+The first implementation step is a loopback-only, read-only REST subset for health, readiness, safe local device state, services, and capabilities. Before cluster identity, authentication, authorization, signing, replay protection, and audit are active, the server rejects non-loopback binding and exposes no command or setter. The secure REST phase preserves those query semantics, admits configured LAN/WireGuard access, and maps authenticated mutations onto the same internal commands already used by the GUI.
+
 OpenAPI source: [`openapi/apparat-v1.yaml`](./openapi/apparat-v1.yaml).
 
 ## Endpoints
