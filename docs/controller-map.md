@@ -2,6 +2,10 @@
 
 All GUI targets dispatch the same application actions for tabs, focus, activation, cancellation, context, scrolling, text entry, and push-to-talk.
 
+This is the target input contract. The current five-tab mockup implements tab selection and portions of pointer/touch behavior; complete focus movement, activation, back/context semantics, command palette, scrolling equivalence, configurable bindings, accessibility, and real voice effects remain planned until their Roadmap evidence is complete.
+
+The canonical top-level tab order is Comrades, Projects, Cluster, Research, Settings. Routing and Tasks are details within Cluster, not top-level tabs.
+
 ## Steam Deck
 
 - `L1`: previous top-level tab.
@@ -18,7 +22,7 @@ All GUI targets dispatch the same application actions for tabs, focus, activatio
 ## Debian GUI
 
 - `Ctrl+PageUp` / `Ctrl+PageDown`: previous/next top-level tab.
-- `Alt+1` through `Alt+6`: Comrades, Projects, Research, Cluster, Tasks, Settings. Routing is selected within Cluster.
+- `Alt+1` through `Alt+5`: Comrades, Projects, Cluster, Research, Settings. Routing and Tasks are selected within Cluster.
 - `Tab` / `Shift+Tab`: next/previous focusable control.
 - Arrows: list, tree, grid, menu, and spatial focus movement.
 - `Enter`: activate or submit.

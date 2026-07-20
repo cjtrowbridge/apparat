@@ -2,6 +2,8 @@
 
 SQLite stores durable application metadata and workflow state; ordinary project files remain filesystem and Git data.
 
+This is the target persistence contract. Phase 3 implements the initial SQLite lifecycle and messaging primitives; most Project, Task, service, queue, artifact, and remote-projection records below remain planned until their Roadmap phases produce migration and restart evidence.
+
 ## Layers
 
 - Identity, certificates, trust, enrollment, and directory records.
@@ -36,6 +38,28 @@ Each MVP project and queue has exactly one authoritative owner device. A Task be
 - Lease expiry may make work eligible for another attempt. Attempt history is retained so reassignment never erases the earlier execution record.
 - Result/artifact records become authoritative only after the owner validates worker authorization, lease state, schema, integrity, and policy.
 
+## Local Inference Service State
+
+The service model must preserve zero-to-many cardinality for every driver and workload class. `driver_kind` and `workload_class` are never primary instance identity.
+
+- `inference_service_instances` stores owner-local desired configuration keyed by stable `service_id`: local device, driver kind, display name, local endpoint, enabled/advertise flags, schema-versioned provider configuration, opaque credential reference, admission/concurrency policy, revision, and timestamps.
+- `inference_service_observations` stores last-known observed lifecycle and health independently from desired state: service ID, observation time, reachability, safe failure code/message, inventory hash, availability, load, and probe revision.
+- `inference_service_capabilities` stores observed capabilities keyed by service and stable `capability_id`: workload class, schema version, model ID, modalities, formats, features, limits, capability data, and observation time.
+- `service_advertisement_state` stores the last derived owner-scoped revision, observation time, expiration, publication status, and safe advertisement digest. Advertisements do not store or expose local endpoints, credential references, tokens, raw provider failures, prompts, or results.
+- Cached remote service advertisements preserve signer/owner, revision, observation and expiration times, safe health/capability fields, and stale state. Expiry immediately removes routing eligibility; the default stale diagnostic retention is 24 hours.
+
+The default advertisement lifetime is 120 seconds and an eligible owner refreshes by 60 seconds. A newer owner-scoped revision supersedes older revisions. Re-advertisement after expiry requires a fresh observation and revision.
+
+SQLite stores only opaque credential references. A secret adapter resolves them from an OS credential store when available or an Apparat-managed encrypted secret file under the node runtime root. Secret values never appear in general provider JSON, replicated records, advertisements, logs, backups lacking the corresponding secret policy, or GUI read models.
+
+## Artifacts
+
+Artifact content is stored as files beneath the authoritative node's runtime artifact root; SQLite stores metadata and lifecycle state rather than large blobs.
+
+An artifact record includes stable artifact ID, owner device, SHA-256 digest, byte length, MIME type, provenance, Project/job/result links, authorization policy, creation/expiry times, retention state, and local content location. Transfer records preserve source/recipient, expected digest and size, completed ranges/chunks, retry state, deadlines, and terminal validation outcome.
+
+Authenticated transfers are bounded and resumable. Received bytes remain temporary until size and digest validation succeeds, then become atomically visible. A queue owner accepts a worker result only after validating the active lease/fencing token and every referenced artifact. Retention cleanup records deletion explicitly; it cannot silently leave a successful authoritative result claiming that missing content is available.
+
 ## Migrations And Data Types
 
 Migrations are forward-only and checksumed. IDs are ULID-compatible sortable strings. Timestamps are UTC integer milliseconds; human schedule timezone data is stored explicitly when needed.
@@ -50,6 +74,8 @@ Phase 3 implements the first SQLite lifecycle:
 - Provide read-only diagnostics for user version, foreign-key status, and migration count.
 - Provide sortable local IDs and UTC millisecond helpers.
 
+The target node runtime permits exactly one authoritative SQLite writer process. `apparat` and `apparatd` use one logical node root and an exclusive runtime lock after Phase 7. Current binary-specific default roots remain implementation evidence until that migration is complete. Multiple independent nodes on one host require explicit roots and identities rather than concurrent writers to one database.
+
 ## Backup, Repair, Restore, And Encryption
 
-The MVP defines backup, repair, restore, and integrity checks before broad replication. Optional at-rest encryption remains a Phase 1 decision input, not a default until key storage and recovery are designed.
+The MVP defines backup, repair, restore, and integrity checks before broad replication. Optional at-rest encryption remains a Phase 7 decision gate, not a default until key storage, backup interaction, and recovery are designed and validated.
