@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-07-19-20-39-41 | plans/past/2026-07-19-17-19-34_replace-roadmap-phase-6-onward.md | Replace Roadmap Phase 6 Onward | Replace the broad legacy roadmap from Phase 6 onward with a concrete Phase 6–N implementation program derived from the completed GUI foundation and architecture review.
 2026-07-19-00-04-06 | plans/past/2026-07-18-22-06-37_restructure-hud-selector-content-mockups.md | Restructure HUD Selector And Content Mockups | Reorder Research, replace generic placeholder surfaces with faithful mockups, and define color-grouped selector panels for Comrades, Projects, Cluster, and Research.
 2026-07-19-10-35-21 | plans/past/2026-07-18-21-00-43_move-tasks-into-cluster-selector-panel.md | Move Tasks Into Cluster Selector Panel | Replace the Tasks top-level tab with a Cluster selector-panel item, add semantic selector headings, and canonize selector/content-panel terminology.
 2026-07-18-20-22-09 | plans/past/2026-07-18-19-58-30_restructure-cluster-routing-and-project-pipelines.md | Restructure Cluster Routing And Project Pipelines | Move the mock Routing surface into Cluster detail content and add a mock Pipelines detail surface under Projects while preserving the left-selector/right-detail HUD pattern.

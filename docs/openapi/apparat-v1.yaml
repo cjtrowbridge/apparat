@@ -21,10 +21,34 @@ paths:
           description: Device identity, roles, and trust
   /v1/capabilities:
     get:
-      summary: Typed workload capabilities
+      summary: Safe aggregate typed workload capabilities for this device
       responses:
         "200":
           description: Capabilities for text, image, video, STT, TTS, BOINC, and future classes
+  /v1/services:
+    get:
+      summary: List authorization-filtered logical services owned by this device
+      responses:
+        "200":
+          description: Safe service identities, health, policy, revision, and expiry without local endpoints or credentials
+  /v1/services/{service_id}:
+    get:
+      summary: Get one logical local-service projection
+      parameters:
+        - $ref: "#/components/parameters/ServiceID"
+      responses:
+        "200":
+          description: Safe logical service projection
+        "404":
+          description: Service is unknown or not visible to the caller
+  /v1/services/{service_id}/capabilities:
+    get:
+      summary: List safe capabilities observed for one logical service
+      parameters:
+        - $ref: "#/components/parameters/ServiceID"
+      responses:
+        "200":
+          description: Capability IDs, workload classes, models, features, limits, observation time, and expiry
   /v1/projects:
     get:
       summary: List projects authoritatively owned by this device
@@ -157,6 +181,28 @@ paths:
       responses:
         "202":
           description: Transaction accepted
+  /v1/artifacts:
+    post:
+      summary: Begin a bounded authenticated artifact upload
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Upload resource created; bytes remain temporary until size and SHA-256 validation succeeds
+          headers:
+            Location:
+              schema:
+                type: string
+  /v1/artifacts/{artifact_id}:
+    get:
+      summary: Get authorized artifact metadata or verified bytes with range support
+      parameters:
+        - $ref: "#/components/parameters/ArtifactID"
+      responses:
+        "200":
+          description: Authorized artifact metadata or content
+        "404":
+          description: Artifact is unknown, unavailable, expired, or not visible to the caller
 components:
   securitySchemes:
     mutualTLS:
@@ -192,6 +238,18 @@ components:
       required: true
       schema:
         type: string
+    ServiceID:
+      name: service_id
+      in: path
+      required: true
+      schema:
+        type: string
+    ArtifactID:
+      name: artifact_id
+      in: path
+      required: true
+      schema:
+        type: string
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -208,3 +266,95 @@ components:
         - speech_to_text
         - text_to_speech
         - research_boinc
+    DriverKind:
+      type: string
+      description: Statically registered provider protocol; not a concrete service-instance identity
+      examples:
+        - ollama
+        - openai_compatible
+        - llama_cpp
+        - automatic1111
+        - comfyui
+    ServiceProjection:
+      type: object
+      required:
+        - service_id
+        - owner_device_id
+        - driver_kind
+        - revision
+        - observed_at
+        - expires_at
+      properties:
+        service_id:
+          type: string
+        owner_device_id:
+          type: string
+        driver_kind:
+          $ref: "#/components/schemas/DriverKind"
+        display_name:
+          type: string
+        health:
+          type: string
+        revision:
+          type: integer
+          minimum: 0
+        observed_at:
+          type: integer
+          description: UTC milliseconds
+        expires_at:
+          type: integer
+          description: UTC milliseconds; expired services are not routable
+        capabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/CapabilityProjection"
+      description: Never contains a provider-local endpoint, credential reference, token, prompt, or result
+    CapabilityProjection:
+      type: object
+      required:
+        - capability_id
+        - service_id
+        - workload_class
+        - schema_version
+      properties:
+        capability_id:
+          type: string
+        service_id:
+          type: string
+        workload_class:
+          $ref: "#/components/schemas/WorkloadClass"
+        schema_version:
+          type: string
+        model_id:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+        limits:
+          type: object
+          additionalProperties: true
+    ArtifactMetadata:
+      type: object
+      required:
+        - artifact_id
+        - owner_device_id
+        - sha256
+        - size
+        - mime_type
+      properties:
+        artifact_id:
+          type: string
+        owner_device_id:
+          type: string
+        sha256:
+          type: string
+          pattern: "^[a-f0-9]{64}$"
+        size:
+          type: integer
+          minimum: 0
+        mime_type:
+          type: string
+        expires_at:
+          type: integer
+          description: Optional UTC milliseconds

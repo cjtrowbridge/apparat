@@ -4,7 +4,7 @@ Apparat is a controller-first console for building and operating a personal-area
 
 The cluster coordinates projects, typed compute and inference services, durable message queues, automation, and device capabilities. Apparat initially uses a game engine to deliver a portable HUD rather than to build a game. Gamification comes later. The first target is Steam Deck, followed by Debian/Linux, Windows, macOS, and Android; both headless workers and the full UI/UX.
 
-The current canonical implementation sequence lives in [ROADMAP.md](./ROADMAP.md). [RECOMMENDATIONS.md](./RECOMMENDATIONS.md) contains the architecture review and an integrated successor backlog for the unfinished roadmap; it remains advisory until the roadmap-authority migration is explicitly approved and individual implementation changes are accepted through focused execution plans.
+The canonical implementation sequence lives in [ROADMAP.md](./ROADMAP.md). Product implementation proceeds through focused approved execution plans bound to its phase checklist and the detailed contracts linked from this README.
 
 ## Vision
 
@@ -252,10 +252,11 @@ A device may hold several roles:
 - Service host
 - Queue owner
 - Project owner
-- Scheduler owner
 - Enrollment authority
 
 No permanently online central server is required. One device may authorize enrollment, but enrolled devices cache signed directory and peer records so the cluster can degrade gracefully when devices are offline.
+
+During the MVP, the Project owner evaluates that Project's Task trigger bindings and owns its Task runs. Scheduling is an owner-local responsibility, not a separately elected authority. Scheduler failover is a later resilience feature and must not silently move Project or Task ownership.
 
 ### Projects
 
@@ -338,7 +339,7 @@ A device may advertise several independent capabilities. For example, one workst
 Each advertised capability records:
 
 - Workload class and schema version.
-- Service/runtime and endpoint.
+- Service/runtime and stable logical service identity. Provider endpoints remain owner-local configuration and are not advertised.
 - Supported models or BOINC projects.
 - Input and output modalities and limits.
 - Required hardware and available accelerators.
@@ -354,6 +355,25 @@ Queues may accept one workload class or an explicit allowlist. A queue containin
 The first production text-generation adapter targets OpenAI-compatible HTTP APIs, followed by Ollama and llama.cpp. Image, video, STT, TTS, and BOINC adapters are developed and validated independently because they have different inputs, outputs, resource profiles, progress semantics, cancellation behavior, and artifacts.
 
 Routing profiles may be attached to projects, chats, workflows, or individual task steps. Large outputs use artifact references and bounded transfers rather than oversized queue envelopes.
+
+### Local Inference Service Instances
+
+Every Apparat node may manage zero to many localhost-exposed inference services, including several instances of the same provider and several instances serving the same workload class. A headless or GUI node may therefore expose Ollama, llama.cpp, Automatic1111, ComfyUI, and other approved services simultaneously without collapsing them into one capability record.
+
+The model keeps four identities separate:
+
+- A workload class describes the requested operation, such as text or image generation.
+- A driver kind identifies a provider protocol, such as `ollama`, `openai_compatible`, `llama_cpp`, `automatic1111`, or `comfyui`.
+- A service instance is one configured local endpoint with a stable `ServiceID`, independent lifecycle, limits, policy, and health.
+- A capability is a model, modality, format, feature, or limit currently discovered on one service instance and identified by a stable `CapabilityID`.
+
+Provider plugins are statically compiled Go drivers registered explicitly at the application composition root. Apparat does not use Go dynamic `.so` plugins. Each driver supplies a factory; each configured endpoint creates an independently supervised instance; and typed executors preserve meaningful differences among workload classes. The manager is keyed primarily by `ServiceID`, never by provider name or workload class.
+
+SQLite is authoritative for desired service configuration and the last safe observed state. Desired configuration, observed health/inventory, discovered capabilities, and derived advertisements are separate records. Provider credentials are stored through local secret references, and provider-local URLs, tokens, prompts, results, and raw failure bodies never enter cluster advertisements or normal logs.
+
+Remote peers never connect directly to another device's localhost provider. They address logical device, service, capability, and model identities through the authenticated Apparat gateway. The gateway applies authorization, queue admission, routing, limits, audit, and artifact policy before invoking a local provider.
+
+Service advertisements carry an owner-scoped monotonic revision, observation time, and expiration time. The default service-advertisement lifetime is 120 seconds and owners refresh by 60 seconds while a service remains eligible. Expired advertisements immediately become non-routable but may remain visible as stale diagnostics for up to 24 hours. A newer revision supersedes every older revision from the same owner; re-advertisement after expiry requires a fresh observation and revision.
 
 ### Automation
 
@@ -405,6 +425,10 @@ LAN discovery may suggest endpoints but never grants trust.
 
 App identity remains separate from WireGuard identity.
 
+The MVP uses one cluster-local X.509 root CA whose certificate fingerprint is part of the verified cluster identity. The currently authorized enrollment authority controls issuance under that root for the MVP; adding multiple concurrent issuers requires a later explicit hierarchy and conflict-resolution design.
+
+Each device generates a TLS leaf key separately from its Apparat Ed25519 device-signing key. Enrollment binds the leaf public key, certificate serial and fingerprint, Apparat device signing key, WireGuard public key, roles, scopes, validity, and cluster identity in a signed device record. The device signs or proves possession for its certificate request, and peers require both successful mTLS validation to the cluster root and a current authorized device-record binding. Rotation issues a new serial and binding before the old certificate is retired; revocation and lost-device recovery invalidate the device record and certificate authorization.
+
 Device authorization binds:
 
 - The Apparat device identity.
@@ -417,8 +441,6 @@ Enrollment is out-of-band through a short-lived QR code or invite containing the
 
 The connection layer uses TLS 1.3 mutual device authentication. Mutating requests do not use TLS 0-RTT. Certificate issuance, expiration, revocation, rotation, lost-device handling, and trust-store updates are first-class lifecycle operations.
 
-The exact X.509 hierarchy and its relationship to Apparat's device keys will be decided in the security architecture phase.
-
 ### REST Resources
 
 The initial API surface is:
@@ -427,6 +449,9 @@ The initial API surface is:
 GET  /v1/health
 GET  /v1/device
 GET  /v1/capabilities
+GET  /v1/services
+GET  /v1/services/{service_id}
+GET  /v1/services/{service_id}/capabilities
 GET  /v1/projects
 GET  /v1/projects/{id}
 GET  /v1/projects/{id}/tasks
@@ -440,13 +465,15 @@ POST /v1/queues/{queue_id}/leases/{lease_id}/heartbeat
 POST /v1/queues/{queue_id}/leases/{lease_id}/complete
 GET  /v1/events?after={cursor}&wait={duration}
 POST /v1/project-transactions
+POST /v1/artifacts
+GET  /v1/artifacts/{artifact_id}
 ```
 
 Mutating operations require an `Idempotency-Key`. Asynchronous job submission returns `202 Accepted`, a durable job ID, and a status resource location.
 
 Cursor-based long polling comes before WebSockets. Requests enforce authentication, authorization, schema versions, content types, body limits, deadlines, and bounded concurrency.
 
-`GET /v1/capabilities` returns typed capability descriptors rather than one generic inference flag. Jobs and routes refer to workload classes and capability requirements by stable identifiers.
+`GET /v1/capabilities` returns the responding device's safe aggregate typed capability projection rather than one generic inference flag. The service resources expose authorization-filtered logical service and capability identities, safe health, inventory revision, availability, limits, and expiry without exposing provider-local endpoints or credentials. Jobs and routes refer to workload classes and optional `ServiceID`, `CapabilityID`, and model requirements by stable identifiers.
 
 Each device's `GET /v1/projects` response is authoritative only for projects that device owns. A caller builds the cluster-wide Projects list from signed/cached project advertisements and owner responses; a non-owner does not re-publish a cached project as though it owns it. Project detail, Task discovery/execution, and project transactions are sent to the owning device.
 
@@ -466,7 +493,7 @@ Durable cross-device messages use a transport-independent signed envelope contai
 - Inline payload or artifact reference.
 - Signature algorithm and signature.
 
-Receivers validate the version, signature, authorization, expiration, body hash, size, replay state, and idempotency before applying work.
+The MVP wire representation is UTF-8 JSON canonicalized with RFC 8785 JSON Canonicalization Scheme rules. Integer UTC millisecond timestamps are required. The payload hash is SHA-256 over the exact inline payload bytes or the canonical artifact metadata, and the sender signs the canonical envelope with the `signature` value omitted using its Apparat Ed25519 device key. Receivers validate the version, device-record key binding, signature, authorization, recipient, expiration, deadline, payload hash, size, replay state, idempotency, and schema compatibility before applying work.
 
 HTTPS carries the envelope through JSON REST resources. Constrained transports may use compact binary encodings while preserving the same identity, authorization, correlation, expiration, hash, and signature semantics.
 
@@ -645,7 +672,7 @@ Build troubleshooting:
 
 ### Local Runtime
 
-Phase 3 adds shared local runtime startup for GUI and headless modes:
+Phase 3 implemented shared local runtime startup primitives for GUI and headless modes:
 
 - `cmd/apparat` is the GUI entry point.
 - `cmd/apparatd` is the headless worker/service entry point and does not initialize Ebitengine.
@@ -658,6 +685,8 @@ Phase 3 adds shared local runtime startup for GUI and headless modes:
 - `last_run.log` is recreated in the runtime root at every process start and records verbose startup, component, doctor, smoke-test, failure, panic, and shutdown diagnostics for immediate debugging.
 - Append-only JSONL logs remain under the runtime `logs/` directory for durable structured history.
 - GUI builds compiled with the `gui` build tag enter the Ebitengine run loop; headless builds keep the non-window path available for worker and service validation environments.
+
+Those binary-specific default roots are current implementation evidence, not the final one-node ownership contract. Phase 7 will make `apparat` and `apparatd` alternative process forms of one logical Apparat node with one identity, database, service inventory, and default runtime root protected by an exclusive node-runtime lock. Simultaneous GUI and daemon ownership of that root is rejected. A later approved daemon-client mode may let the GUI connect to a daemon-owned core. Intentionally independent nodes on one host require explicit separate runtime roots, identities, and local-service ownership so they cannot advertise the same provider accidentally.
 
 Contributor verification includes a source-size gate: code files must be at most 400 physical lines unless they are excluded generated/vendor/reference artifacts. Over-limit files should be decomposed into smaller package files with local README context where needed.
 

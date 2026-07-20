@@ -13,3 +13,7 @@ HTTPS REST is the authoritative MVP request transport between devices. Project d
 HTTPS REST carries JSON envelopes and artifact references. Future compact transports such as Meshtastic or Signal gateways carry the same logical envelope fields with constrained payloads, fragmentation, and command allowlists. They must preserve Project-owner and queue-owner authority, idempotency, lease/fencing, and result-validation semantics; a constrained adapter may omit an unsupported operation but may not invent a second authoritative queue or project copy.
 
 Large prompts, model data, project files, and artifacts do not belong on constrained transports.
+
+Service and capability advertisements preserve owner identity, monotonic revision, observation time, expiration, logical IDs, and safe policy/health fields across transports. The default advertisement lifetime is 120 seconds with owner refresh by 60 seconds. Expired inventory becomes non-routable on every transport; a delayed or store-and-forward adapter cannot revive it without a newer revision and fresh observation. Provider-local endpoints and credentials are never advertisement fields.
+
+Artifact bytes use authenticated bounded HTTPS range/chunk transfer with declared size and SHA-256 verification for the MVP. Constrained transports carry only artifact references or compact status when their capability descriptor cannot safely carry the content. A transport may decline an oversized operation but may not bypass artifact authorization, integrity, retention, or queue-owner result validation.

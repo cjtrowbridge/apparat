@@ -2,6 +2,14 @@
 
 Support is claimed only after target-specific build and behavior evidence exists.
 
+The shared-core and local-service contracts are platform-independent targets, but provider discovery, acceleration, process supervision, credential storage, filesystem isolation, audio, background execution, and service-manager behavior require separate evidence on every supported target.
+
+## Node Process Ownership
+
+The current implementation gives `apparat` and `apparatd` binary-specific default runtime roots. Phase 7 will migrate the default product model to one logical node root and identity with an exclusive runtime lock, making the GUI and headless binaries alternative owners of the same shared core and SQLite state rather than two accidental nodes.
+
+Starting both artifacts against one node root must fail safely until a separately approved daemon-client mode exists. Multiple intentional nodes on one host require explicit roots, identities, ports, and local inference-service ownership. No platform may claim service-host support until it proves that duplicate processes cannot advertise the same provider endpoint accidentally.
+
 ## Steam Deck And Linux GUI
 
 Requires controller-first HUD, readable 1280x800 sizing, keyboard/mouse fallback, audio capture, local storage paths, external WireGuard compatibility, runtime-root `last_run.log`, and generated release artifact under `releases/linux/<arch>/apparat/latest`.
@@ -13,6 +21,8 @@ Phase 3 keeps `--smoke-test` non-window for CI and build environments. The Ebite
 Requires no Ebitengine initialization, CLI/API/service-manager control, health checks, graceful `SIGINT`/`SIGTERM`, durable storage paths, runtime-root `last_run.log`, and generated release artifact under `releases/linux/<arch>/apparatd/latest`.
 
 Phase 3 headless startup initializes the same config, directory, logging, SQLite, identity-status, cluster-directory, and messaging primitives without importing Ebitengine.
+
+Linux is the first platform for supervising arbitrary localhost inference service instances. Service-host evidence must include multiple same-provider instances, independent health/failure behavior, local credential references, bounded probing, gateway-only remote access, and clean shutdown without taking provider processes hostage.
 
 ## Windows
 
@@ -50,3 +60,4 @@ Known caveats:
 - The current APK uses the wrapper/AAR-style path. Future release-hardening still needs signing, icons, store packaging, additional ABI decisions, and broader Android device validation.
 - Android `apparatd` is intentionally unsupported; headless Android work requires a later Termux/service-worker strategy.
 - App-managed WireGuard/VPN-service, real microphone capture, broad storage, background execution, release signing, store packaging, signed update manifests, and additional Android ABIs are future work.
+- Android local inference-provider supervision is not implied by the GUI APK. Each supported provider, background/lifecycle mode, accelerator path, credential store, and endpoint assumption requires separate validation; Android headless remains out of scope unless a Termux/service-worker strategy is approved.

@@ -491,7 +491,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - **Shared controller and Debian GUI focus model**
     - `L1` and `R1` cycle through top-level tabs in canonical order.
     - Holding `R2` starts push-to-talk capture; releasing `R2` stops capture and submits audio to speech-to-text.
-    - Debian GUI uses `Ctrl+PageUp` and `Ctrl+PageDown` for tab cycling, `Alt+1` through `Alt+7` for direct tab selection, and right `Ctrl` for hold-to-talk.
+    - Debian GUI uses `Ctrl+PageUp` and `Ctrl+PageDown` for tab cycling, `Alt+1` through `Alt+5` for the five canonical tabs, and right `Ctrl` for hold-to-talk.
     - Debian GUI uses standard keyboard focus, activation, cancellation, contextual-action, scrolling, text-editing, and mouse conventions without creating separate application behavior.
     - Directional controls move through an explicit focus graph, not pointer-coordinate emulation.
     - Confirm activates the focused control.
@@ -704,14 +704,14 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - [x] Create `docs/architecture.md`.
   - [x] Define ports-and-adapters package boundaries.
-  - [x] Define GUI, headless, service-host, queue-owner, project-owner, scheduler-owner, and enrollment-authority roles.
+  - [x] Define GUI, headless, service-host, queue-owner, project-owner with owner-local Task scheduling, and enrollment-authority roles.
   - [x] Define module registration and command/event/store boundaries.
   - [x] Define the versioned workload-class taxonomy and extension rules.
   - [x] Define typed device, service, queue, route, and job capability contracts.
   - [x] Define which Salvagecore components are copied, adapted, rewritten, or rejected.
 - [x] Create the shared input and focus contract in `docs/controller-map.md`.
   - [x] Define `L1`, `R1`, D-pad, sticks, `A`, `B`, `X`, Menu, and `R2`.
-  - [x] Define Debian `Ctrl+PageUp`, `Ctrl+PageDown`, `Alt+1` through `Alt+7`, focus traversal, activation, cancellation, contextual actions, command palette, scrolling, and right-`Ctrl` push-to-talk.
+  - [x] Define Debian `Ctrl+PageUp`, `Ctrl+PageDown`, `Alt+1` through `Alt+5`, focus traversal, activation, cancellation, contextual actions, command palette, scrolling, and right-`Ctrl` push-to-talk.
   - [x] Define Debian mouse activation, context menu, scrolling, back, drag alternatives, and optional configurable push-to-talk buttons.
   - [x] Define Debian headless CLI, API, service-manager, health-check, and process-signal controls.
   - [x] Define focus traversal, disabled controls, modal focus, scrolling, and pane transitions.
@@ -797,6 +797,8 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** Phase 1 controller and architecture contracts.
 
+**Historical evidence note:** The completed checklist records the prototype/mockup milestone and its intended input contract. It does not prove that every focus, activation, context, scrolling, accessibility, or input-equivalence behavior is present in the current executable. New Phases 6–7 reconcile and implement that remaining evidence without rewriting the historical checkpoint.
+
 - [x] Create the Ebitengine application shell.
   - [x] Add a small executable entrypoint.
   - [x] Add a thin Ebitengine game adapter.
@@ -808,7 +810,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Implement activation, back, contextual action, and scrolling.
   - [x] Implement Debian GUI keyboard controls.
     - [x] Implement `Ctrl+PageUp` and `Ctrl+PageDown` tab cycling.
-    - [x] Implement `Alt+1` through `Alt+7` direct tab selection.
+    - [x] Implement the then-documented direct-tab selection; the current canonical contract is `Alt+1` through `Alt+5`.
     - [x] Implement `Tab`, `Shift+Tab`, arrows, `Enter`, `Space`, `Escape`, Menu or `Shift+F10`, `Ctrl+Shift+P`, and collection-navigation keys.
     - [x] Preserve ordinary text editing and clipboard behavior while text controls own focus.
   - [x] Implement mouse/touch focus, activation, context actions, scrolling, and non-pointer drag alternatives without separate application behavior.
@@ -818,7 +820,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Add Projects.
   - [x] Add Research after Cluster.
   - [x] Add Cluster.
-  - [x] Add Routing.
+  - [x] Add Routing as Cluster selector/content-panel content.
   - [x] Add Tasks as Cluster selector/content-panel content.
   - [x] Add Settings as the final tab.
   - [x] Implement `L1`/`R1` tab switching and wrap behavior.
@@ -1211,685 +1213,1042 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [x] The Android build, tests, and documentation do not require `third_party/salvagecore`.
 - [x] Documentation explains prerequisites, commands, artifact paths, validation evidence, and known limitations.
 
-## Phase 6: Secure Two-Device HTTPS/WireGuard Vertical Slice
+## Remaining Program Execution Contract
 
-**Goal:** Complete the MVP proof between a Steam Deck and one headless worker.
+Phases 0–5 above are the completed foundation and historical implementation record. From Phase 6 onward, each phase is a concrete implementation program rather than a broad theme.
 
-**Dependencies:** Phases 1–5.
+Every focused execution plan bound to a remaining phase must identify:
 
-- [ ] Add external-network configuration.
+- User-visible outcome and explicit deferrals.
+- Dependencies and must-resolve-before decisions.
+- Domain authority and core-versus-presentation state ownership.
+- SQLite migrations, compatibility, backup, and restart behavior.
+- REST/OpenAPI, signed-envelope, authorization, limit, and audit changes.
+- External, platform, provider, and transport adapters.
+- GUI read models, commands, loading/empty/stale/offline/error states, focus, and input behavior.
+- Failure, cancellation, retry, idempotency, recovery, and rollback behavior.
+- Headless, display-free GUI, integration, target-platform, performance, and security evidence.
+- Documentation updates and phase exit evidence.
+
+Every functional phase ends in a reviewable vertical slice:
+
+`core state -> SQLite -> command/query or REST boundary -> GUI projection -> failure/restart evidence`
+
+Shared abstractions grow from completed slices. A phase may not claim support from compilation alone, replace durable state with channels or widget state, expose a provider's localhost endpoint, grant authority through cached records, or bypass Project-owner and queue-owner validation.
+
+## Phase 6: Documentation, Evidence Reconciliation, And Decision Gates
+
+**User outcome:** Contributors can begin backend implementation from one accurate architecture and roadmap without mistaking the GUI mockup or planned contracts for completed behavior.
+
+**Dependencies:** Completed Phases 0–5 and the 2026-07-19 architecture review.
+
+**Scope and deferrals:** This phase changes contracts, evidence labels, and executable planning only. It does not implement the backend features described by later phases.
+
+### Documentation truth
+
+- [ ] Audit every completed Phase 0–5 claim against executable evidence.
+  - [ ] Verify the five canonical tab IDs and order against code and tests.
+  - [ ] Reclassify unfinished focus, activation, back, context, command-palette, scrolling, input-equivalence, accessibility, configuration, offline, and recovery behavior as planned or validation-pending.
+  - [ ] Distinguish implemented startup and persistence primitives from the planned shared-core package structure.
+  - [ ] Preserve journal history; record corrections in current evidence rather than rewriting past checkpoints.
+- [x] Keep one canonical product and contract vocabulary.
+  - [x] GUI state never becomes headless-core state.
+  - [x] Projects are owner-local Git repositories projected into one authorized cluster-wide catalog.
+  - [x] Pipelines are Projects with Task entrypoints.
+  - [x] Tasks may run manually with no trigger.
+  - [x] Queue owners validate REST submissions; workers pull leases and return outcomes; only owners complete jobs authoritatively.
+  - [x] Providers are static drivers, endpoints are stable service instances, models/features are capabilities, and remote peers use the Apparat gateway.
+- [x] Mark every affected document section as implemented, partially validated, planned, deferred, or removed where ambiguity could mislead implementation.
+- [ ] Add or retain automated consistency checks for tabs, shortcuts, artifact paths, package boundaries, service cardinality, OpenAPI links, and platform-support claims.
+
+### Resolved architecture decisions
+
+- [x] Record and test-plan the selected one-node process model.
+  - [x] `apparat` and `apparatd` embed the same headless-capable core.
+  - [x] They are alternative process forms of one node with one default runtime root, identity, SQLite database, service inventory, and artifact store.
+  - [x] One exclusive runtime lock permits one authoritative process and SQLite writer.
+  - [x] Simultaneous GUI/daemon use requires a later approved daemon-client mode.
+  - [x] Independent nodes on one host require explicit roots, identities, ports, and service ownership.
+- [x] Record the selected identity and TLS model.
+  - [x] One cluster-local X.509 root fingerprint is verified out of band.
+  - [x] One enrollment authority controls MVP issuance under that root.
+  - [x] TLS leaf keys remain separate from Apparat Ed25519 device-signing keys.
+  - [x] Signed device records bind both keys, certificate serial/fingerprint, WireGuard key, roles, scopes, validity, and status.
+  - [x] Rotation and revocation update the binding rather than trusting a still-chain-valid leaf.
+- [x] Record the signed-envelope model.
+  - [x] RFC 8785 canonical UTF-8 JSON.
+  - [x] Integer UTC millisecond timestamps.
+  - [x] SHA-256 payload or canonical artifact-metadata hashes.
+  - [x] Ed25519 signature by the Apparat device key over the envelope with the signature value omitted.
+  - [x] Strict recipient, expiry, deadline, replay, idempotency, size, authorization, and schema validation.
+- [x] Record owner authority.
+  - [x] Project owners own Project Task definitions, trigger bindings, scheduling evaluation, and runs during the MVP.
+  - [x] Queue owners own admission, ordering, attempts, leases, cancellation, results, retention, and audit.
+  - [x] Cached directory, Project, service, queue, and result projections grant no authority.
+- [x] Record service advertisement behavior.
+  - [x] Owner-scoped monotonic revisions.
+  - [x] Default 120-second lifetime and refresh by 60 seconds.
+  - [x] Immediate routing exclusion on expiry.
+  - [x] Stale diagnostic visibility for up to 24 hours.
+  - [x] Fresh observation and newer revision required to become routable again.
+- [x] Record credential and artifact boundaries.
+  - [x] SQLite stores provider credential references, not provider secrets.
+  - [x] Secret adapters use an OS credential store or Apparat-managed encrypted local secret file.
+  - [x] Artifact bytes live in the owner runtime artifact store; SQLite holds metadata and lifecycle.
+  - [x] HTTPS transfer is bounded, resumable, authenticated, and SHA-256 verified before atomic finalization.
+  - [x] Queue completion waits for owner validation of the active lease and every artifact.
+
+### Decision gates retained for later phases
+
+- [x] Assign every unresolved decision to the phase that needs it.
+  - [x] Phase 7: final migration/backup/restore procedure, lock recovery, clock/ID ports, WAL platform evidence, and whether optional at-rest database encryption is admitted.
+  - [x] Phase 8: enrollment authorization vocabulary, invite recovery, endpoint-discovery seed, rate/size limits, and certificate rotation/revocation operations.
+  - [x] Phase 9: directory conflict resolution and Project-summary authorization/freshness policy.
+  - [x] Phase 10: supported file/binary limits, Task sandbox per platform, transaction conflicts, and artifact retention defaults.
+  - [x] Phase 11: provider auto-discovery defaults, verified-service auto-promotion, credentials per platform, probe/admission defaults, and approved image providers.
+  - [x] Phase 12: lease/heartbeat/retention defaults, artifact quotas, retry classes, and worker trust policy.
+  - [x] Phase 13: routing score inputs, fallback policy, load freshness, and route-explanation schema.
+  - [x] Phase 14: webhook authentication, schedule/timezone behavior, approval policy, and post-MVP scheduler failover.
+  - [x] Phase 15: capture formats, device permissions, privacy retention, ASR/TTS adapter selection, and streaming behavior.
+  - [x] Phase 16: release artifact hosting, tracked-binary replacement, signing custody, reproducibility threshold, update manifests, and rollback support.
+  - [x] Post-MVP Track A: Meshtastic, Signal, app-managed WireGuard, ownership migration, replication, CRDT, and dynamic optimization.
+  - [x] Post-MVP Track B: Comrades transport/privacy, grants, quotas, moderation, visibility, and abuse defaults.
+  - [x] Post-MVP Track C: BOINC boundary, source dependencies, isolation, validation governance, gameplay, reputation, and anti-gaming.
+
+**Exit criteria**
+
+- [ ] No contradiction can change the identity, authority, cardinality, persistence, security, or process model of Phase 7 or 8.
+- [ ] Current evidence and future requirements are visibly distinct.
+- [ ] README and detailed contracts agree with this roadmap.
+- [ ] `make check-docs`, plan-index checks, link/OpenAPI checks, and whitespace validation pass.
+
+## Phase 7: Shared Core, SQLite, Lifecycle, And First Local-Service Slice
+
+**User outcome:** GUI and headless artifacts operate the same durable backend state without putting presentation state into the core, and users can inspect a real core-backed local service inventory.
+
+**Dependencies:** Phase 6.
+
+**Deferred:** Enrollment, remote advertisement, real provider calls, distributed queues, routing, and Task triggers.
+
+### Shared-core ownership and package seams
+
+- [ ] Establish the real shared-core composition.
+  - [ ] Keep executable entry points in `cmd/apparat` and `cmd/apparatd`.
+  - [ ] Put mode-neutral orchestration in `internal/app`.
+  - [ ] Put durable product rules and value types in `internal/domain`.
+  - [ ] Put SQLite, provider, Git, filesystem, HTTP, and other external integrations in `internal/adapters`.
+  - [ ] Put OS paths, locks, signals, credential stores, services, and lifecycle in `internal/platform`.
+  - [ ] Keep Ebitengine/EbitenUI imports below the GUI adapter boundary.
+- [ ] Remove duplicate backend ownership.
+  - [ ] The core owns no HUD shell.
+  - [ ] The GUI owns navigation, focus, selection, layout, scrolling, gestures, animation, modal state, and unsaved widget text.
+  - [ ] Core state includes identity, backend configuration, Projects, durable drafts, Tasks, queues, jobs, services, capabilities, artifacts, retries, and cached remote state.
+  - [ ] Boundary operations convert GUI/API actions into core commands and core read models/change notifications into projections.
+- [ ] Implement the smallest command/query seam needed by the first slice.
+  - [ ] Typed commands validate intent and durable invariants.
+  - [ ] Queries return immutable read models.
+  - [ ] Change notifications are hints to re-query, not durable truth.
+  - [ ] Inject clock and ID sources into deterministic application logic.
+  - [ ] Add abstractions only after a second slice proves a shared contract.
+
+### One-node runtime and transactional lifecycle
+
+- [ ] Migrate to one logical default node root for both artifacts.
+  - [ ] Preserve or explicitly migrate current binary-specific roots.
+  - [ ] Acquire an exclusive runtime lock before opening writable state.
+  - [ ] Report the owning PID/artifact and safe recovery guidance on contention.
+  - [ ] Require explicit roots and identities for independent same-host nodes.
+- [ ] Make startup transactional.
+  - [ ] Resolve configuration and paths.
+  - [ ] Acquire the lock.
+  - [ ] Start structured logging and panic capture.
+  - [ ] Open and inspect SQLite.
+  - [ ] Apply checksumed forward migrations.
+  - [ ] Load/validate identity and secret adapters.
+  - [ ] Construct repositories and managers.
+  - [ ] Start supervised background work only after durable dependencies are ready.
+  - [ ] Publish readiness last.
+- [ ] Make shutdown idempotent and ordered.
+  - [ ] Stop admission.
+  - [ ] Cancel supervised work.
+  - [ ] Flush durable state and logs.
+  - [ ] Close managers, repositories, SQLite, and lock.
+  - [ ] Preserve actionable `last_run.log` diagnostics on partial startup or shutdown failure.
+
+### SQLite and recovery hardening
+
+- [ ] Centralize database ownership behind repositories and transactions.
+  - [ ] Define connection limits, busy timeout, foreign-key behavior, and retry classes.
+  - [ ] Keep WAL opt-in until Linux, Windows, macOS, and Android behavior is evidenced.
+  - [ ] Add cancellation-aware transactions and read models.
+  - [ ] Preserve migration checksum mismatch diagnostics.
+- [ ] Define and test backup, integrity, repair, restore, and rollback.
+  - [ ] Never treat file copy during an active uncoordinated write as a valid backup.
+  - [ ] Record schema/app version and integrity evidence with backups.
+  - [ ] Test restore into a disposable root before replacing authoritative state.
+  - [ ] Keep optional database encryption gated on key storage and recovery design.
+
+### First durable local-service vertical slice
+
+- [ ] Implement a statically registered mock provider driver.
+  - [ ] Explicit factory registration at both composition roots.
+  - [ ] Stable `ServiceID` and `CapabilityID` types.
+  - [ ] Two configured instances of the same driver and workload class plus one different mock provider.
+  - [ ] Independent desired enablement, observed health, inventory, concurrency, failure, and shutdown.
+- [ ] Persist desired and observed service state separately.
+  - [ ] Service-instance desired configuration table.
+  - [ ] Observation table with safe errors and probe timestamps.
+  - [ ] Capability table keyed by service and capability ID.
+  - [ ] No remote advertisement in this phase.
+- [ ] Expose one shared read model.
+  - [ ] Headless query/diagnostic output lists every instance distinctly.
+  - [ ] GUI Routing detail renders the same core projection.
+  - [ ] GUI filter/selection/expansion remains GUI-owned.
+  - [ ] Loading, empty, disabled, unhealthy, and error states are explicit.
+- [ ] Prove restart and failure isolation.
+  - [ ] Stable identities survive restart.
+  - [ ] One failed instance does not hide or stop another same-provider instance.
+  - [ ] Removing one instance cannot remove another by driver or workload key.
+
+### GUI, test, and build foundation
+
+- [ ] Route controller, keyboard, mouse, and touch through one application action model.
+- [ ] Implement or correctly defer focus, activation, back, context, scrolling, modal, disabled-control, and accessibility semantics.
+- [ ] Replace unconditional widget-tree rebuilds with reconciliation where measured evidence shows churn or state loss.
+- [ ] Standardize loading, empty, stale, offline, unauthorized, retrying, cancelled, and failed data states.
+- [ ] Persist only honest configuration with validation, save state, defaults, and secret references.
+- [ ] Separate headless core tests, display-free GUI state/projection tests, and optional native display integration tests.
+- [ ] Remove placeholder/sentinel packages only when real owners replace them; do not perform a broad speculative rewrite.
+- [ ] Avoid a service-locator, generic event bus, or global registry that hides ownership; use explicit composition roots and narrow interfaces.
+- [ ] Keep Ebitengine update/draw work bounded; move SQLite, network, provider probes, artifact I/O, and other blocking effects outside render/update paths.
+- [ ] Harden existing sensitive foundations before exposing the network.
+  - [ ] Strict identity parsing, validation, permissions, and atomic file replacement.
+  - [ ] Recursive structured-log redaction for secrets and sensitive nested fields.
+  - [ ] Updater trust, hash/signature, temporary-file, cancellation, and rollback boundaries.
+- [ ] Separate fast host builds/tests from release orchestration.
+- [ ] Stop mutating tracked or submodule source during builds; use ignored worktrees/caches or upstreamable patches.
+- [ ] Establish startup, memory, SQLite, frame-time, and probe-concurrency budgets with measurements.
+
+### Continuous target evidence
+
+- [ ] Keep Linux GUI and headless builds passing through every later phase.
+- [ ] Prove headless startup imports/initializes no GUI dependency.
+- [ ] Continue Android validation from Phase 5.
+  - [ ] Safe-area and density/readability on a Pixel-class device.
+  - [ ] Touch, keyboard, controller, portrait, landscape, process-liveness, and runtime-path evidence.
+  - [ ] Optional install/launch integration target when tools/device are available.
+  - [ ] No second backend/service registry in the Android GUI.
+- [ ] Carry unresolved input, accessibility, and platform behavior into the exact phase that supplies its real backend effect.
+
+**Exit criteria**
+
+- [ ] One shared core runs headlessly and behind the GUI.
+- [ ] One runtime lock prevents competing writers/advertisements for one node.
+- [ ] Core tests require no GUI, SQLite, network, real clock, or platform service unless explicitly integration-scoped.
+- [ ] Two same-provider mock instances and another provider remain distinct through restart and failure.
+- [ ] The GUI renders core service state without moving GUI state into the core.
+- [ ] Lifecycle, backup/restore, diagnostics, and continuous target checks have reproducible evidence.
+
+## Phase 8: Identity, Trusted Device Directory, Secure REST, And Reusable Mock Queue
+
+**User outcome:** Two devices can enroll, authenticate, exchange durable work through the owner-authoritative REST protocol, disconnect or restart, and recover one logical result.
+
+**Dependencies:** Phase 7 and Phase 6 identity/envelope contracts.
+
+**Deferred:** Automatic endpoint discovery, Project workspaces, real inference providers, pools, and route selection.
+
+### Network configuration and trusted directory
+
+- [ ] Support externally managed WireGuard and trusted LAN through the same HTTPS API.
   - [ ] Detect expected WireGuard interfaces where possible.
-  - [ ] Support explicit peer endpoint configuration.
-  - [ ] Support trusted-LAN endpoints through the same HTTPS API.
-  - [ ] Make discovery advisory rather than authoritative.
-- [ ] Add enrollment.
-  - [ ] Generate a short-lived QR/invite.
-  - [ ] Display and verify the cluster fingerprint.
-  - [ ] Exchange device profile and certificate request.
-  - [ ] Bind device identity, TLS certificate, WireGuard key, roles, permissions, and capabilities.
-  - [ ] Replicate the signed peer record.
-  - [ ] Expire or revoke the enrollment token.
-- [ ] Add mutual TLS.
-  - [ ] Require authenticated client and server devices.
-  - [ ] Validate certificate binding and authorization.
-  - [ ] Add rotation and revocation tests.
-  - [ ] Reject mutating 0-RTT behavior.
-- [ ] Implement the initial REST API.
-  - [ ] Health.
-  - [ ] Device profile.
-  - [ ] Typed workload capabilities.
-  - [ ] Owner-local Project listing and detail used to assemble cluster-wide Project catalogs.
-  - [ ] Project Task-entrypoint listing and manual run submission.
-  - [ ] Submit job.
-  - [ ] Read job.
-  - [ ] Cancel job.
-  - [ ] Queue-owner job submission, worker claim/long-poll, lease heartbeat, and result completion.
-  - [ ] Poll events by cursor.
-  - [ ] Submit project transaction placeholder.
-  - [ ] Enforce schemas, limits, deadlines, authorization, and audit logs.
-- [ ] Implement the signed envelope.
-  - [ ] Sign outgoing messages.
-  - [ ] Verify incoming identity, signature, hash, expiration, and authorization.
-  - [ ] Reject replay.
-  - [ ] Apply duplicate messages idempotently.
-- [ ] Implement the echo/mock queue.
-  - [ ] Persist requester outbox submission.
-  - [ ] Return `202 Accepted` and a durable job resource.
-  - [ ] Persist owner acceptance or rejection.
-  - [ ] Have an authorized worker pull a mock lease from the owner over REST.
-  - [ ] Execute the mock job only under the active lease.
-  - [ ] Post the signed mock result back to the owner over REST for validation.
-  - [ ] Persist progress and result.
-  - [ ] Poll or long-poll status.
-  - [ ] Support cancellation, timeout, retry, and failure.
-  - [ ] Resume after requester restart.
-  - [ ] Resume after owner restart.
-  - [ ] Reject jobs whose workload class or requirements have no compatible destination.
-- [ ] Demonstrate the proof.
-  - [ ] Submit from Steam Deck.
-  - [ ] Execute on the headless device.
-  - [ ] Disconnect one device.
-  - [ ] Restart one or both applications.
-  - [ ] Reconnect.
-  - [ ] Recover final state and result.
-  - [ ] Confirm logs and HUD share correlation and job IDs.
+  - [ ] Support explicit peer endpoint configuration for the first proof.
+  - [ ] Treat discovery as advisory and never as trust.
+- [ ] Add an authoritative durable trusted-device directory.
+  - [ ] Device identity, TLS binding, WireGuard key, roles, scopes, endpoints, revision, validity, and status.
+  - [ ] Signed/cached peer records for offline degradation.
+  - [ ] Explicit revoked, expired, stale, unavailable, and key-changed states.
+  - [ ] No authority from a cached record after revocation/expiry.
+
+### Enrollment and mTLS
+
+- [ ] Generate a short-lived QR/invite.
+  - [ ] Cluster root fingerprint, one-time token, intended role/scopes, endpoint hints, and expiration.
+  - [ ] Mutual human confirmation before trust is recorded.
+  - [ ] Device profile, signing-key proof, TLS key/CSR proof, and WireGuard binding.
+  - [ ] Token single use, expiration, revocation, and audit.
+- [ ] Issue and validate TLS certificates.
+  - [ ] Chain to the verified cluster root.
+  - [ ] Require current signed device-record binding.
+  - [ ] Separate leaf and Apparat signing keys.
+  - [ ] Test issuance, rotation, revocation, lost-device recovery, and key mismatch.
+  - [ ] Disable mutating TLS 0-RTT.
+
+### Signed REST foundation
+
+- [ ] Implement versioned authenticated REST resources.
+  - [ ] Health, version, readiness, and clock state.
+  - [ ] Device profile and trusted-directory projection.
+  - [ ] Safe aggregate capabilities.
+  - [ ] Submit/read/cancel mock jobs.
+  - [ ] Queue-owner submit, worker claim/long-poll, heartbeat, and complete.
+  - [ ] Cursor-based event polling.
+  - [ ] Owner-local Project and Task resources remain placeholders until Phases 9–10.
+- [ ] Enforce OpenAPI schemas, content types, body/artifact limits, deadlines, bounded concurrency, scopes, audit, and redaction-safe errors.
+- [ ] Implement RFC 8785/SHA-256/Ed25519 envelopes.
+  - [ ] Sign outgoing durable operations.
+  - [ ] Validate canonical form, key binding, signature, recipient, hash, expiry, deadline, replay, authorization, size, and schema.
+  - [ ] Apply duplicate messages idempotently and return prior durable outcomes where possible.
+
+### Reusable mock-queue proof
+
+- [ ] Persist requester outbound submission before network delivery.
+- [ ] Have the queue owner authenticate, authorize, validate, and durably accept or reject.
+- [ ] Return `202 Accepted` only after durable acceptance with resource location.
+- [ ] Let an authorized worker poll/long-poll with current mock capabilities.
+- [ ] Issue one bounded owner-created attempt, lease, fencing token, and deadline.
+- [ ] Execute only under the active lease.
+- [ ] Accept bounded heartbeat/progress according to policy.
+- [ ] Post a signed terminal result/failure to the owner.
+- [ ] Let the owner validate worker, lease, fencing, schema, idempotency, and result before authoritative completion.
+- [ ] Support cancellation, timeout, retry, lease expiry, and clear incompatibility rejection.
+- [ ] Reuse these identities and transitions in Phase 12; do not build a disposable echo-only protocol.
+
+### GUI and recovery proof
+
+- [ ] Show enrollment, fingerprint, trust, directory, connection, queue/job, attempt, and failure states in existing HUD surfaces.
+- [ ] Keep invite text, selected peer, forms, focus, and navigation in GUI state.
+- [ ] Use stable device, message, job, attempt, lease, and correlation IDs in API, SQLite, logs, events, and GUI.
+- [ ] Demonstrate Steam Deck requester and headless worker.
+  - [ ] Disconnect requester, owner, or worker.
+  - [ ] Restart requester and owner independently.
+  - [ ] Reconnect and retrieve the one authoritative result.
+  - [ ] Reject duplicate delivery, stale completion, replay, and unauthorized work.
 
 **Exit criteria**
 
-- The complete two-device proof passes repeatedly across restart and temporary disconnection.
-- No trust is derived solely from LAN presence or WireGuard reachability.
-- Duplicate delivery cannot duplicate the logical job.
+- [ ] Two devices repeatedly complete the proof across restart and temporary disconnection.
+- [ ] LAN/WireGuard presence alone grants no trust.
+- [ ] Duplicate delivery cannot duplicate the logical job.
+- [ ] Only the queue owner records authoritative acceptance and completion.
+- [ ] The mock queue is a reusable foundation for Phase 12.
 
-## Phase 7: Project Workspace And Git Operations
+## Phase 9: Discovery, Presence, Project Registry, And Cluster-Wide Project Catalog
 
-**Goal:** Make Apparat useful for real project navigation and controlled repository work.
+**User outcome:** Every enrolled device shows every Project it is authorized to discover across the cluster, with correct owner, freshness, and offline state.
 
-**Dependencies:** Phase 6 transport and persistence.
+**Dependencies:** Phase 8 secure REST and trusted directory.
 
-- [ ] Add project registration and ownership.
-  - [ ] Register existing filesystem/Git folders.
-  - [ ] Assign one owner device.
-  - [ ] Store metadata and routes in SQLite.
-  - [ ] Validate safe project roots and path traversal protection.
+**Deferred:** File/Git operations, Project mutation, Pipeline execution, and full artifacts until Phase 10.
+
+### Endpoint discovery and presence
+
+- [ ] Add endpoint discovery after the explicit Phase 8 seed.
+  - [ ] Discovery records are suggestions until matched to an authorized device record and mTLS identity.
+  - [ ] Preserve explicit endpoint configuration as fallback.
+  - [ ] Record last success, failure, clock state, revision, and availability safely.
+- [ ] Define and implement directory conflict behavior.
+  - [ ] Newer valid signed revision supersedes older state.
+  - [ ] Revocation and key-change conflicts fail closed.
+  - [ ] Cached offline records remain visible but cannot authorize.
+  - [ ] Surface actionable conflict and recovery information.
+
+### Owner-local Project registry
+
+- [ ] Register existing filesystem/Git folders.
+  - [ ] Assign stable Project ID and one owner device.
+  - [ ] Validate canonical safe roots and path traversal protection.
+  - [ ] Store owner-local metadata and revision in SQLite.
   - [ ] Treat the device holding/running the Git working tree as authoritative.
-  - [ ] Advertise signed authorization-filtered Project summaries with revision, freshness, and availability.
-  - [ ] Merge owner-local and authorized remote summaries into the Projects list on every device.
-  - [ ] Keep offline remote Projects visible as stale/unavailable without treating cached metadata as repository authority.
-  - [ ] Route all remote Project reads, Git operations, Task operations, and mutations to the owner through REST.
-- [ ] Add file management.
-  - [ ] Browse directories.
-  - [ ] View text files.
-  - [ ] Edit supported text files.
-  - [ ] Create, rename, move, and delete with explicit confirmation.
-  - [ ] Track unsaved and offline drafts.
-  - [ ] Define binary and large-file handling.
+  - [ ] Do not expose owner-local filesystem paths remotely.
+- [ ] Produce signed authorization-filtered Project summaries.
+  - [ ] Project and owner IDs, display metadata, Pipeline/task presence summary, capabilities, revision, observation/expiry, and availability.
+  - [ ] Separate permission to discover from file, Git, Task, mutation, artifact, chat, and secret permissions.
+
+### Cluster-wide catalog projection
+
+- [ ] Merge local Projects with authorized remote summaries from every owner.
+- [ ] Cache remote summaries with signer, revision, freshness, and expiry.
+- [ ] Keep offline Projects visible as stale/unavailable according to policy.
+- [ ] Never relabel a cached remote Project as local or authoritative.
+- [ ] Route Project detail reads to the owner through REST.
+- [ ] Prevent one device from republishing another owner's summary as its own.
+- [ ] Reconcile additions, updates, authorization loss, owner revocation, and deletion idempotently.
+
+### GUI and evidence
+
+- [ ] Replace mock Project list data with a core read model.
+- [ ] Show local/remote owner, online/stale/unavailable, authorization, revision, and last observation.
+- [ ] Keep filter, selection, expansion, sorting, focus, and unsaved search text in GUI state.
+- [ ] Provide loading, empty, partial-cluster, offline, unauthorized, conflict, and retry states.
+- [ ] Test at least two owners, duplicate display names, offline cache, revoked access, stale revision, and restart recovery.
+
+**Exit criteria**
+
+- [ ] Every device presents the same authorized cluster-wide Project set modulo current authorization and freshness.
+- [ ] Each Git repository remains authoritative only on its owner.
+- [ ] Remote reads go to the owner; no remote filesystem or SQLite access exists.
+- [ ] Cached summaries remain useful offline without granting authority.
+
+## Phase 10: Project Workspaces, Git, Pipelines, And Constrained Manual Tasks
+
+**User outcome:** A user can open a real local or remote Project, perform safe repository work, manage durable drafts/artifacts, and run a Project entrypoint manually without a trigger or unrestricted shell.
+
+**Dependencies:** Phase 9 Project ownership/catalog and Phase 8 secure REST.
+
+**Deferred:** Queue-backed Task steps until Phase 12, route selection until Phase 13, and schedules/webhooks/events until Phase 14.
+
+### Files and Git
+
+- [ ] Add constrained owner-served filesystem resources.
+  - [ ] Browse directories and view supported text.
+  - [ ] Create/edit/rename/move/delete with explicit scope and confirmation.
+  - [ ] Protect roots, symlinks, traversal, binary files, large files, and races.
+  - [ ] Preserve unsaved/offline drafts independently from authoritative files.
 - [ ] Add safe Git operations.
-  - [ ] Status.
-  - [ ] Diff.
-  - [ ] Stage and unstage.
-  - [ ] Commit with explicit scope.
-  - [ ] Branch listing and switching.
-  - [ ] History and commit details.
-  - [ ] Conflict visualization.
-  - [ ] No unrestricted shell escape.
-- [ ] Add project chats.
-  - [ ] Chat list and history.
-  - [ ] Prompt editor.
-  - [ ] Message/job/artifact relationships.
-  - [ ] Project route selection.
-  - [ ] Offline pending messages.
-- [ ] Add project transactions.
-  - [ ] Stable transaction IDs.
-  - [ ] Owner-device apply.
-  - [ ] Version/conflict checks.
-  - [ ] Durable rejection reasons.
-  - [ ] Revise, discard, and retry.
-  - [ ] Idempotent replay.
-- [ ] Define Pipelines and Project Task entrypoints.
-  - [ ] Derive Pipeline status from a Project having at least one Apparat Task entrypoint; do not create a separately owned Pipeline entity.
-  - [ ] Store Task definitions and authoritative run records with the Project owner.
-  - [ ] Define typed inputs/outputs, permissions, constrained execution behavior, routing, approvals, and entrypoint schema version.
-  - [ ] Allow manual Task execution with no trigger binding.
-  - [ ] Keep trigger bindings separate so intervals, webhooks, application events, and cluster events can invoke the same Task.
-  - [ ] Expose authorized Task summaries and manual invocation through the Project owner's REST API.
-- [ ] Add artifacts.
-  - [ ] Metadata and ownership.
-  - [ ] Hash and MIME type.
-  - [ ] Bounded upload/download.
-  - [ ] Resume and integrity verification.
-  - [ ] Retention and cleanup.
+  - [ ] Status, diff, stage, unstage, scoped commit.
+  - [ ] Branch list/switch, history, and commit detail.
+  - [ ] Conflict visualization and explicit resolution transactions.
+  - [ ] No shell escape or arbitrary command construction.
+
+### Chats, transactions, drafts, and artifacts
+
+- [ ] Add Project chats.
+  - [ ] Chat list/history and prompt editor.
+  - [ ] Message, job, route, result, and artifact relationships.
+  - [ ] Offline pending messages with durable state.
+- [ ] Add owner-authoritative idempotent Project transactions.
+  - [ ] Stable transaction and base-revision identity.
+  - [ ] Authorization, validation, conflict checks, and owner apply.
+  - [ ] Durable rejection reason and editable content.
+  - [ ] Revise, discard, retry, and duplicate replay.
+- [ ] Implement artifact lifecycle.
+  - [ ] Owner metadata, SHA-256, size, MIME type, provenance, authorization, and retention.
+  - [ ] Bounded authenticated upload/download with ranges/chunks.
+  - [ ] Temporary partial state, resume, digest verification, and atomic finalization.
+  - [ ] Explicit expired/deleted/corrupt/unavailable states.
+  - [ ] Cleanup without silently invalidating successful authoritative results.
+
+### Pipelines and manual Tasks
+
+- [ ] Derive Pipeline status from one or more enabled Apparat Task entrypoints.
+  - [ ] No separate Pipeline owner, repository, scheduler, or identity.
+- [ ] Define versioned Task entrypoints.
+  - [ ] Stable Task and Project IDs.
+  - [ ] Typed inputs/outputs and schema version.
+  - [ ] Project-owner authority and revision.
+  - [ ] Permissions, secret references, timeouts, retries, approvals, and enabled state.
+  - [ ] Durable run/correlation/idempotency identity and history.
+- [ ] Permit manual execution with zero trigger bindings.
+  - [ ] Owner-local allowlisted application actions.
+  - [ ] Project-scoped filesystem/Git operations.
+  - [ ] Explicit mock/local executor calls.
+  - [ ] Configured human approval for consequential actions.
+  - [ ] No unrestricted remote shell, generic process endpoint, or arbitrary tool execution.
+- [ ] Keep trigger bindings as separate planned records; a manual action is not a persistent trigger.
+- [ ] Expose authorized Task summaries and manual run requests through the Project owner's REST API.
+
+### GUI, recovery, and safety
+
+- [ ] Wire workspace buttons to real routes/commands or visibly disable them with a reason.
+- [ ] Preserve editor focus, selection, scroll, panes, unsaved buffers, and conflict UI as presentation state.
+- [ ] Show transaction pending/accepted/rejected/conflicted, Task approval/running/cancelled/failed/completed, and artifact transfer states.
+- [ ] Recover drafts, transactions, Task runs, and transfers across restart.
+- [ ] Redact file contents, prompts, chat bodies, secrets, and artifact bytes from default logs.
+- [ ] Test authorization distinctions among discovery, read, Git, Task invocation, mutation, artifact, chat, and secret scopes.
 
 **Exit criteria**
 
-- A Steam Deck can open a real project, inspect files and Git state, submit a project chat job, and recover offline drafts without granting arbitrary shell access.
-- Every device presents all authorized Projects across the cluster with owner and freshness state; remote operations go to the owning device.
-- A Project with a Task entrypoint appears as a Pipeline, and that Task can run manually without any configured trigger.
+- [ ] A Steam Deck can operate a real Project locally or through its owner without arbitrary shell access.
+- [ ] Offline drafts and rejected/conflicted transactions remain recoverable and editable.
+- [ ] A Project with an entrypoint appears as a Pipeline.
+- [ ] The same owner-defined Task runs manually with no trigger.
+- [ ] Artifact transfers resume and verify integrity.
 
-## Phase 8: Typed Compute Services, Queues, And Routing
+## Phase 11: Multi-Instance Local Inference Drivers, Health, Capabilities, And Advertisements
 
-**Goal:** Route each workload only through authoritative queues and devices that explicitly support its workload class and requirements.
+**User outcome:** One Apparat node can discover, configure, supervise, inspect, and safely advertise any number of local inference services, including duplicates of the same provider.
 
-**Dependencies:** Phases 6–7.
+**Dependencies:** Phase 7 shared core/service slice, Phase 8 identity/gateway, and Phase 6 service contracts.
 
-- [ ] Establish the workload-class registry.
-  - [ ] Add `text_generation`.
-  - [ ] Add `image_generation`.
-  - [ ] Add `video_generation`.
-  - [ ] Add `speech_to_text`.
-  - [ ] Add `text_to_speech`.
-  - [ ] Add `research_boinc`.
-  - [ ] Define versioning and extension rules for future classes such as embeddings, reranking, classification, vision analysis, audio generation, simulation, and compilation.
-  - [ ] Keep workload class independent from runtime/provider and model/project identity.
-- [ ] Add typed service capability inventory.
-  - [ ] Workload class and schema version.
-  - [ ] Service runtime/provider.
-  - [ ] Endpoint.
-  - [ ] Device owner.
-  - [ ] Models or BOINC projects.
-  - [ ] Input/output modalities and limits.
-  - [ ] Hardware and accelerator requirements.
-  - [ ] Memory, storage, concurrency, and queue limits.
-  - [ ] Streaming, progress, cancellation, and artifact support.
-  - [ ] Health, load, availability, and validation timestamp.
-  - [ ] Power, thermal, and schedule constraints.
-  - [ ] Privacy and authorization scope.
-- [ ] Add text-generation adapters.
-  - [ ] Add OpenAI-compatible adapter.
-    - [ ] Text/chat generation.
-    - [ ] Streaming versus non-streaming behavior.
-    - [ ] Timeouts and cancellation.
-    - [ ] Usage and error normalization.
-    - [ ] Artifact/result storage.
-  - [ ] Add Ollama adapter.
-    - [ ] Model inventory.
-    - [ ] Generation.
-    - [ ] Pull/install state where authorized.
-    - [ ] Health and cancellation.
-  - [ ] Add llama.cpp service adapter.
-    - [ ] Keep llama.cpp outside the HUD process.
-    - [ ] Discover server capabilities.
-    - [ ] Normalize model and generation behavior.
-    - [ ] Document per-platform acceleration separately.
-- [ ] Define image-generation adapter contract.
-  - [ ] Text-to-image and image-to-image inputs.
-  - [ ] Image dimensions, formats, model, sampler, and resource requirements.
-  - [ ] Progress, cancellation, preview, result artifacts, and metadata.
-- [ ] Define video-generation adapter contract.
-  - [ ] Text-to-video and image-to-video inputs.
-  - [ ] Duration, dimensions, frame rate, format, model, and resource requirements.
-  - [ ] Long-running progress, cancellation, checkpoint, result artifacts, and storage limits.
-- [ ] Register speech workload contracts.
-  - [ ] Define STT audio inputs, language, timestamps, streaming, and transcript output.
-  - [ ] Define TTS text inputs, voice, language, streaming, audio format, and output.
-  - [ ] Defer concrete STT/TTS adapters to Phase 10 while preserving typed discovery and routing now.
-- [ ] Register BOINC workload contract.
-  - [ ] Define BOINC project identity, client/runtime, platform, application, resource, schedule, and validation requirements.
-  - [ ] Defer concrete BOINC execution to Phase 14 while preserving typed discovery and routing now.
-- [ ] Implement authoritative queues.
-  - [ ] Direct device queues.
-  - [ ] Pool-owner queues.
-  - [ ] Single-class queues.
-  - [ ] Explicit multi-class queue allowlists.
-  - [ ] Per-member capability matching inside heterogeneous pools.
-  - [ ] Priorities.
-  - [ ] Leases.
-  - [ ] Deadlines.
-  - [ ] Retries and backoff.
-  - [ ] Cancellation.
-  - [ ] Failure reasons.
-  - [ ] Result and artifact references.
-  - [ ] Retention.
-  - [ ] Send every remote submission to the queue owner through authenticated REST.
-  - [ ] Validate authentication, authorization, idempotency, schema, workload requirements, policy, quota, limits, and queue state before durable admission.
-  - [ ] Make inference workers claim or long-poll for compatible work from the queue owner; do not push unleased work to workers.
-  - [ ] Issue owner-authoritative attempt IDs, leases, deadlines, and fencing tokens.
-  - [ ] Accept heartbeat/progress and signed completion only from the active leased worker.
-  - [ ] Validate results/artifacts at the owner before authoritative completion.
-  - [ ] Reject stale, expired, replayed, superseded, or duplicate completion without double-completing a logical job.
-- [ ] Implement pool execution.
-  - [ ] Pool membership.
-  - [ ] Owner assignment.
-  - [ ] Capability filtering.
-  - [ ] Member leases.
-  - [ ] Signed member results.
-  - [ ] Owner validation and authoritative completion.
-- [ ] Implement routing profiles.
-  - [ ] Project defaults.
-  - [ ] Chat overrides.
-  - [ ] Workflow/task step routes.
-  - [ ] Required workload class.
-  - [ ] Required runtime/provider, model/project, modality, hardware, and feature capabilities.
-  - [ ] Privacy boundary.
-  - [ ] Priority and timeout.
-  - [ ] Ordered fallback.
-  - [ ] Clear explanation of the selected route.
-  - [ ] Clear reason each incompatible device or queue was excluded.
+**Deferred:** Distributed queue execution to Phase 12 and route/pool selection to Phase 13.
+
+### Workload and driver contracts
+
+- [ ] Establish the versioned workload-class registry.
+  - [ ] `text_generation`, `image_generation`, `video_generation`, `speech_to_text`, `text_to_speech`, and `research_boinc`.
+  - [ ] Extension rules for embeddings, reranking, classification, vision analysis, audio generation, simulation, compilation, and future types.
+  - [ ] Keep workload class independent from driver, service, model, Project, and queue identity.
+- [ ] Implement static provider driver registration.
+  - [ ] Typed factory, configuration validation, instance, inspection, executor, progress, result, and error contracts.
+  - [ ] Explicit composition-root registration in GUI and headless artifacts.
+  - [ ] Workload-specific or deliberately tagged/versioned requests and results, never unbounded generic maps.
+  - [ ] No Go dynamic `plugin.Open` or hidden package-global registration.
+  - [ ] Defer authenticated out-of-process extension IPC until a concrete third-party requirement exists.
+
+### Arbitrary service instances and persistence
+
+- [ ] Generalize the Phase 7 manager.
+  - [ ] Stable `ServiceID` independent from driver/workload.
+  - [ ] Arbitrary same-driver and same-workload instances.
+  - [ ] Primary index by ServiceID; secondary driver/class/model/health/policy indexes.
+  - [ ] Independent probing, health, admission semaphore, concurrency, cancellation, retry classification, failure isolation, refresh, and shutdown.
+- [ ] Implement desired/observed/capability persistence.
+  - [ ] Desired endpoint, enablement, advertise policy, provider configuration, credential reference, admission, concurrency, and revision.
+  - [ ] Observed lifecycle, health, safe failure, availability, load, inventory hash, and probe time.
+  - [ ] Capabilities with stable IDs, workload/schema, model, modality, format, features, limits, artifact/progress/cancellation support, and observation time.
+  - [ ] Provider secrets never enter general JSON, advertisements, logs, or GUI read models.
+- [ ] Implement secret resolution.
+  - [ ] OS credential store when supported.
+  - [ ] Apparat-managed encrypted local secret file fallback.
+  - [ ] Missing/locked/rotated/revoked secret states without disclosing values.
+
+### Discovery, verification, and supervision
+
+- [ ] Probe approved provider defaults and explicit endpoints with bounded concurrency and deadlines.
+- [ ] Validate provider identity/protocol before creating a verified service.
+- [ ] Implement `discovered -> verified -> enabled -> advertised`.
+- [ ] Require explicit enablement/advertisement unless an approved policy auto-promotes a verified known service.
+- [ ] Refresh health/inventory without blocking unrelated instances.
+- [ ] Recover desired state after restart without duplicate instances or advertisements.
+- [ ] Keep providers as separately supervised processes/services; do not load model runtimes into the HUD.
+
+### Safe advertisements and gateway
+
+- [ ] Derive signed service/capability advertisements from desired policy and safe observed state.
+  - [ ] Owner/device, ServiceID, DriverKind, display name, safe health/availability/concurrency/policy.
+  - [ ] CapabilityID, workload/schema, model, modalities, formats, features, and limits.
+  - [ ] Monotonic revision, observed time, 120-second expiry, and refresh by 60 seconds.
+  - [ ] No provider endpoint, secret reference, token, prompt, result, or raw failure.
+- [ ] Cache remote advertisements safely.
+  - [ ] Reject older revisions.
+  - [ ] Make expired services immediately non-routable.
+  - [ ] Show stale diagnostics for up to 24 hours.
+  - [ ] Require fresh newer revision to restore eligibility.
+- [ ] Expose logical service/capability resources through authenticated Apparat REST.
+- [ ] Apply gateway authorization, policy, limits, audit, and queue requirements before provider invocation.
+
+### Provider sequence
+
+- [ ] Retain the mock driver as conformance coverage.
+- [ ] Add OpenAI-compatible text.
+  - [ ] Chat/completion, streaming/non-streaming, timeouts, cancellation, usage/error normalization, and results/artifacts.
+- [ ] Add Ollama.
+  - [ ] Model inventory, generation, authorized pull/install state, health, and cancellation.
+- [ ] Add llama.cpp.
+  - [ ] External service process, inventory, generation normalization, health, cancellation, and platform acceleration evidence.
+- [ ] Add approved image providers through the same registry.
+  - [ ] Automatic1111 and/or ComfyUI.
+  - [ ] Multiple simultaneous providers and same-provider instances.
+  - [ ] Text-to-image/image-to-image, dimensions, formats, model, sampler, progress, cancellation, previews, artifacts, and metadata.
+- [ ] Define video contract without claiming a concrete adapter.
+  - [ ] Text/image-to-video, duration, dimensions, frame rate, format, model, progress, cancellation, checkpoint, artifacts, and storage limits.
+- [ ] Define STT/TTS contracts; concrete adapters remain Phase 15.
+- [ ] Define BOINC capability contract; execution remains Post-MVP Track C.
+
+### GUI and evidence
+
+- [ ] Render every service instance distinctly with stable name/ID, driver, health, capabilities, desired enablement, advertise policy, revision, expiry, and safe failure.
+- [ ] Support independent enable/disable/advertise actions through core commands.
+- [ ] Keep filtering, selection, expansion, form text, and layout in GUI state.
+- [ ] Test two same-provider instances plus another provider through restart, independent failure, removal, secret failure, inventory change, expiry, and shutdown.
+- [ ] Measure bounded probe and refresh resource use on supported platforms.
 
 **Exit criteria**
 
-- A project can submit real text generation through an explicit route, survive retry/restart, fall back deterministically, and retrieve an authoritative result.
-- Mock image, video, STT, TTS, and BOINC jobs route only to matching advertised capabilities.
-- Unsupported workload classes and incompatible requirements fail clearly before execution.
-- Queue requesters submit to the owner, eligible inference workers pull leased tasks from that owner over REST, and only owner-validated returned results become authoritative.
+- [ ] One node manages and advertises several services, including two same-provider/same-workload instances, without identity collision or shared failure.
+- [ ] GUI and headless surfaces use the same manager and read models.
+- [ ] Remote peers see only safe logical identities and cannot invoke localhost providers directly.
+- [ ] Desired, observed, capability, and advertisement state remain separate and restart-safe.
 
-## Phase 9: Automation, Scheduling, And Webhooks
+## Phase 12: Authoritative Queue Protocol, Worker Leasing, Results, Artifacts, And Recovery
 
-**Goal:** Run durable cluster tasks even when some devices are offline.
+**User outcome:** Typed jobs can be submitted to their queue owner, leased by an eligible worker, completed with verified results/artifacts, and recovered without duplicate authoritative completion.
 
-**Dependencies:** Phase 8 typed queues.
+**Dependencies:** Phase 8 reusable mock queue, Phase 10 artifacts, and Phase 11 capabilities.
 
-- [ ] Add task definitions.
-  - [ ] Owner device.
-    - The owner is the device that owns the Task's Project and Git working tree.
-  - [ ] Project ID and Apparat entrypoint identity/schema.
-  - [ ] Trigger.
-  - [ ] Steps.
-  - [ ] Inputs and outputs.
-  - [ ] Permissions.
-  - [ ] Retry and timeout.
-  - [ ] Approval policy.
-  - [ ] Enabled/paused state.
-- [ ] Add triggers.
-  - [ ] Manual.
-    - Manual execution requires no persistent trigger binding.
-  - [ ] Hourly/daily/weekly/monthly or cron-like schedule.
-  - [ ] Authenticated webhook.
-  - [ ] Internal application event.
-  - [ ] Cluster device/service/queue event.
-- [ ] Add durable workflow execution.
-  - [ ] Run ID and correlation ID.
-  - [ ] Current step.
-  - [ ] Submitted job references.
-  - [ ] Await state.
-  - [ ] Checkpoint and resume point.
-  - [ ] Retry and timeout.
-  - [ ] Cancellation.
-  - [ ] Success/failure output.
-- [ ] Add safe action boundaries.
-  - [ ] Allowlisted application actions.
-  - [ ] Project-scoped file/Git operations.
-  - [ ] Explicit service calls.
-  - [ ] Secret references rather than secret values in task definitions.
-  - [ ] Human approval where configured.
-  - [ ] No unrestricted remote shell.
-- [ ] Add run history and diagnostics.
-  - [ ] Timeline.
-  - [ ] Inputs and outputs with redaction.
-  - [ ] Queue/job linkage.
-  - [ ] Failure reason.
-  - [ ] Retry history.
-  - [ ] Resume behavior after restart.
+**Deferred:** Pool choice, route profiles, and fallback policy to Phase 13.
+
+### Queue definitions and admission
+
+- [ ] Implement direct-device, pool-owner, single-class, and explicit multi-class queue definitions.
+- [ ] Persist owner, membership policy, workload allowlist, priorities, deadlines, concurrency, quotas, retries, retention, and enabled state.
+- [ ] Direct every remote submission to the queue owner by authenticated REST.
+- [ ] Validate authentication, scope, idempotency, schema, workload/capability requirements, policy, quota, size, deadline, retention, and queue state before durable accept/reject.
+- [ ] Keep requester outbound state and authorized cached status/result separate from owner authority.
+
+### Worker pull and lease lifecycle
+
+- [ ] Let authorized workers claim/long-poll with current device/service/capability identity, accepted classes, availability, and bounded wait.
+- [ ] Select only compatible work and issue owner-created attempt, lease, fencing token, deadline, and bounded payload/artifact references.
+- [ ] Accept heartbeat/progress only under active policy, worker, and fencing token.
+- [ ] Expire leases safely and permit reassignment without erasing attempt history.
+- [ ] Reject stale, late, replayed, duplicated, mismatched, superseded, or unauthorized worker operations.
+- [ ] Do not push unleased work into worker memory/databases or let workers read replicated queue rows as assignments.
+
+### Execution, results, and artifacts
+
+- [ ] Resolve leased logical service/capability identity through the local manager.
+- [ ] Apply per-service admission, cancellation, deadline, failure isolation, and safe error normalization.
+- [ ] Post signed terminal success/failure to the owner.
+- [ ] Bind worker, queue, job, attempt, lease, fencing, schema, idempotency, and artifact hashes.
+- [ ] Transfer bounded artifacts through authenticated resumable HTTPS.
+- [ ] Verify authorization, provenance, size, MIME policy, and SHA-256 before finalization.
+- [ ] Record authoritative completion exactly once only after every required validation succeeds.
+- [ ] Preserve explicit partial, corrupt, expired, missing, rejected, cancelled, timed-out, and retryable states.
+
+### Recovery and observability
+
+- [ ] Recover requester outbox, owner queue, leases, attempts, cancellation intent, results, and transfers after restart.
+- [ ] Reconcile worker completion after an ambiguous network failure idempotently.
+- [ ] Bound retries/backoff and honor deadlines/cancellation.
+- [ ] Retain attempt history and user-readable safe failure reasons.
+- [ ] Trace stable job/correlation/attempt/lease/service/capability/artifact identity across SQLite, REST, events, logs, and GUI.
+- [ ] Provide health and diagnostics without exposing prompts, results, secrets, endpoints, or unrelated jobs.
+
+### GUI and tests
+
+- [ ] Replace mock queue/job data with core read models.
+- [ ] Show owner, requester, workload, route requirement, queue, attempts, lease, progress, cancellation, retry, result/artifacts, retention, and failure.
+- [ ] Support loading, empty, offline, unauthorized, incompatible, waiting, leased, retrying, cancelled, failed, expired, and completed states.
+- [ ] Test duplicate submission, owner/worker/requester restart, lease expiry, reassignment, late result, corrupted artifact, authorization loss, and cancellation races.
+- [ ] Run concurrency, race, bounded-resource, and database-recovery tests.
 
 **Exit criteria**
 
-- A scheduler-owned task can trigger, submit inference, await a result, survive restart, resume idempotently, and produce an auditable outcome.
-- The same Project Task entrypoint can run manually or through any authorized interval, webhook, application-event, or cluster-event binding without changing Task identity or ownership.
+- [ ] Requesters submit only to owners and workers pull only owner-issued leases.
+- [ ] A worker result becomes authoritative only after owner validation.
+- [ ] Restart, reassignment, duplicate delivery, and ambiguous completion never double-complete a logical job.
+- [ ] Artifacts resume and validate before accepted completion.
+- [ ] The Phase 8 mock flow uses the same production queue primitives.
 
-## Phase 10: ASR, TTS, And Voice Control
+## Phase 13: Pools, Routing Profiles, Deterministic Fallback, And Real Text Generation
 
-**Goal:** Turn controller and Debian GUI push-to-talk into a reliable routed cluster capability.
+**User outcome:** A Project or Task can request typed work, understand why a destination was chosen or excluded, fall back deterministically, and retrieve a real text-generation result.
 
-**Dependencies:** Phases 2, 8, and 9.
+**Dependencies:** Phases 9–12.
 
-- [ ] Add audio capture.
-  - [ ] Start while `R2` or the configured Debian GUI push-to-talk key is held.
-  - [ ] Stop and submit on release.
-  - [ ] Use right `Ctrl` as the documented Debian fallback binding.
-  - [ ] Cancel a held Debian recording with `Escape` without submitting on release.
-  - [ ] Cancel before submission.
-  - [ ] Limit duration and memory.
-  - [ ] Store temporary audio safely.
-  - [ ] Delete according to privacy policy.
-- [ ] Add ASR routing.
-  - [ ] Local whisper.cpp service.
-  - [ ] Remote ASR service.
-  - [ ] Project/context-specific route.
-  - [ ] Queue, progress, timeout, retry, and cancellation.
-  - [ ] Language and model settings.
-- [ ] Add transcription behavior.
+### Pools
+
+- [ ] Implement pool membership and one owner per pool queue.
+- [ ] Support heterogeneous members while leasing only to currently compatible services.
+- [ ] Persist membership revision, authorization, workload allowlist, priorities, availability, and owner policy.
+- [ ] Have members pull leases and return signed results to the pool owner.
+- [ ] Preserve owner validation and authoritative completion.
+- [ ] Handle member offline, stale advertisement, removal, revocation, and partial capability change.
+
+### Routing profiles
+
+- [ ] Implement profiles for Project defaults, chats, Task/workflow steps, and explicit user overrides.
+- [ ] Match:
+  - [ ] Required workload class and schema.
+  - [ ] Optional/required driver, ServiceID, CapabilityID, model/Project, modality, format, hardware, and features.
+  - [ ] Privacy and authorization boundary.
+  - [ ] Deadline, timeout, priority, cost/resource policy, and artifact requirements.
+  - [ ] Current advertisement revision/expiry, health, admission, availability, and queue policy.
+- [ ] Keep explicit service targeting distinct from provider kind.
+- [ ] Apply ordered deterministic fallback.
+- [ ] Reject unsupported or expired destinations before execution.
+- [ ] Return a stable route explanation.
+  - [ ] Selected queue/device/service/capability/model and matched requirements.
+  - [ ] Every excluded candidate and safe reason.
+  - [ ] Fallback order and transition reason.
+
+### First real inference slice
+
+- [ ] Submit a real OpenAI-compatible text-generation job from a Project/chat/Task through an explicit profile.
+- [ ] Route through an owner-authoritative direct or pool queue.
+- [ ] Lease to an eligible worker and resolve a local service through the gateway.
+- [ ] Stream or poll bounded progress according to the typed contract.
+- [ ] Persist normalized result, usage, errors, and artifacts.
+- [ ] Survive owner, requester, or worker restart and deterministic fallback.
+- [ ] Retrieve the one authoritative result through Project/job UI.
+- [ ] Route mock image, video, STT, TTS, and BOINC jobs only to matching advertised capabilities.
+- [ ] Fail unsupported workload classes and requirements clearly before execution.
+
+### GUI, observability, and budgets
+
+- [ ] Implement route/profile editor with honest validation and save states.
+- [ ] Show selected destination, exclusions, fallback, health/expiry, queue state, and result linkage.
+- [ ] Keep editor focus, filter, selected candidate, expanded rationale, and unsaved changes in GUI state.
+- [ ] Redact prompts and model output from default logs while retaining correlation and safe metrics.
+- [ ] Measure route-query latency, SQLite query cost, memory, network payloads, service admission, and fallback behavior.
+
+**Exit criteria**
+
+- [ ] A real text request completes through an explicit owner-authoritative route and survives retry/restart.
+- [ ] Fallback is deterministic and explainable.
+- [ ] No job reaches an incompatible, expired, unauthorized, disabled, or unavailable service.
+- [ ] Remote execution never discloses or bypasses provider-local endpoints/credentials.
+
+## Phase 14: Task Triggers, Automation, Webhooks, Approvals, And Durable Workflows
+
+**User outcome:** The same Project Task entrypoint can run manually or through authorized triggers, survive restart, await queued work, and produce one auditable outcome.
+
+**Dependencies:** Phase 10 Task entrypoints and Phases 12–13 queue/routing.
+
+**Deferred:** Scheduler failover/election to Post-MVP Track A.
+
+### Trigger bindings
+
+- [ ] Add separate bindings for:
+  - [ ] Interval and hourly/daily/weekly/monthly or cron-like schedules.
+  - [ ] Authenticated webhooks.
+  - [ ] Internal application events.
+  - [ ] Cluster device/service/queue events.
+- [ ] Keep manual execution valid without a binding.
+- [ ] Let trigger delivery request a run at the Project owner; do not move Task authority.
+- [ ] Persist binding identity, Task/Project owner, revision, timezone/schedule, authentication policy, enabled/paused state, and last/next evaluation.
+- [ ] Bound, authenticate, authorize, replay-protect, rate-limit, and audit webhooks.
+
+### Durable workflow execution
+
+- [ ] Extend Task definitions with versioned steps, typed inputs/outputs, permissions, retries, timeouts, approvals, and route references.
+- [ ] Persist run/correlation/idempotency ID, initiating actor/trigger, definition revision, current step, checkpoints, await state, submitted jobs, approvals, retry history, outputs, and terminal outcome.
+- [ ] Resume idempotently after application/device restart.
+- [ ] Reconcile ambiguous job submission and completion through durable IDs.
+- [ ] Support cancellation, pause, timeout, retry, and explicit failure.
+- [ ] Keep one authoritative scheduler/evaluator at the Project owner during the MVP.
+
+### Safe actions and approvals
+
+- [ ] Permit only allowlisted application actions, Project-scoped file/Git operations, and explicit typed service calls.
+- [ ] Resolve secrets from references at execution time.
+- [ ] Require configured human approval before consequential steps.
+- [ ] Persist approval request, actor, scope, decision, expiry, and resulting transition.
+- [ ] Expose no unrestricted remote shell, arbitrary process execution, or generic tool endpoint.
+- [ ] Redact sensitive inputs/outputs while preserving safe audit evidence.
+
+### GUI and diagnostics
+
+- [ ] Show Task definition revision, trigger bindings, next/last run, current step, waits, approvals, jobs, retries, result, and failure.
+- [ ] Support manual run independently from trigger management.
+- [ ] Show offline owner, paused binding, missed schedule policy, webhook denial, approval expiry, recovery, and cancellation states.
+- [ ] Preserve forms, filters, focus, selection, and unsaved edits as GUI state.
+- [ ] Provide a redacted run timeline linking trigger, command, queue, job, attempt, artifact, approval, and result.
+
+**Exit criteria**
+
+- [ ] One Project-owner Task runs manually or through every supported authorized binding without changing identity/ownership.
+- [ ] A triggered Task submits inference, awaits the result, survives restart, resumes idempotently, and produces an auditable outcome.
+- [ ] Consequential actions honor approval and sandbox boundaries.
+- [ ] Duplicate triggers and webhooks do not duplicate a logical run.
+
+## Phase 15: ASR, TTS, Push-To-Talk, Audio Lifecycle, And Privacy
+
+**User outcome:** Holding and releasing the configured control produces editable transcribed text through a selected local or remote route, and spoken output can be controlled independently.
+
+**Dependencies:** Display-free input contract and Phases 11–14.
+
+### Audio capture and presentation boundary
+
+- [ ] Start capture while `R2` or configured Debian right `Ctrl` is held.
+- [ ] Stop and submit on release.
+- [ ] Let `Escape` cancel a held right-`Ctrl` recording without submitting on later release.
+- [ ] Bound duration, memory, sample format, and temporary storage.
+- [ ] Delete temporary audio according to explicit privacy/retention policy.
+- [ ] Keep capture device, buffer, held/cancelled state, focused field, and playback controls in GUI/platform state.
+- [ ] Create durable core state only on explicit transcription or synthesis submission.
+
+### Speech services and routing
+
+- [ ] Add speech-to-text adapters.
+  - [ ] Local whisper.cpp first.
+  - [ ] Remote STT through the same service/queue/gateway model.
+  - [ ] Language, model, timestamps, streaming policy, progress, timeout, retry, and cancellation.
+- [ ] Route by explicit global, Project, chat, or focused-context profile.
+- [ ] Add transcription outcomes.
   - [ ] Populate focused text field.
-  - [ ] Open command palette intent.
-  - [ ] Submit prompt when explicitly configured.
-  - [ ] Allow review/edit before consequential actions.
-- [ ] Add TTS.
+  - [ ] Open command-palette intent.
+  - [ ] Submit a prompt only when explicitly configured.
+  - [ ] Require review/edit before consequential actions unless policy explicitly approves direct behavior.
+- [ ] Add text-to-speech independently.
   - [ ] OS-native or lightweight service adapter first.
-  - [ ] Route generated text separately from ASR.
-  - [ ] Support play, pause, stop, and interruption.
-  - [ ] Add Qwen3-TTS only as a service adapter after research.
-- [ ] Add privacy and feedback.
-  - [ ] Recording indicator.
-  - [ ] Route/device indicator.
-  - [ ] Queue/transcription state.
-  - [ ] Failure and retry.
-  - [ ] Retention and deletion.
-  - [ ] No raw recordings in normal logs.
+  - [ ] Local/remote typed routes independent from ASR.
+  - [ ] Voice, language, streaming, format, play, pause, stop, and interruption.
+  - [ ] Qwen3-TTS only after focused research and adapter approval.
+
+### Privacy, GUI, platform, and recovery
+
+- [ ] Show recording, cancellation, upload/queue, route/device, transcription, retry, failure, completion, playback, and retention states.
+- [ ] Never log raw recordings, transcripts, prompts, generated speech, provider responses, or credentials by default.
+- [ ] Authorize audio artifacts and delete them according to policy.
+- [ ] Recover submitted jobs/results after restart without pretending an in-memory capture can resume.
+- [ ] Validate microphone/audio permissions, interruption, device change, background/lifecycle behavior, and cancellation separately on Linux/Steam Deck, Windows, macOS, and Android where supported.
+- [ ] Test the state machine with fake audio before requiring real-device integration.
 
 **Exit criteria**
 
-- Holding and releasing `R2` or right `Ctrl` produces editable transcribed text through a selected local or remote route.
-- Spoken output can be routed independently.
-- Voice state remains visible, cancellable, and privacy-preserving.
+- [ ] `R2` and right `Ctrl` produce editable transcription through a selected local or remote route.
+- [ ] Spoken output routes and controls independently.
+- [ ] Capture and focus remain presentation/platform state until explicit submission.
+- [ ] Voice behavior is visible, cancellable, bounded, privacy-preserving, and restart-honest.
 
-## Phase 11: Platform Packaging And Release Pipeline
+## Phase 16: Packaging, Release Hardening, And Platform Support Evidence
 
-**Goal:** Validate and ship each supported platform honestly and independently.
+**User outcome:** Users can install, run, diagnose, upgrade, and roll back honestly supported GUI/headless artifacts on each declared platform.
 
-**Dependencies:** Stable vertical slice and HUD.
+**Dependencies:** Stable secure vertical slice, shared-core lifecycle, and continuous platform evidence from Phases 7–15.
 
-- [ ] Steam Deck/Linux GUI.
-  - [ ] Controller database and mappings.
-  - [ ] Debian keyboard mapping and text-input precedence.
-  - [ ] Debian mouse and touchpad behavior.
-  - [ ] Debian right-`Ctrl` push-to-talk and cancellation.
-  - [ ] Configurable binding persistence and conflict reporting.
-  - [ ] Settings UI for viewing and reassigning scroll, pane, pointer-drag, touch-drag, keyboard, and controller bindings.
-  - [ ] Settings UI for customizing HUD aesthetics, including fonts, icon glyphs, and distinct button/panel background colors.
-  - [ ] Gamescope/fullscreen/window behavior.
-  - [ ] Hi-DPI/readability.
-  - [ ] `Steam+X` keyboard.
-  - [ ] Microphone and audio.
-  - [ ] External WireGuard.
-  - [ ] Packaging and update path.
-- [ ] Linux headless.
-  - [ ] Service installation.
-  - [ ] User/system service choice.
-  - [ ] CLI and authenticated API control.
-  - [ ] Health checks and service-manager operations.
-  - [ ] Graceful `SIGINT` and `SIGTERM`.
-  - [ ] Runtime directories and permissions.
-  - [ ] Startup, restart, logs, and doctor.
-  - [ ] No display dependency.
-- [ ] Windows.
-  - [ ] Build and package.
-  - [ ] Signing.
-  - [ ] Runtime paths.
-  - [ ] Controller and audio.
-  - [ ] Firewall and HTTPS.
-  - [ ] External WireGuard.
-- [ ] macOS.
-  - [ ] Build and package.
-  - [ ] Signing and notarization.
-  - [ ] Runtime paths and sandbox considerations.
-  - [ ] Controller, microphone, and audio.
-  - [ ] External WireGuard.
-- [ ] Android.
-  - [ ] Continue from Phase 5 Android GUI APK support rather than redoing its build-pipeline work.
-  - [ ] Harden release signing, versioning, provenance, and upgrade/rollback behavior.
-  - [ ] Replace the temporary APK hash-only update check with installed-version versus latest-version display before offering an update.
-  - [ ] Validate additional Android ABIs only after `android/arm64` is proven.
-  - [ ] Expand device coverage across phone, tablet, controller, keyboard, and touch configurations.
-  - [ ] Validate microphone, audio output, scoped storage, background, and battery behavior against real feature use.
-  - [ ] Keep Android headless out of scope unless a later Termux/service-worker strategy is approved.
-  - [ ] Keep external WireGuard first; defer VPN-service integration to the later transport/platform phase.
-- [ ] Release engineering.
-  - [ ] Artifact naming and directory layout.
-  - [ ] Checksums and provenance.
-  - [ ] Version metadata.
-  - [ ] Reproducible build inputs.
-  - [ ] Platform test matrix.
-  - [ ] Upgrade and rollback.
+**Scope:** This phase culminates platform validation; it is not the first platform test.
+
+### Steam Deck and Linux GUI
+
+- [ ] Controller database/mappings and complete application-action equivalence.
+- [ ] Debian keyboard text precedence, mouse/touchpad, right-`Ctrl` PTT, and configurable binding conflicts.
+- [ ] Settings for bindings and HUD aesthetics, including fonts, glyphs, and panel/button colors.
+- [ ] Gamescope/fullscreen/window, 1280x800, Hi-DPI, `Steam+X` keyboard, microphone, audio, storage, HTTPS, and external WireGuard.
+- [ ] Packaging, desktop integration, diagnostics, update, and rollback.
+
+### Linux headless
+
+- [ ] User/system service installation choice.
+- [ ] CLI, authenticated API, health, service-manager operations, signals, restart, logs, doctor, permissions, and no display dependency.
+- [ ] Exclusive node ownership or approved daemon-client behavior.
+- [ ] Local inference provider supervision and same-provider failure isolation.
+- [ ] Upgrade/rollback without corrupting migrations, identity, queues, services, artifacts, or active work.
+
+### Windows
+
+- [ ] Build/package GUI and headless artifacts.
+- [ ] Signing, runtime paths, service/tray choice, certificate/secret store, firewall/HTTPS, controller, audio, provider supervision, and external WireGuard.
+- [ ] Install, upgrade, rollback, diagnostics, and target-specific behavior evidence.
+
+### macOS
+
+- [ ] Build/package GUI and headless where supported.
+- [ ] Signing, notarization, app lifecycle/sandbox, keychain/certificates, controller, microphone/audio, provider supervision, and external WireGuard.
+- [ ] Install, upgrade, rollback, diagnostics, and target-specific behavior evidence.
+
+### Android
+
+- [ ] Continue from Phase 5 and continuous Phase 7+ validation.
+- [ ] Release signing, versioning, provenance, icons, store/distribution, signed update manifest, installed-versus-latest display, and rollback policy.
+- [ ] Additional ABI only after arm64 proof.
+- [ ] Phone/tablet, portrait/landscape, safe-area, density, keyboard, controller, touch, microphone, audio, scoped storage, background, battery, and network evidence.
+- [ ] Keep Android headless out of scope unless a Termux/service-worker plan is approved.
+- [ ] Keep external WireGuard first; app-managed VPN remains Track A.
+- [ ] Do not imply local provider supervision from GUI APK support without provider-specific evidence.
+
+### Release engineering
+
+- [ ] Keep fast host build/test separate from the release matrix.
+- [ ] Stop mutating tracked/submodule source during builds.
+- [ ] Decide whether Git-tracked large binaries move to immutable release assets plus a signed latest manifest.
+- [ ] Record version, source commit, dependency/toolchain locks, target, hash, size, signer, provenance, SBOM where required, and reproducibility evidence.
+- [ ] Define signing-key custody, rotation, compromise response, and platform verification.
+- [ ] Define compatible schema/protocol upgrade order and rollback limits.
+- [ ] Test clean install, upgrade, failed upgrade, rollback, backup/restore, and offline diagnostics.
+- [ ] Publish an honest support matrix; compilation is not support.
 
 **Exit criteria**
 
-- Each platform is marked supported only after its build, packaging, input, storage, networking, audio, and lifecycle checks pass.
+- [ ] Steam Deck/Linux GUI and headless packages pass installation and lifecycle evidence.
+- [ ] Every other platform is marked supported only after its independent build, packaging, input, storage, networking, audio, security, provider, and lifecycle checks pass.
+- [ ] Release artifacts are reproducible or carry a documented variance, provenance, signer, hashes, and rollback policy.
+- [ ] Upgrades preserve or safely migrate authoritative state.
 
-## Phase 12: Alternative Transports And Long-Term Resilience
+## Post-MVP Track A: Alternative Transports And Long-Term Resilience
 
-**Goal:** Carry the same authenticated durable operations across constrained or human-mediated transports.
-
-**Dependencies:** Stable signed envelope, queues, authorization, and transport adapter tests.
+**Independence:** This track depends on stable identity, envelopes, queues, authorization, advertisements, and transport conformance. Tracks B and C do not depend on its completion unless they explicitly select one of its transports.
 
 - [ ] Add transport conformance tests.
-  - [ ] Identity and authorization.
-  - [ ] Envelope integrity.
-  - [ ] Replay and duplicate behavior.
-  - [ ] Expiration.
-  - [ ] Acknowledgement.
-  - [ ] Fragmentation.
-  - [ ] Store-and-forward.
-  - [ ] Payload and attachment limits.
-- [ ] Research and implement Meshtastic adapter.
-  - [ ] Choose protobuf/client source.
-  - [ ] Define a dedicated compact application port/message type.
-  - [ ] Define allowed commands and status messages.
-  - [ ] Define fragmentation and reassembly.
-  - [ ] Define acknowledgement and retry.
-  - [ ] Define authorization and replay protection.
-  - [ ] Reject oversized prompts, artifacts, project files, and model payloads.
-- [ ] Research and implement Signal gateway.
-  - [ ] Validate available maintained integration approaches.
-  - [ ] Define account and device operation.
-  - [ ] Map Signal identity to Apparat authorization.
-  - [ ] Restrict to notifications, approvals, compact commands, and selected task triggers.
-  - [ ] Avoid making Signal the authoritative queue or project transport.
-- [ ] Add platform-specific WireGuard management.
-  - [ ] Linux kernel/tools adapter.
-  - [ ] Windows supported embedding adapter.
-  - [ ] Apple Network Extension/WireGuardKit adapter.
-  - [ ] Android VPN-service/tunnel adapter.
-  - [ ] Preserve external-tunnel compatibility.
-- [ ] Add long-term resilience.
-  - [ ] Scheduler failover.
-  - [ ] Queue-owner migration.
-  - [ ] Project-owner migration.
-  - [ ] Cluster-directory conflict handling.
-  - [ ] Advanced replication.
-  - [ ] Optional CRDT research.
-  - [ ] Dynamic routing optimization.
+  - [ ] Identity/authorization, envelope integrity, replay/duplicate, expiry, acknowledgement, fragmentation, store-and-forward, ordering, and payload/attachment limits.
+- [ ] Research and implement Meshtastic.
+  - [ ] Select maintained protobuf/client source.
+  - [ ] Define compact application port/types, allowlisted commands/status, fragmentation/reassembly, acknowledgement/retry, authorization, replay protection, and size rejection.
+- [ ] Research and implement a maintainable Signal gateway.
+  - [ ] Define account/device operation and map Signal identity to Apparat authorization.
+  - [ ] Restrict to notifications, approvals, compact commands, and selected triggers.
+  - [ ] Do not make Signal authoritative for queues or Projects.
+- [ ] Add optional platform WireGuard management while preserving external tunnels.
+  - [ ] Linux kernel/tools, Windows supported embedding, Apple Network Extension/WireGuardKit, and Android VPN-service adapters.
+- [ ] Add resilience only with explicit ownership protocols.
+  - [ ] Project-owner and queue-owner migration.
+  - [ ] Task scheduler failover tied to Project authority.
+  - [ ] Cluster-directory conflict handling and advanced replication.
+  - [ ] Optional CRDT research for explicitly selected data.
+  - [ ] Dynamic routing optimization after deterministic routing remains explainable.
+- [ ] Preserve service expiry, gateway policy, workload authorization, owner authority, idempotency, and artifact limits on every transport.
 
 **Exit criteria**
 
-- Alternative transports carry only operations appropriate to their capabilities while preserving Apparat identity, authorization, queue, project, and task semantics.
+- [ ] Each adapter passes the common conformance suite for every operation it claims.
+- [ ] Constrained transports reject unsupported/oversized work safely.
+- [ ] Ownership migration never creates two authoritative owners.
 
-## Phase 13: Comrades, Chat, And Shared Inference
+## Post-MVP Track B: Comrades, Chat, And Shared Inference
 
-**Goal:** Add trusted real-friend communication and owner-controlled sharing of otherwise idle inference capacity.
+**Independence:** This track requires stable identity, authorization, queues, multi-instance routing, audit, and one suitable authenticated transport. It does not require Track A in full.
 
-**Dependencies:** Stable identity, authorization, queues, routing, audit, and at least one suitable authenticated transport.
-
-- [ ] Define the Comrades trust and identity model.
-  - [ ] Define friend invitation, acceptance, rejection, blocking, removal, and reauthorization.
-  - [ ] Bind social identity to Apparat user/device identity without exposing private cluster topology.
-  - [ ] Define direct and group membership.
-  - [ ] Define trust state, verification, key changes, and compromised-account recovery.
-- [ ] Add Comrades chat.
-  - [ ] Direct conversations.
-  - [ ] Group conversations.
-  - [ ] Durable outbound and inbound messages.
-  - [ ] Offline delivery and retry.
-  - [ ] Attachments and artifact references.
-  - [ ] Delivery, failure, and read state where supported.
-  - [ ] Transport-independent message identity and signatures.
-  - [ ] Clear separation between social chat and project chat.
-- [ ] Define shared-compute grants.
-  - [ ] Resource owner.
-  - [ ] Eligible comrades and groups.
-  - [ ] Eligible devices and pools.
-  - [ ] Allowed workload classes, service runtimes, models, and capabilities.
-  - [ ] Schedule and idle-capacity rules.
-  - [ ] Priority and preemption.
-  - [ ] Concurrency and rate limits.
-  - [ ] Daily/monthly quotas.
-  - [ ] Prompt/result/artifact visibility policy.
-  - [ ] Expiration, pause, revocation, and emergency stop.
-- [ ] Implement comrade queues.
-  - [ ] Create an owner-authoritative queue class for shared inference.
-  - [ ] Assign some or all owner devices or pools.
-  - [ ] Assign some or all authorized comrades.
-  - [ ] Keep personal work higher priority by default.
-  - [ ] Admit work only when owner policy and idle-capacity rules allow it.
-  - [ ] Restrict default grants to inference generation.
-  - [ ] Deny project files, chats, secrets, tools, shell, administration, and unrelated cluster data by default.
-  - [ ] Persist admission, scheduling, execution, result, quota, rejection, and revocation events.
+- [ ] Define Comrades trust and social identity.
+  - [ ] Invite, accept, reject, block, remove, reauthorize, key change, compromise recovery, direct/group membership, and topology privacy.
+- [ ] Add direct and group chat.
+  - [ ] Durable outbound/inbound identity, signatures, offline retry, attachments/artifact references, delivery/failure/read state where supported, and separation from Project chat.
+- [ ] Define owner-controlled shared-compute grants.
+  - [ ] Eligible comrades/groups, devices/pools, workloads, services/models, schedule, idle rules, priority, preemption, concurrency/rates, quota, visibility, retention, expiration, pause, revocation, and emergency stop.
+- [ ] Implement owner-authoritative comrade queues.
+  - [ ] Personal work higher priority by default.
+  - [ ] Inference-only default.
+  - [ ] Deny Projects, files, chats, secrets, tools, shell, administration, provider endpoints/credentials, and unrelated cluster state.
+  - [ ] Persist admission, execution, result, quota, rejection, and revocation audit.
 - [ ] Add Comrades HUD.
-  - [ ] Contact and group list.
-  - [ ] Conversation view.
-  - [ ] Trust and verification state.
-  - [ ] Shared queue list.
-  - [ ] Grant editor.
-  - [ ] Usage, quota, priority, availability, and audit views.
-  - [ ] Owner emergency pause.
+  - [ ] Contacts/groups, conversations, trust, shared queues, grant editor, usage/quota/priority/availability/audit, and emergency pause.
 - [ ] Add safety and abuse controls.
-  - [ ] Resource-owner consent.
-  - [ ] Request authentication and authorization.
-  - [ ] Model/service allowlists.
-  - [ ] Prompt and output size limits.
-  - [ ] Malware and unsafe-content boundary decisions.
-  - [ ] Quota abuse and denial-of-service protections.
-  - [ ] Audit and dispute evidence without unnecessary content retention.
+  - [ ] Consent, authentication, allowlists, size/rate limits, malware/content boundaries, denial-of-service controls, moderation, and privacy-preserving dispute evidence.
 
 **Exit criteria**
 
-- A verified comrade can submit an authorized inference job to a comrade queue.
-- Owner work retains priority.
-- The resource owner can inspect usage and immediately pause or revoke access.
-- Shared inference does not expose project files, secrets, arbitrary tools, shell access, or unrelated cluster state.
+- [ ] A verified comrade submits authorized inference without receiving unrelated access.
+- [ ] Owner work retains priority and the owner can inspect, pause, or revoke immediately.
+- [ ] Shared inference exposes neither provider-local connection data nor personal cluster data.
 
-## Phase 14: Research, BOINC, And Validation Gameplay
+## Post-MVP Track C: Research, BOINC, And Validation Gameplay
 
-**Goal:** Allow opt-in personal compute to support validated BOINC projects through a transparent, constrained, and engaging Research surface.
+**Independence:** This track requires capabilities, scheduling, resource budgets, Task execution, audit, packaging, and safe workload isolation. It does not require Tracks A or B.
 
-**Dependencies:** Stable device capabilities, scheduling, resource budgets, task execution, audit, packaging, and safe workload isolation.
-
-- [ ] Define the Research trust model.
-  - [ ] Define project identity and authoritative BOINC metadata.
-  - [ ] Define technical, scientific, operator, security, legal, and reputation evidence.
-  - [ ] Define validation states and who may propose, review, challenge, approve, suspend, or remove a project.
-  - [ ] Define revalidation after software, operator, endpoint, or policy changes.
-  - [ ] Ensure gameplay scores or popularity cannot substitute for required security and legitimacy checks.
+- [ ] Define Research trust and validation governance.
+  - [ ] Project identity and authoritative metadata.
+  - [ ] Technical, scientific, operator, security, legal, and reputation evidence.
+  - [ ] Proposal, review, challenge, approval, suspension, removal, and revalidation.
+  - [ ] Gameplay scores/popularity never replace legitimacy or security evidence.
 - [ ] Define validation gameplay.
-  - [ ] Decide how players discover candidate research projects.
-  - [ ] Decide how evidence review and validation actions are represented.
-  - [ ] Define progression, reputation, achievements, or collective goals without creating pay-to-win or popularity-only trust.
-  - [ ] Define anti-gaming, collusion, Sybil, misinformation, and moderation controls.
-  - [ ] Keep project validation evidence inspectable outside the gameplay presentation.
-- [ ] Research and select the BOINC integration boundary.
-  - [ ] Evaluate BOINC client control/RPC interfaces.
-  - [ ] Decide whether Apparat supervises an external BOINC client or embeds selected components.
-  - [ ] Select source submodules only after the boundary is approved.
-  - [ ] Define project attachment, account/authentication, work fetch, pause, resume, detach, and update behavior.
-  - [ ] Define BOINC version and project compatibility policy.
-- [ ] Define research resource policies.
-  - [ ] Opt-in devices and pools.
-  - [ ] CPU, GPU/accelerator, memory, storage, and bandwidth budgets.
-  - [ ] Power, battery, temperature, fan, and schedule limits.
-  - [ ] Personal, task, and comrade workload priority above research by default.
+  - [ ] Discovery, evidence review/actions, progression, reputation, achievements, collective goals, anti-gaming, collusion, Sybil, misinformation, moderation, and evidence inspection outside gameplay.
+- [ ] Select the BOINC boundary and sources.
+  - [ ] Evaluate client control/RPC.
+  - [ ] Decide external supervision versus selected embedding.
+  - [ ] Select submodules only after approval.
+  - [ ] Define attach/auth, fetch, pause/resume/detach/update, version, and Project compatibility.
+- [ ] Define resource policy.
+  - [ ] Opt-in devices/pools; CPU/GPU, memory, storage, bandwidth, power, battery, thermal, fan, schedule, quota, and metered-network limits.
+  - [ ] Personal, Task, and comrade work outrank Research by default.
   - [ ] Pause on user activity, low battery, thermal pressure, metered network, or policy violation.
-  - [ ] Per-project and aggregate quotas.
-- [ ] Isolate BOINC workloads.
-  - [ ] Separate runtime directories and credentials.
-  - [ ] Restrict project access to Apparat data, identities, projects, secrets, and networks.
-  - [ ] Define process, container, OS sandbox, or platform-specific isolation.
-  - [ ] Verify downloaded application signatures and provenance where supported.
-  - [ ] Record project, application, work-unit, and result provenance.
-- [ ] Add Research HUD.
-  - [ ] Candidate and validated project catalog.
-  - [ ] Validation evidence and status.
-  - [ ] Device/pool assignment.
-  - [ ] Resource budget editor.
-  - [ ] Active work units and progress.
-  - [ ] Contribution history and estimated impact.
-  - [ ] Failures, suspension, and audit state.
-  - [ ] Gameplay progression and collective goals after the validation design is approved.
-- [ ] Add operations and recovery.
-  - [ ] Start, pause, resume, and stop.
-  - [ ] Recover after restart.
-  - [ ] Handle project outage or revocation.
-  - [ ] Handle invalid, malicious, or compromised project state.
-  - [ ] Preserve owner control and immediate shutdown.
+- [ ] Isolate BOINC.
+  - [ ] Separate runtime/credentials.
+  - [ ] Restrict Apparat data, identity, Projects, secrets, and networks.
+  - [ ] Platform process/container/sandbox boundary.
+  - [ ] Verify application signatures/provenance where supported.
+  - [ ] Record Project/application/work-unit/result provenance.
+- [ ] Add Research HUD and recovery.
+  - [ ] Candidate/validated catalog, evidence, assignment, budgets, work units/progress, contributions/impact, failure/suspension/audit, and later gameplay.
+  - [ ] Start/pause/resume/stop, restart recovery, outage/revocation, malicious/compromised state, and immediate owner shutdown.
 
 **Exit criteria**
 
-- A user can opt a device into a validated BOINC project with explicit resource limits.
-- Personal and comrade work preempts or outranks research by default.
-- Research work is isolated from Apparat identities, projects, queues, and secrets.
-- Validation evidence and provenance remain auditable independently of gameplay rewards.
+- [ ] A user opts a device into a validated BOINC Project with explicit budgets.
+- [ ] Higher-priority owner/comrade work preempts Research by policy.
+- [ ] Research is isolated from identities, Projects, queues, and secrets.
+- [ ] Validation evidence and provenance remain auditable independently from gameplay.
 
 ## Cross-Cutting Requirements
 
-These requirements apply to every implementation phase:
+Every focused implementation plan includes the applicable items below and its phase cannot exit without evidence.
 
 - [ ] Security
-  - [ ] Least privilege.
-  - [ ] Explicit authorization.
-  - [ ] Safe defaults.
-  - [ ] Secret redaction.
-  - [ ] Key rotation and revocation.
-  - [ ] No unrestricted remote execution.
-  - [ ] Shared-compute grants never imply project, file, secret, tool, shell, or administrative access.
-  - [ ] Research workloads remain isolated from personal and comrade data.
+  - [ ] Least privilege, explicit authorization, safe defaults, key rotation/revocation, secret redaction, no unrestricted remote execution.
+  - [ ] Shared-compute grants never imply Project/file/secret/tool/shell/admin access.
+  - [ ] Research remains isolated.
+  - [ ] Provider-local endpoints and credentials remain local.
+  - [ ] Task and artifact boundaries are explicit.
 - [ ] Reliability
-  - [ ] Stable IDs.
-  - [ ] Idempotent operations.
-  - [ ] Durable state transitions.
-  - [ ] Bounded retries.
-  - [ ] Cancellation and deadlines.
-  - [ ] Restart recovery.
+  - [ ] Stable IDs, idempotent operations, durable transitions, bounded retries, cancellation, deadlines, restart recovery.
+  - [ ] Independent failure/admission for every service instance.
+  - [ ] One authoritative owner/writer for each node root, Project, queue, Task, result, and artifact.
 - [ ] Observability
-  - [ ] Structured logs.
-  - [ ] Correlation IDs.
-  - [ ] Queue and job traces.
-  - [ ] Health endpoints.
-  - [ ] User-readable failure reasons.
+  - [ ] Structured logs with stable component/event/command/correlation/error fields.
+  - [ ] Queue/job/attempt/lease/service/artifact traces, health endpoints, safe diagnostics, and user-readable failures.
 - [ ] Privacy
-  - [ ] No raw prompts, model output, voice, private keys, or tokens in default logs.
-  - [ ] Explicit retention.
-  - [ ] Clear ownership and visibility.
+  - [ ] No raw prompts, model output, voice, private keys, tokens, chat bodies, Project contents, provider responses, or secrets in default logs.
+  - [ ] Explicit ownership, visibility, retention, expiry, and deletion.
 - [ ] Performance
-  - [ ] Frame-time budget.
-  - [ ] Memory budget.
-  - [ ] Startup budget.
-  - [ ] SQLite query budget.
-  - [ ] Network and constrained-transport payload budgets.
+  - [ ] Frame-time, memory, startup, SQLite, API, network, artifact, and constrained-transport budgets.
+  - [ ] Bounded discovery/probe and per-service execution concurrency.
 - [ ] Recovery
-  - [ ] Database backup.
-  - [ ] Identity repair.
-  - [ ] Migration compatibility.
-  - [ ] Upgrade rollback.
-  - [ ] Artifact integrity verification.
+  - [ ] Database backup/integrity/restore, identity repair, migration compatibility, upgrade rollback, artifact verification, desired-service recovery, and no duplicate advertisement/execution.
+- [ ] GUI
+  - [ ] Core read models and commands; no durable widget state.
+  - [ ] Loading, empty, stale, offline, unauthorized, pending, retrying, cancelled, failed, and recovery states.
+  - [ ] Controller/keyboard/mouse/touch parity, visible focus, accessibility, and no enabled no-op controls.
+- [ ] Platform
+  - [ ] Continuous Linux GUI/headless and relevant Android evidence.
+  - [ ] Target-specific storage, locks, credentials, networking, provider supervision, input, audio, lifecycle, packaging, and update evidence before support claims.
 - [ ] Documentation
-  - [ ] Update README when product behavior changes.
-  - [ ] Update API, security, database, transport, controller, and platform contracts with implementation changes.
-  - [ ] Keep agent-operation instructions out of the human-facing README.
+  - [ ] README for product/operations changes.
+  - [ ] API/OpenAPI, architecture, database, security, signed-envelope, transport, controller, and platform contracts when affected.
+  - [ ] Closest directory README for changed code/scripts/tools/build/tests.
+  - [ ] Useful script `--help`, prerequisites, side effects, outputs, and failures.
+  - [ ] Focused plan binding, compatibility, failure, rollback, verification, and acceptance evidence.
 
-## Open Architecture Decisions
+## Architecture Decision Ledger
 
-These remain explicit design tasks:
+### Resolved for the active implementation path
 
-- [ ] Identity, certificates, and authorization
-  - [ ] Select the exact X.509 hierarchy.
-  - [ ] Decide how TLS leaf keys relate to Apparat device identity keys.
-  - [ ] Finalize authorization vocabulary.
-- [ ] Network and protocol
-  - [ ] Select canonical signed-envelope encoding.
-  - [ ] Select endpoint discovery after temporary static configuration.
-  - [ ] Define cluster-directory conflict resolution.
-- [ ] Data, artifacts, and recovery
-  - [ ] Define artifact chunking, resumption, integrity, and retention.
-  - [ ] Define optional database encryption and multi-device restore.
-- [ ] Runtime and execution safety
-  - [ ] Define process/service supervision.
-  - [ ] Define safe tool execution and sandboxing.
-  - [ ] Decide whether a headless TUI justifies termframe.
-- [ ] Alternative transports
-  - [ ] Choose Meshtastic source dependencies.
-  - [ ] Choose a maintainable Signal gateway strategy.
-- [ ] Comrades and shared compute
-  - [ ] Define comrade message transport and end-to-end privacy expectations.
-  - [ ] Define comrade prompt/result visibility and resource-owner observability.
-  - [ ] Define comrade quota, preemption, abuse, moderation, and revocation defaults.
-- [ ] Research and validation gameplay
-  - [ ] Select the BOINC integration boundary and source dependencies.
-  - [ ] Define BOINC workload isolation across Linux, Windows, macOS, and Android-capable devices.
-  - [ ] Define research-project validation evidence and governance.
-  - [ ] Define validation gameplay, reputation, anti-gaming, and moderation mechanics.
+- [x] Shared headless-capable core embedded in GUI and headless artifacts.
+- [x] GUI state excluded from durable core state.
+- [x] One logical node root and exclusive authoritative process/SQLite writer as the target; daemon-client mode is separate future work.
+- [x] Project owner owns Task definitions, trigger evaluation, runs, and authoritative Project operations.
+- [x] Queue owner validates REST submission; workers pull leases and return outcomes; owner completes.
+- [x] Providers are statically registered drivers; arbitrary endpoints are stable service instances; capabilities are subordinate observations.
+- [x] Remote inference uses authenticated Apparat logical IDs; provider endpoints/credentials remain local.
+- [x] One cluster-local X.509 root for MVP, separate TLS leaf and Apparat signing keys, signed device-record binding.
+- [x] RFC 8785 JSON, SHA-256 payload hash, and Apparat Ed25519 envelope signature.
+- [x] Service ads use monotonic revisions, 120-second expiry, refresh by 60 seconds, immediate routing exclusion, and 24-hour stale diagnostic retention.
+- [x] Provider credentials use opaque local secret references.
+- [x] Artifact bytes live outside SQLite and transfer through bounded resumable authenticated SHA-256-verified HTTPS.
+
+### Must resolve before dependent implementation
+
+- [ ] Phase 7: database encryption/restore, WAL/platform policy, lock recovery, and binary-root migration details.
+- [ ] Phase 8: authorization vocabulary, endpoint seed/discovery transition, enrollment recovery, and concrete API limits.
+- [ ] Phase 9: directory conflicts and Project-summary policy.
+- [ ] Phase 10: file/binary limits, platform Task sandboxing, conflicts, and artifact retention defaults.
+- [ ] Phase 11: discovery/auto-promotion, provider secrets per platform, admission defaults, and approved image drivers.
+- [ ] Phase 12: lease/heartbeat/retry/retention/artifact quota defaults.
+- [ ] Phase 13: routing score/fallback/explanation and freshness policy.
+- [ ] Phase 14: webhook/schedule/approval rules; scheduler failover remains post-MVP.
+- [ ] Phase 15: audio formats, adapters, retention, streaming, and permissions.
+- [ ] Phase 16: binary hosting/tracking, signing custody, manifests, reproducibility, and rollback.
+- [ ] Track A: Meshtastic, Signal, app-managed WireGuard, migration, replication, CRDT, dynamic routing.
+- [ ] Track B: Comrades transport/privacy, grants, visibility, quotas, moderation, and abuse.
+- [ ] Track C: BOINC boundary/sources/isolation, validation governance, gameplay, reputation, and anti-gaming.
+- [ ] Optional headless TUI: reconsider termframe only after an approved TUI input contract exists.
 
 ## MVP Completion Definition
 
-The MVP is complete only when:
+The MVP is complete only when the applicable cross-cutting requirements and all outcomes below have evidence.
 
 - [ ] Steam Deck HUD and input
-  - [ ] Controller navigation works across all primary tabs.
-  - [ ] Comrades is present as the first navigable future-facing tab.
-  - [ ] Research is present after Cluster as a navigable future-facing tab.
-  - [ ] Settings is present as the final navigable tab.
-  - [ ] `R2` push-to-talk state works and can route to ASR.
+  - [ ] Controller navigation works across all five primary tabs.
+  - [x] Comrades is the first navigable future-facing tab.
+  - [x] Research follows Cluster as a navigable future-facing tab.
+  - [x] Settings is final.
+  - [ ] Focus, activation, back, context, scrolling, text, pointer/touch, accessibility, and enabled actions behave honestly.
+  - [ ] `R2` PTT routes to ASR and can be cancelled.
 - [ ] Shared runtime and secure connectivity
-  - [ ] A headless Linux worker runs without Ebitengine initialization.
-  - [ ] Two devices enroll and authenticate mutually.
-  - [ ] HTTPS REST works over WireGuard and trusted LAN with the same authorization.
-  - [ ] Signed envelopes reject tampering, replay, expiration, and unauthorized work.
-- [ ] Durable state and project operation
-  - [ ] A durable job survives duplicate delivery, temporary disconnection, and application restart.
-  - [ ] A real project can be browsed with safe Git operations.
-  - [ ] A durable scheduled or webhook task can submit and await a job.
-  - [ ] Every device shows a cluster-wide authorized Project list while each Git repository and its Task entrypoints remain authoritative on its owner device.
-  - [ ] A Pipeline is represented as a Project with one or more Tasks, and a Task can be invoked manually without a trigger.
-- [ ] Typed compute routing
-  - [ ] A real OpenAI-compatible text-generation job can be routed through an authoritative queue.
-  - [ ] Device capability records distinguish text generation, image generation, video generation, STT, TTS, and BOINC support.
-  - [ ] Jobs cannot route to devices that do not advertise the requested workload class and requirements.
-  - [ ] Queue owners validate REST submissions; inference workers pull leases and return results by REST; only the owner records authoritative completion.
+  - [ ] GUI and headless use the same core/node state without double ownership.
+  - [ ] Headless Linux initializes no Ebitengine dependency.
+  - [ ] Two devices enroll and mutually authenticate.
+  - [ ] HTTPS REST works over WireGuard and trusted LAN with identical authorization.
+  - [ ] Signed envelopes reject canonicalization errors, tampering, key mismatch, replay, expiry, wrong recipient, and unauthorized work.
+- [ ] Durable state and Projects
+  - [ ] A job survives duplicate delivery, disconnection, lease expiry, and requester/owner/worker restart.
+  - [ ] Every device shows the authorized cluster-wide Project catalog while each repository/Task remains authoritative on its owner.
+  - [ ] A real Project supports safe files/Git, durable drafts/transactions, and verified artifacts.
+  - [ ] A Pipeline is a Project with Tasks and a Task runs manually with no trigger.
+  - [ ] A scheduled or webhook Task submits/awaits a job, resumes idempotently, and produces an auditable result.
+- [ ] Typed services, queues, and routing
+  - [ ] One node manages/advertises multiple services including two same-provider/same-workload instances.
+  - [ ] Desired, observed, capability, and advertisement state remain separate.
+  - [ ] Capabilities distinguish text, image, video, STT, TTS, and BOINC contracts.
+  - [ ] A real OpenAI-compatible text job routes through an authoritative queue.
+  - [ ] Incompatible, unauthorized, disabled, unhealthy, or expired destinations are excluded with reasons.
+  - [ ] Workers pull owner leases and return signed outcomes; only owners complete.
+  - [ ] Remote jobs use logical Apparat IDs and never learn/invoke provider-local endpoints.
+- [ ] Voice
+  - [ ] PTT creates editable text through local or remote ASR.
+  - [ ] TTS routes independently.
+  - [ ] Audio lifecycle is bounded, cancellable, visible, private, and restart-honest.
 - [ ] Diagnostics and release
-  - [ ] Logs and diagnostics explain failures without leaking sensitive payloads.
-  - [ ] The Steam Deck/Linux release is packaged and validated.
+  - [ ] Logs/diagnostics explain identity, lifecycle, queue, route, service, artifact, and platform failures without sensitive payloads.
+  - [ ] Backup/restore and upgrade/rollback preserve authoritative state.
+  - [ ] Steam Deck/Linux GUI and headless releases are packaged and validated.
+  - [ ] Other platforms are claimed only to their evidenced level.
