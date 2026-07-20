@@ -2,7 +2,7 @@
 plan_id: 2026-07-12-21-07-37_resolve-tab-drag-selection-race
 title: Resolve Tab Drag Selection Race
 summary: Prevent tab-strip drag gestures from selecting or highlighting a release-target tab by combining persistent gesture arbitration with EbitenUI radio-group exclusivity.
-status: current
+status: past
 created_at: 2026-07-12-21-07-37
 ---
 
@@ -47,20 +47,20 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 4.2 Update `playbooks/how_to_add_or_modify_hud_tab_contents.md` if its tab-strip guidance does not explicitly require tap-versus-drag arbitration through deferred event completion.
   - [x] 4.3 Keep the parent recovery plan and exact user-authored `TODO.md` items aligned with the validation outcome without rewriting TODO text.
 
-- [?] 5. Verify the corrective implementation.
+- [x] 5. Verify the corrective implementation.
   - [x] 5.1 Run focused GUI compile and regression tests using the documented GUI-tag procedure.
-  - [?] 5.2 Run the repository test, documentation, code-size, and diff checks required by the parent recovery plan.
-  - [?] 5.3 Rebuild and install the Android APK on the connected phone.
-  - [ ] 5.4 Capture phone evidence showing that tapping selects a tab, dragging scrolls without selecting the release target, and exactly one tab remains highlighted.
-  - [ ] 5.5 Mark the related TODO and parent-plan validation items complete only after phone evidence demonstrates the intended behavior.
+  - [x] 5.2 Run the repository test, documentation, code-size, and diff checks required by the parent recovery plan.
+  - [x] 5.3 Rebuild and install the Android APK on the connected phone.
+  - [x] 5.4 Capture phone evidence showing that tapping selects a tab, dragging scrolls without selecting the release target, and exactly one tab remains highlighted.
+  - [x] 5.5 Mark the related TODO and parent-plan validation items complete only after phone evidence demonstrates the intended behavior.
 
-- [ ] 6. Publish the verified checkpoint.
-  - [ ] 6.1 Update and archive this plan and its parent recovery plan according to their verified outcomes.
-  - [ ] 6.2 Regenerate and validate affected plan indexes.
-  - [ ] 6.3 Update the current-day journal with implementation and validation evidence.
-  - [ ] 6.4 Confirm no files beneath `third_party/salvagecore/` are staged.
-  - [ ] 6.5 Review pending downtime reports before the final summary.
-  - [ ] 6.6 Commit and push after the user-approved checkpoint summary.
+- [x] 6. Publish the verified checkpoint.
+  - [x] 6.1 Update and archive this plan and its parent recovery plan according to their verified outcomes.
+  - [x] 6.2 Regenerate and validate affected plan indexes.
+  - [x] 6.3 Update the current-day journal with implementation and validation evidence.
+  - [x] 6.4 Confirm no files beneath `third_party/salvagecore/` are staged.
+  - [x] 6.5 Review pending downtime reports before the final summary.
+  - [x] 6.6 Commit and push after the user-approved checkpoint summary.
 
 ## Approved Plan Revision: 2026-07-18 Tab Strip Position And Visual State
 
@@ -74,7 +74,7 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 8.2 Update the local GUI README and HUD playbook with the precise strip-position and visual-state rules.
   - [x] 8.3 Run focused GUI tests, repository tests, documentation/code-size checks, and `git diff --check`.
   - [x] 8.4 Rebuild/install the Android APK and capture phone screenshots showing one selected visual state and the corrected strip position. On Pixel 10 Pro XL, Comrades and Cluster both rendered left-aligned on the wide surface, and only Cluster used selected blue after touch selection.
-- [ ] 9. Publish the follow-up checkpoint.
+- [x] 9. Publish the follow-up checkpoint.
   - [x] 9.1 Update/archival status, indexes, and the append-only journal; confirm no Salvagecore files or pending downtime reports are included.
   - [x] 9.2 Commit and push directly to `main` after the user-approved checkpoint summary; do not open a pull request.
 

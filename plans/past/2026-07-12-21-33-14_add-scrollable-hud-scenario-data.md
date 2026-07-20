@@ -2,7 +2,7 @@
 plan_id: 2026-07-12-21-33-14_add-scrollable-hud-scenario-data
 title: Add Scrollable HUD Scenario Data
 summary: Populate each HUD tab with realistic multi-page scenario data and make every body, master-list, and detail viewport scroll only within the area between the tab strip and diagnostics bar.
-status: current
+status: past
 created_at: 2026-07-12-21-33-14
 ---
 
@@ -47,20 +47,20 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 4.4 Test tab-strip horizontal scrolling remains independent of body vertical scrolling.
   - [x] 4.5 Test each body viewport rectangle remains below the tab strip and above diagnostics at desktop and phone-sized dimensions.
 
-- [?] 5. Document and validate the behavior.
+- [x] 5. Document and validate the behavior.
   - [x] 5.1 Update `internal/hud/README.md` with the scope and truthfulness rules for scenario data.
   - [x] 5.2 Update `internal/adapters/gui/README.md` and the HUD playbook with vertical scroll ownership and viewport-boundary rules.
-  - [?] 5.3 Run focused GUI compile/tests, repository tests, code-size, docs, and diff checks.
-  - [?] 5.4 Rebuild/install Android when its toolchain and ADB are available.
-  - [ ] 5.5 Capture desktop and phone screenshots showing several pages of content scrolling inside the body rectangle without overlapping tabs or diagnostics.
+  - [x] 5.3 Run focused GUI compile/tests, repository tests, code-size, docs, and diff checks.
+  - [x] 5.4 Rebuild/install Android when its toolchain and ADB are available.
+  - [x] 5.5 Capture desktop and phone screenshots showing several pages of content scrolling inside the body rectangle without overlapping tabs or diagnostics.
 
-- [ ] 6. Publish the verified checkpoint.
-  - [ ] 6.1 Update plan status and related-plan validation items to match verified behavior.
-  - [ ] 6.2 Regenerate and validate plan indexes.
-  - [ ] 6.3 Append implementation/validation evidence to the current-day journal.
-  - [ ] 6.4 Confirm no files beneath `third_party/salvagecore/` are staged.
-  - [ ] 6.5 Review pending downtime reports before final summary.
-  - [ ] 6.6 Commit and push after the user-approved checkpoint summary.
+- [x] 6. Publish the verified checkpoint.
+  - [x] 6.1 Update plan status and related-plan validation items to match verified behavior.
+  - [x] 6.2 Regenerate and validate plan indexes.
+  - [x] 6.3 Append implementation/validation evidence to the current-day journal.
+  - [x] 6.4 Confirm no files beneath `third_party/salvagecore/` are staged.
+  - [x] 6.5 Review pending downtime reports before final summary.
+  - [x] 6.6 Commit and push after the user-approved checkpoint summary.
 
 ## Scope Boundaries
 

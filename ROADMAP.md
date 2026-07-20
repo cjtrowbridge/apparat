@@ -51,9 +51,14 @@ The roadmap assumes these decisions:
     - Research-project validation eventually participates in gameplay mechanics.
   - Settings remains the final tab.
 - **Data and authority**
-  - Project files remain ordinary filesystem and Git repositories.
+  - Every Project is an ordinary Git repository owned by the device where its working tree lives and runs.
+  - Every device presents one cluster-wide authorized Projects list assembled from owner-local Projects and signed/cached summaries from every other device.
+  - A Pipeline is a Project with one or more Apparat Task entrypoints; it is not a separately owned entity.
+  - A Task may run manually with no trigger or be bound to intervals, authenticated webhooks, internal application events, or cluster events.
   - SQLite stores identities, metadata, chats, transactions, events, queue state, indexes, and durable workflow state.
-  - Projects, queues, and scheduled tasks have one authoritative owner device during the MVP.
+  - Projects and queues have one authoritative owner device during the MVP; Project Tasks and their run records are owned with the Project.
+  - All cross-device Project, Task, queue-submission, worker-claim, heartbeat, and result operations use authenticated HTTPS REST directed to the owning device.
+  - Queue owners validate and admit requests; authorized inference workers pull leased tasks and post signed results back; only the owner records authoritative completion.
   - Cross-device delivery is at-least-once.
     - Stable IDs and idempotent application provide duplicate safety.
 - **Connection and trust**
@@ -315,20 +320,29 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
       - Sensitive columns and payloads require redaction or explicit privileged access.
   - **Authority model**
     - **Core rule**
-      - During the MVP, every project, queue, and scheduled task has exactly one authoritative owner device.
+      - During the MVP, every Project and queue has exactly one authoritative owner device; Project Tasks are owned with their Project.
       - Other devices may cache authorized projections and submit transactions, but they do not silently become co-authoritative.
     - **Projects**
+      - A Project is a Git repository owned by the device where its working tree lives and runs.
+      - Every device builds a cluster-wide Projects projection from owner-local records plus signed/cached summaries from all authorized owners.
+      - Remote reads and writes use authenticated REST to the owner; no remote device reads the owner's filesystem or SQLite directly.
       - The owner serializes accepted project transactions and publishes the resulting version.
       - A non-owner submits a transaction with its base version and stable transaction ID.
       - Accepted changes advance the authoritative project version.
       - Rejected or conflicting changes remain local editable drafts with a machine-readable reason and enough context for the user to revise or rebase them.
     - **Queues**
       - The queue owner stores authoritative ordering, admission, attempts, cancellation state, and results.
+      - Requesters submit through authenticated REST and the owner validates authorization, schema, workload requirements, policy, limits, quota, and idempotency before admission.
+      - Authorized inference workers poll or long-poll the owner for compatible leases, then post signed results back through REST.
+      - The owner validates active lease/fencing identity and result integrity before authoritative completion.
       - Requesters retain their submission record and authorized status/result projections.
       - Requesters do not mirror the complete queue unless a later availability design explicitly requires it.
-      - Direct queues execute on the owner; pool queues are coordinated by the owner across eligible member devices.
+      - A direct queue targets one eligible inference device; that device still pulls an owner-issued lease through REST and may happen to be the owner.
+      - A pool queue is coordinated by the owner across eligible member devices, each of which pulls compatible leased work.
     - **Tasks**
-      - The task owner evaluates schedules and durable triggers.
+      - A Pipeline is a Project with at least one Apparat Task entrypoint; it is not a separate ownership object.
+      - The Project owner defines and runs its Tasks and evaluates their optional schedules and durable trigger bindings.
+      - A Task with no trigger remains manually executable through Apparat.
       - Offline replicas may retain definitions and observations but do not execute an owner-only trigger independently.
       - Scheduler failover is deferred until leases, fencing, clock behavior, and duplicate execution are designed explicitly.
   - **Durable delivery and synchronization**
@@ -1224,9 +1238,12 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Health.
   - [ ] Device profile.
   - [ ] Typed workload capabilities.
+  - [ ] Owner-local Project listing and detail used to assemble cluster-wide Project catalogs.
+  - [ ] Project Task-entrypoint listing and manual run submission.
   - [ ] Submit job.
   - [ ] Read job.
   - [ ] Cancel job.
+  - [ ] Queue-owner job submission, worker claim/long-poll, lease heartbeat, and result completion.
   - [ ] Poll events by cursor.
   - [ ] Submit project transaction placeholder.
   - [ ] Enforce schemas, limits, deadlines, authorization, and audit logs.
@@ -1239,7 +1256,9 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Persist requester outbox submission.
   - [ ] Return `202 Accepted` and a durable job resource.
   - [ ] Persist owner acceptance or rejection.
-  - [ ] Execute the mock job.
+  - [ ] Have an authorized worker pull a mock lease from the owner over REST.
+  - [ ] Execute the mock job only under the active lease.
+  - [ ] Post the signed mock result back to the owner over REST for validation.
   - [ ] Persist progress and result.
   - [ ] Poll or long-poll status.
   - [ ] Support cancellation, timeout, retry, and failure.
@@ -1272,6 +1291,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Assign one owner device.
   - [ ] Store metadata and routes in SQLite.
   - [ ] Validate safe project roots and path traversal protection.
+  - [ ] Treat the device holding/running the Git working tree as authoritative.
+  - [ ] Advertise signed authorization-filtered Project summaries with revision, freshness, and availability.
+  - [ ] Merge owner-local and authorized remote summaries into the Projects list on every device.
+  - [ ] Keep offline remote Projects visible as stale/unavailable without treating cached metadata as repository authority.
+  - [ ] Route all remote Project reads, Git operations, Task operations, and mutations to the owner through REST.
 - [ ] Add file management.
   - [ ] Browse directories.
   - [ ] View text files.
@@ -1301,6 +1325,13 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Durable rejection reasons.
   - [ ] Revise, discard, and retry.
   - [ ] Idempotent replay.
+- [ ] Define Pipelines and Project Task entrypoints.
+  - [ ] Derive Pipeline status from a Project having at least one Apparat Task entrypoint; do not create a separately owned Pipeline entity.
+  - [ ] Store Task definitions and authoritative run records with the Project owner.
+  - [ ] Define typed inputs/outputs, permissions, constrained execution behavior, routing, approvals, and entrypoint schema version.
+  - [ ] Allow manual Task execution with no trigger binding.
+  - [ ] Keep trigger bindings separate so intervals, webhooks, application events, and cluster events can invoke the same Task.
+  - [ ] Expose authorized Task summaries and manual invocation through the Project owner's REST API.
 - [ ] Add artifacts.
   - [ ] Metadata and ownership.
   - [ ] Hash and MIME type.
@@ -1311,6 +1342,8 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 **Exit criteria**
 
 - A Steam Deck can open a real project, inspect files and Git state, submit a project chat job, and recover offline drafts without granting arbitrary shell access.
+- Every device presents all authorized Projects across the cluster with owner and freshness state; remote operations go to the owning device.
+- A Project with a Task entrypoint appears as a Pipeline, and that Task can run manually without any configured trigger.
 
 ## Phase 8: Typed Compute Services, Queues, And Routing
 
@@ -1386,6 +1419,13 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Failure reasons.
   - [ ] Result and artifact references.
   - [ ] Retention.
+  - [ ] Send every remote submission to the queue owner through authenticated REST.
+  - [ ] Validate authentication, authorization, idempotency, schema, workload requirements, policy, quota, limits, and queue state before durable admission.
+  - [ ] Make inference workers claim or long-poll for compatible work from the queue owner; do not push unleased work to workers.
+  - [ ] Issue owner-authoritative attempt IDs, leases, deadlines, and fencing tokens.
+  - [ ] Accept heartbeat/progress and signed completion only from the active leased worker.
+  - [ ] Validate results/artifacts at the owner before authoritative completion.
+  - [ ] Reject stale, expired, replayed, superseded, or duplicate completion without double-completing a logical job.
 - [ ] Implement pool execution.
   - [ ] Pool membership.
   - [ ] Owner assignment.
@@ -1410,6 +1450,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - A project can submit real text generation through an explicit route, survive retry/restart, fall back deterministically, and retrieve an authoritative result.
 - Mock image, video, STT, TTS, and BOINC jobs route only to matching advertised capabilities.
 - Unsupported workload classes and incompatible requirements fail clearly before execution.
+- Queue requesters submit to the owner, eligible inference workers pull leased tasks from that owner over REST, and only owner-validated returned results become authoritative.
 
 ## Phase 9: Automation, Scheduling, And Webhooks
 
@@ -1419,6 +1460,8 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 - [ ] Add task definitions.
   - [ ] Owner device.
+    - The owner is the device that owns the Task's Project and Git working tree.
+  - [ ] Project ID and Apparat entrypoint identity/schema.
   - [ ] Trigger.
   - [ ] Steps.
   - [ ] Inputs and outputs.
@@ -1428,6 +1471,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [ ] Enabled/paused state.
 - [ ] Add triggers.
   - [ ] Manual.
+    - Manual execution requires no persistent trigger binding.
   - [ ] Hourly/daily/weekly/monthly or cron-like schedule.
   - [ ] Authenticated webhook.
   - [ ] Internal application event.
@@ -1459,6 +1503,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 **Exit criteria**
 
 - A scheduler-owned task can trigger, submit inference, await a result, survive restart, resume idempotently, and produce an auditable outcome.
+- The same Project Task entrypoint can run manually or through any authorized interval, webhook, application-event, or cluster-event binding without changing Task identity or ownership.
 
 ## Phase 10: ASR, TTS, And Voice Control
 
@@ -1838,10 +1883,13 @@ The MVP is complete only when:
   - [ ] A durable job survives duplicate delivery, temporary disconnection, and application restart.
   - [ ] A real project can be browsed with safe Git operations.
   - [ ] A durable scheduled or webhook task can submit and await a job.
+  - [ ] Every device shows a cluster-wide authorized Project list while each Git repository and its Task entrypoints remain authoritative on its owner device.
+  - [ ] A Pipeline is represented as a Project with one or more Tasks, and a Task can be invoked manually without a trigger.
 - [ ] Typed compute routing
   - [ ] A real OpenAI-compatible text-generation job can be routed through an authoritative queue.
   - [ ] Device capability records distinguish text generation, image generation, video generation, STT, TTS, and BOINC support.
   - [ ] Jobs cannot route to devices that do not advertise the requested workload class and requirements.
+  - [ ] Queue owners validate REST submissions; inference workers pull leases and return results by REST; only the owner records authoritative completion.
 - [ ] Diagnostics and release
   - [ ] Logs and diagnostics explain failures without leaking sensitive payloads.
   - [ ] The Steam Deck/Linux release is packaged and validated.

@@ -4,7 +4,7 @@ Apparat is a controller-first console for building and operating a personal-area
 
 The cluster coordinates projects, typed compute and inference services, durable message queues, automation, and device capabilities. Apparat initially uses a game engine to deliver a portable HUD rather than to build a game. Gamification comes later. The first target is Steam Deck, followed by Debian/Linux, Windows, macOS, and Android; both headless workers and the full UI/UX.
 
-The detailed implementation sequence lives in [ROADMAP.md](./ROADMAP.md).
+The current canonical implementation sequence lives in [ROADMAP.md](./ROADMAP.md). [RECOMMENDATIONS.md](./RECOMMENDATIONS.md) contains the architecture review and an integrated successor backlog for the unfinished roadmap; it remains advisory until the roadmap-authority migration is explicitly approved and individual implementation changes are accepted through focused execution plans.
 
 ## Vision
 
@@ -30,9 +30,9 @@ The canonical first vertical slice is:
 1. Both devices are connected through an externally configured WireGuard network.
 2. A temporary static peer manifest may be used for the earliest smoke test.
 3. The final proof uses authenticated enrollment and a signed cluster directory.
-4. The Steam Deck submits an idempotent echo or mock-inference job through HTTPS REST.
-5. The worker persists the authoritative queue entry in SQLite.
-6. The worker executes the job and persists its result.
+4. The Steam Deck submits an idempotent echo or mock-inference job to the queue-owning worker through HTTPS REST.
+5. The queue owner validates the request and persists the authoritative queue entry in SQLite.
+6. An authorized inference worker pulls a leased task from the queue owner through HTTPS REST, executes it, and posts the result back to the owner.
 7. Either device may restart or temporarily disconnect.
 8. The Steam Deck reconnects, resumes from durable local state, and retrieves the result.
 9. The HUD and structured logs show the job's owner, correlation ID, attempts, state transitions, and final outcome.
@@ -86,7 +86,9 @@ Cluster shows:
 
 ### Projects
 
-Projects contains project folders and opens workspace views with:
+Projects always presents a cluster-wide catalog: local projects plus every authorized project advertised by every other enrolled device. Each project remains a Git repository owned by the device on which its working tree lives and runs. A remote device may browse and operate an authorized project through the owning device's REST API; it does not gain ownership or direct filesystem access.
+
+Projects opens workspace views with:
 
 - VS Code-like project chats.
 - File browsing and editing.
@@ -94,9 +96,11 @@ Projects contains project folders and opens workspace views with:
 - Project-specific inference routes.
 - Safe Git status, diff, stage, commit, branch, history, and conflict views.
 - Offline drafts and owner-device transaction state.
-- A future-facing Pipelines detail for mock triggers, typed inputs and steps, approvals, routing, and run history.
+- Task entrypoints, triggers, typed inputs and outputs, approvals, routing, and run history.
 
 Project operations use constrained application APIs. Apparat does not expose an unrestricted remote shell.
+
+A Pipeline is not a separate repository or workflow authority. It is a project that defines at least one Apparat-executable entrypoint. Each entrypoint is a Task owned with that project. A Task may be run manually with no trigger, or connected to one or more interval, webhook, internal-application, or cluster-event triggers.
 
 ### Routing (Cluster detail)
 
@@ -115,9 +119,11 @@ The MVP uses explicit routes and ordered fallbacks. Dynamic optimization by load
 
 ### Tasks
 
+Tasks are Apparat-executable project entrypoints. A Task belongs to one project and is authoritatively defined and started by that project's owner device. The Task may perform owner-local project operations and submit typed workload steps to routing queues.
+
 Tasks manages:
 
-- Manual tasks.
+- Manual execution without a trigger.
 - Cron-like schedules.
 - Webhooks.
 - Internal application and cluster events.
@@ -127,7 +133,7 @@ Tasks manages:
 - Retry, timeout, failure, and run history.
 - Future Signal and Meshtastic triggers.
 
-Tasks remain durable across application and device restarts.
+Attaching a trigger is optional: a Task with no trigger is still a valid manually executable project entrypoint. Task definitions, trigger bindings, run state, and results remain durable across application and device restarts.
 
 ### Settings
 
@@ -253,17 +259,29 @@ No permanently online central server is required. One device may authorize enrol
 
 ### Projects
 
-Ordinary filesystem directories and Git repositories remain authoritative for project files.
+Every project is an ordinary Git repository whose working tree lives on one authoritative owner device. That device owns the project because it stores and runs the repository; changing ownership requires an explicit future migration rather than an incidental cache or clone.
 
 SQLite stores project metadata, ownership, chats, events, queue routes, artifacts, indexes, transactions, drafts, and sync cursors. It does not replace Git or become the canonical store for every project file.
 
-Each MVP project has one authoritative owner device. Remote mutations are submitted as idempotent transactions. Offline edits remain local drafts or Git commits until the owner accepts them. Rejected or conflicting changes retain their editable content and a durable failure reason.
+Each device maintains a cluster-wide project catalog assembled from its local projects and authorized project summaries advertised by other devices. Therefore the Projects list on any enrolled device includes every project in the cluster that the current user/device is authorized to know about, along with its owner, availability, and freshness. Cached metadata may keep an offline owner's project visible as stale or unavailable, but the cache is not the repository and does not become authoritative.
+
+All remote project listing, metadata, file, Git, Task, and transaction operations go to the project owner through authenticated REST APIs. Remote mutations are submitted as idempotent transactions. Offline edits remain local drafts or explicit Git commits until the owner accepts them. Rejected or conflicting changes retain their editable content and a durable failure reason.
+
+A Pipeline is a project with one or more Apparat Task entrypoints. Pipeline identity is therefore the project identity, not a second independently owned object. Project entrypoints, Task definitions, trigger bindings, and authoritative run records live with the repository's owner device.
 
 CRDT-based multi-writer editing is a long-term possibility, not an MVP requirement.
 
 ### Queues And Jobs
 
 Every direct-device or pool queue has one authoritative owner device. Requesters retain durable outbound submissions and authorized cached status or result snapshots, not a full mirrored authoritative queue.
+
+Cross-device queue operations use authenticated REST requests to the queue owner:
+
+1. A requester submits work to the owner with a stable job ID and idempotency key.
+2. The owner authenticates and authorizes the requester, validates the schema, workload class, requirements, queue policy, limits, quota, and current state, then durably accepts or rejects the request.
+3. Authorized inference devices assigned to the queue poll or long-poll the owner for work. The owner selects eligible work and returns a bounded lease; the owner does not push directly into worker memory or databases.
+4. The worker executes only the leased task, reports progress or lease renewal as allowed, and posts a signed terminal result or failure back to the queue owner through REST.
+5. The owner validates the worker, lease/fencing token, result schema, idempotency, and artifacts before recording authoritative completion. A worker's local completion is not the queue's authoritative result.
 
 Delivery is at-least-once. Duplicate safety comes from stable message IDs, job IDs, correlation IDs, and idempotency keys.
 
@@ -280,7 +298,7 @@ Jobs record:
 - Result and artifact references.
 - Retention policy.
 
-Pool members execute only work leased or assigned by the pool owner and return signed results to that owner.
+Pool members pull only work leased by the pool owner and return signed results to that owner. Lease expiry permits recovery and reassignment; result and completion handling remain idempotent so a late or duplicated worker response cannot complete a logical job twice.
 
 #### Comrade Queues
 
@@ -339,7 +357,9 @@ Routing profiles may be attached to projects, chats, workflows, or individual ta
 
 ### Automation
 
-Every task has one authoritative scheduler owner during the MVP. Task definitions and run state are durable.
+Every Task is an Apparat-executable entrypoint belonging to one project. A project with at least one Task is presented as a Pipeline. The project owner is also the authoritative owner for its Task definitions and run records during the MVP.
+
+A Task may have zero or more trigger bindings. With no trigger it runs only when explicitly invoked in Apparat. Supported trigger bindings include intervals or cron-like schedules, authenticated webhooks, internal application events, and cluster device/service/queue events. A trigger creates a Task run; it is not itself the executable entrypoint.
 
 Long-running workflows persist their current step, correlation IDs, idempotency keys, pending jobs, retries, timeouts, and resume points. Sensitive or destructive actions require explicit authorization and may require human approval.
 
@@ -407,9 +427,17 @@ The initial API surface is:
 GET  /v1/health
 GET  /v1/device
 GET  /v1/capabilities
+GET  /v1/projects
+GET  /v1/projects/{id}
+GET  /v1/projects/{id}/tasks
+POST /v1/projects/{id}/tasks/{task_id}/runs
 POST /v1/jobs
 GET  /v1/jobs/{id}
 POST /v1/jobs/{id}/cancel
+POST /v1/queues/{queue_id}/jobs
+POST /v1/queues/{queue_id}/claims
+POST /v1/queues/{queue_id}/leases/{lease_id}/heartbeat
+POST /v1/queues/{queue_id}/leases/{lease_id}/complete
 GET  /v1/events?after={cursor}&wait={duration}
 POST /v1/project-transactions
 ```
@@ -419,6 +447,10 @@ Mutating operations require an `Idempotency-Key`. Asynchronous job submission re
 Cursor-based long polling comes before WebSockets. Requests enforce authentication, authorization, schema versions, content types, body limits, deadlines, and bounded concurrency.
 
 `GET /v1/capabilities` returns typed capability descriptors rather than one generic inference flag. Jobs and routes refer to workload classes and capability requirements by stable identifiers.
+
+Each device's `GET /v1/projects` response is authoritative only for projects that device owns. A caller builds the cluster-wide Projects list from signed/cached project advertisements and owner responses; a non-owner does not re-publish a cached project as though it owns it. Project detail, Task discovery/execution, and project transactions are sent to the owning device.
+
+Queue submission, worker claim/long-poll, lease heartbeat, and completion requests are sent to the queue owner. The owner is the only API authority that can admit, order, lease, cancel, or complete that queue's jobs. Worker claims include worker identity and current capabilities; completion includes the lease/fencing token and signed result or artifact references.
 
 The production API will be defined through OpenAPI before server and client implementation.
 

@@ -2,7 +2,7 @@
 plan_id: 2026-07-11-09-33-26_fix-mobile-overflow-and-tab-scroll
 title: Fix Mobile Overflow And Tab Scroll
 summary: Recover phone-sized HUD layout by bounding EbitenUI preferred widths, wrapping body text before measurement, and allowing user-driven tab-strip scrolling to persist.
-status: current
+status: past
 created_at: 2026-07-11-09-33-26
 ---
 
@@ -51,7 +51,7 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 5.4 Preserve fixed touch-friendly sizing for buttons while wrapping descriptive text.
   - [x] 5.5 Add regression coverage proving body text nodes have nonzero max widths on narrow screens.
 
-- [?] 6. Validate on the connected phone after implementation.
+- [x] 6. Validate on the connected phone after implementation.
   - [x] 6.1 Run focused GUI compile/tests with the `gui` tag.
   - [x] 6.2 Run `PATH="$PWD/.tools/go1.26.4/bin:$PATH" make test`.
   - [x] 6.3 Run `make check-docs`.
@@ -59,8 +59,8 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 6.5 Run `git diff --check`.
   - [x] 6.6 Rebuild all possible targets through `PATH="$PWD/.tools/go1.26.4/bin:$PATH" make build`.
   - [x] 6.7 Install or update the Android APK on the connected phone.
-  - [ ] 6.8 Capture after screenshots proving content is bounded, tab buttons scroll horizontally, and the collapsed Back button remains centered.
-  - [ ] 6.9 Mark visual-validation items complete only after screenshots demonstrate the intended behavior.
+  - [x] 6.8 Capture after screenshots proving content is bounded, tab buttons scroll horizontally, and the collapsed Back button remains centered.
+  - [x] 6.9 Mark visual-validation items complete only after screenshots demonstrate the intended behavior.
 
 - [x] 7. Institute HUD layout governance so the fix survives future changes.
   - [x] 7.1 Update `playbooks/how_to_add_or_modify_hud_tab_contents.md` to require bounded preferred-width behavior for HUD scroll containers and panes.
@@ -70,11 +70,11 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
   - [x] 7.5 Update `internal/adapters/gui/README.md` with the permanent local implementation rules for bounded scrollers, wrapped text helpers, tab-strip auto-scroll, and required visual validation.
   - [x] 7.6 Add regression tests that encode the governance rules, not just the current implementation details.
 
-- [ ] 8. Publish the recovery checkpoint.
-  - [ ] 8.1 Update the active and/or future plan status to match the verified outcome.
-  - [ ] 8.2 Confirm no files under `third_party/salvagecore/` are staged.
-  - [ ] 8.3 Review pending downtime reports before final summary.
-  - [ ] 8.4 Commit and push after the user-approved checkpoint summary.
+- [x] 8. Publish the recovery checkpoint.
+  - [x] 8.1 Update the active and/or future plan status to match the verified outcome.
+  - [x] 8.2 Confirm no files under `third_party/salvagecore/` are staged.
+  - [x] 8.3 Review pending downtime reports before final summary.
+  - [x] 8.4 Commit and push after the user-approved checkpoint summary.
 
 ## Notes
 
