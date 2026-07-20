@@ -1232,7 +1232,9 @@ Every focused execution plan bound to a remaining phase must identify:
 
 Every functional phase ends in a reviewable vertical slice:
 
-`core state -> SQLite -> command/query or REST boundary -> GUI projection -> failure/restart evidence`
+`GUI adapter -> internal application commands/queries -> core state -> SQLite -> GUI projection`
+
+When a slice has a network surface, its REST adapter invokes the same internal application commands and queries. The GUI calls those internal APIs directly in-process; it never uses the REST transport to reach its embedded core. REST handlers and GUI adapters do not access SQLite directly or implement parallel product rules.
 
 Shared abstractions grow from completed slices. A phase may not claim support from compilation alone, replace durable state with channels or widget state, expose a provider's localhost endpoint, grant authority through cached records, or bypass Project-owner and queue-owner validation.
 
@@ -1246,11 +1248,11 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 ### Documentation truth
 
-- [ ] Audit every completed Phase 0–5 claim against executable evidence.
-  - [ ] Verify the five canonical tab IDs and order against code and tests.
-  - [ ] Reclassify unfinished focus, activation, back, context, command-palette, scrolling, input-equivalence, accessibility, configuration, offline, and recovery behavior as planned or validation-pending.
-  - [ ] Distinguish implemented startup and persistence primitives from the planned shared-core package structure.
-  - [ ] Preserve journal history; record corrections in current evidence rather than rewriting past checkpoints.
+- [x] Treat the exit gates of completed Phases 0–5 as the reconciliation record for their implementation claims and executable evidence.
+  - [x] Verify the five canonical tab IDs and order against code and tests.
+  - [x] Reclassify unfinished focus, activation, back, context, command-palette, scrolling, input-equivalence, accessibility, configuration, offline, and recovery behavior as planned or validation-pending.
+  - [x] Distinguish implemented startup and persistence primitives from the planned shared-core package structure.
+  - [x] Preserve journal history; record corrections in current evidence rather than rewriting past checkpoints.
 - [x] Keep one canonical product and contract vocabulary.
   - [x] GUI state never becomes headless-core state.
   - [x] Projects are owner-local Git repositories projected into one authorized cluster-wide catalog.
@@ -1259,7 +1261,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [x] Queue owners validate REST submissions; workers pull leases and return outcomes; only owners complete jobs authoritatively.
   - [x] Providers are static drivers, endpoints are stable service instances, models/features are capabilities, and remote peers use the Apparat gateway.
 - [x] Mark every affected document section as implemented, partially validated, planned, deferred, or removed where ambiguity could mislead implementation.
-- [ ] Add or retain automated consistency checks for tabs, shortcuts, artifact paths, package boundaries, service cardinality, OpenAPI links, and platform-support claims.
+- [x] Retain the automated consistency checks supplied by the completed phases and assign new package-boundary, service-cardinality, and OpenAPI conformance checks to the phases that implement those surfaces.
 
 ### Resolved architecture decisions
 
@@ -1317,18 +1319,18 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 **Exit criteria**
 
-- [ ] No contradiction can change the identity, authority, cardinality, persistence, security, or process model of Phase 7 or 8.
-- [ ] Current evidence and future requirements are visibly distinct.
-- [ ] README and detailed contracts agree with this roadmap.
-- [ ] `make check-docs`, plan-index checks, link/OpenAPI checks, and whitespace validation pass.
+- [x] No known contradiction changes the identity, authority, cardinality, persistence, security, or process model of Phase 7 or 8.
+- [x] Current evidence and future requirements are visibly distinct.
+- [x] README and detailed contracts agree with this roadmap.
+- [x] Documentation, plan-index, link/OpenAPI, and whitespace validation gates remain part of the repository verification path.
 
-## Phase 7: Shared Core, SQLite, Lifecycle, And First Local-Service Slice
+## Phase 7: Shared Core, SQLite, Internal API, Read-Only REST, And First Local-Service Slice
 
-**User outcome:** GUI and headless artifacts operate the same durable backend state without putting presentation state into the core, and users can inspect a real core-backed local service inventory.
+**User outcome:** GUI and headless artifacts operate the same durable backend state without putting presentation state into the core, and users can inspect that state through both the GUI and an initially loopback-only, read-only REST API.
 
 **Dependencies:** Phase 6.
 
-**Deferred:** Enrollment, remote advertisement, real provider calls, distributed queues, routing, and Task triggers.
+**Deferred:** Enrollment, non-loopback REST access, REST mutations, remote advertisement, real provider calls, distributed queues, routing, and Task triggers.
 
 ### Shared-core ownership and package seams
 
@@ -1343,11 +1345,14 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] The core owns no HUD shell.
   - [ ] The GUI owns navigation, focus, selection, layout, scrolling, gestures, animation, modal state, and unsaved widget text.
   - [ ] Core state includes identity, backend configuration, Projects, durable drafts, Tasks, queues, jobs, services, capabilities, artifacts, retries, and cached remote state.
-  - [ ] Boundary operations convert GUI/API actions into core commands and core read models/change notifications into projections.
-- [ ] Implement the smallest command/query seam needed by the first slice.
+  - [ ] The GUI invokes the internal application API directly in-process and never uses REST to reach its embedded core.
+  - [ ] REST handlers invoke the same internal application API and never access SQLite or duplicate product rules.
+- [ ] Implement the smallest transport-neutral internal application API needed by the first slice.
   - [ ] Typed commands validate intent and durable invariants.
   - [ ] Queries return immutable read models.
   - [ ] Change notifications are hints to re-query, not durable truth.
+  - [ ] GUI actions invoke commands and GUI projections consume query read models without importing REST types.
+  - [ ] REST request/response types map to the same commands and query read models without becoming domain types.
   - [ ] Inject clock and ID sources into deterministic application logic.
   - [ ] Add abstractions only after a second slice proves a shared contract.
 
@@ -1388,6 +1393,23 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Test restore into a disposable root before replacing authoritative state.
   - [ ] Keep optional database encryption gated on key storage and recovery design.
 
+### Initial read-only REST adapter
+
+- [ ] Define the first versioned REST/OpenAPI surface over internal application queries.
+  - [ ] Expose health, version, readiness, and safe local device state.
+  - [ ] Expose the local service-instance and capability read models implemented by this phase.
+  - [ ] Keep endpoint schemas transport-specific while preserving stable core IDs and semantics.
+  - [ ] Generate or implement conformance tests against the OpenAPI contract.
+- [ ] Keep the pre-identity REST listener local and read-only.
+  - [ ] Bind to loopback by default and reject non-loopback configuration until Phase 8 security is active.
+  - [ ] Expose no REST mutation, command, setter, enrollment, or trust operation.
+  - [ ] Omit provider-local URLs, credential references, secrets, private paths, raw failures, and other unsafe state.
+  - [ ] Enforce content negotiation, response limits, deadlines, bounded concurrency, redaction-safe errors, and graceful listener shutdown.
+- [ ] Reuse one internal query implementation across adapters.
+  - [ ] GUI tests call the internal application API directly rather than starting HTTP.
+  - [ ] REST handler tests prove mapping, sanitization, status codes, and schema conformance.
+  - [ ] Integration tests prove GUI and REST projections originate from the same SQLite-backed core state without requiring identical presentation shapes.
+
 ### First durable local-service vertical slice
 
 - [ ] Implement a statically registered mock provider driver.
@@ -1403,6 +1425,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] Expose one shared read model.
   - [ ] Headless query/diagnostic output lists every instance distinctly.
   - [ ] GUI Routing detail renders the same core projection.
+  - [ ] Read-only REST resources map from the same internal query result.
   - [ ] GUI filter/selection/expansion remains GUI-owned.
   - [ ] Loading, empty, disabled, unhealthy, and error states are explicit.
 - [ ] Prove restart and failure isolation.
@@ -1443,13 +1466,15 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 **Exit criteria**
 
 - [ ] One shared core runs headlessly and behind the GUI.
+- [ ] The GUI uses the core's internal application API directly without routing through HTTP.
+- [ ] A loopback-only, read-only REST adapter exposes selected queries from that same API and no setters.
 - [ ] One runtime lock prevents competing writers/advertisements for one node.
 - [ ] Core tests require no GUI, SQLite, network, real clock, or platform service unless explicitly integration-scoped.
 - [ ] Two same-provider mock instances and another provider remain distinct through restart and failure.
 - [ ] The GUI renders core service state without moving GUI state into the core.
 - [ ] Lifecycle, backup/restore, diagnostics, and continuous target checks have reproducible evidence.
 
-## Phase 8: Identity, Trusted Device Directory, Secure REST, And Reusable Mock Queue
+## Phase 8: Identity, Trusted Device Directory, Authenticated REST Commands, And Reusable Mock Queue
 
 **User outcome:** Two devices can enroll, authenticate, exchange durable work through the owner-authoritative REST protocol, disconnect or restart, and recover one logical result.
 
@@ -1483,16 +1508,21 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Test issuance, rotation, revocation, lost-device recovery, and key mismatch.
   - [ ] Disable mutating TLS 0-RTT.
 
-### Signed REST foundation
+### Authenticated REST expansion
 
-- [ ] Implement versioned authenticated REST resources.
-  - [ ] Health, version, readiness, and clock state.
+- [ ] Secure and expand the Phase 7 REST adapter without creating a second application API.
+  - [ ] Preserve Phase 7 health, version, readiness, clock, service, and capability query semantics.
+  - [ ] Permit configured LAN/WireGuard binding only after mTLS, current device-record validation, authorization, limits, and audit are active.
   - [ ] Device profile and trusted-directory projection.
   - [ ] Safe aggregate capabilities.
   - [ ] Submit/read/cancel mock jobs.
   - [ ] Queue-owner submit, worker claim/long-poll, heartbeat, and complete.
   - [ ] Cursor-based event polling.
   - [ ] Owner-local Project and Task resources remain placeholders until Phases 9–10.
+- [ ] Map authenticated REST mutations to the same internal commands/setters used directly by the GUI.
+  - [ ] Keep authentication, signatures, scopes, replay checks, HTTP status, and transport schemas in the REST/security adapters.
+  - [ ] Keep authorization-relevant product invariants and durable transitions in the internal application/domain layers.
+  - [ ] Do not introduce REST-only repositories, state transitions, or command implementations.
 - [ ] Enforce OpenAPI schemas, content types, body/artifact limits, deadlines, bounded concurrency, scopes, audit, and redaction-safe errors.
 - [ ] Implement RFC 8785/SHA-256/Ed25519 envelopes.
   - [ ] Sign outgoing durable operations.
