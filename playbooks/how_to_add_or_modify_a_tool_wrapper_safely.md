@@ -62,7 +62,7 @@ Provide a safety-first workflow for adding or changing a tool wrapper (command w
         * Playbooks
         * References
         * Templates
-        * `RULES.md` / `README.md` (if organization or workflow inventory changed)
+        * `AGENTS.md` / `README.md` (if organization or workflow inventory changed)
         * Today's journal repo work log entry for the wrapper change
     * If the change introduces a recurring pattern, consider extracting it into `./references/`.
 

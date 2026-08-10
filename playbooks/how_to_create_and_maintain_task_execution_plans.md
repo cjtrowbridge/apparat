@@ -8,7 +8,7 @@ Define a repeatable workflow for creating, selecting, executing, revising, and a
 
 ## Prerequisites
 
-* Read `README.md` and `RULES.md`.
+* Read `README.md` and `AGENTS.md`.
 * Plans directories exist:
   * `./plans/future/`
   * `./plans/current/`
@@ -83,7 +83,7 @@ Define a repeatable workflow for creating, selecting, executing, revising, and a
      * `past`: `created_at` descending.
    * Run `python scripts/regenerate_plan_indexes.py` after plan create/update/move/archive.
    * If this framework is mounted as `./agents` in a host repo using host-owned `./plans/`, run:
-     * `python agents/scripts/regenerate_plan_indexes.py --repo-root .`
+     * `python agentic-pipelines/scripts/regenerate_plan_indexes.py --repo-root .`
 
 9. **Checkpoint Summary Requirements**
    * Before commit/push flow, summarize:

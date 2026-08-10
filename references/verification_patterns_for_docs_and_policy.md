@@ -26,7 +26,7 @@ A file can exist and still fail the framework if it is:
 
 3. **Connected**
    - References to other files/paths are valid.
-   - Indexes (`RULES.md`/`README.md`) reflect added/removed artifacts.
+   - Indexes (`AGENTS.md`/`README.md`) reflect added/removed artifacts.
 
 4. **Actionable**
    - Steps can be followed in order.
@@ -35,7 +35,7 @@ A file can exist and still fail the framework if it is:
    - Execution boundaries are tied to approved active plan checklist items.
 
 5. **Aligned**
-   - Matches current repo policy and does not contradict `RULES.md`.
+   - Matches current repo policy and does not contradict `AGENTS.md`.
    - Matches actual repo organization and current workflows.
 
 ## Practical Checks by Artifact Type
@@ -55,7 +55,7 @@ Failure patterns:
 - "Update docs" with no files listed
 - "Run tests" with no scope or fallback
 - Implicit approval assumptions
-- Contradicting another playbook or `RULES.md`
+- Contradicting another playbook or `AGENTS.md`
 
 ### References
 
@@ -85,7 +85,7 @@ Failure patterns:
 - Missing active plan path/checklist delta fields in execution checkpoint templates
 - Sections that no playbook actually uses
 
-### Indexes / Organization Docs (`RULES.md`, `README.md`)
+### Indexes / Organization Docs (`AGENTS.md`, `README.md`)
 
 Verify:
 - Newly added files/directories are documented if relevant

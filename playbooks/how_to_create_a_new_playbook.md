@@ -10,7 +10,7 @@ This playbook outlines the standard procedure for an AI Agent to create a new op
 
 1.  **Read the Root Documentation**:
     *   `README.md`: Understand the project's high-level architecture and goals.
-    *   `RULES.md`: Understand the organizational structure, API standards, and the role of agents.
+    *   `AGENTS.md`: Understand the organizational structure, API standards, and the role of agents.
 2.  **Read Component Documentation (If Present)**:
     *   Relevant module or subsystem READMEs (e.g., `/docs`, `/services`, `/modules`, `/platform`).
     *   Any architecture or integration notes that affect the task.
@@ -82,9 +82,9 @@ If this occurs inside a git repo:
 ## 5. Finalizing
 
 1.  Save the file to `./playbooks/`.
-2.  Update `RULES.md` under the "Agent Playbooks" section with the new, removed, or renamed playbook entry and a brief description (required for every playbook change).
+2.  Update `AGENTS.md` under the "Agent Playbooks" section with the new, removed, or renamed playbook entry and a brief description (required for every playbook change).
 3.  Update `README.md` if the new playbook changes any structure or workflow inventory that the README documents.
-4.  Verify the `RULES.md` playbook index matches the actual contents of `./playbooks/`.
+4.  Verify the `AGENTS.md` playbook index matches the actual contents of `./playbooks/`.
 5.  Append today's journal repo work log entry summarizing the playbook change and rationale.
 6.  If in a git repo, check status/diff and suggest a commit message. Commit after approved checkpoint completion.
 

@@ -7,7 +7,7 @@ Provide a repeatable, low-risk workflow for migrating roadmap/milestone content 
 
 ## Prerequisites
 
-- Read `README.md` and `RULES.md` first.
+- Read `README.md` and `AGENTS.md` first.
 - Ensure the plans directories exist:
   - `plans/future/`
   - `plans/current/`
@@ -88,7 +88,7 @@ Provide a repeatable, low-risk workflow for migrating roadmap/milestone content 
      - `future/current`: filesystem last-write time descending.
      - `past`: `created_at` descending.
    - Run `python scripts/regenerate_plan_indexes.py` after plan create/update/move/archive.
-   - Host/submodule mode (`./agents` with host-owned plans): run `python agents/scripts/regenerate_plan_indexes.py --repo-root .` from host root.
+   - Host/submodule mode (`./agents` with host-owned plans): run `python agentic-pipelines/scripts/regenerate_plan_indexes.py --repo-root .` from host root.
    - If script execution is unavailable, update indexes manually and record follow-up to restore script-based regeneration.
 
 7. **Run Migration Verification**

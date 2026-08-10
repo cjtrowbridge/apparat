@@ -86,7 +86,7 @@ Use templates when the same output repeats (plans, reports, proposals).
 ## Prompt Layering Pattern
 
 Use layered guidance instead of one giant block:
-- Global posture in `RULES.md`
+- Global posture in `AGENTS.md`
 - Task workflow in playbooks
 - Reusable tone/timbre details in `./references/`
 - Output shape in `./templates/`

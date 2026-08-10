@@ -15,6 +15,8 @@ EXCLUDED_DIRS = {
     ".tools",
     ".tmp",
     "__pycache__",
+    "agentic-pipelines",
+    "agents",
     "third_party",
     "releases",
     "journal",

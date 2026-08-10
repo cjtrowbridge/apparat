@@ -9,7 +9,7 @@ Provide a repeatable review workflow that prioritizes bugs, behavioral regressio
 ## Prerequisites
 
 * Access to the changed files (local repo, diff, or patch).
-* Ability to inspect relevant documentation (`RULES.md`, `README.md`, `./playbooks/`, `./references/`, `./templates/`) when affected.
+* Ability to inspect relevant documentation (`AGENTS.md`, `README.md`, `./playbooks/`, `./references/`, `./templates/`) when affected.
 * Enough context to understand the intended behavior of the change.
 
 ## Step-by-Step Instructions

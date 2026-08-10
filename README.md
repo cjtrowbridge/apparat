@@ -568,6 +568,15 @@ Source submodules are added when Apparat needs a pinned source tree for audit, a
 
 Normal Go dependencies remain pinned through `go.mod` and `go.sum`. Build tools are pinned through documented tool versions. A source submodule does not automatically become linked into the MVP binary.
 
+### Governance Frameworks
+
+| Path | Revision | License | Purpose and update policy |
+| --- | --- | --- | --- |
+| `agentic-pipelines` | `bdf758c21319b3a2f99d70a9f95417b55e636398` | No license file present at the pinned revision; treat as project-governance source only pending an explicit license decision | Selected shared agent-governance baseline and reusable pipeline tooling; update through a reviewed submodule synthesis |
+| `agents` | `a264b984c127673a557aa8acf183dbbea8bdb3d6` | See the pinned repository | Transitional comparison and rollback source; not selected as the active governance baseline and not an application build dependency |
+
+Neither governance framework is imported by the Apparat binary or its build scripts. Update a gitlink only after reviewing upstream instructions, host overrides, live path references, and local verification. The legacy `agents` submodule remains until a later plan confirms that no required detail was lost.
+
 ### Required Early Sources
 
 | Path | Source | Purpose |
@@ -615,6 +624,14 @@ make build
 `make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, build-pipeline tests, race tests, code-size checks, documentation-completeness checks, linting, and vulnerability scanning.
 
 ### Build Process
+
+After cloning, initialize both governance frameworks during the transition:
+
+```bash
+git submodule update --init --recursive agents agentic-pipelines
+```
+
+`agentic-pipelines/AGENTS.md` is the selected shared governance baseline; `agents/` remains pinned temporarily for comparison and rollback. Apparat's build targets are the deterministic pipeline entities, and the existing no-flag `scripts/build.py` process remains the sole build engine. The current host-owned VS Code task and play action are Windows-local and enter `scripts/run_build_pipeline.ps1` before delegating to that build script. Linux and macOS retain their documented direct build commands until native VS Code entrypoints can be tested there.
 
 Run build and verification commands from the repository root. Prefer Makefile targets because they apply repo-local Go cache settings and keep generated files out of source directories.
 

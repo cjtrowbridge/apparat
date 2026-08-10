@@ -49,7 +49,7 @@ Provide a safe, repeatable workflow for updating the `./agents` submodule in a h
    - Check policy/schema changes requiring host migration.
    - Check script behavior/flags that affect host commands.
    - Run:
-     - `python agents/scripts/regenerate_plan_indexes.py --check --repo-root .`
+     - `python agentic-pipelines/scripts/regenerate_plan_indexes.py --check --repo-root .`
 
 8. **Finalize and Report**
    - Summarize:

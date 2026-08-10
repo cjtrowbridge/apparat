@@ -7,7 +7,7 @@ Run a startup workflow that discovers daily artifact state, gets approval before
 
 ## Prerequisites
 
-- Read `README.md` and `RULES.md` before making changes.
+- Read `README.md` and `AGENTS.md` before making changes.
 - Journal template available at `./templates/daily_journal_entry.md`.
 - Kanban template available at `./templates/kanban_board.md`.
 

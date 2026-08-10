@@ -35,7 +35,7 @@
 
 ## Dependencies / Related Docs
 
-- `RULES.md`
+- `AGENTS.md`
 - `README.md`
 - `./playbooks/[related].md`
 - `./references/[related].md`
@@ -44,7 +44,7 @@
 ## Proposed File Changes
 
 1. `./playbooks/[filename].md`
-2. `RULES.md` (playbook index)
+2. `AGENTS.md` (playbook index)
 3. `README.md` (if organization/workflow inventory changes)
 [Add others as needed]
 

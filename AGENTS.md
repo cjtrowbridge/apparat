@@ -1,12 +1,13 @@
 # AGENTS Instructions
 
-Read `./agents/RULES.md` in its entirety before doing anything in this repository. Follow all instructions in `./agents/RULES.md` as though they are written directly in this file. Do not proceed if you have not read and understood `./agents/RULES.md`.
+Read `./agentic-pipelines/AGENTS.md` in its entirety before doing anything in this repository. Follow its shared instructions as though they are written directly in this file. Explicit Apparat-specific overrides below take precedence.
 
 ## Framework Resolution
 
-- Treat `./agents/RULES.md` as the canonical shared-policy baseline; explicit host-specific overrides in this file take precedence for this repository.
+- Treat `./agentic-pipelines/AGENTS.md` as the selected shared-policy baseline; explicit host-specific overrides in this file take precedence for this repository.
 - Use host-managed `./playbooks/`, `./references/`, `./templates/`, and `./scripts/` when present.
-- Fall back to `./agents/playbooks/`, `./agents/references/`, `./agents/templates/`, and `./agents/scripts/` when host copies are missing.
+- Fall back to `./agentic-pipelines/playbooks/`, `./agentic-pipelines/references/`, `./agentic-pipelines/templates/`, and `./agentic-pipelines/scripts/` when host copies are missing.
+- Keep `./agents/` initialized during the transition, but do not use it as the selected governance baseline. Remove it only through a later reviewed migration.
 - Treat `./plans/`, `./journal/`, `./kanban/`, and `./downtime/reports/` as host-owned operational state.
 - Keep agent-facing operating instructions in `AGENTS.md`, not the human-facing `README.md`.
 - Agents should be aware of TODO.md but only act on it or pull things out of it to work on when the user directly instructs the agent to do that.
@@ -56,14 +57,14 @@ Read `./agents/RULES.md` in its entirety before doing anything in this repositor
 Initialize the framework after cloning:
 
 ```bash
-git submodule update --init --recursive agents
+git submodule update --init --recursive agents agentic-pipelines
 ```
 
 Regenerate or validate host plan indexes:
 
 ```bash
-python agents/scripts/regenerate_plan_indexes.py --repo-root .
-python agents/scripts/regenerate_plan_indexes.py --check --repo-root .
+python agentic-pipelines/scripts/regenerate_plan_indexes.py --repo-root .
+python agentic-pipelines/scripts/regenerate_plan_indexes.py --check --repo-root .
 ```
 
 When updating the submodule, compare upstream changes with host-managed copies and synthesize them without overwriting host-specific behavior.

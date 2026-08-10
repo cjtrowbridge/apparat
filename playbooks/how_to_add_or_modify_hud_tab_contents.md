@@ -8,7 +8,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 
 ## Prerequisites
 
-* Read `README.md`, `ROADMAP.md`, `AGENTS.md`, and `agents/RULES.md`.
+* Read `README.md`, `ROADMAP.md`, `AGENTS.md`, and `agentic-pipelines/AGENTS.md`.
 * Identify the active execution plan item that authorizes the tab-content change.
 * Read `internal/hud/README.md` and `internal/adapters/gui/README.md`.
 * Inspect the current tab model in `internal/hud` and the rendering/input adapter in `internal/adapters/gui`.

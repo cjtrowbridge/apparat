@@ -10,10 +10,11 @@ Run scripts from the repository root unless a script explicitly says otherwise. 
 - `build_orchestrator.py`: Implements the no-flag target detection/report/build loop used by `build.py`.
 - `generate_gitingest.py`: Creates the root-level GitIngest digest from this checkout and its initialized submodules.
 - `android_wrapper.py`: Assembles the Android GUI wrapper APK from Ebitengine mobile binding output and tracked Apparat Android sources.
-- `check_code_file_lines.py`: Fails when included code files exceed the 400-line limit.
+- `check_code_file_lines.py`: Fails when host-owned code files exceed the 400-line limit; Git submodules, third-party sources, generated releases, plans, and journals are excluded.
 - `check_directory_docs.py`: Fails when source directories or scripts are missing required documentation.
 - `regenerate_plan_indexes.py`: Validates plan files and regenerates plan indexes.
 - `run_artifact.py`: Runs a built artifact while forwarding arguments after an optional `--`.
+- `run_build_pipeline.ps1`: Host-owned Windows VS Code/local prerequisite boundary that verifies the selected Agentic Pipelines submodule and Python before delegating once to the canonical build script.
 
 ## Desktop Build Script
 
@@ -25,6 +26,8 @@ python3 scripts/build.py
 ```
 
 `make build` is preferred because it applies repo-local Go cache settings. `python3 build.py` at the repository root is a compatibility wrapper that delegates to `python3 scripts/build.py`. The build script intentionally has one no-flag entry point: it detects the host, prints possible and impossible targets with reasons, and builds every possible target.
+
+VS Code's local `Apparat: Build Pipeline` task and primary play action enter `run_build_pipeline.ps1`. The wrapper installs nothing and does not invoke inference: it checks that `agentic-pipelines/AGENTS.md` and Python are available, then runs `scripts/build.py` exactly once and preserves its exit status. Run it with `-Help` for usage. Missing submodules are repaired explicitly with `git submodule update --init --recursive agents agentic-pipelines`. Linux and macOS VS Code entrypoints remain unclaimed until they can be tested on those hosts; their existing direct `make build` and `python3 scripts/build.py` commands remain supported.
 
 ## GitIngest Digest
 

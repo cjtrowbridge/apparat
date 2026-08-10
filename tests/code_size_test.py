@@ -13,14 +13,17 @@ class CodeSizeTest(unittest.TestCase):
             path.write_text("package main\n" * 3)
             self.assertEqual(check_code_file_lines.violations(root, 2), [(Path("main.go"), 3)])
 
-    def test_excludes_third_party_and_releases(self):
+    def test_excludes_submodules_third_party_and_releases(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             third_party = root / "third_party" / "x.go"
+            framework = root / "agentic-pipelines" / "runtime.py"
             release = root / "releases" / "linux" / "amd64" / "apparat" / "latest"
             third_party.parent.mkdir(parents=True)
+            framework.parent.mkdir(parents=True)
             release.parent.mkdir(parents=True)
             third_party.write_text("package x\n" * 99)
+            framework.write_text("print('external')\n" * 99)
             release.write_text("binary-ish\n" * 99)
             self.assertEqual(check_code_file_lines.violations(root, 1), [])
 
