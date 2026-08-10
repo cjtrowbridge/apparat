@@ -2,5 +2,6 @@
 /.tools/
 /.tmp/
 build_environment.py
+gitingest.txt
 __pycache__/
 *.pyc

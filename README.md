@@ -637,7 +637,9 @@ python3 scripts/build.py
 python3 scripts/build.py --help
 ```
 
-`make build` runs the Python build pipeline. The pipeline has one no-flag entry point: it detects the current machine, reports possible and impossible targets with reasons, then builds every possible target. On a Linux host with desktop build prerequisites, it writes both latest local binaries to:
+To create a separate prompt-friendly digest of the local checkout and all initialized submodules, run `python3 scripts/generate_gitingest.py`. It bootstraps GitIngest `>=0.2.0` into ignored `.tools/gitingest-venv` on first use and writes ignored `gitingest.txt` at the repository root. This is intentionally separate from the build pipeline; its first run needs network access.
+
+`make build` runs the Python build pipeline. The pipeline detects the current machine, reports possible and impossible targets with reasons, then builds every possible target. On a Linux host with desktop build prerequisites, it writes both latest local binaries to:
 
 ```text
 releases/<goos>/<goarch>/apparat/latest[.exe]

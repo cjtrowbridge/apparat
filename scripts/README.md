@@ -8,6 +8,7 @@ Run scripts from the repository root unless a script explicitly says otherwise. 
 
 - `build.py`: Builds canonical local release artifacts for `apparat`, `apparatd`, and the Android GUI APK.
 - `build_orchestrator.py`: Implements the no-flag target detection/report/build loop used by `build.py`.
+- `generate_gitingest.py`: Creates the root-level GitIngest digest from this checkout and its initialized submodules.
 - `android_wrapper.py`: Assembles the Android GUI wrapper APK from Ebitengine mobile binding output and tracked Apparat Android sources.
 - `check_code_file_lines.py`: Fails when included code files exceed the 400-line limit.
 - `check_directory_docs.py`: Fails when source directories or scripts are missing required documentation.
@@ -24,6 +25,16 @@ python3 scripts/build.py
 ```
 
 `make build` is preferred because it applies repo-local Go cache settings. `python3 build.py` at the repository root is a compatibility wrapper that delegates to `python3 scripts/build.py`. The build script intentionally has one no-flag entry point: it detects the host, prints possible and impossible targets with reasons, and builds every possible target.
+
+## GitIngest Digest
+
+Generate a prompt-friendly digest separately from application builds:
+
+```bash
+python3 scripts/generate_gitingest.py
+```
+
+The command bootstraps GitIngest `>=0.2.0` in the ignored `.tools/gitingest-venv` environment when needed and writes the ignored root-level `gitingest.txt`. The digest covers the local checkout and all initialized Git submodules, while honoring GitIngest's normal `.gitignore` filtering. Its first run needs network access; run `git submodule update --init --recursive` if generation reports a missing submodule.
 
 Desktop outputs:
 
@@ -94,6 +105,7 @@ make test-build
 ## Failure Modes
 
 - Missing Go modules: rerun through `make build` or allow network access so Go can populate the module cache.
+- Missing GitIngest: allow network access for `python3 scripts/generate_gitingest.py` to create `.tools/gitingest-venv`; initialize submodules recursively before rerunning if digest generation reports a missing submodule.
 - Missing Linux GUI headers: install the native desktop development packages listed above, then rerun `make build`.
 - Missing Android SDK/OpenJDK/NDK: set `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, or configure ignored `build_environment.py`, then rerun `make build`. Use an OpenJDK 21 distribution, never Oracle JDK.
 - Missing Android gomobile module: run `go mod download github.com/ebitengine/gomobile` with writable `GOMODCACHE`, then rerun the Android preflight.
