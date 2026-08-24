@@ -653,7 +653,7 @@ python3 scripts/build.py
 python3 scripts/build.py --help
 ```
 
-To create a separate prompt-friendly digest of the local checkout and all initialized submodules, run `python3 scripts/generate_gitingest.py`. It bootstraps GitIngest `>=0.2.0` into ignored `.tools/gitingest-venv` on first use and writes ignored `gitingest.txt` at the repository root. This is intentionally separate from the build pipeline; its first run needs network access.
+To create a separate prompt-friendly research digest, run `python3 scripts/generate_gitingest.py`. It pins GitIngest 0.3.1 in the ignored `.tools/gitingest-venv`, writes the project-focused ignored `gitingest.txt`, and writes its ignored provenance sidecar `gitingest.manifest.json`. The default excludes recursive third-party source, release artifacts, and tool/cache directories while preserving Apparat-owned code, tests, documentation, plans, and build files. Use `--include-submodules` only when a review requires full third-party source bodies. This is intentionally separate from the build pipeline; its first run needs network access.
 
 `make build` runs the Python build pipeline. The pipeline detects the current machine, reports possible and impossible targets with reasons, then builds every possible target. On a Linux host with desktop build prerequisites, it writes both latest local binaries to:
 

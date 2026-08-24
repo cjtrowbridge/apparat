@@ -8,7 +8,7 @@ Run scripts from the repository root unless a script explicitly says otherwise. 
 
 - `build.py`: Builds canonical local release artifacts for `apparat`, `apparatd`, and the Android GUI APK.
 - `build_orchestrator.py`: Implements the no-flag target detection/report/build loop used by `build.py`.
-- `generate_gitingest.py`: Creates the root-level GitIngest digest from this checkout and its initialized submodules.
+- `generate_gitingest.py`: Creates a project-focused GitIngest digest and provenance manifest for deep research.
 - `android_wrapper.py`: Assembles the Android GUI wrapper APK from Ebitengine mobile binding output and tracked Apparat Android sources.
 - `check_code_file_lines.py`: Fails when host-owned code files exceed the 400-line limit; Git submodules, third-party sources, generated releases, plans, and journals are excluded.
 - `check_directory_docs.py`: Fails when source directories or scripts are missing required documentation.
@@ -37,7 +37,12 @@ Generate a prompt-friendly digest separately from application builds:
 python3 scripts/generate_gitingest.py
 ```
 
-The command bootstraps GitIngest `>=0.2.0` in the ignored `.tools/gitingest-venv` environment when needed and writes the ignored root-level `gitingest.txt`. The digest covers the local checkout and all initialized Git submodules, while honoring GitIngest's normal `.gitignore` filtering. Its first run needs network access; run `git submodule update --init --recursive` if generation reports a missing submodule.
+The command bootstraps the pinned GitIngest 0.3.1 release in the ignored `.tools/gitingest-venv` environment when needed. It atomically replaces two ignored root-level outputs:
+
+- `gitingest.txt`: the default project-focused corpus, containing Apparat-owned code, tests, documentation, plans, governance, and build files. It excludes recursive third-party source, release artifacts, and tool/cache directories.
+- `gitingest.manifest.json`: schema-versioned provenance containing the commit, branch, dirty state, sanitized remotes, recursive submodule revisions, `go.mod`/`go.sum` hashes, generator settings, and the digest SHA-256.
+
+Use `python3 scripts/generate_gitingest.py --include-submodules` only for a targeted review that genuinely requires full third-party source bodies. The default does not recursively ingest submodule contents; their exact revisions remain in the manifest for later pinned-source retrieval. Use `--output` or `--manifest` to choose alternative artifact paths. Its first run needs network access; run `git submodule update --init --recursive` if generation reports a missing submodule.
 
 Desktop outputs:
 
@@ -108,7 +113,7 @@ make test-build
 ## Failure Modes
 
 - Missing Go modules: rerun through `make build` or allow network access so Go can populate the module cache.
-- Missing GitIngest: allow network access for `python3 scripts/generate_gitingest.py` to create `.tools/gitingest-venv`; initialize submodules recursively before rerunning if digest generation reports a missing submodule.
+- Missing GitIngest: allow network access for `python3 scripts/generate_gitingest.py` to create the pinned `.tools/gitingest-venv`; initialize submodules recursively before rerunning if provenance collection reports a missing submodule.
 - Missing Linux GUI headers: install the native desktop development packages listed above, then rerun `make build`.
 - Missing Android SDK/OpenJDK/NDK: set `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, or configure ignored `build_environment.py`, then rerun `make build`. Use an OpenJDK 21 distribution, never Oracle JDK.
 - Missing Android gomobile module: run `go mod download github.com/ebitengine/gomobile` with writable `GOMODCACHE`, then rerun the Android preflight.

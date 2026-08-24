@@ -4,5 +4,6 @@
 /.tmp/
 build_environment.py
 gitingest.txt
+gitingest.manifest.json
 __pycache__/
 *.pyc

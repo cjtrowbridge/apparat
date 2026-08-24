@@ -105,13 +105,21 @@ class BuildPipelineTest(unittest.TestCase):
             with redirect_stderr(StringIO()):
                 build.main(["--target", "apparat"])
 
-    def test_gitingest_command_includes_submodules_and_root_output(self):
+    def test_gitingest_default_command_excludes_submodules_and_generated_files(self):
         command = generate_gitingest.generate_command()
-        self.assertIn("--include-submodules", command)
+        self.assertEqual(command[1:3], ["-m", "gitingest"])
+        self.assertNotIn("--include-submodules", command)
+        self.assertIn("third_party/", command)
+        self.assertIn("releases/", command)
         self.assertEqual(command[-1], str(generate_gitingest.OUTPUT))
 
-    def test_gitingest_install_requires_supported_version(self):
-        self.assertIn("gitingest>=0.2.0", generate_gitingest.install_command())
+    def test_gitingest_submodules_are_explicit(self):
+        command = generate_gitingest.generate_command(include_submodules=True)
+        self.assertIn("--include-submodules", command)
+        self.assertNotIn("third_party/", command)
+
+    def test_gitingest_install_is_pinned(self):
+        self.assertIn("gitingest==0.3.1", generate_gitingest.install_command())
 
     def test_build_plan_reports_android_headless_impossible(self):
         with mock.patch("scripts.build.resolve_android_toolchain", return_value=(None, ["missing sdk"], [])):
