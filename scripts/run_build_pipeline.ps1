@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $framework = Join-Path $repoRoot "agentic-pipelines\AGENTS.md"
 if (-not (Test-Path -LiteralPath $framework)) {
-    Write-Error "Missing agentic-pipelines submodule. Run: git submodule update --init --recursive agents agentic-pipelines"
+    Write-Error "Missing agentic-pipelines submodule. Run: git submodule update --init --recursive agentic-pipelines"
     exit 2
 }
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {

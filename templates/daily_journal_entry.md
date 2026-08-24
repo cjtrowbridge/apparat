@@ -2,16 +2,9 @@
 
 ## Field Ownership
 
-- User-only fields:
-  - `Today's Intentions`
-  - `Notes / Reflections`
-- Agent-managed fields:
-  - `Kickoff Context`
-  - `Kanban State Summary`
-  - `Repo Work Log (Required)`
-- Rule:
-  - For user-only fields, agent may only insert verbatim user-provided text.
-  - If user input is not provided, leave an empty list item (`-`).
+- User-only: `Today's Intentions`, `Notes / Reflections`
+- Agent-managed: `Kickoff Context`, `TODO State Summary`, `Plan Checkpoint Linkage`, `Repo Work Log`
+- Agents copy user-only text verbatim; without user text, leave `-`.
 
 ## Today's Intentions
 
@@ -21,38 +14,27 @@
 
 - Date: YYYY-MM-DD
 - Journal file status: [created or existed]
-- Relevant kanban files found:
-  - [kanban/today.md]
-  - [kanban/this_week.md]
-  - [kanban/eventually.md]
-  - [kanban/ideas.md]
-  - [kanban/reminders.md]
-- Missing artifacts created during kickoff:
-  - [list]
-- Kickoff capture goals:
-  - [what the agent is helping capture now]
+- Root `TODO.md` status: [found, missing, or intentionally absent]
+- Kickoff goal: [current task]
 
-## Kanban State Summary
+## TODO State Summary
 
-- Active boards:
-  - [board path]
-- Moves performed this checkpoint (verbatim task lines only):
-  - [from -> to] `exact task line`
+- Relevant root checklist items: [exact lines or none]
+- Checklist edits this checkpoint: [exact before/after or none]
 
 ## Plan Checkpoint Linkage
 
-- Active plan path:
-  - [plans/current/...md]
-- Checklist items updated this checkpoint:
-  - [`[x]` item]
-  - [`[?]` item]
-  - [`[-]` item]
-- Plan revisions proposed/approved this checkpoint:
-  - [none | short note]
+- Active plan: [plans/current/...md or none]
+- Checklist deltas: [exact items]
+- Approved decisions: [items]
+- Open decisions: [items]
+- Evidence/report links: [paths]
+- Material risks: [items]
+- Exact next approved action: [action]
 
 ## Repo Work Log (Required)
 
-- [YYYY-MM-DD HH:MM local] [change summary] [reason] [follow-up if any]
+- [YYYY-MM-DD HH:MM local] [change, reason, follow-up]
 
 ## Notes / Reflections
 

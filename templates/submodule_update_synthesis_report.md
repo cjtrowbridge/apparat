@@ -3,7 +3,7 @@
 ## Scope
 
 - Host repository:
-- Submodule path: `./agents`
+- Submodule path: `./agentic-pipelines`
 - Prior submodule commit:
 - New submodule commit:
 - Report date:

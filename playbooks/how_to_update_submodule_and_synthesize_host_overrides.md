@@ -4,11 +4,11 @@
 
 ## Objective
 
-Provide a safe, repeatable workflow for updating the `./agents` submodule in a host repository and synthesizing host-managed framework files (`./playbooks`, `./references`, `./templates`, `./scripts`, shims) with user-approved merge decisions.
+Provide a safe, repeatable workflow for updating the `./agentic-pipelines` submodule in a host repository and synthesizing host-managed framework files (`./playbooks`, `./references`, `./templates`, `./scripts`, shims) with user-approved merge decisions.
 
 ## Prerequisites
 
-- Host repository includes this framework as `./agents`.
+- Host repository includes this framework as `./agentic-pipelines`.
 - Host repository contains managed framework copies and/or customizations.
 - User approval available for merge resolutions.
 

@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-08-24-13-48-04 | plans/past/2026-08-09-21-01-11_remove-legacy-agents-governance.md | Remove Legacy Agents Governance | Remove deprecated Kanban and downtime systems, consolidate Apparat-specific routing in root AGENTS.md, audit retained host governance, and remove the legacy agents submodule.
 2026-08-09-20-50-12 | plans/past/2026-08-09-20-36-57_add-agentic-pipelines-alongside-agents.md | Add Agentic Pipelines Alongside Agents | Add the published Agentic Pipelines repository as a second submodule, redirect live governance and plan tooling to it, and configure the host-owned local build entrypoint without removing the legacy agents submodule.
 2026-08-09-16-59-45 | plans/past/2026-08-09-16-37-11_add-gitingest-build-artifact.md | Add GitIngest Build Artifact | Install GitIngest project-locally and generate a root-level digest of the checkout and initialized submodules during every build.
 2026-08-09-16-30-01 | plans/past/2026-07-19-17-19-34_replace-roadmap-phase-6-onward.md | Replace Roadmap Phase 6 Onward | Replace the broad legacy roadmap from Phase 6 onward with a concrete Phase 6–N implementation program derived from the completed GUI foundation and architecture review.

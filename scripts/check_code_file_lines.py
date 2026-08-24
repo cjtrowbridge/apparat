@@ -21,7 +21,6 @@ EXCLUDED_DIRS = {
     "releases",
     "journal",
     "plans",
-    "downtime",
 }
 EXCLUDED_FILES = {"go.sum"}
 

@@ -890,7 +890,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Add safe log rotation and retention.
 - [x] Add source-size governance.
   - [x] Require included code files to stay at or below 400 physical lines.
-  - [x] Exclude generated, vendored/reference, `third_party/`, `.tools/` and `.tmp/`, release, plan, journal, downtime, and prose documentation files.
+  - [x] Exclude generated, vendored/reference, `third_party/`, `.tools/` and `.tmp/`, release, plan, journal, and prose documentation files.
   - [x] Add `scripts/check_code_file_lines.py`.
   - [x] Add `make check-code-size`.
   - [x] Include the check in `make verify`.

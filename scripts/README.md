@@ -27,7 +27,7 @@ python3 scripts/build.py
 
 `make build` is preferred because it applies repo-local Go cache settings. `python3 build.py` at the repository root is a compatibility wrapper that delegates to `python3 scripts/build.py`. The build script intentionally has one no-flag entry point: it detects the host, prints possible and impossible targets with reasons, and builds every possible target.
 
-VS Code's local `Apparat: Build Pipeline` task and primary play action enter `run_build_pipeline.ps1`. The wrapper installs nothing and does not invoke inference: it checks that `agentic-pipelines/AGENTS.md` and Python are available, then runs `scripts/build.py` exactly once and preserves its exit status. Run it with `-Help` for usage. Missing submodules are repaired explicitly with `git submodule update --init --recursive agents agentic-pipelines`. Linux and macOS VS Code entrypoints remain unclaimed until they can be tested on those hosts; their existing direct `make build` and `python3 scripts/build.py` commands remain supported.
+VS Code's local `Apparat: Build Pipeline` task and primary play action enter `run_build_pipeline.ps1`. The wrapper installs nothing and does not invoke inference: it checks that `agentic-pipelines/AGENTS.md` and Python are available, then runs `scripts/build.py` exactly once and preserves its exit status. Run it with `-Help` for usage. A missing submodule is repaired explicitly with `git submodule update --init --recursive agentic-pipelines`. Linux and macOS VS Code entrypoints remain unclaimed until they can be tested on those hosts; their existing direct `make build` and `python3 scripts/build.py` commands remain supported.
 
 ## GitIngest Digest
 

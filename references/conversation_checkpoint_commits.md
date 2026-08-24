@@ -5,7 +5,7 @@
 - A checkpoint is a completed conversation slice, not project completion.
 - Examples:
   - Daily kickoff captured and written.
-  - Kanban moves applied and recorded.
+  - A root TODO state transition captured and recorded.
   - A focused bugfix discussion captured with resulting file edits.
 
 ## What to Include in Checkpoint Summary
@@ -15,7 +15,7 @@
 - Checklist items changed (`[x]` / `[?]` / `[-]` / newly added plan items).
 - Journal updates added in this checkpoint.
 - Any user-only journal fields and whether user input was provided.
-- Kanban moves with exact task text.
+- TODO state changes with exact task text.
 - Any unresolved items or follow-up questions.
 
 ## Approval Language Pattern
@@ -24,8 +24,9 @@
 - "This checkpoint updates plan `path/to/plan.md` items: [...]."
 - "Do you want me to create or update today's journal entry with this checkpoint?"
 - "Approve saving this snapshot?"
-- "Approve commit + push for this journal checkpoint?"
-- Journal-only exception: if staged scope is only journal updates, commit/push may proceed without a commit approval prompt after summary.
+- "Approve this local checkpoint commit?"
+- "Approve pushing the committed checkpoint?"
+- Push approval is always separate and explicit, including journal-only checkpoints.
 - User-only journal fields must remain verbatim user text (or an empty list item `-` if no user input was provided).
 
 ## Avoiding Commit Spam While Preserving Auditability

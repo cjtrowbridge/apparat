@@ -37,7 +37,7 @@ Provide a repeatable, low-risk workflow for migrating roadmap/milestone content 
      - release planning docs
    - Use discovery search from repo root:
      - `rg -n "(?i)roadmap|milestone|phase|next steps|upcoming|plan" README.md docs *.md`
-   - If this framework is mounted as `./agents` in a host repo, run discovery from the host root and migrate host roadmap content, not just framework docs.
+   - If this framework is mounted as `./agentic-pipelines` in a host repo, run discovery from the host root and migrate host roadmap content, not just framework docs.
 
 2. **Build a Migration Map Before Editing**
    - Create a temporary mapping table in the active work note or change plan with columns:
@@ -88,7 +88,7 @@ Provide a repeatable, low-risk workflow for migrating roadmap/milestone content 
      - `future/current`: filesystem last-write time descending.
      - `past`: `created_at` descending.
    - Run `python scripts/regenerate_plan_indexes.py` after plan create/update/move/archive.
-   - Host/submodule mode (`./agents` with host-owned plans): run `python agentic-pipelines/scripts/regenerate_plan_indexes.py --repo-root .` from host root.
+   - Host/submodule mode (`./agentic-pipelines` with host-owned plans): run `python agentic-pipelines/scripts/regenerate_plan_indexes.py --repo-root .` from host root.
    - If script execution is unavailable, update indexes manually and record follow-up to restore script-based regeneration.
 
 7. **Run Migration Verification**

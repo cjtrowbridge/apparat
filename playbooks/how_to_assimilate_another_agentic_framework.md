@@ -10,6 +10,7 @@ Provide a repeatable, evidence-first workflow for studying similar or adjacent a
 * Ability to read documentation, prompts/instructions, playbooks, and implementation code from the comparison repo(s).
 * A user-provided comparison repo (or a plan to provide one next).
 * Time to perform deep reflection before proposing changes (do not jump straight to implementation).
+* Use `./templates/assimilation_report.md` for the required report and `./references/how_to_shape_agent_tone_and_timbre.md` when comparing instruction style.
 
 ## When to Use This Playbook
 Use this playbook when:

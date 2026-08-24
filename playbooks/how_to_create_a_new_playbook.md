@@ -16,6 +16,8 @@ This playbook outlines the standard procedure for an AI Agent to create a new op
     *   Any architecture or integration notes that affect the task.
 3.  **Verify Current State**:
     *   Check `./playbooks/` to ensure a similar playbook does not already exist.
+    *   Load `./references/how_to_shape_agent_tone_and_timbre.md` and `./references/verification_patterns_for_docs_and_policy.md` when their concerns apply.
+    *   Use `./templates/playbook_proposal.md` when proposing the new route before implementation.
 
 ## 2. When to Create a Playbook
 

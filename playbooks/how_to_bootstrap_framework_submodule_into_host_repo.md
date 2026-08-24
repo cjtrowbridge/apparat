@@ -4,7 +4,7 @@
 
 ## Objective
 
-Provide a repeatable workflow for first-time integration of this framework as `./agents` inside a host repository, including host-root bootstrap files/directories and host-managed framework copy/synthesis rules.
+Provide a repeatable workflow for first-time integration of Agentic Pipelines at `./agentic-pipelines` inside a host repository, including host-root bootstrap files/directories and host-managed framework synthesis rules.
 
 ## Prerequisites
 
@@ -26,8 +26,6 @@ Provide a repeatable workflow for first-time integration of this framework as `.
    - Ensure these host directories exist:
      - `./plans/future/`, `./plans/current/`, `./plans/past/`
      - `./journal/`
-     - `./kanban/`
-     - `./downtime/reports/pending/`, `./downtime/reports/reviewed/`
 
 4. **Bootstrap Host Shim Files**
    - Ensure host shim files exist (`./AGENTS.md`, and runtime-specific variants as needed).
