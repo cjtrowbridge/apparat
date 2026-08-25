@@ -1,4 +1,5 @@
 /third_party/salvagecore/
+/artifacts/
 /.agentic-pipelines/
 /.tools/
 /.tmp/

@@ -1304,7 +1304,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 - [x] Assign every unresolved decision to the phase that needs it.
   - [x] Phase 8: final migration/backup/restore procedure, lock recovery, clock/ID ports, WAL platform evidence, and whether optional at-rest database encryption is admitted.
-  - [x] Phase 9: enrollment authorization vocabulary, invite recovery, endpoint-discovery seed, rate/size limits, and certificate rotation/revocation operations.
+  - [x] Phase 9: enrollment authorization vocabulary, invite recovery, endpoint-discovery seed, multi-address priority/fallback, telemetry schema/retention, development-update source/target policy, rate/size limits, and certificate rotation/revocation operations.
   - [x] Phase 10: directory conflict resolution and Project-summary authorization/freshness policy.
   - [x] Phase 11: supported file/binary limits, Task sandbox per platform, transaction conflicts, and artifact retention defaults.
   - [x] Phase 12: provider auto-discovery defaults, verified-service auto-promotion, credentials per platform, probe/admission defaults, and approved image providers.
@@ -1312,7 +1312,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [x] Phase 14: routing score inputs, fallback policy, load freshness, and route-explanation schema.
   - [x] Phase 15: webhook authentication, schedule/timezone behavior, approval policy, and post-MVP scheduler failover.
   - [x] Phase 16: capture formats, device permissions, privacy retention, ASR/TTS adapter selection, and streaming behavior.
-  - [x] Phase 17: release artifact hosting, tracked-binary replacement, signing custody, reproducibility threshold, update manifests, and rollback support.
+  - [x] Phase 17: release artifact hosting, tracked-binary replacement, signing custody, reproducibility threshold, release-grade update manifests, and rollback support.
   - [x] Post-MVP Track A: Meshtastic, Signal, app-managed WireGuard, ownership migration, replication, CRDT, and dynamic optimization.
   - [x] Post-MVP Track B: Comrades transport/privacy, grants, quotas, moderation, visibility, and abuse defaults.
   - [x] Post-MVP Track C: BOINC boundary, source dependencies, isolation, validation governance, gameplay, reputation, and anti-gaming.
@@ -1550,9 +1550,9 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] The GUI renders core service state without moving GUI state into the core.
 - [ ] Lifecycle, backup/restore, diagnostics, and continuous target checks have reproducible evidence.
 
-## Phase 9: Identity, Trusted Device Directory, Authenticated REST Commands, And Reusable Mock Queue
+## Phase 9: Identity, Trusted Device Directory, Resource Telemetry, Authenticated REST Commands, And Reusable Mock Queue
 
-**User outcome:** Two devices can enroll, authenticate, exchange durable work through the owner-authoritative REST protocol, disconnect or restart, and recover one logical result.
+**User outcome:** Two devices can enroll, authenticate, inspect each other's safe resource and development-update availability across reachable network paths, request a target-owned update through the cluster API, exchange durable work through the owner-authoritative REST protocol, disconnect or restart, and recover one logical result.
 
 **Dependencies:** Phase 8 and Phase 6 identity/envelope contracts.
 
@@ -1564,11 +1564,28 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Detect expected WireGuard interfaces where possible.
   - [ ] Support explicit peer endpoint configuration for the first proof.
   - [ ] Treat discovery as advisory and never as trust.
+- [ ] Model one trusted peer identity with multiple independently observed candidate addresses.
+  - [ ] Retain a bounded address record with network scope (LAN, externally managed WireGuard, Tailscale, or other overlay), host/address, port, transport, priority, last success/failure, and expiry.
+  - [ ] Select and fall back among reachable addresses only after mTLS proves the expected current device identity; a new address cannot create, merge, or authorize a peer.
+  - [ ] Keep explicit configured addresses as durable fallback; do not require, configure, or take ownership of Tailscale or any overlay network.
+  - [ ] Surface the active address and safe reachability/freshness state without disclosing unrelated network topology.
 - [ ] Add an authoritative durable trusted-device directory.
-  - [ ] Device identity, TLS binding, WireGuard key, roles, scopes, endpoints, revision, validity, and status.
+  - [ ] Device identity, TLS binding, optional WireGuard key, roles, scopes, multi-address endpoints, revision, validity, and status.
   - [ ] Signed/cached peer records for offline degradation.
   - [ ] Explicit revoked, expired, stale, unavailable, and key-changed states.
   - [ ] No authority from a cached record after revocation/expiry.
+
+### Safe resource telemetry
+
+- [ ] Publish an authenticated, bounded resource snapshot for each trusted peer.
+  - [ ] Include CPU logical capacity and utilization; RAM and swap total, used, and available; disk capacity, used, and free space; and accelerator identity/availability, utilization, and VRAM total, used, and available where the platform can report them.
+  - [ ] Include snapshot timestamp, collection duration, freshness/expiry, and explicit unavailable/unknown values; do not infer absence from an unsupported platform or device.
+  - [ ] Use stable, non-sensitive disk and accelerator labels. Exclude file contents, project paths, process lists, prompts, model inputs/outputs, secrets, and raw provider payloads.
+  - [ ] Bound collection frequency, payload size, retries, retention, and display precision; failed or stale collection remains visible as stale/unknown rather than silently reusing a current-looking value.
+- [ ] Expose telemetry only through authenticated, authorized device-directory and REST read models.
+  - [ ] Telemetry is observational: it neither establishes trust nor reserves capacity, admits work, selects a route, or changes queue authority.
+  - [ ] Phase 14 may consume fresh telemetry as one explainable routing input; Phase 9 shows it without introducing a scheduler or dynamic optimization.
+  - [ ] Test platform collectors behind fakes and verify unavailable GPU, VRAM, swap, and disk details degrade safely.
 
 ### Enrollment and mTLS
 
@@ -1591,6 +1608,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Permit configured LAN/WireGuard binding only after mTLS, current device-record validation, authorization, limits, and audit are active.
   - [ ] Device profile and trusted-directory projection.
   - [ ] Safe aggregate capabilities.
+  - [ ] Safe per-peer resource telemetry with freshness and active-address state.
   - [ ] Submit/read/cancel mock jobs.
   - [ ] Queue-owner submit, worker claim/long-poll, heartbeat, and complete.
   - [ ] Cursor-based event polling.
@@ -1604,6 +1622,18 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Sign outgoing durable operations.
   - [ ] Validate canonical form, key binding, signature, recipient, hash, expiry, deadline, replay, authorization, size, and schema.
   - [ ] Apply duplicate messages idempotently and return prior durable outcomes where possible.
+
+### Development update visibility and remote orchestration
+
+- [ ] Publish each trusted node's installed version, target/platform, configured development update channel, compatible update availability, update state, and last outcome through the authenticated device-directory read model.
+  - [ ] The Devices/Cluster UI distinguishes current, available, incompatible, downloading, validating, applying, restarting, succeeded, failed, rollback-required, stale, and unknown states.
+  - [ ] Offer an update only when the target/platform, release identity, hash, compatibility decision, disk-space requirement, and rollback policy are known for that node.
+- [ ] Let any node holding an explicit `cluster:update` scope request an update on any other enrolled node in that same cluster through the authenticated cluster API.
+  - [ ] Make the request durable, idempotent, auditable, time-bounded, and queryable by progress/result resource; record requester, target, selected release identity, compatibility decision, and correlation ID.
+  - [ ] A requester cannot stream an arbitrary binary or bypass target policy. The target independently verifies mTLS authorization, release identity/hash, compatibility, disk space, active-work policy, and local platform prerequisites before downloading or applying.
+  - [ ] The target owns quiescing work, backup/migration, atomic replacement, restart, health verification, rollback, and truthful terminal status. Losing the requester connection does not leave the target in an indeterminate command state.
+  - [ ] Deny revoked, expired, unauthorized, incompatible, replayed, or cross-cluster requests; redact sensitive paths, credentials, and release-source details from ordinary UI and logs.
+- [ ] Test update visibility and remote requests with disconnected requesters, target restart, duplicate command delivery, failed download/verification/migration, rollback, authorization loss, and mixed-version development clusters.
 
 ### Reusable mock-queue proof
 
@@ -1621,7 +1651,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 ### GUI and recovery proof
 
-- [ ] Show enrollment, fingerprint, trust, directory, connection, queue/job, attempt, and failure states in existing HUD surfaces.
+- [ ] Show enrollment, fingerprint, trust, directory, multiple-address connection/fallback, safe resource telemetry, node update availability/progress, queue/job, attempt, and failure states in existing HUD surfaces.
 - [ ] Keep invite text, selected peer, forms, focus, and navigation in GUI state.
 - [ ] Use stable device, message, job, attempt, lease, and correlation IDs in API, SQLite, logs, events, and GUI.
 - [ ] Demonstrate Steam Deck requester and headless worker.
@@ -1634,6 +1664,9 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 - [ ] Two devices repeatedly complete the proof across restart and temporary disconnection.
 - [ ] LAN/WireGuard presence alone grants no trust.
+- [ ] One trusted device remains one peer while connectivity moves between configured LAN and overlay addresses; every selected address revalidates the same mTLS-bound identity.
+- [ ] A trusted peer exposes CPU, RAM, swap, disk, GPU, and VRAM telemetry where available, and explicitly reports stale or unknown values where it is not.
+- [ ] An authorized node can request a compatible development update for another enrolled node, and the target reports a durable target-verified success, failure, or rollback outcome.
 - [ ] Duplicate delivery cannot duplicate the logical job.
 - [ ] Only the queue owner records authoritative acceptance and completion.
 - [ ] The mock queue is a reusable foundation for Phase 13.
@@ -1652,6 +1685,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Discovery records are suggestions until matched to an authorized device record and mTLS identity.
   - [ ] Preserve explicit endpoint configuration as fallback.
   - [ ] Record last success, failure, clock state, revision, and availability safely.
+  - [ ] Reconcile discovered addresses into the existing peer's multi-address set; never merge peers merely because an address matches or create trust from discovery.
 - [ ] Define and implement directory conflict behavior.
   - [ ] Newer valid signed revision supersedes older state.
   - [ ] Revocation and key-change conflicts fail closed.
@@ -1953,6 +1987,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Privacy and authorization boundary.
   - [ ] Deadline, timeout, priority, cost/resource policy, and artifact requirements.
   - [ ] Current advertisement revision/expiry, health, admission, availability, and queue policy.
+  - [ ] Fresh, advisory resource telemetry only when the selected policy explicitly permits it.
 - [ ] Keep explicit service targeting distinct from provider kind.
 - [ ] Apply ordered deterministic fallback.
 - [ ] Reject unsupported or expired destinations before execution.
@@ -2306,7 +2341,7 @@ Every focused implementation plan includes the applicable items below and its ph
 ### Must resolve before dependent implementation
 
 - [ ] Phase 8: database encryption/restore, WAL/platform policy, lock recovery, and binary-root migration details.
-- [ ] Phase 9: authorization vocabulary, endpoint seed/discovery transition, enrollment recovery, and concrete API limits.
+- [ ] Phase 9: authorization vocabulary, endpoint seed/discovery transition, multi-address priority/fallback, telemetry schema/retention, development-update source/target policy, enrollment recovery, and concrete API limits.
 - [ ] Phase 10: directory conflicts and Project-summary policy.
 - [ ] Phase 11: file/binary limits, platform Task sandboxing, conflicts, and artifact retention defaults.
 - [ ] Phase 12: discovery/auto-promotion, provider secrets per platform, admission defaults, and approved image drivers.
@@ -2314,7 +2349,7 @@ Every focused implementation plan includes the applicable items below and its ph
 - [ ] Phase 14: routing score/fallback/explanation and freshness policy.
 - [ ] Phase 15: webhook/schedule/approval rules; scheduler failover remains post-MVP.
 - [ ] Phase 16: audio formats, adapters, retention, streaming, and permissions.
-- [ ] Phase 17: binary hosting/tracking, signing custody, manifests, reproducibility, and rollback.
+- [ ] Phase 17: binary hosting/tracking, signing custody, release-grade manifests, reproducibility, and rollback.
 - [ ] Track A: Meshtastic, Signal, app-managed WireGuard, migration, replication, CRDT, dynamic routing.
 - [ ] Track B: Comrades transport/privacy, grants, visibility, quotas, moderation, and abuse.
 - [ ] Track C: BOINC boundary/sources/isolation, validation governance, gameplay, reputation, and anti-gaming.

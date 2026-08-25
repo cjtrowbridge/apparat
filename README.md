@@ -77,7 +77,11 @@ Cluster shows:
 
 - Enrolled and known devices.
 - Device roles, trust, connectivity, and last-seen state.
-- CPU, memory, storage, accelerator, and service capabilities.
+- Safe resource telemetry: CPU capacity and utilization; RAM and swap total, used, and available; disk capacity, used, and free space; and GPU/accelerator identity, utilization, and VRAM capacity, used, and available.
+- Resource-observation timestamp, freshness, unavailable/unknown state, and the peer address currently reached; telemetry is advisory and never grants trust or authorizes work.
+- One stable peer identity with multiple candidate addresses, including LAN, externally managed WireGuard, Tailscale, or another overlay; addresses are reachability hints, not separate devices or sources of trust.
+- Installed version, compatible update availability, update channel, and update/rollback progress for every enrolled Apparat node.
+- An authorized node can request a target node's update through the cluster API; the target independently verifies the signed release and applies its own safe update, migration, restart, and rollback procedure.
 - Supported workload classes such as text generation, image generation, video generation, speech-to-text, text-to-speech, and BOINC research compute.
 - Running and queued work.
 - Queue depth, utilization, failures, and recent activity.
