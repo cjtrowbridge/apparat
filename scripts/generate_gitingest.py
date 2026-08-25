@@ -20,6 +20,7 @@ OUTPUT = ROOT / "gitingest.txt"
 MANIFEST = ROOT / "gitingest.manifest.json"
 GITINGEST_VERSION = "0.3.1"
 CORE_EXCLUDES = ("releases/", ".tools/", ".tmp/", ".git/")
+TEMP_DIR = ROOT / ".tmp"
 
 
 class GitIngestError(RuntimeError):
@@ -188,7 +189,8 @@ def atomic_replace(path: Path, content: bytes) -> None:
 
 def generate(output: Path, manifest: Path, include_submodules: bool) -> Path:
     ensure_gitingest()
-    with tempfile.NamedTemporaryFile(dir=output.parent, suffix=".txt", delete=False) as temporary:
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=TEMP_DIR, prefix="gitingest-", suffix=".txt", delete=False) as temporary:
         temporary_output = Path(temporary.name)
     try:
         subprocess.run(generate_command(temporary_output, include_submodules), cwd=ROOT, check=True)

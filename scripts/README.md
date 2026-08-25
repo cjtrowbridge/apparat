@@ -37,7 +37,7 @@ Generate a prompt-friendly digest separately from application builds:
 python3 scripts/generate_gitingest.py
 ```
 
-The command bootstraps the pinned GitIngest 0.3.1 release in the ignored `.tools/gitingest-venv` environment when needed. It atomically replaces two ignored root-level outputs:
+The command bootstraps the pinned GitIngest 0.3.1 release in the ignored `.tools/gitingest-venv` environment when needed. It stages the digest in ignored `.tmp/` before collecting provenance, so that staging does not make a clean repository appear dirty. It atomically replaces two ignored root-level outputs:
 
 - `gitingest.txt`: the default project-focused corpus, containing Apparat-owned code, tests, documentation, plans, governance, and build files. It excludes recursive third-party source, release artifacts, and tool/cache directories.
 - `gitingest.manifest.json`: schema-versioned provenance containing the commit, branch, dirty state, sanitized remotes, recursive submodule revisions, `go.mod`/`go.sum` hashes, generator settings, and the digest SHA-256.
