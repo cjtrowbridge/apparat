@@ -1,6 +1,6 @@
-# Deep-Research Review Artifacts
+# Phase 7 Review Archive
 
-This directory preserves the supplied deep-research report as advisory input and records the smaller review that determines which of its Phase 7 recommendations are supported by the repository. It is not a second research pipeline and it does not change product behavior, `ROADMAP.md`, or the Phase 7 execution plan by itself.
+This archived directory preserves the supplied deep-research report as advisory input and records the smaller review that determined which of its Phase 7 recommendations are supported by the repository. It is not a second research pipeline and it does not change product behavior, `ROADMAP.md`, or the Phase 7 execution plan by itself.
 
 ## Entry points
 
@@ -13,7 +13,7 @@ This directory preserves the supplied deep-research report as advisory input and
 
 ## Operating rule
 
-The report may suggest a decision, but only the claim ledger's repository or pinned-upstream evidence can support one. An accepted decision remains advisory until the user explicitly approves a revision to `plans/future/2026-07-20-09-04-03_execute-phase-7.md`.
+The report may suggest a decision, but only the claim ledger's repository or pinned-upstream evidence can support one. The accepted decisions in this archive were incorporated into `plans/future/2026-07-20-09-04-03_execute-phase-7.md`; separate approval remains required before implementation.
 
 ## Provenance and retention
 

@@ -74,8 +74,8 @@ Phase 3 implements the first SQLite lifecycle:
 - Provide read-only diagnostics for user version, foreign-key status, and migration count.
 - Provide sortable local IDs and UTC millisecond helpers.
 
-The target node runtime permits exactly one authoritative SQLite writer process. `apparat` and `apparatd` use one logical node root and an exclusive runtime lock after Phase 7. Current binary-specific default roots remain implementation evidence until that migration is complete. Multiple independent nodes on one host require explicit roots and identities rather than concurrent writers to one database.
+The target node runtime permits exactly one authoritative SQLite writer process. `apparat` and `apparatd` use one logical node root and an exclusive runtime lock after Phase 8. Current binary-specific default roots remain implementation evidence until that migration is complete. Multiple independent nodes on one host require explicit roots and identities rather than concurrent writers to one database.
 
 ## Backup, Repair, Restore, And Encryption
 
-The MVP defines backup, repair, restore, and integrity checks before broad replication. Optional at-rest encryption remains a Phase 7 decision gate, not a default until key storage, backup interaction, and recovery are designed and validated.
+The MVP defines backup, repair, restore, and integrity checks before broad replication. Optional at-rest encryption remains a Phase 8 decision gate, not a default until key storage, backup interaction, and recovery are designed and validated.

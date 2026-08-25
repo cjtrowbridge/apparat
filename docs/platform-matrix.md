@@ -6,7 +6,7 @@ The shared-core and local-service contracts are platform-independent targets, bu
 
 ## Node Process Ownership
 
-The current implementation gives `apparat` and `apparatd` binary-specific default runtime roots. Phase 7 will migrate the default product model to one logical node root and identity with an exclusive runtime lock, making the GUI and headless binaries alternative owners of the same shared core and SQLite state rather than two accidental nodes.
+The current implementation gives `apparat` and `apparatd` binary-specific default runtime roots. Phase 8 will migrate the default product model to one logical node root and identity with an exclusive runtime lock, making the GUI and headless binaries alternative owners of the same shared core and SQLite state rather than two accidental nodes.
 
 Starting both artifacts against one node root must fail safely until a separately approved daemon-client mode exists. Multiple intentional nodes on one host require explicit roots, identities, ports, and local inference-service ownership. No platform may claim service-host support until it proves that duplicate processes cannot advertise the same provider endpoint accidentally.
 

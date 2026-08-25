@@ -797,7 +797,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** Phase 1 controller and architecture contracts.
 
-**Historical evidence note:** The completed checklist records the prototype/mockup milestone and its intended input contract. It does not prove that every focus, activation, context, scrolling, accessibility, or input-equivalence behavior is present in the current executable. New Phases 6–7 reconcile and implement that remaining evidence without rewriting the historical checkpoint.
+**Historical evidence note:** The completed checklist records the prototype/mockup milestone and its intended input contract. It does not prove that every focus, activation, context, scrolling, accessibility, or input-equivalence behavior is present in the current executable. Phases 6–8 reconcile, review, and implement that remaining evidence without rewriting the historical checkpoint.
 
 - [x] Create the Ebitengine application shell.
   - [x] Add a small executable entrypoint.
@@ -1148,7 +1148,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [x] Add Android permissions and platform behavior.
   - [x] Request `android.permission.INTERNET` for HTTPS over external WireGuard/local network.
   - [x] Avoid broad storage permissions; runtime data remains app-scoped by default.
-  - [x] Request microphone permission for the existing push-to-talk state path while keeping real Android audio capture validation as future Phase 10 work.
+  - [x] Request microphone permission for the existing push-to-talk state path while keeping real Android audio capture validation as future Phase 11 work.
   - [x] Defer VPN-service permissions and app-managed WireGuard to the later transport/platform phase.
   - [x] Validate touch tab selection on Android while keeping keyboard, controller, and text-input coverage as follow-up testing.
   - [x] Defer Android audio/TTS behavior beyond package startup.
@@ -1303,32 +1303,108 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 ### Decision gates retained for later phases
 
 - [x] Assign every unresolved decision to the phase that needs it.
-  - [x] Phase 7: final migration/backup/restore procedure, lock recovery, clock/ID ports, WAL platform evidence, and whether optional at-rest database encryption is admitted.
-  - [x] Phase 8: enrollment authorization vocabulary, invite recovery, endpoint-discovery seed, rate/size limits, and certificate rotation/revocation operations.
-  - [x] Phase 9: directory conflict resolution and Project-summary authorization/freshness policy.
-  - [x] Phase 10: supported file/binary limits, Task sandbox per platform, transaction conflicts, and artifact retention defaults.
-  - [x] Phase 11: provider auto-discovery defaults, verified-service auto-promotion, credentials per platform, probe/admission defaults, and approved image providers.
-  - [x] Phase 12: lease/heartbeat/retention defaults, artifact quotas, retry classes, and worker trust policy.
-  - [x] Phase 13: routing score inputs, fallback policy, load freshness, and route-explanation schema.
-  - [x] Phase 14: webhook authentication, schedule/timezone behavior, approval policy, and post-MVP scheduler failover.
-  - [x] Phase 15: capture formats, device permissions, privacy retention, ASR/TTS adapter selection, and streaming behavior.
-  - [x] Phase 16: release artifact hosting, tracked-binary replacement, signing custody, reproducibility threshold, update manifests, and rollback support.
+  - [x] Phase 8: final migration/backup/restore procedure, lock recovery, clock/ID ports, WAL platform evidence, and whether optional at-rest database encryption is admitted.
+  - [x] Phase 9: enrollment authorization vocabulary, invite recovery, endpoint-discovery seed, rate/size limits, and certificate rotation/revocation operations.
+  - [x] Phase 10: directory conflict resolution and Project-summary authorization/freshness policy.
+  - [x] Phase 11: supported file/binary limits, Task sandbox per platform, transaction conflicts, and artifact retention defaults.
+  - [x] Phase 12: provider auto-discovery defaults, verified-service auto-promotion, credentials per platform, probe/admission defaults, and approved image providers.
+  - [x] Phase 13: lease/heartbeat/retention defaults, artifact quotas, retry classes, and worker trust policy.
+  - [x] Phase 14: routing score inputs, fallback policy, load freshness, and route-explanation schema.
+  - [x] Phase 15: webhook authentication, schedule/timezone behavior, approval policy, and post-MVP scheduler failover.
+  - [x] Phase 16: capture formats, device permissions, privacy retention, ASR/TTS adapter selection, and streaming behavior.
+  - [x] Phase 17: release artifact hosting, tracked-binary replacement, signing custody, reproducibility threshold, update manifests, and rollback support.
   - [x] Post-MVP Track A: Meshtastic, Signal, app-managed WireGuard, ownership migration, replication, CRDT, and dynamic optimization.
   - [x] Post-MVP Track B: Comrades transport/privacy, grants, quotas, moderation, visibility, and abuse defaults.
   - [x] Post-MVP Track C: BOINC boundary, source dependencies, isolation, validation governance, gameplay, reputation, and anti-gaming.
 
 **Exit criteria**
 
-- [x] No known contradiction changes the identity, authority, cardinality, persistence, security, or process model of Phase 7 or 8.
+- [x] No known contradiction changes the identity, authority, cardinality, persistence, security, or process model of Phase 8 or 9.
 - [x] Current evidence and future requirements are visibly distinct.
 - [x] README and detailed contracts agree with this roadmap.
 - [x] Documentation, plan-index, link/OpenAPI, and whitespace validation gates remain part of the repository verification path.
 
-## Phase 7: Shared Core, SQLite, Internal API, Read-Only REST, And First Local-Service Slice
+## Phase 7: Architecture Review, Evidence Conversion, And Phase 8 Refinement
+
+**Goal:** Establish an evidence-backed checkpoint between the Phase 0–6 prototype/foundation history and shared-core implementation. The checkpoint must determine whether the proposed architecture can safely carry distributed features, preserve the completed research as auditable historical input, and convert only supported findings into bounded Phase 8 work.
+
+**User outcome:** Contributors have one preserved architecture-review record, a verified source snapshot, explicit decisions on its material findings, and an implementation-ready Phase 8 plan rather than a second unbounded research effort.
+
+**Dependencies:** Completed Phases 0–6, the project-focused GitIngest artifact, and the completed deep-research report.
+
+**Scope and deferrals:** This phase reviewed and converted evidence; it did not implement the shared core, networking, persistence redesign, provider drivers, or other product behavior. Those remain Phase 8 and later work.
+
+### Research goal and evidence model
+
+- [x] Preserve the original 58-part review rubric, which required reconstruction of current behavior, intended future architecture, dependency boundaries, governance, reliability, platform readiness, and a revised project plan.
+- [x] Preserve the completed 27-part deep-research report as advisory analysis rather than treating it as an implementation specification or self-validating authority.
+- [x] Use the project-focused GitIngest corpus as the primary evidence source and inspect project-owned source directly for claims that could change Phase 8 scope.
+- [x] Require a materiality decision before external dependency research. Do not treat omitted third-party source, generic current documentation, or an upstream name as proof of behavior at an unverified pinned revision.
+- [x] Distinguish repository fact, verified upstream fact, inference, recommendation, accepted decision, and unimplemented plan requirement throughout the review record.
+
+### Completed provenance and artifact work
+
+- [x] Preserve the supplied deep-research report and master review rubric in the archived `plans/past/phase-7-review/` bundle.
+- [x] Replace the overbroad GitIngest default with a project-focused corpus and provenance sidecar: pinned GitIngest 0.3.1, digest SHA-256, clean source commit, sanitized remotes, submodule revisions, module hashes, and explicit recursive-third-party exclusion.
+- [x] Correct temporary GitIngest staging so an ignored temporary digest cannot make an otherwise clean source snapshot appear dirty before provenance collection.
+- [x] Establish the reviewed clean snapshot at commit `8095ee4d2845b31ee2272ac5849a03bf0612f773`; verify matching digest/manifest SHA-256 and zero recursive `third_party/` file bodies.
+- [x] Record the report hash, corpus scope, omitted-source limitation, GitIngest configuration, and snapshot applicability in `deep-research-provenance.md`.
+- [x] Create the claim ledger, decision register, and Phase 8 amendment proposal with stable identifiers, source locators, confidence, disposition, and explicit uncertainty.
+- [x] Preserve the report as historical advisory input rather than treating it as an automatic authority over implementation or product policy.
+
+### Verified review conclusions
+
+- [x] Verify that the current ID generator is a timestamp-plus-random hexadecimal format, not canonical ULID. The source observation is settled; the desired durable ID contract required a product decision.
+- [x] Verify that SQLite/schema ownership is transitional: `internal/app` distributes raw database access, while cluster and messaging packages create their own tables at runtime.
+- [x] Verify that replay recording currently converts every database-insert error into a successful “already seen” result, instead of returning non-uniqueness failures.
+- [x] Verify that startup/shutdown does not yet provide the intended transactional lifecycle, reverse cleanup, readiness timing, and repeatable-close evidence.
+- [x] Verify that `internal/app` currently imports concrete GUI/HUD presentation packages and owns `hud.Shell`, contrary to the selected shared-core boundary.
+- [x] Verify that identity `StatusReady` currently proves file presence only; it is local bootstrap evidence, not proof of cryptographic consistency, enrollment, or remote trust.
+- [x] Verify that Android mobile `Ready()` can report success unconditionally after initialization failure.
+- [x] Reproduce a deliberately narrow function-comment presence measurement: 35 non-test Go files, 243 function declarations, and 2 declarations immediately preceded by a line comment. Treat comment usefulness as semantic review, not a countable proof.
+- [x] Retain the existing Phase 8 foreign-key-per-connection requirement. Defer broad governance-remediation claims because the narrow review did not audit enough historical evidence to impose a new process gate.
+
+### Decisions incorporated into Phase 8 planning
+
+- [x] Adopt canonical ULID as the durable ID contract before new durable or external consumers proliferate.
+- [x] Require targeted lifecycle, persistence, identity, replay, and platform-boundary comments with prospective semantic review; do not make a repository-wide comment backfill a prerequisite.
+- [x] Add Phase 8 requirements for canonical ULID format/injection/compatibility checks, transitional-schema migration, replay-error preservation, lifecycle failure proof, removal of GUI/HUD ownership from `internal/app`, local-bootstrap identity semantics, and truthful Android readiness.
+- [x] Keep Phase 8's existing foreign-key-per-connection requirement and defer broad historical-governance remediation to a later bounded retrospective.
+
+### Resulting Phase 8 requirements
+
+| Review conclusion | Phase 8 plan response | Completion evidence |
+| --- | --- | --- |
+| Transitional schema ownership | Move cluster and messaging DDL into canonical forward migrations; remove raw database exposure above persistence. | Migration and restart integration tests. |
+| Replay errors are collapsed | Return storage errors except the replay uniqueness violation, or retire the transitional store before its replacement becomes authoritative. | Error-classification tests for duplicate, cancellation, locking, corruption, and other failures. |
+| Lifecycle is non-transactional | Prove reverse cleanup, primary-error retention, truthful readiness, and repeated close. | Failure injection at every initialized lifecycle stage. |
+| GUI/HUD leak into the core | Remove concrete GUI/HUD imports and `hud.Shell` ownership from `internal/app`. | Import-boundary check and direct GUI-query test. |
+| Local identity readiness is overstated | Label and test `StatusReady` as local bootstrap-only while hardening parsing and writes. | Strict-validation, atomic-write, and no-authorization-inference tests. |
+| Android readiness is overstated | Make mobile readiness reflect initialization/lifecycle outcome. | Success/failure lifecycle tests and honest device-evidence status. |
+| ID format is not canonical | Adopt ULID with injected time/entropy and an explicit development-data compatibility decision. | Format, ordering, uniqueness, invalid-input, and migration/retention tests. |
+| Critical boundary intent is underdocumented | Add targeted comments and prospective semantic review for touched critical boundaries. | Review evidence; no mechanical quality surrogate. |
+
+### Archived review artifacts
+
+- [x] `plans/past/phase-7-review/review.md`: original review rubric.
+- [x] `plans/past/phase-7-review/deep-research.md`: preserved advisory research report.
+- [x] `plans/past/phase-7-review/deep-research-provenance.md`: source snapshot, hashes, source scope, and limitations.
+- [x] `plans/past/phase-7-review/deep-research-claim-ledger.md`: source-linked material findings.
+- [x] `plans/past/phase-7-review/deep-research-decisions.md`: accepted, deferred, and bounded decisions.
+- [x] `plans/past/phase-7-review/phase-7-amendment-proposal.md`: conversion record for the now-renumbered Phase 8 plan.
+
+**Exit criteria**
+
+- [x] The archived review bundle contains provenance, claims, decisions, and the amendment proposal under one stable Phase 7 location.
+- [x] Every accepted technical recommendation is independently traceable to source evidence and represented as an atomic Phase 8 plan item.
+- [x] The canonical roadmap distinguishes completed review work from unimplemented product work, and the renamed Phase 8 execution plan is ready for separate implementation approval.
+- [x] No product behavior, security/trust claim, or roadmap completion checkbox was changed merely because the research report recommended it.
+
+## Phase 8: Shared Core, SQLite, Internal API, Read-Only REST, And First Local-Service Slice
 
 **User outcome:** GUI and headless artifacts operate the same durable backend state without putting presentation state into the core, and users can inspect that state through both the GUI and an initially loopback-only, read-only REST API.
 
-**Dependencies:** Phase 6.
+**Dependencies:** Phases 6–7.
 
 **Deferred:** Enrollment, non-loopback REST access, REST mutations, remote advertisement, real provider calls, distributed queues, routing, and Task triggers.
 
@@ -1401,7 +1477,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Keep endpoint schemas transport-specific while preserving stable core IDs and semantics.
   - [ ] Generate or implement conformance tests against the OpenAPI contract.
 - [ ] Keep the pre-identity REST listener local and read-only.
-  - [ ] Bind to loopback by default and reject non-loopback configuration until Phase 8 security is active.
+  - [ ] Bind to loopback by default and reject non-loopback configuration until Phase 9 security is active.
   - [ ] Expose no REST mutation, command, setter, enrollment, or trust operation.
   - [ ] Omit provider-local URLs, credential references, secrets, private paths, raw failures, and other unsafe state.
   - [ ] Enforce content negotiation, response limits, deadlines, bounded concurrency, redaction-safe errors, and graceful listener shutdown.
@@ -1474,11 +1550,11 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] The GUI renders core service state without moving GUI state into the core.
 - [ ] Lifecycle, backup/restore, diagnostics, and continuous target checks have reproducible evidence.
 
-## Phase 8: Identity, Trusted Device Directory, Authenticated REST Commands, And Reusable Mock Queue
+## Phase 9: Identity, Trusted Device Directory, Authenticated REST Commands, And Reusable Mock Queue
 
 **User outcome:** Two devices can enroll, authenticate, exchange durable work through the owner-authoritative REST protocol, disconnect or restart, and recover one logical result.
 
-**Dependencies:** Phase 7 and Phase 6 identity/envelope contracts.
+**Dependencies:** Phase 8 and Phase 6 identity/envelope contracts.
 
 **Deferred:** Automatic endpoint discovery, Project workspaces, real inference providers, pools, and route selection.
 
@@ -1510,15 +1586,15 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 ### Authenticated REST expansion
 
-- [ ] Secure and expand the Phase 7 REST adapter without creating a second application API.
-  - [ ] Preserve Phase 7 health, version, readiness, clock, service, and capability query semantics.
+- [ ] Secure and expand the Phase 8 REST adapter without creating a second application API.
+  - [ ] Preserve Phase 8 health, version, readiness, clock, service, and capability query semantics.
   - [ ] Permit configured LAN/WireGuard binding only after mTLS, current device-record validation, authorization, limits, and audit are active.
   - [ ] Device profile and trusted-directory projection.
   - [ ] Safe aggregate capabilities.
   - [ ] Submit/read/cancel mock jobs.
   - [ ] Queue-owner submit, worker claim/long-poll, heartbeat, and complete.
   - [ ] Cursor-based event polling.
-  - [ ] Owner-local Project and Task resources remain placeholders until Phases 9–10.
+  - [ ] Owner-local Project and Task resources remain placeholders until Phases 10–11.
 - [ ] Map authenticated REST mutations to the same internal commands/setters used directly by the GUI.
   - [ ] Keep authentication, signatures, scopes, replay checks, HTTP status, and transport schemas in the REST/security adapters.
   - [ ] Keep authorization-relevant product invariants and durable transitions in the internal application/domain layers.
@@ -1541,7 +1617,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] Post a signed terminal result/failure to the owner.
 - [ ] Let the owner validate worker, lease, fencing, schema, idempotency, and result before authoritative completion.
 - [ ] Support cancellation, timeout, retry, lease expiry, and clear incompatibility rejection.
-- [ ] Reuse these identities and transitions in Phase 12; do not build a disposable echo-only protocol.
+- [ ] Reuse these identities and transitions in Phase 13; do not build a disposable echo-only protocol.
 
 ### GUI and recovery proof
 
@@ -1560,19 +1636,19 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] LAN/WireGuard presence alone grants no trust.
 - [ ] Duplicate delivery cannot duplicate the logical job.
 - [ ] Only the queue owner records authoritative acceptance and completion.
-- [ ] The mock queue is a reusable foundation for Phase 12.
+- [ ] The mock queue is a reusable foundation for Phase 13.
 
-## Phase 9: Discovery, Presence, Project Registry, And Cluster-Wide Project Catalog
+## Phase 10: Discovery, Presence, Project Registry, And Cluster-Wide Project Catalog
 
 **User outcome:** Every enrolled device shows every Project it is authorized to discover across the cluster, with correct owner, freshness, and offline state.
 
-**Dependencies:** Phase 8 secure REST and trusted directory.
+**Dependencies:** Phase 9 secure REST and trusted directory.
 
-**Deferred:** File/Git operations, Project mutation, Pipeline execution, and full artifacts until Phase 10.
+**Deferred:** File/Git operations, Project mutation, Pipeline execution, and full artifacts until Phase 11.
 
 ### Endpoint discovery and presence
 
-- [ ] Add endpoint discovery after the explicit Phase 8 seed.
+- [ ] Add endpoint discovery after the explicit Phase 9 seed.
   - [ ] Discovery records are suggestions until matched to an authorized device record and mTLS identity.
   - [ ] Preserve explicit endpoint configuration as fallback.
   - [ ] Record last success, failure, clock state, revision, and availability safely.
@@ -1619,13 +1695,15 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] Remote reads go to the owner; no remote filesystem or SQLite access exists.
 - [ ] Cached summaries remain useful offline without granting authority.
 
-## Phase 10: Project Workspaces, Git, Pipelines, And Constrained Manual Tasks
+## Phase 11: Project Workspaces, Git, Pipelines, And Constrained Manual Tasks
 
 **User outcome:** A user can open a real local or remote Project, perform safe repository work, manage durable drafts/artifacts, and run a Project entrypoint manually without a trigger or unrestricted shell.
 
-**Dependencies:** Phase 9 Project ownership/catalog and Phase 8 secure REST.
+**Dependencies:** Phase 10 Project ownership/catalog and Phase 9 secure REST.
 
-**Deferred:** Queue-backed Task steps until Phase 12, route selection until Phase 13, and schedules/webhooks/events until Phase 14.
+**Deferred:** Queue-backed Task steps until Phase 13, route selection until Phase 14, and schedules/webhooks/events until Phase 15.
+
+**Parallel-lane rule:** After Phase 10 establishes trusted discovery and the Project catalog, Phase 11 Project/workspace work and Phase 12 local-service work may proceed independently. Phase 13 may begin only after both lanes provide their required artifact and capability foundations.
 
 ### Files and Git
 
@@ -1694,13 +1772,13 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] The same owner-defined Task runs manually with no trigger.
 - [ ] Artifact transfers resume and verify integrity.
 
-## Phase 11: Multi-Instance Local Inference Drivers, Health, Capabilities, And Advertisements
+## Phase 12: Multi-Instance Local Inference Drivers, Health, Capabilities, And Advertisements
 
 **User outcome:** One Apparat node can discover, configure, supervise, inspect, and safely advertise any number of local inference services, including duplicates of the same provider.
 
-**Dependencies:** Phase 7 shared core/service slice, Phase 8 identity/gateway, and Phase 6 service contracts.
+**Dependencies:** Phase 8 shared core/service slice, Phase 9 identity/gateway, and Phase 6 service contracts.
 
-**Deferred:** Distributed queue execution to Phase 12 and route/pool selection to Phase 13.
+**Deferred:** Distributed queue execution to Phase 13 and route/pool selection to Phase 14.
 
 ### Workload and driver contracts
 
@@ -1717,7 +1795,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 ### Arbitrary service instances and persistence
 
-- [ ] Generalize the Phase 7 manager.
+- [ ] Generalize the Phase 8 manager.
   - [ ] Stable `ServiceID` independent from driver/workload.
   - [ ] Arbitrary same-driver and same-workload instances.
   - [ ] Primary index by ServiceID; secondary driver/class/model/health/policy indexes.
@@ -1772,7 +1850,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [ ] Text-to-image/image-to-image, dimensions, formats, model, sampler, progress, cancellation, previews, artifacts, and metadata.
 - [ ] Define video contract without claiming a concrete adapter.
   - [ ] Text/image-to-video, duration, dimensions, frame rate, format, model, progress, cancellation, checkpoint, artifacts, and storage limits.
-- [ ] Define STT/TTS contracts; concrete adapters remain Phase 15.
+- [ ] Define STT/TTS contracts; concrete adapters remain Phase 16.
 - [ ] Define BOINC capability contract; execution remains Post-MVP Track C.
 
 ### GUI and evidence
@@ -1790,13 +1868,13 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] Remote peers see only safe logical identities and cannot invoke localhost providers directly.
 - [ ] Desired, observed, capability, and advertisement state remain separate and restart-safe.
 
-## Phase 12: Authoritative Queue Protocol, Worker Leasing, Results, Artifacts, And Recovery
+## Phase 13: Authoritative Queue Protocol, Worker Leasing, Results, Artifacts, And Recovery
 
 **User outcome:** Typed jobs can be submitted to their queue owner, leased by an eligible worker, completed with verified results/artifacts, and recovered without duplicate authoritative completion.
 
-**Dependencies:** Phase 8 reusable mock queue, Phase 10 artifacts, and Phase 11 capabilities.
+**Dependencies:** Phase 9 reusable mock queue, Phase 11 artifacts, and Phase 12 capabilities.
 
-**Deferred:** Pool choice, route profiles, and fallback policy to Phase 13.
+**Deferred:** Pool choice, route profiles, and fallback policy to Phase 14.
 
 ### Queue definitions and admission
 
@@ -1849,9 +1927,9 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] A worker result becomes authoritative only after owner validation.
 - [ ] Restart, reassignment, duplicate delivery, and ambiguous completion never double-complete a logical job.
 - [ ] Artifacts resume and validate before accepted completion.
-- [ ] The Phase 8 mock flow uses the same production queue primitives.
+- [ ] The Phase 9 mock flow uses the same production queue primitives.
 
-## Phase 13: Pools, Routing Profiles, Deterministic Fallback, And Real Text Generation
+## Phase 14: Pools, Routing Profiles, Deterministic Fallback, And Real Text Generation
 
 **User outcome:** A Project or Task can request typed work, understand why a destination was chosen or excluded, fall back deterministically, and retrieve a real text-generation result.
 
@@ -1910,11 +1988,11 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] No job reaches an incompatible, expired, unauthorized, disabled, or unavailable service.
 - [ ] Remote execution never discloses or bypasses provider-local endpoints/credentials.
 
-## Phase 14: Task Triggers, Automation, Webhooks, Approvals, And Durable Workflows
+## Phase 15: Task Triggers, Automation, Webhooks, Approvals, And Durable Workflows
 
 **User outcome:** The same Project Task entrypoint can run manually or through authorized triggers, survive restart, await queued work, and produce one auditable outcome.
 
-**Dependencies:** Phase 10 Task entrypoints and Phases 12–13 queue/routing.
+**Dependencies:** Phase 11 Task entrypoints and Phases 13–14 queue/routing.
 
 **Deferred:** Scheduler failover/election to Post-MVP Track A.
 
@@ -1963,7 +2041,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] Consequential actions honor approval and sandbox boundaries.
 - [ ] Duplicate triggers and webhooks do not duplicate a logical run.
 
-## Phase 15: ASR, TTS, Push-To-Talk, Audio Lifecycle, And Privacy
+## Phase 16: ASR, TTS, Push-To-Talk, Audio Lifecycle, And Privacy
 
 **User outcome:** Holding and releasing the configured control produces editable transcribed text through a selected local or remote route, and spoken output can be controlled independently.
 
@@ -2013,11 +2091,11 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] Capture and focus remain presentation/platform state until explicit submission.
 - [ ] Voice behavior is visible, cancellable, bounded, privacy-preserving, and restart-honest.
 
-## Phase 16: Packaging, Release Hardening, And Platform Support Evidence
+## Phase 17: Packaging, Release Hardening, And Platform Support Evidence
 
 **User outcome:** Users can install, run, diagnose, upgrade, and roll back honestly supported GUI/headless artifacts on each declared platform.
 
-**Dependencies:** Stable secure vertical slice, shared-core lifecycle, and continuous platform evidence from Phases 7–15.
+**Dependencies:** Stable secure vertical slice, shared-core lifecycle, and continuous platform evidence from Phases 8–16.
 
 **Scope:** This phase culminates platform validation; it is not the first platform test.
 
@@ -2051,7 +2129,7 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 ### Android
 
-- [ ] Continue from Phase 5 and continuous Phase 7+ validation.
+- [ ] Continue from Phase 5 and continuous Phase 8+ validation.
 - [ ] Release signing, versioning, provenance, icons, store/distribution, signed update manifest, installed-versus-latest display, and rollback policy.
 - [ ] Additional ABI only after arm64 proof.
 - [ ] Phone/tablet, portrait/landscape, safe-area, density, keyboard, controller, touch, microphone, audio, scoped storage, background, battery, and network evidence.
@@ -2227,16 +2305,16 @@ Every focused implementation plan includes the applicable items below and its ph
 
 ### Must resolve before dependent implementation
 
-- [ ] Phase 7: database encryption/restore, WAL/platform policy, lock recovery, and binary-root migration details.
-- [ ] Phase 8: authorization vocabulary, endpoint seed/discovery transition, enrollment recovery, and concrete API limits.
-- [ ] Phase 9: directory conflicts and Project-summary policy.
-- [ ] Phase 10: file/binary limits, platform Task sandboxing, conflicts, and artifact retention defaults.
-- [ ] Phase 11: discovery/auto-promotion, provider secrets per platform, admission defaults, and approved image drivers.
-- [ ] Phase 12: lease/heartbeat/retry/retention/artifact quota defaults.
-- [ ] Phase 13: routing score/fallback/explanation and freshness policy.
-- [ ] Phase 14: webhook/schedule/approval rules; scheduler failover remains post-MVP.
-- [ ] Phase 15: audio formats, adapters, retention, streaming, and permissions.
-- [ ] Phase 16: binary hosting/tracking, signing custody, manifests, reproducibility, and rollback.
+- [ ] Phase 8: database encryption/restore, WAL/platform policy, lock recovery, and binary-root migration details.
+- [ ] Phase 9: authorization vocabulary, endpoint seed/discovery transition, enrollment recovery, and concrete API limits.
+- [ ] Phase 10: directory conflicts and Project-summary policy.
+- [ ] Phase 11: file/binary limits, platform Task sandboxing, conflicts, and artifact retention defaults.
+- [ ] Phase 12: discovery/auto-promotion, provider secrets per platform, admission defaults, and approved image drivers.
+- [ ] Phase 13: lease/heartbeat/retry/retention/artifact quota defaults.
+- [ ] Phase 14: routing score/fallback/explanation and freshness policy.
+- [ ] Phase 15: webhook/schedule/approval rules; scheduler failover remains post-MVP.
+- [ ] Phase 16: audio formats, adapters, retention, streaming, and permissions.
+- [ ] Phase 17: binary hosting/tracking, signing custody, manifests, reproducibility, and rollback.
 - [ ] Track A: Meshtastic, Signal, app-managed WireGuard, migration, replication, CRDT, dynamic routing.
 - [ ] Track B: Comrades transport/privacy, grants, visibility, quotas, moderation, and abuse.
 - [ ] Track C: BOINC boundary/sources/isolation, validation governance, gameplay, reputation, and anti-gaming.
