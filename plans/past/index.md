@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-08-24-18-42-49 | plans/past/2026-08-24-16-46-50_review-and-convert-deep-research-findings.md | Review and Convert Deep Research Findings | Validate the existing deep-research report's provenance and high-leverage claims, make disposition decisions explicit, and prepare an evidence-backed Phase 7 amendment proposal.
 2026-08-24-17-24-50 | plans/past/2026-08-24-14-08-00_correct-research-manifest-cleanliness.md | Correct Research Manifest Cleanliness | Keep GitIngest temporary output ignored during provenance collection so a clean repository produces a clean manifest.
 2026-08-24-14-06-07 | plans/past/2026-08-24-13-57-01_establish-research-gitingest-artifact.md | Establish Research GitIngest Artifact | Replace the full-submodule GitIngest default with a project-focused digest and reproducibility manifest, then regenerate and validate the current research snapshot.
 2026-08-24-13-48-04 | plans/past/2026-08-09-21-01-11_remove-legacy-agents-governance.md | Remove Legacy Agents Governance | Remove deprecated Kanban and downtime systems, consolidate Apparat-specific routing in root AGENTS.md, audit retained host governance, and remove the legacy agents submodule.
