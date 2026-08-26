@@ -31,13 +31,15 @@ type Row struct {
 }
 
 type Section struct {
-	Title          string
-	Description    string
-	Rows           []Row
-	DetailSections []Section
-	SelectorKind   SelectorKind
-	SelectorColor  string
-	ContentKind    ContentKind
+	Title               string
+	Description         string
+	Rows                []Row
+	DetailSections      []Section
+	SelectorKind        SelectorKind
+	SelectorColor       string
+	ContentKind         ContentKind
+	YourContribution    string
+	FriendContributions []FriendContribution
 }
 
 type SelectorKind string
@@ -50,10 +52,11 @@ const (
 type ContentKind string
 
 const (
-	ContentStandard ContentKind = "standard"
-	ContentChat     ContentKind = "chat"
-	ContentProject  ContentKind = "project"
-	ContentPipeline ContentKind = "pipeline"
+	ContentStandard             ContentKind = "standard"
+	ContentChat                 ContentKind = "chat"
+	ContentProject              ContentKind = "project"
+	ContentPipeline             ContentKind = "pipeline"
+	ContentResearchContribution ContentKind = "research_contribution"
 )
 
 var SelectorPalette = []string{"#0032AB", "#6028A7", "#8C159F", "#AF0093", "#CB0084", "#E10072", "#F10060"}

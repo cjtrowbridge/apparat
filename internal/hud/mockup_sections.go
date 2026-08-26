@@ -61,13 +61,17 @@ func clusterMockSections() []Section {
 func researchMockSections() []Section {
 	return []Section{
 		selectorHeading("Your Research", "The total compute power you've donated to each type of research.", SelectorPalette[0]),
-		mockSection("Curing Cancer (2.4 pflops)", "Mock contribution record; no work is running.", ContentStandard, SelectorPalette[0], "Contribution|2.4 pflops mock total", "Focus|medical research"),
-		mockSection("Finding Aliens (6.2 gflops)", "Mock contribution record; no work is running.", ContentStandard, SelectorPalette[0], "Contribution|6.2 gflops mock total", "Focus|signal analysis"),
+		researchContributionSection("Curing Cancer (2.4 pflops)", "2.4 pflops mock total", "Focus|medical research"),
+		researchContributionSection("Finding Aliens (6.2 gflops)", "6.2 gflops mock total", "Focus|signal analysis"),
 		selectorHeading("Other Research Opportunities", "Mock opportunities awaiting technical validation.", SelectorPalette[1]),
 		mockSection("Drug Research", "Mock candidate research opportunity.", ContentStandard, SelectorPalette[1], "Status|not enrolled", "Budget|not assigned"),
 		mockSection("Einstein@Home", "Analyze gravity waves to help find new neutron stars.", ContentStandard, SelectorPalette[1], "Status|not enrolled", "Evidence|mock review pending"),
 		mockSection("NFS@Home", "Find new factorizations of large integers.", ContentStandard, SelectorPalette[1], "Status|not enrolled", "Evidence|mock review pending"),
 	}
+}
+
+func researchContributionSection(title, contribution string, entries ...string) Section {
+	return Section{Title: title, Description: "Mock contribution record; no work is running.", Rows: mockRows(entries...), ContentKind: ContentResearchContribution, SelectorColor: SelectorPalette[0], YourContribution: contribution, FriendContributions: []FriendContribution{{"Mara", 18.4}, {"River", 7.1}, {"Zvyo", 7.1}, {"Puck", 2.8}}}
 }
 
 func mockSection(title, description string, kind ContentKind, color string, entries ...string) Section {

@@ -188,6 +188,9 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	for _, row := range section.Rows {
 		sectionContainer.AddChild(game.detailText(rowText(row)))
 	}
+	if section.ContentKind == hud.ContentResearchContribution {
+		sectionContainer.AddChild(game.researchContributionTable(section))
+	}
 	for _, detail := range section.DetailSections {
 		sectionContainer.AddChild(game.buildSectionContainer(detail))
 	}

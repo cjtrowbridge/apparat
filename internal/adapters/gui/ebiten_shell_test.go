@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/ebitenui/ebitenui/event"
 	"github.com/ebitenui/ebitenui/widget"
 )
 
@@ -40,15 +41,8 @@ func TestNewGameBuildsScrollableTabStripRoot(t *testing.T) {
 
 func TestActiveTabStripFollowsHUDSnapshot(t *testing.T) {
 	game := NewGame()
-	if err := game.shell.SelectTab(5); err != nil {
-		t.Fatal(err)
-	}
-	game.rebuildUI(game.shell.Snapshot())
-	if id := game.ActiveTabID(); id != "comrades" {
-		t.Fatalf("active tab id before update store = %q, want existing comrades store", id)
-	}
-	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
-	if id := game.ActiveTabID(); id != "settings" {
+	selectTabThroughStrip(t, game, hud.TabSettings)
+	if id := game.shell.Snapshot().ActiveTab().ID(); id != hud.TabSettings {
 		t.Fatalf("active tab id = %q, want settings", id)
 	}
 	game.ensureActiveTabVisible()
@@ -58,6 +52,27 @@ func TestActiveTabStripFollowsHUDSnapshot(t *testing.T) {
 	if got := game.tabScroll.ScrollLeft; got != 0 {
 		t.Fatalf("settings tab scroll = %.2f, want left-aligned 0 when tabs fit", got)
 	}
+}
+
+func selectTabThroughStrip(t *testing.T, game *Game, id hud.TabID) {
+	t.Helper()
+	for index, tab := range game.shell.Snapshot().Tabs {
+		if tab.ID() != id {
+			continue
+		}
+		game.tabRadioGroup.SetActive(game.tabButtons[index])
+		event.ExecuteDeferred()
+		return
+	}
+	t.Fatalf("tab %q was not present", id)
+}
+
+func buildSettingsContentForTest(t *testing.T, game *Game) *widget.Container {
+	t.Helper()
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
+	content := game.buildSettingsContent(settings)
+	content.Validate()
+	return content
 }
 
 func TestTabStripManualScrollIsNotOverwrittenWithoutRequest(t *testing.T) {
@@ -76,8 +91,7 @@ func TestTabStripManualScrollIsNotOverwrittenWithoutRequest(t *testing.T) {
 
 func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
-	content := game.buildSettingsContent(settings)
+	content := buildSettingsContentForTest(t, game)
 	labels := collectTextLabels(content)
 
 	for _, want := range []string{"UPDATES", "HUD CONFIGURATION", "BINDINGS", "DIAGNOSTICS"} {
@@ -86,7 +100,7 @@ func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 		}
 	}
 	if findButtonByLabel(content, "Check for update") == nil {
-		t.Fatal("settings content missing Check for update button")
+		t.Fatalf("settings content missing Check for update button; labels: %#v", labels)
 	}
 	if findCheckboxByLabel(content, "Open Debug UI overlay") == nil {
 		t.Fatal("settings content missing Debug UI overlay checkbox")
@@ -96,8 +110,7 @@ func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 func TestSettingsDebugOverlayCheckboxLabelClosesWhenOpen(t *testing.T) {
 	game := NewGame()
 	game.debugOverlayOpen = true
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
-	content := game.buildSettingsContent(settings)
+	content := buildSettingsContentForTest(t, game)
 	if findCheckboxByLabel(content, "Close Debug UI overlay") == nil {
 		t.Fatal("settings content missing close Debug UI overlay checkbox label")
 	}
@@ -105,17 +118,18 @@ func TestSettingsDebugOverlayCheckboxLabelClosesWhenOpen(t *testing.T) {
 
 func TestSettingsDebugOverlayCheckboxTogglesState(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
-	content := game.buildSettingsContent(settings)
+	content := buildSettingsContentForTest(t, game)
 	checkbox := findCheckboxByLabel(content, "Open Debug UI overlay")
 	if checkbox == nil {
 		t.Fatal("settings content missing Debug UI overlay checkbox")
 	}
 	checkbox.SetState(widget.WidgetChecked)
+	event.ExecuteDeferred()
 	if !game.debugOverlayOpen {
 		t.Fatal("debug overlay did not open after checkbox checked")
 	}
 	checkbox.SetState(widget.WidgetUnchecked)
+	event.ExecuteDeferred()
 	if game.debugOverlayOpen {
 		t.Fatal("debug overlay did not close after checkbox unchecked")
 	}
@@ -128,13 +142,13 @@ func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
 		called = true
 		return true
 	})
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
-	content := game.buildSettingsContent(settings)
+	content := buildSettingsContentForTest(t, game)
 	button := findButtonByLabel(content, "Check for update")
 	if button == nil {
 		t.Fatal("settings content missing Check for update button")
 	}
 	button.Click()
+	event.ExecuteDeferred()
 	if !called {
 		t.Fatal("update button did not invoke callback")
 	}
@@ -148,8 +162,7 @@ func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
 
 func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
-	content := game.buildSettingsContent(settings)
+	content := buildSettingsContentForTest(t, game)
 	button := findButtonByLabel(content, "Check for update")
 	if button == nil {
 		t.Fatal("settings content missing Check for update button")
@@ -163,13 +176,13 @@ func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 
 func TestSettingsUpdateButtonShowsUnavailableWithoutCallback(t *testing.T) {
 	game := NewGame()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
-	content := game.buildSettingsContent(settings)
+	content := buildSettingsContentForTest(t, game)
 	button := findButtonByLabel(content, "Check for update")
 	if button == nil {
 		t.Fatal("settings content missing Check for update button")
 	}
 	button.Click()
+	event.ExecuteDeferred()
 	if got := button.Text().Label; got != "Update unavailable" {
 		t.Fatalf("button label without callback = %q, want Update unavailable", got)
 	}

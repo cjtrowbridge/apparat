@@ -44,7 +44,7 @@ func TestRequestedTabRevealMovesOnlyWhenSelectedTabIsClipped(t *testing.T) {
 	game := NewGame()
 	game.width = 360
 	game.rebuildUI(game.shell.Snapshot())
-	game.selectTabWithReveal(5)
+	game.selectTabWithReveal(len(game.shell.Snapshot().Tabs) - 1)
 	game.rebuildUI(game.shell.Snapshot())
 	game.ensureActiveTabVisible()
 	if got := game.tabScroll.ScrollLeft; got != 1 {

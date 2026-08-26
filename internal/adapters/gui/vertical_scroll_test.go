@@ -6,6 +6,7 @@ import (
 	"image"
 	"testing"
 
+	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -14,10 +15,7 @@ func TestBodyScrollsRegisterForSettingsAndMasterDetail(t *testing.T) {
 	if got := len(game.verticalScrolls); got != 2 {
 		t.Fatalf("master-detail vertical scrolls = %d, want 2", got)
 	}
-	if err := game.shell.SelectTab(5); err != nil {
-		t.Fatal(err)
-	}
-	game.rebuildUI(game.shell.Snapshot())
+	selectTabThroughStrip(t, game, hud.TabSettings)
 	if got := len(game.verticalScrolls); got != 1 {
 		t.Fatalf("settings vertical scrolls = %d, want 1", got)
 	}
@@ -81,10 +79,7 @@ func TestBodyViewportStaysBetweenTabsAndDiagnostics(t *testing.T) {
 		game.ui.Draw(ebiten.NewImage(width, 800))
 		assertBodyViewports(t, game, width)
 
-		if err := game.shell.SelectTab(5); err != nil {
-			t.Fatal(err)
-		}
-		game.rebuildUI(game.shell.Snapshot())
+		selectTabThroughStrip(t, game, hud.TabSettings)
 		game.ui.Container.SetLocation(image.Rect(0, 0, width, 800))
 		game.ui.Draw(ebiten.NewImage(width, 800))
 		assertBodyViewports(t, game, width)
