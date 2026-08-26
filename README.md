@@ -167,7 +167,7 @@ BOINC work must remain lower priority than the owner's personal workloads unless
 
 Project validation will eventually participate in Apparat's gameplay mechanics. Those mechanics may make reviewing evidence, validating project legitimacy, selecting trusted research, contributing work, and tracking collective progress more engaging. The exact validation and gameplay design remains open and must not imply that points or popularity replace technical, security, legal, or scientific review.
 
-The Research tab is visible in the HUD but BOINC integration and gameplay are not actively developed in the MVP.
+The Research tab is visible in the HUD but BOINC integration and gameplay are not actively developed in the MVP. Until then, enrolled-project placeholders show a clearly labeled mock personal contribution and sortable mock friend-contribution table; neither represents a live BOINC account, research result, or social-graph record.
 
 ## Input And Controls
 

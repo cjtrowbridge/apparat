@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-08-25-17-58-16 | plans/past/2026-08-25-12-00-55_research-contribution-leaderboard.md | Research Contribution Leaderboard | Replace the Research placeholder contribution row with an explicit personal contribution summary and sortable mock friend-contribution leaderboard.
 2026-08-25-12-22-42 | plans/past/2026-08-24-16-46-50_review-and-convert-deep-research-findings.md | Review and Convert Deep Research Findings | Validate the existing deep-research report's provenance and high-leverage claims, make disposition decisions explicit, and prepare an evidence-backed Phase 7 amendment proposal.
 2026-08-25-12-22-42 | plans/past/2026-08-24-14-08-00_correct-research-manifest-cleanliness.md | Correct Research Manifest Cleanliness | Keep GitIngest temporary output ignored during provenance collection so a clean repository produces a clean manifest.
 2026-08-25-12-22-42 | plans/past/2026-08-24-13-57-01_establish-research-gitingest-artifact.md | Establish Research GitIngest Artifact | Replace the full-submodule GitIngest default with a project-focused digest and reproducibility manifest, then regenerate and validate the current research snapshot.

@@ -55,7 +55,7 @@ Phase 4 tab content is local, mocked, or placeholder-only:
 
 - Comrades explains future friend chat and comrade queues.
 - Projects shows mock chats, files, artifacts, Git status, drafts, transaction concepts, and Pipeline-building detail.
-- Research explains future BOINC delegation and validation gameplay.
+- Research explains future BOINC delegation and validation gameplay. Its enrolled-project placeholders show a separate mock `Your Contribution` value and a mock friend-contribution table. The table starts in numeric contribution-descending order, breaks ties by friend name, and can be sorted by either header; it is not BOINC or social data.
 - Cluster shows local diagnostics, mock device capabilities, Routing, and Tasks. Tasks remains a selector-panel item whose content panel shows placeholder schedules, webhooks, events, approvals, and run history.
 - Settings shows runtime/config diagnostics, hard-coded HUD settings, command hints, and verification hints.
 

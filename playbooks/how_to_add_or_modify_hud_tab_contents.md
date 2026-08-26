@@ -22,6 +22,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Put related content in EbitenUI layout containers (like `widget.RowLayout` or `widget.GridLayout`) and `widget.ScrollContainer`.
    * Each bounded element must own its title, explanation, controls, and body content.
    * Tab content must remain strictly data-driven (dynamically iterating through `tab.Sections` and `section.Rows`); do not hardcode EbitenUI containers or widgets outside of this loop pattern.
+   * For a data table, use the reusable GUI `borderedTable` routine in `internal/adapters/gui/table.go`. Supply one header `tableRow` and same-width data rows, using `tableText` for padded text cells. The routine owns the shared column calculation, outer border, and per-cell borders. Do not build headers and rows as separate grids because they calculate different column widths and will not align.
 
 2. **Prevent Overlap By Construction**
    * Do not place controls as floating overlays unless they correspond to a reserved body element.
@@ -75,6 +76,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
    * Construct the EbitenUI widget hierarchy using appropriate containers and layout managers.
    * Use the central theme configuration for padding, margins, gaps, fonts, and colors.
    * Let EbitenUI handle dynamic text wrapping and layout calculation.
+   * Keep sortable table headers as ordinary, touch-sized EbitenUI buttons supplied to `borderedTable`; sorting state belongs in the HUD view model or the adapter state boundary, never in formatted cell text.
 
 4. **Handle Responsiveness**
    * Test narrow body widths in unit tests where possible.

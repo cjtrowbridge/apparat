@@ -71,7 +71,7 @@ func researchMockSections() []Section {
 }
 
 func researchContributionSection(title, contribution string, entries ...string) Section {
-	return Section{Title: title, Description: "Mock contribution record; no work is running.", Rows: mockRows(entries...), ContentKind: ContentResearchContribution, SelectorColor: SelectorPalette[0], YourContribution: contribution, FriendContributions: []FriendContribution{{"Mara", 18.4}, {"River", 7.1}, {"Zvyo", 7.1}, {"Puck", 2.8}}}
+	return Section{Title: title, Description: "Mock contribution record; no work is running.", Rows: mockRows(entries...), ContentKind: ContentResearchContribution, SelectorColor: SelectorPalette[0], YourContribution: contribution, FriendContributions: []FriendContribution{{Friend: "Mara", GFlops: 18.4}, {Friend: "River", GFlops: 7.1}, {Friend: "Zvyo", GFlops: 7.1}, {Friend: "Puck", GFlops: 2.8}}}
 }
 
 func mockSection(title, description string, kind ContentKind, color string, entries ...string) Section {
