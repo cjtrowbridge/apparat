@@ -105,6 +105,7 @@ type Game struct {
 	activeTabID                    atomic.Value
 	updateStatus                   atomic.Value
 	updateButton                   *widget.Button
+	updateDetail                   *widget.Text
 	onCheckForUpdate               func() bool
 }
 
@@ -112,13 +113,20 @@ func (game *Game) SetOnCheckForUpdate(f func() bool) {
 	game.onCheckForUpdate = f
 }
 
-func (game *Game) SetUpdateStatus(status string) {
-	game.updateStatus.Store(status)
+func (game *Game) SetUpdateStatus(code UpdateStatusCode) {
+	game.updateStatus.Store(updateStatusFor(code))
 }
 
 func (game *Game) UpdateStatus() string {
-	if status, ok := game.updateStatus.Load().(string); ok {
-		return status
+	if status, ok := game.updateStatus.Load().(updateStatus); ok {
+		return status.Label
+	}
+	return ""
+}
+
+func (game *Game) UpdateStatusDetail() string {
+	if status, ok := game.updateStatus.Load().(updateStatus); ok {
+		return status.Detail
 	}
 	return ""
 }
@@ -200,18 +208,19 @@ func (game *Game) Update() error {
 }
 
 func (game *Game) applyUpdateStatus() {
-	if game.updateButton == nil {
-		return
-	}
 	status := game.UpdateStatus()
 	if status == "" {
 		return
 	}
-	text := game.updateButton.Text()
-	if text != nil && text.Label == status {
-		return
+	if game.updateButton != nil {
+		text := game.updateButton.Text()
+		if text == nil || text.Label != status {
+			game.updateButton.SetText(status)
+		}
 	}
-	game.updateButton.SetText(status)
+	if game.updateDetail != nil {
+		game.updateDetail.Label = game.UpdateStatusDetail()
+	}
 }
 
 func (game *Game) ActiveTabID() string {

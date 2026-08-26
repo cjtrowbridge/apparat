@@ -41,7 +41,8 @@ func init() {
 	})
 	game.SetOnCheckForUpdate(func() bool {
 		if updater == nil {
-			slog.Warn("android update check requested before updater registration")
+			game.SetUpdateStatus(gui.UpdateStatusUnableBridge)
+			slog.Warn("android update check requested before updater registration", "reason", gui.UpdateStatusUnableBridge)
 			return false
 		}
 		slog.Info("android update check requested")
@@ -63,13 +64,13 @@ func ActiveTab() string {
 	return game.ActiveTabID()
 }
 
-func ReportUpdateStatus(message string) {
+func ReportUpdateStatus(code string) {
 	if game == nil {
-		slog.Warn("android update status before game registration", "message", message)
+		slog.Warn("android update status before game registration", "reason", code)
 		return
 	}
-	game.SetUpdateStatus(message)
-	slog.Info("android update status", "message", message)
+	game.SetUpdateStatus(gui.UpdateStatusCode(code))
+	slog.Info("android update status", "reason", code)
 }
 
 type Updater interface {

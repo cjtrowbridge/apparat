@@ -32,6 +32,12 @@ public class MainActivity extends Activity {
     private EbitenView view;
     private File downloadedUpdate;
 
+    private static class UpdateHttpException extends Exception {
+        UpdateHttpException() {
+            super();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,21 +83,40 @@ public class MainActivity extends Activity {
     private void checkForUpdate(final boolean userInitiated) {
         Log.i(TAG, "Starting update check userInitiated=" + userInitiated);
         if (userInitiated) {
-            reportUpdateStatus("Checking...");
+            reportUpdateStatus("checking");
             showToast("Checking Apparat update...");
         }
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    File apk = downloadLatestApk();
+                    File apk;
+                    try {
+                        apk = downloadLatestApk();
+                    } catch (UpdateHttpException error) {
+                        reportUpdateFailure("unable_http", userInitiated);
+                        return;
+                    } catch (java.io.IOException error) {
+                        reportUpdateFailure("unable_network", userInitiated);
+                        return;
+                    } catch (Exception error) {
+                        reportUpdateFailure("unable_download", userInitiated);
+                        return;
+                    }
                     downloadedUpdate = apk;
-                    String installedHash = sha256(new File(getApplicationInfo().sourceDir));
-                    String downloadedHash = sha256(apk);
+                    String installedHash;
+                    String downloadedHash;
+                    try {
+                        installedHash = sha256(new File(getApplicationInfo().sourceDir));
+                        downloadedHash = sha256(apk);
+                    } catch (Exception error) {
+                        reportUpdateFailure("unable_verification", userInitiated);
+                        return;
+                    }
                     if (installedHash.equals(downloadedHash)) {
                         if (userInitiated) {
-                            reportUpdateStatus("Already current");
-                            showToast("Already current: installed and GitHub APK hashes match (" + shortHash(installedHash) + ")");
+                            reportUpdateStatus("up_to_date");
+                            showToast("Up To Date! Installed and verified release APKs match.");
                         } else {
                             Log.i(TAG, "Startup update check found current APK " + shortHash(installedHash));
                         }
@@ -104,11 +129,7 @@ public class MainActivity extends Activity {
                         }
                     });
                 } catch (Exception error) {
-                    Log.w(TAG, "Update check failed", error);
-                    if (userInitiated) {
-                        reportUpdateStatus("Update failed");
-                        showToast("Update check failed: " + error.getMessage());
-                    }
+                    reportUpdateFailure("unable_download", userInitiated);
                 }
             }
         }).start();
@@ -124,7 +145,7 @@ public class MainActivity extends Activity {
         connection.setInstanceFollowRedirects(true);
         int status = connection.getResponseCode();
         if (status < 200 || status >= 300) {
-            throw new IllegalStateException("HTTP " + status);
+            throw new UpdateHttpException();
         }
         try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(apk)) {
             byte[] buffer = new byte[64 * 1024];
@@ -140,7 +161,7 @@ public class MainActivity extends Activity {
 
     private void requestPermissionOrInstall() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {
-            reportUpdateStatus("Permission needed");
+            reportUpdateStatus("permission_needed");
             showToast("Allow Apparat to install updates, then tap Update again.");
             Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
             intent.setData(Uri.parse("package:" + getPackageName()));
@@ -152,7 +173,7 @@ public class MainActivity extends Activity {
 
     private void installDownloadedUpdate() {
         if (downloadedUpdate == null || !downloadedUpdate.exists()) {
-            reportUpdateStatus("No update ready");
+            reportUpdateStatus("unable_install");
             showToast("No downloaded update is ready");
             return;
         }
@@ -163,10 +184,18 @@ public class MainActivity extends Activity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             startActivity(intent);
-            reportUpdateStatus("Installer opened");
+            reportUpdateStatus("installer_opened");
         } catch (Exception error) {
-            reportUpdateStatus("Installer failed");
-            showToast("Could not open Android installer: " + error.getMessage());
+            reportUpdateStatus("unable_install");
+            showToast("Unable to open the system installer.");
+        }
+    }
+
+    private void reportUpdateFailure(String code, boolean userInitiated) {
+        Log.w(TAG, "Update check failed: " + code);
+        if (userInitiated) {
+            reportUpdateStatus(code);
+            showToast("Unable to check for updates. Check status in Settings for details.");
         }
     }
 

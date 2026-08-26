@@ -261,16 +261,19 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 					if game.bodySelectionSuppressed() {
 						return
 					}
-					game.SetUpdateStatus("Checking...")
-					args.Button.SetText("Checking...")
-					if game.onCheckForUpdate == nil || !game.onCheckForUpdate() {
-						game.SetUpdateStatus("Update unavailable")
-						args.Button.SetText("Update unavailable")
+					game.SetUpdateStatus(UpdateStatusChecking)
+					if game.onCheckForUpdate == nil {
+						game.SetUpdateStatus(UpdateStatusUnableNoChecker)
+					} else if !game.onCheckForUpdate() {
+						game.SetUpdateStatus(UpdateStatusUnableBridge)
 					}
+					game.applyUpdateStatus()
 				}),
 			)
 			game.updateButton = updateBtn
 			sectionContainer.AddChild(updateBtn)
+			game.updateDetail = game.hudText(game.UpdateStatusDetail())
+			sectionContainer.AddChild(game.updateDetail)
 		}
 		if strings.ToLower(section.Title) == "diagnostics" {
 			debugLabel := "Open Debug UI overlay"

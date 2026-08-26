@@ -167,10 +167,10 @@ func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 	if button == nil {
 		t.Fatal("settings content missing Check for update button")
 	}
-	game.SetUpdateStatus("Already current")
+	game.SetUpdateStatus(UpdateStatusUpToDate)
 	game.applyUpdateStatus()
-	if got := button.Text().Label; got != "Already current" {
-		t.Fatalf("button label after external status = %q, want Already current", got)
+	if got := button.Text().Label; got != "Up To Date!" {
+		t.Fatalf("button label after external status = %q, want Up To Date!", got)
 	}
 }
 
@@ -183,11 +183,14 @@ func TestSettingsUpdateButtonShowsUnavailableWithoutCallback(t *testing.T) {
 	}
 	button.Click()
 	event.ExecuteDeferred()
-	if got := button.Text().Label; got != "Update unavailable" {
-		t.Fatalf("button label without callback = %q, want Update unavailable", got)
+	if got := button.Text().Label; got != "Unable to check for updates" {
+		t.Fatalf("button label without callback = %q, want Unable to check for updates", got)
 	}
-	if got := game.UpdateStatus(); got != "Update unavailable" {
-		t.Fatalf("game update status = %q, want Update unavailable", got)
+	if got := game.UpdateStatus(); got != "Unable to check for updates" {
+		t.Fatalf("game update status = %q, want Unable to check for updates", got)
+	}
+	if got := game.UpdateStatusDetail(); got != "No update checker is configured in this build." {
+		t.Fatalf("update detail = %q, want desktop no-checker explanation", got)
 	}
 }
 

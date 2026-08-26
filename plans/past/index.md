@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-08-25-18-52-54 | plans/past/2026-08-25-18-35-54_update-check-status-explanations.md | Update Check Status Explanations | Give Settings update checks typed, honest outcomes with safe, actionable explanations for current, unavailable, and failure states.
 2026-08-25-17-58-16 | plans/past/2026-08-25-12-00-55_research-contribution-leaderboard.md | Research Contribution Leaderboard | Replace the Research placeholder contribution row with an explicit personal contribution summary and sortable mock friend-contribution leaderboard.
 2026-08-25-12-22-42 | plans/past/2026-08-24-16-46-50_review-and-convert-deep-research-findings.md | Review and Convert Deep Research Findings | Validate the existing deep-research report's provenance and high-leverage claims, make disposition decisions explicit, and prepare an evidence-backed Phase 7 amendment proposal.
 2026-08-25-12-22-42 | plans/past/2026-08-24-14-08-00_correct-research-manifest-cleanliness.md | Correct Research Manifest Cleanliness | Keep GitIngest temporary output ignored during provenance collection so a clean repository produces a clean manifest.
