@@ -2188,7 +2188,7 @@ Continuous Android evidence: the [Pixel 10 safe-area correction](plans/past/2026
 
 ### Android
 
-[GitHub update repair](plans/current/2026-11-16-15-20-00_repair-github-updates.md) pins the installed Pixel signing identity and prepares version 0.1.1 (code 2). Build, verification and Pixel 4a in-place installation pass; source/APK publication and fetched-byte verification remain pending. This does not close production signing custody or release-manifest work below.
+[GitHub update repair](plans/past/2026-11-16-15-20-00_repair-github-updates.md) pins the installed Pixel signing identity and prepares version 0.1.1 (code 2). Build, verification and Pixel 4a in-place installation pass; source/APK publication and fetched-byte signature/version/hash verification are complete. This does not close production signing custody or release-manifest work below.
 
 [Tab page headings](plans/past/2026-11-16-15-00-00_tab-page-headings.md) add the active tab name beneath icon navigation, validated on Pixel 4a with scrolling and landscape.
 

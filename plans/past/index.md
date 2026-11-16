@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-16-14-24-32 | plans/past/2026-11-16-15-20-00_repair-github-updates.md | Preserve installed signing identity for GitHub updates | Pin the installed Android signing certificate, advance release versions and verify a data-preserving upgrade.
 2026-11-16-14-12-17 | plans/past/2026-11-16-15-00-00_tab-page-headings.md | Name each icon tab with a page heading | Add a prominent shared page-title row beneath the icon navigation.
 2026-11-16-14-08-07 | plans/past/2026-11-16-14-30-00_compact-icon-tabs.md | Compact symbol-only HUD tabs | Fit all five tabs on phone screens using the existing Comrades symbol and bundled emoji.
 2026-11-16-13-52-04 | plans/past/2026-11-16-14-10-00_match-android-safe-area-color.md | Match Android safe areas to HUD background | Use the GUI background color for Android cutout and navigation areas.
