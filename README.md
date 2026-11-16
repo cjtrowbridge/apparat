@@ -739,6 +739,8 @@ Android GitHub updates require the retained signing key pinned by `android/appar
 
 Android update checks now require an explicit Update action. Downloads are bounded, cancel with Activity destruction and must match the installed package/signature with a strictly newer version before the system installer is offered. Public hash equality does not establish release authenticity. Production signed manifests, key custody and rollback remain Phase 17; no install permission is granted automatically.
 
+Android update downloads allow 60 seconds without incoming data and 15 minutes of total transfer time, capped at 128 MiB. Timeout, cancellation and oversized-download messages are distinct from package/signature rejection. A failed download or local save does not establish that GitHub is unreachable. Builds older than 0.1.2 retain the earlier restrictive limits until upgraded.
+
 ### Research Before Adding
 
 - Qwen3-TTS.

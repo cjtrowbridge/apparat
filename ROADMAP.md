@@ -2188,6 +2188,8 @@ Continuous Android evidence: the [Pixel 10 safe-area correction](plans/past/2026
 
 ### Android
 
+[Slow-download repair](plans/current/2026-11-16-16-00-00_repair-slow-update-downloads.md) addresses restrictive transfer timeouts and misleading network errors discovered after publication; end-to-end phone update acceptance remains open.
+
 [GitHub update repair](plans/past/2026-11-16-15-20-00_repair-github-updates.md) pins the installed Pixel signing identity and prepares version 0.1.1 (code 2). Build, verification and Pixel 4a in-place installation pass; source/APK publication and fetched-byte signature/version/hash verification are complete. This does not close production signing custody or release-manifest work below.
 
 [Tab page headings](plans/past/2026-11-16-15-00-00_tab-page-headings.md) add the active tab name beneath icon navigation, validated on Pixel 4a with scrolling and landscape.

@@ -43,7 +43,13 @@ func updateStatusFor(code UpdateStatusCode) updateStatus {
 	case UpdateStatusInstallerOpened:
 		return updateStatus{Label: "Installer opened", Detail: "Confirm the update in the system installer.", Reason: code}
 	case UpdateStatusUnableNetwork:
-		return updateStatus{Label: "Unable to check for updates", Detail: "The update service could not be reached. Check your connection and try again.", Reason: code}
+		return updateStatus{Label: "Download failed", Detail: "The update could not be downloaded or saved. Check your connection and available storage, then retry. No changes were installed.", Reason: code}
+	case "unable_timeout":
+		return updateStatus{Label: "Download timed out", Detail: "The update download stalled or exceeded its time limit. Retry on a stable connection. No changes were installed.", Reason: code}
+	case "unable_size":
+		return updateStatus{Label: "Update rejected", Detail: "The download exceeds the supported APK size. No changes were installed.", Reason: code}
+	case "update_cancelled":
+		return updateStatus{Label: "Download cancelled", Detail: "The update download was cancelled. No changes were installed.", Reason: code}
 	case UpdateStatusUnableHTTP:
 		return updateStatus{Label: "Unable to check for updates", Detail: "The update service returned an unexpected response. Try again later.", Reason: code}
 	case UpdateStatusUnableDownload:

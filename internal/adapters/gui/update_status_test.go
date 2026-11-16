@@ -16,7 +16,7 @@ func TestUpdateStatusCodesHaveSafeActionableText(t *testing.T) {
 		UpdateStatusAvailable,
 		UpdateStatusUnableNoChecker,
 		UpdateStatusUnableBridge,
-		UpdateStatusUnableNetwork,
+		UpdateStatusUnableNetwork, "unable_timeout", "unable_size", "update_cancelled",
 		UpdateStatusUnableHTTP,
 		UpdateStatusUnableDownload,
 		UpdateStatusUnableVerification,

@@ -26,3 +26,10 @@ Tests here should avoid network access and should not require GUI libraries. Go 
 - `build_preparation_test.py`: Checks read-only mobile capability inspection, single preparation and failure-before-binding without producing artifacts.
 
 - `android_release_test.py`: Verifies signer, package, version and missing-key publication boundaries.
+
+- `UpdateTransferTest.java`: Tests the production Android copy loop with deterministic slow streams, timeout, cancellation and size failures. Requires OpenJDK 21; run separately from Python tests:
+
+```bash
+python3 scripts/build_gate.py -- javac -d .tmp/update-transfer-test android/apparat/src/com/cjtrowbridge/apparat/UpdateTransfer.java tests/UpdateTransferTest.java
+python3 scripts/build_gate.py -- java -cp .tmp/update-transfer-test com.cjtrowbridge.apparat.UpdateTransferTest
+```

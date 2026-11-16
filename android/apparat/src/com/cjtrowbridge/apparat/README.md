@@ -10,3 +10,7 @@ Host-owned source for android/apparat/src/com/cjtrowbridge/apparat.
 Android safe-area color comes from the GUI renderer through `BackgroundARGB` in the mobile bridge. The current fixed dark palette is authoritative; runtime theme switching is not implemented. The native parent and navigation background use that color, with light navigation icons and no automatic contrast scrim. Insets and touch bounds are unchanged. Verify matching background pixels and readable buttons in portrait/landscape on an authorized device; system/OEM styling on other devices requires separate evidence.
 
 Updater rejection codes distinguish invalid package, mismatched signer and non-increasing version. The signer is checked before version messaging; none of these paths opens the installer or clears app data.
+
+- `UpdateTransfer.java`: Copies APK bytes with a 15-minute monotonic duration bound, 128 MiB limit and lifecycle cancellation; transport allows 60-second idle reads. Typed timeout/size/cancellation failures retain byte count and elapsed-time evidence without content or URLs. Partial APKs are removed on failure.
+
+Regression verification: compile this helper with `tests/UpdateTransferTest.java` through the build gate and run `com.cjtrowbridge.apparat.UpdateTransferTest`. Controlled streams exercise slow progress beyond the old two-minute cap, idle timeout, duration, size and cancellation. Actual mobile network acceptance remains a separate device check.

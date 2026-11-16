@@ -164,7 +164,15 @@ public class MainActivity extends Activity {
                     } catch (UpdateHttpException error) {
                         reportUpdateFailure("unable_http", userInitiated);
                         return;
+                    } catch (UpdateTransfer.Failure error) {
+                        Log.w(TAG, "event=download_failed reason=" + error.code + " bytes=" + error.bytes + " elapsed_ms=" + error.elapsed);
+                        reportUpdateFailure(error.code, userInitiated);
+                        return;
+                    } catch (java.net.SocketTimeoutException error) {
+                        reportUpdateFailure("unable_timeout", userInitiated);
+                        return;
                     } catch (java.io.IOException error) {
+                        Log.w(TAG, "event=download_failed error=" + error.getClass().getSimpleName());
                         reportUpdateFailure("unable_network", userInitiated);
                         return;
                     } catch (Exception error) {
@@ -246,30 +254,22 @@ public class MainActivity extends Activity {
         try {
             connection.setUseCaches(false);
             connection.setConnectTimeout(15000);
-            connection.setReadTimeout(15000);
+            connection.setReadTimeout(UpdateTransfer.READ_TIMEOUT_MS);
             connection.setInstanceFollowRedirects(false);
             int status = connection.getResponseCode();
             if (status != 200) {
                 throw new UpdateHttpException();
             }
-            long total = 0;
-            long deadline = android.os.SystemClock.elapsedRealtime() + 120000;
             try (InputStream in = connection.getInputStream();
                  FileOutputStream out = new FileOutputStream(partial)) {
-                byte[] buffer = new byte[64 * 1024];
-                int read;
-                while (true) {
-                    read = in.read(buffer);
-                    if (read == -1) {
-                        break;
+                UpdateTransfer.copy(in, out, new UpdateTransfer.State() {
+                    public long now() {
+                        return android.os.SystemClock.elapsedRealtime();
                     }
-                    total += read;
-                    if (destroyed || Thread.currentThread().isInterrupted() || total > 128L * 1024 * 1024
-                            || android.os.SystemClock.elapsedRealtime() > deadline) {
-                        throw new java.io.IOException("download cancelled or limit exceeded");
+                    public boolean cancelled() {
+                        return destroyed || Thread.currentThread().isInterrupted();
                     }
-                    out.write(buffer, 0, read);
-                }
+                });
                 out.getFD().sync();
             }
             if (!partial.renameTo(apk)) {
