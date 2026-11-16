@@ -2,7 +2,7 @@
 plan_id: 2026-11-16-16-00-00_repair-slow-update-downloads
 title: Repair slow Android update downloads
 summary: Restore tolerant download behavior and distinguish transfer failures from reachability failures.
-status: current
+status: past
 created_at: 2026-11-16-16-00-00
 ---
 
@@ -26,6 +26,10 @@ Canonical build, source/physical-size/docs gates, production Java transfer tests
 
 Pixel 10 was inspected only; its installed code 1 APK hash/signature exactly match the retained baseline. No Pixel 10 install, uninstall or data clear. GitHub still serves code 2. Candidate remains `releases/android/arm64/apparat/latest.apk` and ignored `.tmp/pixel10-update-diagnosis/candidate-0.1.2.apk`; Linux build outputs restored to HEAD. Evidence in `.tmp/pixel10-update-diagnosis/`.
 
-- [ ] Publish the reviewed 0.1.2 source/APK checkpoint with approval, verify fetched bytes, then archive this plan and reconcile the roadmap. Existing phone versions retain their timeout behavior until they install the correction.
+- [x] Publish the reviewed 0.1.2 source/APK checkpoint with approval, verify fetched bytes, then archive this plan and reconcile the roadmap. Existing phone versions retain their timeout behavior until they install the correction.
 
 User now explicitly approves committing/pushing 0.1.2 including the three new files, and updating the connected Pixel 10 successfully. This supersedes the earlier read-only device boundary. Preserve app data; prefer the actual GitHub updater and verify installed bytes afterward.
+
+## Publication and Pixel 10 completion
+
+Published `c13b77f` to origin/main. Exact GitHub updater URL returns 0.1.2/code 3 with SHA-256 `681fb88f24bac4bb813c830a6b821b3f9b0af088dde411e7f90e35713e1f0867`; fetched package/signature/version gate passes against prior code 2. Pixel 10 used the actual app download and Android installer flow (permission_needed, installer_opened), upgraded from code 1 to code 3 and launched successfully. Pulled installed base.apk has the same SHA-256 as the published APK. App-private continuity marker survived and was then removed; no uninstall or data clear. Post-upgrade Settings displays Up To Date and exact downloaded/installed APK equality. No ADB install fallback was used. Evidence includes `pixel10-success.log`, `pixel10-new-settings.png`, `installed-0.1.2.apk` and `published-0.1.2-check.log` in ignored `.tmp/pixel10-update-diagnosis/`. All outcomes complete; historical pending/read-only statements above describe earlier checkpoints.

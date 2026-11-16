@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-16-15-18-41 | plans/past/2026-11-16-16-00-00_repair-slow-update-downloads.md | Repair slow Android update downloads | Restore tolerant download behavior and distinguish transfer failures from reachability failures.
 2026-11-16-14-24-32 | plans/past/2026-11-16-15-20-00_repair-github-updates.md | Preserve installed signing identity for GitHub updates | Pin the installed Android signing certificate, advance release versions and verify a data-preserving upgrade.
 2026-11-16-14-12-17 | plans/past/2026-11-16-15-00-00_tab-page-headings.md | Name each icon tab with a page heading | Add a prominent shared page-title row beneath the icon navigation.
 2026-11-16-14-08-07 | plans/past/2026-11-16-14-30-00_compact-icon-tabs.md | Compact symbol-only HUD tabs | Fit all five tabs on phone screens using the existing Comrades symbol and bundled emoji.
