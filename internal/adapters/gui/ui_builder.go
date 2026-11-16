@@ -87,7 +87,6 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 			widget.ButtonOpts.ToggleMode(),
 			widget.ButtonOpts.WidgetOpts(
 				widget.WidgetOpts.MinSize(width, tabHeight),
-				widget.WidgetOpts.ToolTip(widget.NewTextToolTip(tabData.Title(), game.theme.ButtonTheme.TextFace, mutedTextColor, game.theme.PanelTheme.BackgroundImage)),
 				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 			),
 		)

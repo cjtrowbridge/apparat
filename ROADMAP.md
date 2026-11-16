@@ -2188,6 +2188,8 @@ Continuous Android evidence: the [Pixel 10 safe-area correction](plans/past/2026
 
 ### Android
 
+[Tab tooltip removal](plans/current/2026-11-16-16-30-00_remove-tab-tooltips.md) removes popup labels from the shared icon navigation while retaining page headings.
+
 [Slow-download repair](plans/past/2026-11-16-16-00-00_repair-slow-update-downloads.md) corrects restrictive transfer timeouts and misleading network errors. Version 0.1.2 is published; Pixel 10 completed an in-app GitHub update with preserved data and exact installed/published APK equality. Broader platform and release-hardening acceptance below remains open.
 
 [GitHub update repair](plans/past/2026-11-16-15-20-00_repair-github-updates.md) pins the installed Pixel signing identity and prepares version 0.1.1 (code 2). Build, verification and Pixel 4a in-place installation pass; source/APK publication and fetched-byte signature/version/hash verification are complete. This does not close production signing custody or release-manifest work below.

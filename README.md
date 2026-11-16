@@ -51,7 +51,7 @@ The canonical tab order is:
 4. Research
 5. Settings
 
-The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖥️ Cluster, 🧪 Research and ⚙️ Settings. All five fit at 320 logical pixels; hover tooltips retain their names. A prominent page heading below the icons names the active tab and remains visible while its content scrolls. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
+The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖥️ Cluster, 🧪 Research and ⚙️ Settings. All five fit at 320 logical pixels. Tab buttons have no popup tooltips. A prominent page heading below the icons names the active tab and remains visible while its content scrolls. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
 
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 

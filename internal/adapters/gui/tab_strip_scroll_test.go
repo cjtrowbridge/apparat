@@ -85,8 +85,8 @@ func TestIconTabsFitPhoneWidthWithTouchTargetsAndNames(t *testing.T) {
 		if width < 44 || height < 44 || width != tabIconButtonWidth {
 			t.Fatalf("tab %d size %dx%d violates compact touch target", index, width, height)
 		}
-		if len(button.GetWidget().ToolTips) == 0 {
-			t.Fatalf("tab %d lacks a name tooltip", index)
+		if len(button.GetWidget().ToolTips) != 0 {
+			t.Fatalf("tab %d has an unwanted tooltip", index)
 		}
 		if index > 0 && button.GraphicImage().Idle == nil {
 			t.Fatalf("tab %d lacks embedded artwork", index)

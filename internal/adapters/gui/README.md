@@ -114,7 +114,7 @@ Phase 8 adds a live Local services detail under Cluster. One context-owned worke
 
 Android safe-area color comes from the GUI renderer through `BackgroundARGB` in the mobile bridge. The current fixed dark palette is authoritative; runtime theme switching is not implemented. The native parent and navigation background use that color, with light navigation icons and no automatic contrast scrim. Insets and touch bounds are unchanged. Verify matching background pixels and readable buttons in portrait/landscape on an authorized device; system/OEM styling on other devices requires separate evidence.
 
-`tab_icons.go` owns the four embedded Twemoji images in `emoji/`, decoded/scaled once on the GUI thread. Tab buttons are 54x54 with 28px symbols: ☭ 🔨 🖥️ 🧪 ⚙️. All five fit at 320 logical pixels; smaller windows retain overflow scrolling. Visible titles are replaced by name tooltips; descriptor accessibility labels and navigation actions remain. Test phone fit and narrow overflow with the tab-strip GUI tests and rendered Pixel 4a screenshots. This does not add a native accessibility tree.
+`tab_icons.go` owns the four embedded Twemoji images in `emoji/`, decoded/scaled once on the GUI thread. Tab buttons are 54x54 with 28px symbols: ☭ 🔨 🖥️ 🧪 ⚙️. All five fit at 320 logical pixels; smaller windows retain overflow scrolling. Tab buttons have no tooltips; the active page heading supplies the visible name. Descriptor accessibility labels and navigation actions remain. Test phone fit and narrow overflow with the tab-strip GUI tests and rendered Pixel 4a screenshots. This does not add a native accessibility tree.
 
 - `tab_icons.go`: Loads fixed tab artwork and supplies icon-only button contents.
 
