@@ -1,3 +1,5 @@
+// Verifies supplies fictional multi-page HUD scenarios.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 import "testing"

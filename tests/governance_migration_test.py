@@ -1,3 +1,7 @@
+"""
+Checks governance migration test behavior with isolated unittest fixtures.
+Uses temporary directories and mocks; no device deployment is performed.
+"""
 from pathlib import Path
 import unittest
 

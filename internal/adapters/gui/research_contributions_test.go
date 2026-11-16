@@ -1,5 +1,7 @@
 //go:build gui
 
+// Verifies builds and sorts local mock research contribution rows.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui/event.
 package gui
 
 import (
@@ -18,20 +20,26 @@ func TestResearchContributionHeadersResortMockFriends(t *testing.T) {
 	if !containsLabel(collectTextLabels(content), "Your Contribution: 2.4 pflops mock total") {
 		t.Fatal("personal contribution was not rendered separately")
 	}
-	if header := findButtonByLabel(content, "Friend"); header == nil {
-		t.Fatal("friend sort header was not rendered")
-	} else {
-		header.Click()
-		event.ExecuteDeferred()
+	{
+		header := findButtonByLabel(content, "Friend")
+		if header == nil {
+			t.Fatal("friend sort header was not rendered")
+		} else {
+			header.Click()
+			event.ExecuteDeferred()
+		}
 	}
 	content = game.buildSectionContainer(section)
 	content.Validate()
 	assertContributionOrder(t, collectTextLabels(content), []string{"Mara", "Puck", "River", "Zvyo"})
-	if header := findButtonByLabel(content, "Contribution"); header == nil {
-		t.Fatal("contribution sort header was not rendered")
-	} else {
-		header.Click()
-		event.ExecuteDeferred()
+	{
+		header := findButtonByLabel(content, "Contribution")
+		if header == nil {
+			t.Fatal("contribution sort header was not rendered")
+		} else {
+			header.Click()
+			event.ExecuteDeferred()
+		}
 	}
 	content = game.buildSectionContainer(section)
 	content.Validate()

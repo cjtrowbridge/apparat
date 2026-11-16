@@ -1,5 +1,7 @@
 //go:build gui
 
+// Starts the native Ebitengine GUI loop.
+// Dependencies: github.com/hajimehoshi/ebiten/v2.
 package gui
 
 import (
@@ -21,5 +23,8 @@ func RunWithRuntimeInfo(ctx context.Context, info RuntimeInfo) error {
 	ebiten.SetWindowTitle("Apparat")
 	ebiten.SetWindowIcon(appIconImages())
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	return ebiten.RunGame(NewGameWithRuntimeInfo(info))
+	game := NewGameWithRuntimeInfo(info)
+	game.runContext = ctx
+	defer game.Close()
+	return ebiten.RunGame(game)
 }

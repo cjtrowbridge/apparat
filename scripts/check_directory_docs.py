@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Fail when tracked source directories or scripts are missing documentation."""
+"""
+Fail when tracked source directories or scripts are missing documentation.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 
 from __future__ import annotations
 

@@ -1,3 +1,5 @@
+// Coordinates tab selection and HUD shell state.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud.
 package gui
 
 import "github.com/cjtrowbridge/apparat/internal/hud"
@@ -10,6 +12,7 @@ type RuntimeInfo struct {
 	WorkingDir  string
 	RuntimePath string
 	BinaryPath  string
+	Queries     ServiceQueries
 }
 
 func NewAdapter() Adapter {

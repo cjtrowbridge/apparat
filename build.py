@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for the canonical Apparat build script."""
+"""
+Compatibility wrapper for the canonical Apparat build script.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 
 from __future__ import annotations
 

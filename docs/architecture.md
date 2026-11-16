@@ -4,7 +4,7 @@ Apparat is a ports-and-adapters Go application with one shared runtime and sever
 
 ## Status
 
-This file is the target architecture contract. The current repository implements startup, SQLite, identity, logging, messaging, and a five-tab GUI mockup, but several package, command/query, lifecycle, and adapter boundaries below remain planned. `ROADMAP.md` defines the evidence required before a planned boundary is treated as implemented.
+Phase 8 implements a concrete shared node, OS ownership lock, transactional startup/shutdown, SQLite adapters, local mock services, direct GUI queries and a loopback read-only HTTP adapter. Projects, Tasks, distributed queues, real providers and remote trust below remain target contracts. `ROADMAP.md` distinguishes those future effects.
 
 ## Package Boundaries
 
@@ -71,10 +71,10 @@ The queue owner never relies on a worker's local database as queue truth. Lease 
 
 - `apparat` is compiled with the GUI build tag by the release pipeline and enters the Ebitengine run loop during normal execution.
 - `apparatd` is compiled without the GUI build tag and must remain safe on devices without desktop libraries or a display server.
-- The current implementation uses binary-specific default runtime roots, so GUI and headless smoke runs produce separate databases, logs, caches, and `last_run.log` files unless `--runtime-dir` overrides them. This is current evidence, not the final node-ownership model.
+- GUI and headless now share one default node root; the runtime lock rejects competing owners. Explicit roots select independent nodes.
 - `last_run.log` is reset on each process start for immediate debugging, while append-only JSONL logs under `logs/` retain durable structured history.
 
-The target one-node contract is:
+The implemented one-node contract (with daemon-client mode still deferred) is:
 
 - `apparat` and `apparatd` embed the same headless-capable core and are alternative process forms of one logical node.
 - One default node runtime root contains one device identity, SQLite database, service inventory, artifact store, and operational state.
@@ -149,3 +149,11 @@ Routing first excludes incompatible capabilities, then applies priority and fall
 - Adapt: ports/adapters, shared GUI/headless runtime, command/event/store flow, module registration, SQLite lifecycle ideas, identity diagnostics, JSONL logging, mock-data-first UI development.
 - Rewrite: HUD input model, tab layout, routing, identity, persistence, API, and service adapters in Apparat-native packages.
 - Reject: RPG-first product framing, qTox/Tor primary transport, mouse-first input as the foundation, Ebitengine alpha as the default, and Python Whisper as embedded ASR.
+
+## Phase 8 concrete ownership
+
+`cmd/apparat`, `cmd/apparatd` and the mobile root explicitly register mock drivers. `internal/app.Runtime` owns the lock, persistence adapter, service manager, listener and one cancellable supervision loop. It imports no HUD or GUI. `Services` accepts a four-operation persistence boundary plus atomic demo seeding and injected clock/ID functions; driver probes are ordinary functions. No registry discovery, plugin loader, event bus or worker pool is present.
+
+Desired configuration and observed health/capabilities commit separately. Revision and observation timestamps fence late results; removal cascades only by service ID. A capacity-one hint channel suggests re-querying after commits. One GUI worker queries serially with a two-second timeout, retains the last value on query failure and checks periodically for freshness. It strips timestamp-only display changes to avoid rebuilding an unchanged view. SQLite owns truth; selection/scroll/focus/gesture state remain in the GUI.
+
+Input capture uses one pointer owner across mouse/touch debug, tabs, body scrolling and PTT. Secondary pointers cannot replace it. Focus/geometry changes cancel voice capture. Deferred EbitenUI activation is suppressed for two updates after a drag. Keyboard/controller shortcuts retain the existing HUD action model. No actual recording or remote action is implemented.

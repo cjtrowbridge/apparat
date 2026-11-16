@@ -1,5 +1,7 @@
 //go:build gui
 
+// Builds selector and content-panel widgets.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui/image, github.com/ebitenui/ebitenui/widget.
 package gui
 
 import (

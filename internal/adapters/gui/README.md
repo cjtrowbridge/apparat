@@ -72,3 +72,54 @@ Linux GUI builds require native desktop development headers used by Ebitengine/G
 ## Android Mobile Runner
 
 Android GUI APKs use the `cmd/apparatmobile` binding package plus the tracked `android/apparat` wrapper. Direct `GoNativeActivity` paths can initialize Apparat runtime state but do not attach Ebitengine's `EbitenView` on the Pixel, so the wrapper activity owns Android view lifecycle and this adapter owns the shared HUD game model.
+
+## Source inventory
+
+- `app_icon.go`: Embeds the application icon for the GUI shell.
+- `debug_overlay.go`: Renders developer diagnostics over the HUD.
+- `dependencies.go`: Records the package dependency boundary.
+- `ebiten_shell.go`: Updates and draws the Ebitengine HUD shell.
+- `ebiten_shell_test.go`: Verifies updates and draws the Ebitengine HUD shell.
+- `layout_bounds.go`: Computes bounded tab and content geometry.
+- `master_detail.go`: Builds selector and content-panel widgets.
+- `research_contributions.go`: Builds and sorts local mock research contribution rows.
+- `research_contributions_test.go`: Verifies builds and sorts local mock research contribution rows.
+- `run_ebiten.go`: Starts the native Ebitengine GUI loop.
+- `run_stub.go`: Reports the GUI-disabled build behavior.
+- `selector_panel_test.go`: Verifies checks selector-panel geometry and selection behavior.
+- `shell.go`: Coordinates tab selection and HUD shell state.
+- `tab_strip_interaction_test.go`: Verifies checks tab-strip pointer and drag arbitration.
+- `tab_strip_scroll_test.go`: Verifies checks bounded tab-strip scrolling.
+- `table.go`: Builds retained HUD table widgets.
+- `theme.go`: Loads fonts and defines GUI presentation defaults.
+- `ui_builder.go`: Builds retained tab-body widget layouts.
+- `update_status.go`: Maps updater outcomes to safe explanatory HUD status.
+- `update_status_test.go`: Verifies maps updater outcomes to safe explanatory HUD status.
+- `vertical_scroll.go`: Manages bounded vertical widget scrolling.
+- `vertical_scroll_test.go`: Verifies manages bounded vertical widget scrolling.
+
+- `settings_test.go`: Settings diagnostics and update callback/status regressions split from shell layout tests to retain the 400-line bound.
+
+- `live_services.go`: Projects live local services into Cluster Routing without HTTP or SQL.
+
+- `services.go`: Loads immutable service projections outside the render/update goroutine.
+
+- `services_test.go`: Verifies direct query projection and cancellation without a display or HTTP.
+
+- `gesture.go`: Arbitrates one pointer owner across touch and mouse controls.
+
+- `gesture_test.go`: Tests exclusive gesture capture and cancellation across pointer sources.
+
+Phase 8 adds a live Local services detail under Cluster. One context-owned worker calls the core directly, serializes queries, coalesces snapshots and preserves a last-known projection on failure. There is no HTTP/SQL in Update/Draw. Timestamp-only observations do not rebuild widgets. A shared pointer owner arbitrates touch/mouse capture; geometry/focus cancellation cannot submit PTT. Native accessibility trees/screen-reader semantics remain unavailable in the canvas toolkit; names, visible state and keyboard shortcuts are retained, and Phase 17 owns the native accessibility acceptance gate. Real microphone/cancel semantics remain Phase 16.
+
+Android safe-area color comes from the GUI renderer through `BackgroundARGB` in the mobile bridge. The current fixed dark palette is authoritative; runtime theme switching is not implemented. The native parent and navigation background use that color, with light navigation icons and no automatic contrast scrim. Insets and touch bounds are unchanged. Verify matching background pixels and readable buttons in portrait/landscape on an authorized device; system/OEM styling on other devices requires separate evidence.
+
+`tab_icons.go` owns the four embedded Twemoji images in `emoji/`, decoded/scaled once on the GUI thread. Tab buttons are 54x54 with 28px symbols: ☭ 🔨 🖥️ 🧪 ⚙️. All five fit at 320 logical pixels; smaller windows retain overflow scrolling. Visible titles are replaced by name tooltips; descriptor accessibility labels and navigation actions remain. Test phone fit and narrow overflow with the tab-strip GUI tests and rendered Pixel 4a screenshots. This does not add a native accessibility tree.
+
+- `tab_icons.go`: Loads fixed tab artwork and supplies icon-only button contents.
+
+Icon tab buttons set their complete style explicitly and isolate it from the global text-button theme. Otherwise EbitenUI adds an empty text child and spacing beside the graphic, shifting icons off center. Keep screenshot checks alongside width/input tests.
+
+The shell grid contains icon navigation, a fixed 28px page heading derived from `ActiveTab().Title()`, and the remaining scrollable body. The title uses one face per Game and stays visible in collapsed detail and expanded master/detail views. Its measured height reduces the body viewport through grid layout; it does not overlay content. GUI tests and Pixel 4a portrait/landscape screenshots verify titles and scroll bounds.
+
+Updater status text now distinguishes an invalid package, incompatible signing key, and no newer published version. Status tests require safe explanatory text; unknown codes remain redacted.

@@ -1,3 +1,7 @@
+"""
+Checks directory docs test behavior with isolated unittest fixtures.
+Uses temporary directories and mocks; no device deployment is performed.
+"""
 import tempfile
 import unittest
 from pathlib import Path

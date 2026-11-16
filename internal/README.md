@@ -8,14 +8,13 @@ Every package with source files needs a local `README.md` that explains ownershi
 
 ## Inventory
 
-- `adapters`: GUI, persistence, and future external-system adapters.
-- `app`: shared runtime orchestration.
-- `cluster`: local cluster directory repositories and capability records.
-- `config`: runtime configuration and directory resolution.
-- `database`: SQLite lifecycle and migrations.
-- `domain`: durable product vocabulary and rules.
-- `hud`: mockable HUD state and input-facing view model.
-- `identity`: local user/device identity files and diagnostics.
-- `logging`: JSONL and last-run diagnostic logging.
-- `messaging`: durable inbox/outbox/replay primitives.
-- `platform`: OS lifecycle and platform capability boundaries.
+- **`adapters`**: GUI, persistence, and future external-system adapters.
+- **`app`**: shared runtime orchestration.
+- **`config`**: runtime configuration and directory resolution.
+- **`domain`**: durable product vocabulary and rules.
+- **`hud`**: mockable HUD state and input-facing view model.
+- **`identity`**: local user/device identity files and diagnostics.
+- **`logging`**: JSONL and last-run diagnostic logging.
+- **`platform`**: OS lifecycle and platform capability boundaries.
+
+SQLite lifecycle and transitional cluster/messaging repositories now live together under `adapters/persistence`; no SQL handle escapes that adapter.

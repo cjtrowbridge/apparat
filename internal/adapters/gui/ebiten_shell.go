@@ -1,8 +1,11 @@
 //go:build gui
 
+// Updates and draws the Ebitengine HUD shell.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui, github.com/ebitenui/ebitenui/widget.
 package gui
 
 import (
+	"context"
 	"fmt"
 	"image/color"
 	"sync/atomic"
@@ -44,9 +47,16 @@ const (
 
 type Game struct {
 	shell                          hud.Shell
+	runContext                     context.Context
+	gesture                        pointerGesture
+	cancelInputRequested           atomic.Bool
+	serviceUpdates                 <-chan ServiceProjection
+	serviceProjection              ServiceProjection
+	cancelQueries                  context.CancelFunc
 	ui                             *ebitenui.UI
 	theme                          *widget.Theme
 	selectorDescriptionFace        *ebitentext.Face
+	pageTitleFace                  *ebitentext.Face
 	width                          int
 	height                         int
 	layoutDirty                    bool
@@ -59,11 +69,8 @@ type Game struct {
 	debugOverlayOpen               bool
 	debugOverlayX                  int
 	debugOverlayY                  int
-	debugDrag                      bool
 	debugDragDX                    int
 	debugDragDY                    int
-	debugTouchActive               bool
-	debugTouchID                   ebiten.TouchID
 	tabScroll                      *widget.ScrollContainer
 	tabButtonCount                 int
 	tabStripContentWidth           int
@@ -71,25 +78,19 @@ type Game struct {
 	tabButtonRights                []int
 	tabStripScrollLeft             float64
 	tabButtons                     []*widget.Button
-	tabStripDragging               bool
 	tabStripDragDistance           int
 	tabStripDragMoved              bool
 	tabStripLastX                  int
-	tabTouchActive                 bool
-	tabTouchID                     ebiten.TouchID
 	tabRadioGroup                  *widget.RadioGroup
 	tabDragCancelUpdates           int
 	verticalScrolls                []*widget.ScrollContainer
 	bodyScroll                     *widget.ScrollContainer
-	bodyScrollDragging             bool
 	bodyScrollLastY                int
 	bodyScrollDragDistance         int
 	bodyScrollDragMoved            bool
 	bodyScrollCancelUpdates        int
 	bodyTabScrollLeft              float64
 	bodyTabScrollLocked            bool
-	bodyTouchActive                bool
-	bodyTouchID                    ebiten.TouchID
 	syncingTabButtonStates         bool
 	activeTabScrollPending         bool
 	selectedSections               map[hud.TabID]int
@@ -99,8 +100,6 @@ type Game struct {
 	researchContributionSort       hud.ContributionSort
 	researchContributionDescending bool
 	pttHeld                        bool
-	pttTouchActive                 bool
-	pttTouchID                     ebiten.TouchID
 	runtimeInfo                    RuntimeInfo
 	activeTabID                    atomic.Value
 	updateStatus                   atomic.Value
@@ -118,15 +117,21 @@ func (game *Game) SetUpdateStatus(code UpdateStatusCode) {
 }
 
 func (game *Game) UpdateStatus() string {
-	if status, ok := game.updateStatus.Load().(updateStatus); ok {
-		return status.Label
+	{
+		status, ok := game.updateStatus.Load().(updateStatus)
+		if ok {
+			return status.Label
+		}
 	}
 	return ""
 }
 
 func (game *Game) UpdateStatusDetail() string {
-	if status, ok := game.updateStatus.Load().(updateStatus); ok {
-		return status.Detail
+	{
+		status, ok := game.updateStatus.Load().(updateStatus)
+		if ok {
+			return status.Detail
+		}
 	}
 	return ""
 }
@@ -141,6 +146,7 @@ func NewGameWithRuntimeInfo(info RuntimeInfo) *Game {
 		shell:                          hud.NewShell(),
 		theme:                          theme,
 		selectorDescriptionFace:        createTextFace(11),
+		pageTitleFace:                  createTextFace(28),
 		width:                          1280,
 		height:                         800,
 		debugOverlayX:                  24,
@@ -152,23 +158,36 @@ func NewGameWithRuntimeInfo(info RuntimeInfo) *Game {
 		researchContributionDescending: true,
 		runtimeInfo:                    info,
 	}
+	if info.Queries != nil {
+		ctx, cancel := context.WithCancel(context.Background())
+		game.cancelQueries = cancel
+		game.serviceProjection.State = "loading"
+		game.serviceUpdates = WatchServices(ctx, info.Queries)
+	}
 	game.rebuildUI(game.shell.Snapshot())
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
 	return game
 }
 
 func (game *Game) Update() error {
-	if game.layoutDirty {
+	if game.runContext != nil && game.runContext.Err() != nil {
+		return ebiten.Termination
+	}
+	if game.cancelInputRequested.Swap(false) {
+		game.cancelPointer()
+	}
+	game.receiveServices()
+	if game.layoutDirty && game.gesture.Owner == gestureNone {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())
 	}
+	game.updatePointerState()
 	game.ui.Update()
 	game.enforceBodyTabScrollLock()
 	game.advanceTabDragCancellation()
 	game.advanceBodyScrollCancellation()
 	game.applyUpdateStatus()
 	startIndex := game.shell.Snapshot().ActiveIndex
-	game.updatePointerState()
 	ctrlPressed := ebiten.IsKeyPressed(ebiten.KeyControl)
 	pageDownPressed := ebiten.IsKeyPressed(ebiten.KeyPageDown)
 	pageUpPressed := ebiten.IsKeyPressed(ebiten.KeyPageUp)
@@ -199,8 +218,11 @@ func (game *Game) Update() error {
 	}
 	game.rightCtrlHeld = rightCtrl
 	game.updateGamepad()
-	if activeIndex := game.shell.Snapshot().ActiveIndex; activeIndex != startIndex {
-		game.rebuildUI(game.shell.Snapshot())
+	{
+		activeIndex := game.shell.Snapshot().ActiveIndex
+		if activeIndex != startIndex {
+			game.rebuildUI(game.shell.Snapshot())
+		}
 	}
 	game.ensureActiveTabVisible()
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
@@ -224,8 +246,11 @@ func (game *Game) applyUpdateStatus() {
 }
 
 func (game *Game) ActiveTabID() string {
-	if id, ok := game.activeTabID.Load().(string); ok {
-		return id
+	{
+		id, ok := game.activeTabID.Load().(string)
+		if ok {
+			return id
+		}
 	}
 	return ""
 }
@@ -259,15 +284,21 @@ func (game *Game) updateGamepad() {
 
 func (game *Game) applyTabAction(action hud.Action) {
 	active := game.shell.Snapshot().ActiveIndex
-	if err := game.shell.ApplyAction(action); err == nil && game.shell.Snapshot().ActiveIndex != active {
-		game.requestActiveTabVisible()
+	{
+		err := game.shell.ApplyAction(action)
+		if err == nil && game.shell.Snapshot().ActiveIndex != active {
+			game.requestActiveTabVisible()
+		}
 	}
 }
 
 func (game *Game) selectTabWithReveal(index int) {
 	active := game.shell.Snapshot().ActiveIndex
-	if err := game.shell.SelectTab(index); err == nil && game.shell.Snapshot().ActiveIndex != active {
-		game.requestActiveTabVisible()
+	{
+		err := game.shell.SelectTab(index)
+		if err == nil && game.shell.Snapshot().ActiveIndex != active {
+			game.requestActiveTabVisible()
+		}
 	}
 }
 
@@ -286,6 +317,12 @@ func (game *Game) Draw(screen *ebiten.Image) {
 
 func drawDiagnostics(screen *ebiten.Image, snapshot hud.Snapshot, height int) {
 	y := height - diagnosticsHeight + 6
+	if screen.Bounds().Dx() < collapsedWidth {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("voice=%s input=%s", snapshot.VoiceState, snapshot.Diagnostics.Input), windowMargin, y)
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("tab=%s theme=%s", snapshot.ActiveTab().ID(), snapshot.Config.Display.Theme), windowMargin, y+18)
+		ebitenutil.DebugPrintAt(screen, "Swipe tabs | Hold PTT | Ctrl+PgUp/PgDn", windowMargin, y+36)
+		return
+	}
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("voice=%s route=%s input=%s", snapshot.VoiceState, snapshot.Diagnostics.ActiveRoute, snapshot.Diagnostics.Input), windowMargin, y)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("config tabPlacement=%s theme=%s scale=%.1f", snapshot.Config.TabView.Placement, snapshot.Config.Display.Theme, snapshot.Config.Display.Scale), windowMargin, y+18)
 	ebitenutil.DebugPrintAt(screen, "L1/R1 or Ctrl+PageUp/PageDown switch tabs • R2/right Ctrl push-to-talk", windowMargin, y+36)
@@ -340,6 +377,7 @@ func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {
 		game.height = outsideHeight
 	}
 	if changed {
+		game.cancelPointer()
 		game.requestActiveTabVisible()
 	}
 	return game.width, game.height

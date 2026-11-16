@@ -1,5 +1,7 @@
 //go:build gui
 
+// Computes bounded tab and content geometry.
+// Dependencies: github.com/ebitenui/ebitenui/input, github.com/ebitenui/ebitenui/widget, github.com/hajimehoshi/ebiten/v2.
 package gui
 
 import (
@@ -45,39 +47,57 @@ func (b *boundedPreferredWidget) Validate() {
 }
 
 func (b *boundedPreferredWidget) RequestRelayout() {
-	if relayoutable, ok := b.child.(widget.Relayoutable); ok {
-		relayoutable.RequestRelayout()
+	{
+		relayoutable, ok := b.child.(widget.Relayoutable)
+		if ok {
+			relayoutable.RequestRelayout()
+		}
 	}
 }
 
 func (b *boundedPreferredWidget) Render(screen *ebiten.Image) {
-	if renderer, ok := b.child.(widget.Renderer); ok {
-		renderer.Render(screen)
+	{
+		renderer, ok := b.child.(widget.Renderer)
+		if ok {
+			renderer.Render(screen)
+		}
 	}
 }
 
 func (b *boundedPreferredWidget) Update(updObj *widget.UpdateObject) {
-	if updater, ok := b.child.(widget.Updater); ok {
-		updater.Update(updObj)
+	{
+		updater, ok := b.child.(widget.Updater)
+		if ok {
+			updater.Update(updObj)
+		}
 	}
 }
 
 func (b *boundedPreferredWidget) SetupInputLayer(def input.DeferredSetupInputLayerFunc) {
-	if layerer, ok := b.child.(input.Layerer); ok {
-		layerer.SetupInputLayer(def)
+	{
+		layerer, ok := b.child.(input.Layerer)
+		if ok {
+			layerer.SetupInputLayer(def)
+		}
 	}
 }
 
 func (b *boundedPreferredWidget) GetFocusers() []widget.Focuser {
-	if container, ok := b.child.(interface{ GetFocusers() []widget.Focuser }); ok {
-		return container.GetFocusers()
+	{
+		container, ok := b.child.(interface{ GetFocusers() []widget.Focuser })
+		if ok {
+			return container.GetFocusers()
+		}
 	}
 	return nil
 }
 
 func (b *boundedPreferredWidget) GetDropTargets() []widget.HasWidget {
-	if dropper, ok := b.child.(widget.Dropper); ok {
-		return dropper.GetDropTargets()
+	{
+		dropper, ok := b.child.(widget.Dropper)
+		if ok {
+			return dropper.GetDropTargets()
+		}
 	}
 	return nil
 }
@@ -91,7 +111,8 @@ func (game *Game) hudTextMaxWidth() float64 {
 }
 
 func (game *Game) detailTextMaxWidth() float64 {
-	width := game.hudPreferredWidth() - 72
+	// Keep readable detail text outside the floating PTT capture region.
+	width := game.hudPreferredWidth() - 72 - (2*pttRadius + pttMargin)
 	if !game.collapsed() {
 		width -= game.masterListWidth() + 40
 	}

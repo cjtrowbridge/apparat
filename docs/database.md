@@ -2,7 +2,7 @@
 
 SQLite stores durable application metadata and workflow state; ordinary project files remain filesystem and Git data.
 
-This is the target persistence contract. Phase 3 implements the initial SQLite lifecycle and messaging primitives; most Project, Task, service, queue, artifact, and remote-projection records below remain planned until their Roadmap phases produce migration and restart evidence.
+Phase 8 implements SQLite lifecycle, migrated transitional cluster/messaging tables, service intent/observations/capabilities and verified backup/restore. Project, Task, queue, artifact and remote-projection records below remain target contracts.
 
 ## Layers
 
@@ -74,8 +74,18 @@ Phase 3 implements the first SQLite lifecycle:
 - Provide read-only diagnostics for user version, foreign-key status, and migration count.
 - Provide sortable local IDs and UTC millisecond helpers.
 
-The target node runtime permits exactly one authoritative SQLite writer process. `apparat` and `apparatd` use one logical node root and an exclusive runtime lock after Phase 8. Current binary-specific default roots remain implementation evidence until that migration is complete. Multiple independent nodes on one host require explicit roots and identities rather than concurrent writers to one database.
+The node runtime permits exactly one authoritative SQLite writer process. `apparat` and `apparatd` now use one logical default node root and an exclusive runtime lock. Multiple independent nodes on one host require explicit roots and identities rather than concurrent writers to one database.
 
 ## Backup, Repair, Restore, And Encryption
 
 The MVP defines backup, repair, restore, and integrity checks before broad replication. Optional at-rest encryption remains a Phase 8 decision gate, not a default until key storage, backup interaction, and recovery are designed and validated.
+
+## Implemented local schema and recovery
+
+`internal/adapters/persistence` privately owns one writable `database/sql` connection. Foreign keys are enabled in the connection URI (including replacement connections); busy timeout is 1,500 ms. WAL is disabled. Only typed SQLite BUSY/LOCKED errors are retryable; cancellation, corruption and foreign-key errors are not replay hits. Callers own any bounded retry decision; no automatic retry subsystem exists.
+
+Forward migrations preserve the original Phase 3 migration bytes/checksum, adopt transitional cluster/messaging tables as version 2 and add `services`, `service_observations`, `service_capabilities` at version 3. Versions must increase and names must be unique; checksum/name mismatches fail visibly. Each migration is transactional. Older development IDs in transitional tables remain opaque and unchanged. New service/capability IDs use canonical 26-character Crockford ULIDs; no legacy identifier is silently reinterpreted.
+
+Back up through the owning runtime with `--backup /new/backup.db`: integrity check, SQLite `VACUUM INTO`, file sync and a SHA-256/schema/app metadata sidecar. Existing snapshot or metadata files cause refusal. Restore with `--restore-backup /backup.db --runtime-dir /new/disposable-root`: verify metadata/digest, create only a new destination, integrity-check it, confirm schema and close cleanly. A checksum proves file integrity, not origin/authenticity. Test the restored root with `--doctor` and `--services` before choosing it as authoritative.
+
+For a full-node backup, stop every GUI/headless/older process and preserve the complete runtime root including encrypted identity files, manifests and application state. A database snapshot alone does not back up keys. Keep the original root and backup untouched during repair. On migration failure do not edit stored checksums or delete rows; retain failure diagnostics and restore a verified compatible snapshot into a new root. Downgrading code against a newer schema is unsupported; rollback means selecting the preserved old root with a matching old binary after all other owners stop. Cross-device/filesystem moves are manual offline recovery when atomic rename is unavailable. Optional database encryption and WAL remain gated on key recovery/platform evidence.

@@ -1,5 +1,7 @@
 //go:build gui
 
+// Embeds the application icon for the GUI shell.
+// Uses package-local contracts and Go standard-library types.
 package gui
 
 import (

@@ -74,3 +74,20 @@ Tab bodies use structured layout patterns rather than free-form text placement:
 - List rows, fieldset rows, buttons, and form controls must keep touch-first target sizing comparable to tab buttons.
 - Text and input-like controls are block-level elements. Text wraps, truncates, clips, or scrolls inside the owning fieldset or panel instead of drawing over neighboring content.
 - Every body/list/detail viewport starts below the fixed top tab row and ends above the bottom diagnostics/status area. Wheel and vertical drag/touch input scroll the innermost owning viewport; tab-strip horizontal swipes remain separate.
+
+## Source inventory
+
+- `actions.go`: Defines named HUD actions and input-binding defaults.
+- `config.go`: Defines configuration values and their defaults.
+- `content.go`: Builds the five mock tab content models.
+- `hud.go`: Defines the HUD view-model structures.
+- `hud_test.go`: Verifies defines the HUD view-model structures.
+- `mockup_sections.go`: Builds explicitly fictional tab section content.
+- `research_contributions.go`: Builds and sorts local mock research contribution rows.
+- `research_contributions_test.go`: Verifies builds and sorts local mock research contribution rows.
+- `scenario_data.go`: Supplies fictional multi-page HUD scenarios.
+- `scenario_data_test.go`: Verifies supplies fictional multi-page HUD scenarios.
+- `shell.go`: Coordinates tab selection and HUD shell state.
+- `tabs.go`: Defines stable tab identities and order.
+
+Tab descriptors preserve stable IDs, titles and accessibility labels while the GUI presents symbol-only navigation: ☭ Comrades, 🔨 Projects, 🖥️ Cluster, 🧪 Research, ⚙️ Settings. Comrades retains its existing font glyph; the GUI maps the remaining IDs to bundled artwork.

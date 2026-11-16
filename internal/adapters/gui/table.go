@@ -1,5 +1,7 @@
 //go:build gui
 
+// Builds retained HUD table widgets.
+// Dependencies: github.com/ebitenui/ebitenui/image, github.com/ebitenui/ebitenui/widget, github.com/hajimehoshi/ebiten/v2.
 package gui
 
 import (

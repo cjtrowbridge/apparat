@@ -1,3 +1,5 @@
+// Supplies fictional multi-page HUD scenarios.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 // scenarioSections provides deliberately fictional data dense enough to exercise
@@ -42,24 +44,6 @@ func scenarioSections(id TabID) []Section {
 	default:
 		return nil
 	}
-}
-
-func taskScenarioSections() []Section {
-	return []Section{scenario("Task Catalog", "Mock durable-task definitions.", "Morning summary|mock schedule 08:00", "Release watcher|mock webhook trigger", "Research window|mock quiet-hours schedule", "Project backup|mock approval required"),
-		scenario("Pending Approvals", "Human authorization examples.", "Publish artifact|mock awaiting owner", "Rotate device key|mock requires confirmation", "Run backup|mock storage cost estimate", "Share compute grant|mock policy review"),
-		scenario("Run History", "Mock workflow and retry records.", "run-204|mock completed in 14 seconds", "run-203|mock waiting for worker", "run-202|mock retry scheduled", "run-201|mock cancelled safely"),
-		scenario("Webhook Inbox", "Future authenticated trigger examples.", "Build completed|mock source CI", "Sensor alert|mock local bridge", "Calendar event|mock deferred adapter", "Issue mention|mock approval policy"),
-		scenario("Failure Review", "Mock durable failure context.", "run-199|mock timeout, retry allowed", "run-198|mock permission denied", "run-197|mock route unavailable", "run-196|mock user cancelled"),
-		scenario("Task Controls", "Disabled until scheduler ownership exists.", "Create workflow|mock disabled", "Pause scheduler|mock disabled", "Replay run|mock disabled", "Export history|mock disabled")}
-}
-
-func routingScenarioSections() []Section {
-	return []Section{scenario("Routing Profiles", "Mock policy profiles for different work types.", "Personal chat|mock text route preferred", "Project review|mock privacy constrained", "Image workshop|mock workstation first", "Voice capture|mock worker ASR fallback"),
-		scenario("Compatible Destinations", "Compatibility filters run before priority.", "text_generation|mock worker then workstation", "image_generation|mock workstation only", "speech_to_text|mock worker only", "research_boinc|mock schedule-gated pool"),
-		scenario("Queue State", "Mock queue ownership and pressure.", "personal-text|mock depth 2, owner worker", "image-lab|mock depth 0, owner workstation", "voice-asr|mock depth 1, retry ready", "research-night|mock paused by schedule"),
-		scenario("Fallback Order", "Ordered examples, not dynamic optimization.", "Project chat|mock worker -> workstation -> local draft", "ASR|mock worker -> offline capture", "Image|mock workstation -> deferred queue", "Research|mock budget hold -> skipped"),
-		scenario("Service Health", "Mock adapter diagnostics.", "OpenAI-compatible|mock endpoint unchecked", "Ollama|mock inventory stale", "llama.cpp|mock local adapter planned", "whisper.cpp|mock portable reference"),
-		scenario("Policy Events", "Mock routing explanations.", "09:43|mock image request rejected: capability", "09:35|mock text request admitted", "Yesterday|mock fallback profile changed", "Last week|mock privacy rule reviewed")}
 }
 
 func scenario(title string, description string, entries ...string) Section {

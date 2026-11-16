@@ -1,3 +1,5 @@
+// Builds and sorts local mock research contribution rows.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 import "sort"

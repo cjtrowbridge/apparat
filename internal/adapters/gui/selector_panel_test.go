@@ -1,5 +1,7 @@
 //go:build gui
 
+// Verifies checks selector-panel geometry and selection behavior.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui/widget.
 package gui
 
 import (
@@ -13,12 +15,18 @@ func TestClusterSelectorHeadingsAreTextAndTasksOwnsTheContentPanel(t *testing.T)
 	game := NewGame()
 	cluster := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[2]
 	game.selectSection(cluster.ID(), 0)
-	if got := game.selectedSectionIndex(cluster); got != -1 {
-		t.Fatalf("heading selection resolved to %d, want no selection", got)
+	{
+		got := game.selectedSectionIndex(cluster)
+		if got != -1 {
+			t.Fatalf("heading selection resolved to %d, want no selection", got)
+		}
 	}
 	body := game.buildMasterDetailTab(cluster)
-	if _, ok := unwrapBounded(body).(*widget.Container); !ok {
-		t.Fatalf("cluster body type = %T, want *widget.Container", body)
+	{
+		_, ok := unwrapBounded(body).(*widget.Container)
+		if !ok {
+			t.Fatalf("cluster body type = %T, want *widget.Container", body)
+		}
 	}
 	heading := game.selectorHeading(cluster.Sections[0])
 	texts := collectTextNodes(heading)
@@ -30,12 +38,18 @@ func TestClusterSelectorHeadingsAreTextAndTasksOwnsTheContentPanel(t *testing.T)
 			t.Fatalf("selector heading text %q MaxWidth = %.1f, want positive", text.Label, text.MaxWidth)
 		}
 	}
-	if details := game.detailSections(cluster); details != nil {
-		t.Fatalf("initial cluster details = %#v, want blank content panel", details)
+	{
+		details := game.detailSections(cluster)
+		if details != nil {
+			t.Fatalf("initial cluster details = %#v, want blank content panel", details)
+		}
 	}
 	game.selectSection(cluster.ID(), 1)
-	if got := game.selectedSectionIndex(cluster); got != 1 {
-		t.Fatalf("explicit selection = %d, want 1", got)
+	{
+		got := game.selectedSectionIndex(cluster)
+		if got != 1 {
+			t.Fatalf("explicit selection = %d, want 1", got)
+		}
 	}
 	game.selectSection(cluster.ID(), 10)
 	details := game.detailSections(cluster)
@@ -50,11 +64,17 @@ func TestMasterDetailTabsStartWithBlankContentPanels(t *testing.T) {
 		if tabData.ID() == hud.TabSettings {
 			continue
 		}
-		if got := game.selectedSectionIndex(tabData); got != -1 {
-			t.Fatalf("%s initial selection = %d, want none", tabData.ID(), got)
+		{
+			got := game.selectedSectionIndex(tabData)
+			if got != -1 {
+				t.Fatalf("%s initial selection = %d, want none", tabData.ID(), got)
+			}
 		}
-		if details := game.detailSections(tabData); details != nil {
-			t.Fatalf("%s initial details = %#v, want blank panel", tabData.ID(), details)
+		{
+			details := game.detailSections(tabData)
+			if details != nil {
+				t.Fatalf("%s initial details = %#v, want blank panel", tabData.ID(), details)
+			}
 		}
 	}
 }

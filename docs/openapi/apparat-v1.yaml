@@ -1,360 +1,365 @@
-openapi: 3.1.0
-info:
-  title: Apparat API
-  version: 0.1.0
-servers:
-  - url: https://apparat.local
-security:
-  - mutualTLS: []
-paths:
-  /v1/health:
-    get:
-      summary: Health and readiness
-      responses:
-        "200":
-          description: Device health
-  /v1/device:
-    get:
-      summary: Authenticated device record
-      responses:
-        "200":
-          description: Device identity, roles, and trust
-  /v1/capabilities:
-    get:
-      summary: Safe aggregate typed workload capabilities for this device
-      responses:
-        "200":
-          description: Capabilities for text, image, video, STT, TTS, BOINC, and future classes
-  /v1/services:
-    get:
-      summary: List authorization-filtered logical services owned by this device
-      responses:
-        "200":
-          description: Safe service identities, health, policy, revision, and expiry without local endpoints or credentials
-  /v1/services/{service_id}:
-    get:
-      summary: Get one logical local-service projection
-      parameters:
-        - $ref: "#/components/parameters/ServiceID"
-      responses:
-        "200":
-          description: Safe logical service projection
-        "404":
-          description: Service is unknown or not visible to the caller
-  /v1/services/{service_id}/capabilities:
-    get:
-      summary: List safe capabilities observed for one logical service
-      parameters:
-        - $ref: "#/components/parameters/ServiceID"
-      responses:
-        "200":
-          description: Capability IDs, workload classes, models, features, limits, observation time, and expiry
-  /v1/projects:
-    get:
-      summary: List projects authoritatively owned by this device
-      responses:
-        "200":
-          description: Authorized owner-local project summaries; callers merge owners into a cluster-wide catalog
-  /v1/projects/{project_id}:
-    get:
-      summary: Get an owner-local project summary
-      parameters:
-        - $ref: "#/components/parameters/ProjectID"
-      responses:
-        "200":
-          description: Authorized project summary and availability
-  /v1/projects/{project_id}/tasks:
-    get:
-      summary: List Apparat Task entrypoints for an owned project
-      parameters:
-        - $ref: "#/components/parameters/ProjectID"
-      responses:
-        "200":
-          description: Task entrypoints and trigger summaries; the project is a Pipeline when this list is non-empty
-  /v1/projects/{project_id}/tasks/{task_id}/runs:
-    post:
-      summary: Manually request execution of a project Task entrypoint
-      parameters:
-        - $ref: "#/components/parameters/ProjectID"
-        - $ref: "#/components/parameters/TaskID"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Task run accepted by the project owner
-          headers:
-            Location:
-              schema:
-                type: string
-  /v1/jobs:
-    post:
-      summary: Submit an asynchronous workload job
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Job accepted
-          headers:
-            Location:
-              schema:
-                type: string
-  /v1/jobs/{id}:
-    get:
-      summary: Get job state
-      parameters:
-        - $ref: "#/components/parameters/ID"
-      responses:
-        "200":
-          description: Job state
-  /v1/jobs/{id}/cancel:
-    post:
-      summary: Cancel a job
-      parameters:
-        - $ref: "#/components/parameters/ID"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Cancellation accepted
-  /v1/queues/{queue_id}/jobs:
-    post:
-      summary: Submit a job to the authoritative queue owner
-      parameters:
-        - $ref: "#/components/parameters/QueueID"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Queue owner validated, persisted, and accepted the job
-          headers:
-            Location:
-              schema:
-                type: string
-  /v1/queues/{queue_id}/claims:
-    post:
-      summary: Poll or long-poll the queue owner for a compatible worker lease
-      parameters:
-        - $ref: "#/components/parameters/QueueID"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "200":
-          description: One bounded lease selected by the queue owner
-        "204":
-          description: No compatible work is currently available
-  /v1/queues/{queue_id}/leases/{lease_id}/heartbeat:
-    post:
-      summary: Renew or report bounded progress for an active worker lease
-      parameters:
-        - $ref: "#/components/parameters/QueueID"
-        - $ref: "#/components/parameters/LeaseID"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Heartbeat accepted by the queue owner
-  /v1/queues/{queue_id}/leases/{lease_id}/complete:
-    post:
-      summary: Submit a signed terminal result or failure to the queue owner
-      parameters:
-        - $ref: "#/components/parameters/QueueID"
-        - $ref: "#/components/parameters/LeaseID"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Result accepted for authoritative validation and idempotent completion
-  /v1/events:
-    get:
-      summary: Cursor-based long polling
-      parameters:
-        - name: after
-          in: query
-          schema:
-            type: string
-        - name: wait
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Event page
-  /v1/project-transactions:
-    post:
-      summary: Submit an owner-authoritative project transaction
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Transaction accepted
-  /v1/artifacts:
-    post:
-      summary: Begin a bounded authenticated artifact upload
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "202":
-          description: Upload resource created; bytes remain temporary until size and SHA-256 validation succeeds
-          headers:
-            Location:
-              schema:
-                type: string
-  /v1/artifacts/{artifact_id}:
-    get:
-      summary: Get authorized artifact metadata or verified bytes with range support
-      parameters:
-        - $ref: "#/components/parameters/ArtifactID"
-      responses:
-        "200":
-          description: Authorized artifact metadata or content
-        "404":
-          description: Artifact is unknown, unavailable, expired, or not visible to the caller
-components:
-  securitySchemes:
-    mutualTLS:
-      type: mutualTLS
-  parameters:
-    ID:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-    ProjectID:
-      name: project_id
-      in: path
-      required: true
-      schema:
-        type: string
-    TaskID:
-      name: task_id
-      in: path
-      required: true
-      schema:
-        type: string
-    QueueID:
-      name: queue_id
-      in: path
-      required: true
-      schema:
-        type: string
-    LeaseID:
-      name: lease_id
-      in: path
-      required: true
-      schema:
-        type: string
-    ServiceID:
-      name: service_id
-      in: path
-      required: true
-      schema:
-        type: string
-    ArtifactID:
-      name: artifact_id
-      in: path
-      required: true
-      schema:
-        type: string
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      required: true
-      schema:
-        type: string
-  schemas:
-    WorkloadClass:
-      type: string
-      enum:
-        - text_generation
-        - image_generation
-        - video_generation
-        - speech_to_text
-        - text_to_speech
-        - research_boinc
-    DriverKind:
-      type: string
-      description: Statically registered provider protocol; not a concrete service-instance identity
-      examples:
-        - ollama
-        - openai_compatible
-        - llama_cpp
-        - automatic1111
-        - comfyui
-    ServiceProjection:
-      type: object
-      required:
-        - service_id
-        - owner_device_id
-        - driver_kind
-        - revision
-        - observed_at
-        - expires_at
-      properties:
-        service_id:
-          type: string
-        owner_device_id:
-          type: string
-        driver_kind:
-          $ref: "#/components/schemas/DriverKind"
-        display_name:
-          type: string
-        health:
-          type: string
-        revision:
-          type: integer
-          minimum: 0
-        observed_at:
-          type: integer
-          description: UTC milliseconds
-        expires_at:
-          type: integer
-          description: UTC milliseconds; expired services are not routable
-        capabilities:
-          type: array
-          items:
-            $ref: "#/components/schemas/CapabilityProjection"
-      description: Never contains a provider-local endpoint, credential reference, token, prompt, or result
-    CapabilityProjection:
-      type: object
-      required:
-        - capability_id
-        - service_id
-        - workload_class
-        - schema_version
-      properties:
-        capability_id:
-          type: string
-        service_id:
-          type: string
-        workload_class:
-          $ref: "#/components/schemas/WorkloadClass"
-        schema_version:
-          type: string
-        model_id:
-          type: string
-        features:
-          type: array
-          items:
-            type: string
-        limits:
-          type: object
-          additionalProperties: true
-    ArtifactMetadata:
-      type: object
-      required:
-        - artifact_id
-        - owner_device_id
-        - sha256
-        - size
-        - mime_type
-      properties:
-        artifact_id:
-          type: string
-        owner_device_id:
-          type: string
-        sha256:
-          type: string
-          pattern: "^[a-f0-9]{64}$"
-        size:
-          type: integer
-          minimum: 0
-        mime_type:
-          type: string
-        expires_at:
-          type: integer
-          description: Optional UTC milliseconds
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Apparat API",
+    "version": "0.1.0",
+    "description": "Phase 8 implements only the six read-only loopback operations marked x-phase: 8. Phase 9 adds authenticated networking; other operations remain future contracts."
+  },
+  "servers": [{"url": "http://127.0.0.1:{port}", "variables": {"port": {"default": "8080", "description": "Use the actual runtime-reported ephemeral port."}}}],
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "summary": "Inspect local health",
+        "responses": {
+          "200": {"description": "Safe local projection", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalHealth"}}}},
+          "400": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "404": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "405": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "406": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "500": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "503": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "504": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}}
+        },
+        "x-phase": 8,
+        "security": []
+      }
+    },
+    "/v1/device": {
+      "get": {
+        "summary": "Inspect local device",
+        "responses": {
+          "200": {"description": "Safe local projection", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalDevice"}}}},
+          "400": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "404": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "405": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "406": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "500": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "503": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "504": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}}
+        },
+        "x-phase": 8,
+        "security": []
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "summary": "Inspect local capabilities",
+        "responses": {
+          "200": {"description": "Safe local projection", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/LocalCapability"}}}}},
+          "400": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "404": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "405": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "406": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "500": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "503": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "504": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}}
+        },
+        "x-phase": 8,
+        "security": []
+      }
+    },
+    "/v1/services": {
+      "get": {
+        "summary": "Inspect local services",
+        "responses": {
+          "200": {"description": "Safe local projection", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/LocalService"}}}}},
+          "400": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "404": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "405": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "406": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "500": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "503": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "504": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}}
+        },
+        "x-phase": 8,
+        "security": []
+      }
+    },
+    "/v1/services/{service_id}": {
+      "get": {
+        "summary": "Inspect local service",
+        "parameters": [{"$ref": "#/components/parameters/ServiceID"}],
+        "responses": {
+          "200": {"description": "Safe local projection", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalService"}}}},
+          "400": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "404": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "405": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "406": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "500": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "503": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "504": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}}
+        },
+        "x-phase": 8,
+        "security": []
+      }
+    },
+    "/v1/services/{service_id}/capabilities": {
+      "get": {
+        "summary": "Inspect local capabilities",
+        "parameters": [{"$ref": "#/components/parameters/ServiceID"}],
+        "responses": {
+          "200": {"description": "Safe local projection", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/LocalCapability"}}}}},
+          "400": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "404": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "405": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "406": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "500": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "503": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}},
+          "504": {"description": "Bounded safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LocalError"}}}}
+        },
+        "x-phase": 8,
+        "security": []
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "summary": "List projects authoritatively owned by this device",
+        "responses": {"200": {"description": "Authorized owner-local project summaries; callers merge owners into a cluster-wide catalog"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/projects/{project_id}": {
+      "get": {
+        "summary": "Get an owner-local project summary",
+        "parameters": [{"$ref": "#/components/parameters/ProjectID"}],
+        "responses": {"200": {"description": "Authorized project summary and availability"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/projects/{project_id}/tasks": {
+      "get": {
+        "summary": "List Apparat Task entrypoints for an owned project",
+        "parameters": [{"$ref": "#/components/parameters/ProjectID"}],
+        "responses": {"200": {"description": "Task entrypoints and trigger summaries; the project is a Pipeline when this list is non-empty"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/projects/{project_id}/tasks/{task_id}/runs": {
+      "post": {
+        "summary": "Manually request execution of a project Task entrypoint",
+        "parameters": [{"$ref": "#/components/parameters/ProjectID"}, {"$ref": "#/components/parameters/TaskID"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Task run accepted by the project owner", "headers": {"Location": {"schema": {"type": "string"}}}}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/jobs": {
+      "post": {
+        "summary": "Submit an asynchronous workload job",
+        "parameters": [{"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Job accepted", "headers": {"Location": {"schema": {"type": "string"}}}}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/jobs/{id}": {
+      "get": {
+        "summary": "Get job state",
+        "parameters": [{"$ref": "#/components/parameters/ID"}],
+        "responses": {"200": {"description": "Job state"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/jobs/{id}/cancel": {
+      "post": {
+        "summary": "Cancel a job",
+        "parameters": [{"$ref": "#/components/parameters/ID"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Cancellation accepted"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/queues/{queue_id}/jobs": {
+      "post": {
+        "summary": "Submit a job to the authoritative queue owner",
+        "parameters": [{"$ref": "#/components/parameters/QueueID"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Queue owner validated, persisted, and accepted the job", "headers": {"Location": {"schema": {"type": "string"}}}}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/queues/{queue_id}/claims": {
+      "post": {
+        "summary": "Poll or long-poll the queue owner for a compatible worker lease",
+        "parameters": [{"$ref": "#/components/parameters/QueueID"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"200": {"description": "One bounded lease selected by the queue owner"}, "204": {"description": "No compatible work is currently available"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/queues/{queue_id}/leases/{lease_id}/heartbeat": {
+      "post": {
+        "summary": "Renew or report bounded progress for an active worker lease",
+        "parameters": [{"$ref": "#/components/parameters/QueueID"}, {"$ref": "#/components/parameters/LeaseID"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Heartbeat accepted by the queue owner"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/queues/{queue_id}/leases/{lease_id}/complete": {
+      "post": {
+        "summary": "Submit a signed terminal result or failure to the queue owner",
+        "parameters": [{"$ref": "#/components/parameters/QueueID"}, {"$ref": "#/components/parameters/LeaseID"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Result accepted for authoritative validation and idempotent completion"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "summary": "Cursor-based long polling",
+        "parameters": [{"name": "after", "in": "query", "schema": {"type": "string"}}, {"name": "wait", "in": "query", "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Event page"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/project-transactions": {
+      "post": {
+        "summary": "Submit an owner-authoritative project transaction",
+        "parameters": [{"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Transaction accepted"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/artifacts": {
+      "post": {
+        "summary": "Begin a bounded authenticated artifact upload",
+        "parameters": [{"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {"202": {"description": "Upload resource created; bytes remain temporary until size and SHA-256 validation succeeds", "headers": {"Location": {"schema": {"type": "string"}}}}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    },
+    "/v1/artifacts/{artifact_id}": {
+      "get": {
+        "summary": "Get authorized artifact metadata or verified bytes with range support",
+        "parameters": [{"$ref": "#/components/parameters/ArtifactID"}],
+        "responses": {"200": {"description": "Authorized artifact metadata or content"}, "404": {"description": "Artifact is unknown, unavailable, expired, or not visible to the caller"}},
+        "x-phase": "future",
+        "description": "Not served by the Phase 8 loopback listener. Requires a later authenticated implementation.",
+        "security": [{"mutualTLS": []}]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {"mutualTLS": {"type": "mutualTLS"}},
+    "parameters": {
+      "ID": {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
+      "ProjectID": {"name": "project_id", "in": "path", "required": true, "schema": {"type": "string"}},
+      "TaskID": {"name": "task_id", "in": "path", "required": true, "schema": {"type": "string"}},
+      "QueueID": {"name": "queue_id", "in": "path", "required": true, "schema": {"type": "string"}},
+      "LeaseID": {"name": "lease_id", "in": "path", "required": true, "schema": {"type": "string"}},
+      "ServiceID": {"name": "service_id", "in": "path", "required": true, "schema": {"type": "string"}},
+      "ArtifactID": {"name": "artifact_id", "in": "path", "required": true, "schema": {"type": "string"}},
+      "IdempotencyKey": {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string"}}
+    },
+    "schemas": {
+      "WorkloadClass": {"type": "string", "enum": ["text_generation", "image_generation", "video_generation", "speech_to_text", "text_to_speech", "research_boinc"]},
+      "DriverKind": {
+        "type": "string",
+        "description": "Statically registered provider protocol; not a concrete service-instance identity",
+        "examples": ["ollama", "openai_compatible", "llama_cpp", "automatic1111", "comfyui"]
+      },
+      "ServiceProjection": {
+        "type": "object",
+        "required": ["service_id", "owner_device_id", "driver_kind", "revision", "observed_at", "expires_at"],
+        "properties": {
+          "service_id": {"type": "string"},
+          "owner_device_id": {"type": "string"},
+          "driver_kind": {"$ref": "#/components/schemas/DriverKind"},
+          "display_name": {"type": "string"},
+          "health": {"type": "string"},
+          "revision": {"type": "integer", "minimum": 0},
+          "observed_at": {"type": "integer", "description": "UTC milliseconds"},
+          "expires_at": {"type": "integer", "description": "UTC milliseconds; expired services are not routable"},
+          "capabilities": {"type": "array", "items": {"$ref": "#/components/schemas/CapabilityProjection"}}
+        },
+        "description": "Never contains a provider-local endpoint, credential reference, token, prompt, or result"
+      },
+      "CapabilityProjection": {
+        "type": "object",
+        "required": ["capability_id", "service_id", "workload_class", "schema_version"],
+        "properties": {
+          "capability_id": {"type": "string"},
+          "service_id": {"type": "string"},
+          "workload_class": {"$ref": "#/components/schemas/WorkloadClass"},
+          "schema_version": {"type": "string"},
+          "model_id": {"type": "string"},
+          "features": {"type": "array", "items": {"type": "string"}},
+          "limits": {"type": "object", "additionalProperties": true}
+        }
+      },
+      "ArtifactMetadata": {
+        "type": "object",
+        "required": ["artifact_id", "owner_device_id", "sha256", "size", "mime_type"],
+        "properties": {
+          "artifact_id": {"type": "string"},
+          "owner_device_id": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "size": {"type": "integer", "minimum": 0},
+          "mime_type": {"type": "string"},
+          "expires_at": {"type": "integer", "description": "Optional UTC milliseconds"}
+        }
+      },
+      "LocalHealth": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {"version": {"type": "string"}, "state": {"type": "string", "enum": ["starting", "ready", "stopping", "stopped", "failed"]}, "ready": {"type": "boolean"}},
+        "required": ["version", "state", "ready"]
+      },
+      "LocalDevice": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {"os": {"type": "string"}, "architecture": {"type": "string"}, "identity_status": {"type": "string"}},
+        "required": ["os", "architecture", "identity_status"]
+      },
+      "LocalCapability": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+          "service_id": {"type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+          "workload_class": {"type": "string", "enum": ["text_generation", "image_generation"]}
+        },
+        "required": ["id", "service_id", "workload_class"]
+      },
+      "LocalService": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+          "name": {"type": "string", "maxLength": 80},
+          "driver": {"type": "string", "enum": ["mock-text", "mock-image"]},
+          "enabled": {"type": "boolean"},
+          "revision": {"type": "integer", "minimum": 1},
+          "health": {"type": "string", "enum": ["unknown", "disabled", "healthy", "unhealthy", "stale"]},
+          "observed_at_ms": {"type": "integer"},
+          "error": {"type": "string", "enum": ["probe_failed"]},
+          "capabilities": {"type": "array", "items": {"$ref": "#/components/schemas/LocalCapability"}}
+        },
+        "required": ["id", "name", "driver", "enabled", "revision", "health", "observed_at_ms", "capabilities"]
+      },
+      "LocalError": {"type": "object", "additionalProperties": false, "properties": {"error": {"type": "string"}}, "required": ["error"]}
+    }
+  }
+}

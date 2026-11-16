@@ -1,3 +1,5 @@
+// Builds explicitly fictional tab section content.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 func comradesMockSections() []Section {

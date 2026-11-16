@@ -1,5 +1,7 @@
 //go:build gui
 
+// Verifies checks tab-strip pointer and drag arbitration.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui/event, github.com/ebitenui/ebitenui/widget.
 package gui
 
 import (
@@ -35,19 +37,25 @@ func TestTabStripDragStateChangeKeepsOnlySelectedButtonChecked(t *testing.T) {
 
 func TestTabStripDragScrollsWithoutSelectingReleaseTarget(t *testing.T) {
 	game := NewGame()
-	game.width = 360
+	game.width = 280
 	game.rebuildUI(game.shell.Snapshot())
 	event.ExecuteDeferred()
 	game.tabScroll.ScrollLeft = 0.5
 	game.scrollTabStripBy(-tabDragThreshold)
-	if got := game.tabScroll.ScrollLeft; got <= 0.5 {
-		t.Fatalf("tab strip scroll = %.2f, want greater than 0.50 after leftward drag", got)
+	{
+		got := game.tabScroll.ScrollLeft
+		if got <= 0.5 {
+			t.Fatalf("tab strip scroll = %.2f, want greater than 0.50 after leftward drag", got)
+		}
 	}
 	game.finishTabStripDrag()
 	game.tabButtons[2].SetState(widget.WidgetChecked)
 	event.ExecuteDeferred()
-	if active := game.shell.Snapshot().ActiveIndex; active != 0 {
-		t.Fatalf("active tab after drag release = %d, want 0", active)
+	{
+		active := game.shell.Snapshot().ActiveIndex
+		if active != 0 {
+			t.Fatalf("active tab after drag release = %d, want 0", active)
+		}
 	}
 	assertOnlyActiveTabChecked(t, game)
 }
@@ -83,8 +91,11 @@ func TestTabRadioGroupTapSelectsExactlyOneTab(t *testing.T) {
 	}
 	game.tabRadioGroup.SetActive(game.tabButtons[1])
 	event.ExecuteDeferred()
-	if active := game.shell.Snapshot().ActiveIndex; active != 1 {
-		t.Fatalf("active tab after radio selection = %d, want 1", active)
+	{
+		active := game.shell.Snapshot().ActiveIndex
+		if active != 1 {
+			t.Fatalf("active tab after radio selection = %d, want 1", active)
+		}
 	}
 	assertOnlyActiveTabChecked(t, game)
 }
@@ -101,8 +112,11 @@ func TestTabStripRepeatedDragsAndKeyboardSelectionKeepOneCheckedTab(t *testing.T
 		game.advanceTabDragCancellation()
 		game.advanceTabDragCancellation()
 	}
-	if err := game.shell.ApplyAction(hud.ActionNextTab); err != nil {
-		t.Fatal(err)
+	{
+		err := game.shell.ApplyAction(hud.ActionNextTab)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	game.rebuildUI(game.shell.Snapshot())
 	assertOnlyActiveTabChecked(t, game)

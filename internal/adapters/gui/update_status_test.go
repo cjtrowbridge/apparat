@@ -1,5 +1,7 @@
 //go:build gui
 
+// Verifies maps updater outcomes to safe explanatory HUD status.
+// Uses package-local contracts and Go standard-library types.
 package gui
 
 import (
@@ -18,6 +20,9 @@ func TestUpdateStatusCodesHaveSafeActionableText(t *testing.T) {
 		UpdateStatusUnableHTTP,
 		UpdateStatusUnableDownload,
 		UpdateStatusUnableVerification,
+		UpdateStatusUnablePackage,
+		UpdateStatusUnableSigner,
+		UpdateStatusNoNewerUpdate,
 		UpdateStatusPermissionNeeded,
 		UpdateStatusInstallerOpened,
 		UpdateStatusUnableInstall,

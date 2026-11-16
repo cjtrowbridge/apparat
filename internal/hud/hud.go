@@ -1,3 +1,5 @@
+// Defines the HUD view-model structures.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 import "fmt"
@@ -61,7 +63,9 @@ const (
 
 var SelectorPalette = []string{"#0032AB", "#6028A7", "#8C159F", "#AF0093", "#CB0084", "#E10072", "#F10060"}
 
-func (section Section) IsSelectorHeading() bool { return section.SelectorKind == SelectorHeading }
+func (section Section) IsSelectorHeading() bool {
+	return section.SelectorKind == SelectorHeading
+}
 
 func (tab Tab) FirstSelectableSectionIndex() int {
 	for index, section := range tab.Sections {
@@ -82,8 +86,12 @@ type Tab struct {
 	Sections   []Section
 }
 
-func (tab Tab) ID() TabID     { return tab.Descriptor.ID }
-func (tab Tab) Title() string { return tab.Descriptor.Label }
+func (tab Tab) ID() TabID {
+	return tab.Descriptor.ID
+}
+func (tab Tab) Title() string {
+	return tab.Descriptor.Label
+}
 
 func (tab Tab) Rows() []string {
 	rows := []string{}

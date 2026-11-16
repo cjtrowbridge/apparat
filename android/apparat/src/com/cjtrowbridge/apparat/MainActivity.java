@@ -1,7 +1,15 @@
+/*
+ * Hosts the Android Ebitengine view and bounded APK-update UI.
+ * Uses Android lifecycle and file APIs; application data remains on the device.
+ */
 package com.cjtrowbridge.apparat;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -9,6 +17,11 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.View;
+import android.graphics.Insets;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -31,6 +44,10 @@ public class MainActivity extends Activity {
     private static final String APK_MIME_TYPE = "application/vnd.android.package-archive";
     private EbitenView view;
     private File downloadedUpdate;
+    private final AtomicBoolean checking = new AtomicBoolean();
+    private volatile boolean destroyed;
+    private volatile HttpURLConnection activeConnection;
+    private Thread updateThread;
 
     private static class UpdateHttpException extends Exception {
         UpdateHttpException() {
@@ -44,11 +61,44 @@ public class MainActivity extends Activity {
         Seq.setContext(getApplicationContext());
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        Apparatmobile.ready();
+        if (!Apparatmobile.ready()) {
+            Log.e(TAG, "Local runtime initialization failed");
+            Toast.makeText(this, "Apparat could not initialize its local data. See app diagnostics.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         view = new EbitenView(this);
         view.setFocusable(true);
         view.setFocusableInTouchMode(true);
-        setContentView(view);
+        FrameLayout content = new FrameLayout(this);
+        int background = (int) Apparatmobile.backgroundARGB();
+        content.setBackgroundColor(background);
+        getWindow().setNavigationBarColor(background);
+        if (Build.VERSION.SDK_INT >= 29) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
+        content.addView(view, new FrameLayout.LayoutParams(-1, -1));
+        if (Build.VERSION.SDK_INT >= 35) {
+            // Inset the parent: EbitenView lays out its surface without padding.
+            content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsets onApplyWindowInsets(View target, WindowInsets insets) {
+                    int types = WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout();
+                    Insets safe = insets.getInsets(types);
+                    target.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+                    return insets;
+                }
+            });
+        }
+        setContentView(content);
+        if (Build.VERSION.SDK_INT >= 30) {
+            getWindow().getInsetsController().setSystemBarsAppearance(0,
+                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+        } else if (Build.VERSION.SDK_INT >= 26) {
+            View decor = getWindow().getDecorView();
+            decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        }
+        content.requestApplyInsets();
         Apparatmobile.registerUpdater(new com.cjtrowbridge.apparat.apparatmobile.Updater() {
             @Override
             public void checkForUpdate() {
@@ -57,7 +107,7 @@ public class MainActivity extends Activity {
             }
         });
         Log.i(TAG, "Updater bridge registered");
-        checkForUpdate(false);
+        // Downloads and installer handoff require an explicit Update action.
     }
 
     @Override
@@ -72,6 +122,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        Apparatmobile.suspendInput();
 
         if (view != null) {
             view.suspendGame();
@@ -80,13 +131,30 @@ public class MainActivity extends Activity {
 
 
 
+    @Override
+    protected void onDestroy() {
+        destroyed = true;
+        HttpURLConnection connection = activeConnection;
+        if (connection != null) {
+            connection.disconnect();
+        }
+        if (updateThread != null) {
+            updateThread.interrupt();
+        }
+        Apparatmobile.registerUpdater(null);
+        super.onDestroy();
+    }
+
     private void checkForUpdate(final boolean userInitiated) {
+        if (destroyed || !checking.compareAndSet(false, true)) {
+            return;
+        }
         Log.i(TAG, "Starting update check userInitiated=" + userInitiated);
         if (userInitiated) {
             reportUpdateStatus("checking");
             showToast("Checking Apparat update...");
         }
-        new Thread(new Runnable() {
+        updateThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -111,52 +179,111 @@ public class MainActivity extends Activity {
                         downloadedHash = sha256(apk);
                     } catch (Exception error) {
                         reportUpdateFailure("unable_verification", userInitiated);
+                        apk.delete();
                         return;
                     }
                     if (installedHash.equals(downloadedHash)) {
                         if (userInitiated) {
                             reportUpdateStatus("up_to_date");
-                            showToast("Up To Date! Installed and verified release APKs match.");
+                            showToast("This download matches the installed APK.");
                         } else {
                             Log.i(TAG, "Startup update check found current APK " + shortHash(installedHash));
                         }
                         return;
                     }
+                    String rejection = updateRejection(apk);
+                    if (rejection != null) {
+                        reportUpdateFailure(rejection, userInitiated);
+                        apk.delete();
+                        return;
+                    }
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            requestPermissionOrInstall();
+                            if (!destroyed) {
+                                requestPermissionOrInstall();
+                            }
                         }
                     });
                 } catch (Exception error) {
                     reportUpdateFailure("unable_download", userInitiated);
+                } finally {
+                    checking.set(false);
                 }
             }
-        }).start();
+        }, "apparat-update");
+        updateThread.start();
+    }
+
+    // TLS protects transport; installed signing identity and monotonic version
+    // protect handoff. A public hash is equality evidence, not authenticity.
+    @SuppressWarnings("deprecation")
+    private String updateRejection(File apk) throws Exception {
+        PackageManager manager = getPackageManager();
+        PackageInfo current = manager.getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
+        PackageInfo candidate = manager.getPackageArchiveInfo(apk.getPath(), PackageManager.GET_SIGNATURES);
+        if (candidate == null || !getPackageName().equals(candidate.packageName)) {
+            return "unable_package";
+        }
+        long oldVersion = Build.VERSION.SDK_INT >= 28 ? current.getLongVersionCode() : current.versionCode;
+        long newVersion = Build.VERSION.SDK_INT >= 28 ? candidate.getLongVersionCode() : candidate.versionCode;
+        if (current.signatures == null || candidate.signatures == null
+                || !Arrays.equals(current.signatures, candidate.signatures)) {
+            return "unable_signer";
+        }
+        if (newVersion <= oldVersion) {
+            return "no_newer_update";
+        }
+        return null;
     }
 
     private File downloadLatestApk() throws Exception {
+        File partial = new File(getCacheDir(), "latest.apk.part");
         File apk = new File(getCacheDir(), "latest.apk");
-        HttpURLConnection connection = (HttpURLConnection) new URL(UPDATE_URL + "?t=" + System.currentTimeMillis()).openConnection();
-        connection.setUseCaches(false);
-        connection.addRequestProperty("Cache-Control", "no-cache");
-        connection.setConnectTimeout(15000);
-        connection.setReadTimeout(60000);
-        connection.setInstanceFollowRedirects(true);
-        int status = connection.getResponseCode();
-        if (status < 200 || status >= 300) {
-            throw new UpdateHttpException();
-        }
-        try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(apk)) {
-            byte[] buffer = new byte[64 * 1024];
-            int read;
-            while ((read = in.read(buffer)) != -1) {
-                out.write(buffer, 0, read);
+        HttpURLConnection connection = (HttpURLConnection) new URL(UPDATE_URL).openConnection();
+        activeConnection = connection;
+        boolean complete = false;
+        try {
+            connection.setUseCaches(false);
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(15000);
+            connection.setInstanceFollowRedirects(false);
+            int status = connection.getResponseCode();
+            if (status != 200) {
+                throw new UpdateHttpException();
             }
+            long total = 0;
+            long deadline = android.os.SystemClock.elapsedRealtime() + 120000;
+            try (InputStream in = connection.getInputStream();
+                 FileOutputStream out = new FileOutputStream(partial)) {
+                byte[] buffer = new byte[64 * 1024];
+                int read;
+                while (true) {
+                    read = in.read(buffer);
+                    if (read == -1) {
+                        break;
+                    }
+                    total += read;
+                    if (destroyed || Thread.currentThread().isInterrupted() || total > 128L * 1024 * 1024
+                            || android.os.SystemClock.elapsedRealtime() > deadline) {
+                        throw new java.io.IOException("download cancelled or limit exceeded");
+                    }
+                    out.write(buffer, 0, read);
+                }
+                out.getFD().sync();
+            }
+            if (!partial.renameTo(apk)) {
+                throw new java.io.IOException("cannot finalize download");
+            }
+            complete = true;
+            return apk;
         } finally {
             connection.disconnect();
+            activeConnection = null;
+            if (!complete) {
+                partial.delete();
+            }
         }
-        return apk;
     }
 
     private void requestPermissionOrInstall() {
@@ -172,6 +299,16 @@ public class MainActivity extends Activity {
     }
 
     private void installDownloadedUpdate() {
+        try {
+            String rejection = downloadedUpdate == null ? "unable_verification" : updateRejection(downloadedUpdate);
+            if (rejection != null) {
+                reportUpdateStatus(rejection);
+                return;
+            }
+        } catch (Exception error) {
+            reportUpdateStatus("unable_verification");
+            return;
+        }
         if (downloadedUpdate == null || !downloadedUpdate.exists()) {
             reportUpdateStatus("unable_install");
             showToast("No downloaded update is ready");
@@ -204,7 +341,7 @@ public class MainActivity extends Activity {
         try {
             Apparatmobile.reportUpdateStatus(message);
         } catch (Exception error) {
-            Log.w(TAG, "Could not report update status to HUD", error);
+            Log.w(TAG, "Could not report update status to HUD");
         }
     }
 
@@ -233,7 +370,11 @@ public class MainActivity extends Activity {
         try (InputStream in = new FileInputStream(file)) {
             byte[] buffer = new byte[64 * 1024];
             int read;
-            while ((read = in.read(buffer)) != -1) {
+            while (true) {
+                read = in.read(buffer);
+                if (read == -1) {
+                    break;
+                }
                 digest.update(buffer, 0, read);
             }
         }

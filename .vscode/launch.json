@@ -5,7 +5,10 @@
       "name": "Apparat: Build Pipeline",
       "type": "node-terminal",
       "request": "launch",
-      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\scripts\\run_build_pipeline.ps1\""
+      "command": "python3 \"${workspaceFolder}/scripts/build.py\"",
+      "windows": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\scripts\\run_build_pipeline.ps1\""
+      }
     }
   ]
 }

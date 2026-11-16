@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-"""Assemble the Android GUI APK with Ebitengine's generated mobile view."""
+"""
+Assemble the Android GUI APK with Ebitengine's generated mobile view.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 from __future__ import annotations
 
 import shutil
 import subprocess
 import os
-from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 JAVA_PACKAGE = "com.cjtrowbridge.apparat"
 PREFIX = "apparatmobile"
 PREFIX_UPPER = "Apparatmobile"
-EBITEN_DISPLAY_INFO_GUARD = """\tif scale <= 0 || cWidth <= 0 || cHeight <= 0 {
-\t\treturn 0, 0, 1, false
-\t}
-"""
 
 
 def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: dict[str, str]) -> None:
@@ -32,13 +30,12 @@ def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: d
         path.mkdir(parents=True, exist_ok=True)
     aar = work / "apparat.aar"
     env = wrapper_env(toolchain, settings)
-    with patched_ebiten_android_display_info():
-        subprocess.run([
-            str(toolchain.gomobile), "bind", "-target", "android/arm64", "-androidapi", settings["api"],
-            "-javapkg", JAVA_PACKAGE, "-o", str(aar), "-tags", "gui",
-            "-ldflags", f"-extldflags=-Wl,-z,max-page-size={settings['page_size']}", "./cmd/apparatmobile",
-            "github.com/hajimehoshi/ebiten/v2/mobile/ebitenmobileview",
-        ], cwd=ROOT, env=env, check=True)
+    subprocess.run([
+        str(toolchain.gomobile), "bind", "-target", "android/arm64", "-androidapi", settings["api"],
+        "-javapkg", JAVA_PACKAGE, "-o", str(aar), "-tags", "gui",
+        "-ldflags", f"-extldflags=-Wl,-z,max-page-size={settings['page_size']}", "./cmd/apparatmobile",
+        "github.com/hajimehoshi/ebiten/v2/mobile/ebitenmobileview",
+    ], cwd=ROOT, env=env, check=True)
     write_ebiten_view_sources(source_dir)
     copy_android_wrapper_sources(work / "src")
     run = lambda args: subprocess.run(args, cwd=ROOT, env=env, check=True)
@@ -76,7 +73,7 @@ def wrapper_env(toolchain, settings: dict[str, str]) -> dict[str, str]:
     env = dict(os.environ)
     paths = [
         toolchain.java_home / "bin",
-        ROOT / ".tools" / "go1.26.4" / "bin",
+        ROOT / ".tools" / "go1.26.11" / "bin",
         ROOT / ".tools" / "bin",
         toolchain.sdk_root / "platform-tools",
         toolchain.sdk_root / "build-tools" / settings["build_tools"],
@@ -86,14 +83,14 @@ def wrapper_env(toolchain, settings: dict[str, str]) -> dict[str, str]:
     env["ANDROID_SDK_ROOT"] = str(toolchain.sdk_root)
     env["ANDROID_NDK_HOME"] = str(toolchain.ndk_root)
     env["GOFLAGS"] = "-buildvcs=false"
-    env["GOTOOLCHAIN"] = "go1.26.4"
+    env["GOTOOLCHAIN"] = "go1.26.11"
     env["GOCACHE"] = str(ROOT / ".tmp" / "go-build")
     env["PATH"] = os.pathsep.join(str(path) for path in paths) + os.pathsep + env.get("PATH", "")
     return env
 
 
 def write_ebiten_view_sources(source_dir: Path) -> None:
-    replacements = {"{{.JavaPkg}}": JAVA_PACKAGE, "{{.PrefixLower}}": PREFIX, "{{.PrefixUpper}}": PREFIX_UPPER}
+    replacements = {"$Placeholder_JavaPkg$": JAVA_PACKAGE, "$Placeholder_PrefixLower$": PREFIX, "$Placeholder_PrefixUpper$": PREFIX_UPPER}
     template_dir = ROOT / "third_party" / "game" / "ebiten" / "cmd" / "ebitenmobile" / "_files"
     for name in ("EbitenView.java", "EbitenSurfaceView.java"):
         text = (template_dir / name).read_text(encoding="utf-8")
@@ -114,23 +111,6 @@ def copy_android_wrapper_sources(destination: Path) -> None:
         target = destination / path.relative_to(source)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, target)
-
-
-@contextmanager
-def patched_ebiten_android_display_info():
-    path = ROOT / "third_party" / "game" / "ebiten" / "internal" / "ui" / "ui_android.go"
-    original = path.read_text(encoding="utf-8")
-    if EBITEN_DISPLAY_INFO_GUARD in original:
-        yield
-        return
-    needle = "\tscale := float64(cScale)\n"
-    if needle not in original:
-        raise RuntimeError(f"expected Android display-info patch target not found in {path}")
-    path.write_text(original.replace(needle, needle + EBITEN_DISPLAY_INFO_GUARD, 1), encoding="utf-8")
-    try:
-        yield
-    finally:
-        path.write_text(original, encoding="utf-8")
 
 
 def read_zip_member(path: Path, member: str) -> bytes:

@@ -1,5 +1,7 @@
 //go:build gui
 
+// Verifies manages bounded vertical widget scrolling.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/hajimehoshi/ebiten/v2.
 package gui
 
 import (
@@ -12,12 +14,18 @@ import (
 
 func TestBodyScrollsRegisterForSettingsAndMasterDetail(t *testing.T) {
 	game := NewGame()
-	if got := len(game.verticalScrolls); got != 2 {
-		t.Fatalf("master-detail vertical scrolls = %d, want 2", got)
+	{
+		got := len(game.verticalScrolls)
+		if got != 2 {
+			t.Fatalf("master-detail vertical scrolls = %d, want 2", got)
+		}
 	}
 	selectTabThroughStrip(t, game, hud.TabSettings)
-	if got := len(game.verticalScrolls); got != 1 {
-		t.Fatalf("settings vertical scrolls = %d, want 1", got)
+	{
+		got := len(game.verticalScrolls)
+		if got != 1 {
+			t.Fatalf("settings vertical scrolls = %d, want 1", got)
+		}
 	}
 }
 
@@ -28,11 +36,17 @@ func TestBodyScrollChangesOnlyTheTargetViewport(t *testing.T) {
 	second.ScrollTop = 0.75
 	game.bodyScroll = second
 	game.scrollBodyBy(-72)
-	if got := second.ScrollTop; got <= 0.75 {
-		t.Fatalf("target ScrollTop = %.2f, want greater than 0.75", got)
+	{
+		got := second.ScrollTop
+		if got <= 0.75 {
+			t.Fatalf("target ScrollTop = %.2f, want greater than 0.75", got)
+		}
 	}
-	if got := first.ScrollTop; got != 0.25 {
-		t.Fatalf("other ScrollTop = %.2f, want unchanged 0.25", got)
+	{
+		got := first.ScrollTop
+		if got != 0.25 {
+			t.Fatalf("other ScrollTop = %.2f, want unchanged 0.25", got)
+		}
 	}
 }
 
@@ -65,8 +79,11 @@ func TestBodyScrollDragRetainsTabStripPosition(t *testing.T) {
 	game.finishBodyScroll()
 	game.tabScroll.ScrollLeft = 0.8
 	game.enforceBodyTabScrollLock()
-	if got := game.tabScroll.ScrollLeft; got != 0.4 {
-		t.Fatalf("tab ScrollLeft = %.2f, want body-gesture snapshot 0.40", got)
+	{
+		got := game.tabScroll.ScrollLeft
+		if got != 0.4 {
+			t.Fatalf("tab ScrollLeft = %.2f, want body-gesture snapshot 0.40", got)
+		}
 	}
 }
 

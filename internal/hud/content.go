@@ -1,3 +1,5 @@
+// Builds the five mock tab content models.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 func DefaultTabs(config HUDConfig) []Tab {
@@ -26,20 +28,8 @@ func clusterTab() Tab {
 	return tab(DefaultConfigManager{}.Config(), TabCluster, "Mock devices, pool policy, schedules, and inference capabilities; no Cluster operation is live.", clusterMockSections())
 }
 
-func routingSections() []Section {
-	return append([]Section{{Title: "Workload Classes", Description: "Routes are grouped by explicit workload classes rather than one generic compute flag.", Rows: []Row{{Label: "Text generation", Detail: "OpenAI-compatible, Ollama, llama.cpp"}, {Label: "Image generation", Detail: "future adapter contract", Future: true}, {Label: "Video generation", Detail: "future long-running adapter", Future: true}, {Label: "Speech-to-text", Detail: "whisper.cpp reference"}, {Label: "Text-to-speech", Detail: "service-backed first", Future: true}, {Label: "BOINC", Detail: "research compute, not model inference"}}}, {Title: "Queues", Description: "Routing will become a queue list with selected-route context and controls.", Rows: []Row{{Label: "Priority", Detail: "owner work above comrade/research"}, {Label: "Fallback", Detail: "compatible devices only"}}}}, routingScenarioSections()...)
-}
-
-func pipelineSections() []Section {
-	return []Section{{Title: "Pipeline Builder", Description: "Mock composition stages for a future durable workflow editor.", Rows: []Row{{Label: "Trigger", Detail: "manual, schedule, webhook, or event", Future: true}, {Label: "Inputs", Detail: "typed project, chat, artifact, or form data", Future: true}, {Label: "Steps", Detail: "mock ordered transforms and typed workload submissions", Future: true}}}, {Title: "Safety And Routing", Description: "Future pipeline execution must keep approval and compatible destinations explicit.", Rows: []Row{{Label: "Approval gate", Detail: "mock owner confirmation before side effects", Disabled: true, Future: true}, {Label: "Workload route", Detail: "mock Cluster routing profile selection", Future: true}, {Label: "Fallback", Detail: "mock compatible queue order", Future: true}}}, {Title: "Run History", Description: "Mock durable execution records until Tasks owns real workflows.", Rows: []Row{{Label: "Draft pipeline", Detail: "mock editable, not persisted", Future: true}, {Label: "Validation run", Detail: "mock waiting for owner", Future: true}, {Label: "Published run", Detail: "mock disabled until durable task storage", Disabled: true, Future: true}}}}
-}
-
 func selectorHeading(title, description, selectorColor string) Section {
 	return Section{Title: title, Description: description, SelectorKind: SelectorHeading, SelectorColor: selectorColor}
-}
-
-func tasksSection() Section {
-	return Section{Title: "Tasks", Description: "Future schedules, webhooks, event rules, approvals, and run history belong to Cluster operations.", DetailSections: append([]Section{{Title: "Task Types", Description: "Tasks will become a run list with selected-task history and approval context.", Rows: []Row{{Label: "Scheduled task", Detail: "placeholder", Future: true}, {Label: "Webhook", Detail: "placeholder", Future: true}, {Label: "Signal-driven", Detail: "future adapter", Future: true}, {Label: "Manual approval", Detail: "planned safety gate", Future: true}}}, {Title: "Controls", Description: "Creation controls stay disabled until durable task storage exists.", Rows: []Row{{Label: "Create task", Detail: "disabled until durable task storage exists", Disabled: true, Future: true}}}}, taskScenarioSections()...)}
 }
 
 func settingsTab(config HUDConfig) Tab {

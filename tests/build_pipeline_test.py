@@ -1,3 +1,7 @@
+"""
+Checks build pipeline test behavior with isolated unittest fixtures.
+Uses temporary directories and mocks; no device deployment is performed.
+"""
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
@@ -57,12 +61,12 @@ class BuildPipelineTest(unittest.TestCase):
     def test_android_sdk_metadata_constants_are_modern(self):
         self.assertEqual(build.ANDROID_MIN_API, "23")
         self.assertEqual(build.ANDROID_API, "35")
-        self.assertEqual(build.ANDROID_TARGET_API, "30")
+        self.assertEqual(build.ANDROID_TARGET_API, "35")
 
     def test_android_badging_expectations_include_sdk_and_abi(self):
         self.assertEqual(
             build.android_badging_expectations("arm64"),
-            ("minSdkVersion:'23'", "targetSdkVersion:'30'", "native-code: 'arm64-v8a'"),
+            ("minSdkVersion:'23'", "targetSdkVersion:'35'", "native-code: 'arm64-v8a'"),
         )
 
     def test_android_manifest_does_not_force_orientation(self):
@@ -164,10 +168,6 @@ class BuildPipelineTest(unittest.TestCase):
         text = Path("scripts/build.py").read_text(encoding="utf-8")
         self.assertNotIn("third_party/salvagecore", text)
 
-    def test_android_wrapper_owns_temporary_ebiten_display_guard(self):
-        self.assertIn("scale <= 0", android_wrapper.EBITEN_DISPLAY_INFO_GUARD)
-        text = Path("scripts/android_wrapper.py").read_text(encoding="utf-8")
-        self.assertIn("patched_ebiten_android_display_info", text)
 
 
 if __name__ == "__main__":

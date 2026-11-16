@@ -101,3 +101,11 @@ python agentic-pipelines/scripts/regenerate_plan_indexes.py --check --repo-root 
 ```
 
 When updating the submodule, compare upstream changes with host-managed copies and synthesize them without overwriting host-specific behavior.
+
+## Host Source And Build Gate
+
+Use `source-governance.yaml` for public first-party source policy, never private API configuration. Preserve the host 400-total-physical-line check in addition to the framework count. All supported software builds enter `scripts/build_gate.py` before compilation; `scripts/build.py` does this automatically. Bootstrap v1 owns local prerequisite repair and hook installation. Use `python3 scripts/bootstrap.py --check` for read-only inspection and `python3 scripts/build_gate.py -- COMMAND` for compiler/tool commands and approved Git commits with project-local Go on PATH. Do not invoke ungoverned alternate build paths.
+
+ADB is the canonical system PATH executable; never prefer project-local platform-tools for device operations. Pixel testing requires an authorized device from `adb devices -l`; installation/launch permission does not authorize clearing app data, uninstalling unrelated apps or publishing releases.
+
+The canonical Android development/test device is the Pixel 4a (serial `08051JEC218861`); confirm its authorized presence before device operations. Do not silently substitute the Pixel 10 Pro XL. The user maintains the Pixel 10 through the GitHub updater; direct installs there require a new explicit request.

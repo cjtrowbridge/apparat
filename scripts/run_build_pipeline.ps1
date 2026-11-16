@@ -1,3 +1,7 @@
+<#
+Runs the canonical Apparat build from the Windows host terminal.
+Checks prerequisites and propagates the delegated build exit status.
+#>
 param(
     [Alias("h")]
     [switch]$Help

@@ -1,3 +1,7 @@
+/*
+ * Exposes the cached update APK to Android package installation via a content provider.
+ * Uses Android lifecycle and file APIs; application data remains on the device.
+ */
 package com.cjtrowbridge.apparat;
 
 import android.content.ContentProvider;
@@ -36,8 +40,12 @@ public class UpdateApkProvider extends ContentProvider {
         } catch (FileNotFoundException error) {
             return null;
         }
-        MatrixCursor cursor = new MatrixCursor(new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE});
-        cursor.addRow(new Object[]{"latest.apk", apk.length()});
+        MatrixCursor cursor = new MatrixCursor(new String[]{
+            OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE
+        });
+        cursor.addRow(new Object[]{
+            "latest.apk", apk.length()
+        });
         return cursor;
     }
 

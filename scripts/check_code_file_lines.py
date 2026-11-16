@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Fail when code files exceed the Apparat line-count limit."""
+"""
+Fail when code files exceed the Apparat line-count limit.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 
 from __future__ import annotations
 

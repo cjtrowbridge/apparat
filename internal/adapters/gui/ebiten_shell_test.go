@@ -1,5 +1,7 @@
 //go:build gui
 
+// Verifies updates and draws the Ebitengine HUD shell.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui/event, github.com/ebitenui/ebitenui/widget.
 package gui
 
 import (
@@ -42,15 +44,21 @@ func TestNewGameBuildsScrollableTabStripRoot(t *testing.T) {
 func TestActiveTabStripFollowsHUDSnapshot(t *testing.T) {
 	game := NewGame()
 	selectTabThroughStrip(t, game, hud.TabSettings)
-	if id := game.shell.Snapshot().ActiveTab().ID(); id != hud.TabSettings {
-		t.Fatalf("active tab id = %q, want settings", id)
+	{
+		id := game.shell.Snapshot().ActiveTab().ID()
+		if id != hud.TabSettings {
+			t.Fatalf("active tab id = %q, want settings", id)
+		}
 	}
 	game.ensureActiveTabVisible()
 	if game.tabScroll == nil {
 		t.Fatal("tab scroll missing after rebuild")
 	}
-	if got := game.tabScroll.ScrollLeft; got != 0 {
-		t.Fatalf("settings tab scroll = %.2f, want left-aligned 0 when tabs fit", got)
+	{
+		got := game.tabScroll.ScrollLeft
+		if got != 0 {
+			t.Fatalf("settings tab scroll = %.2f, want left-aligned 0 when tabs fit", got)
+		}
 	}
 }
 
@@ -79,118 +87,19 @@ func TestTabStripManualScrollIsNotOverwrittenWithoutRequest(t *testing.T) {
 	game := NewGame()
 	game.tabScroll.ScrollLeft = 0.42
 	game.ensureActiveTabVisible()
-	if got := game.tabScroll.ScrollLeft; got != 0.42 {
-		t.Fatalf("manual tab scroll = %.2f, want preserved 0.42", got)
+	{
+		got := game.tabScroll.ScrollLeft
+		if got != 0.42 {
+			t.Fatalf("manual tab scroll = %.2f, want preserved 0.42", got)
+		}
 	}
 	game.requestActiveTabVisible()
 	game.ensureActiveTabVisible()
-	if got := game.tabScroll.ScrollLeft; got != 0 {
-		t.Fatalf("requested active tab scroll = %.2f, want 0 for first tab", got)
-	}
-}
-
-func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
-	game := NewGame()
-	content := buildSettingsContentForTest(t, game)
-	labels := collectTextLabels(content)
-
-	for _, want := range []string{"UPDATES", "HUD CONFIGURATION", "BINDINGS", "DIAGNOSTICS"} {
-		if !containsLabel(labels, want) {
-			t.Fatalf("settings labels missing %q in %#v", want, labels)
+	{
+		got := game.tabScroll.ScrollLeft
+		if got != 0 {
+			t.Fatalf("requested active tab scroll = %.2f, want 0 for first tab", got)
 		}
-	}
-	if findButtonByLabel(content, "Check for update") == nil {
-		t.Fatalf("settings content missing Check for update button; labels: %#v", labels)
-	}
-	if findCheckboxByLabel(content, "Open Debug UI overlay") == nil {
-		t.Fatal("settings content missing Debug UI overlay checkbox")
-	}
-}
-
-func TestSettingsDebugOverlayCheckboxLabelClosesWhenOpen(t *testing.T) {
-	game := NewGame()
-	game.debugOverlayOpen = true
-	content := buildSettingsContentForTest(t, game)
-	if findCheckboxByLabel(content, "Close Debug UI overlay") == nil {
-		t.Fatal("settings content missing close Debug UI overlay checkbox label")
-	}
-}
-
-func TestSettingsDebugOverlayCheckboxTogglesState(t *testing.T) {
-	game := NewGame()
-	content := buildSettingsContentForTest(t, game)
-	checkbox := findCheckboxByLabel(content, "Open Debug UI overlay")
-	if checkbox == nil {
-		t.Fatal("settings content missing Debug UI overlay checkbox")
-	}
-	checkbox.SetState(widget.WidgetChecked)
-	event.ExecuteDeferred()
-	if !game.debugOverlayOpen {
-		t.Fatal("debug overlay did not open after checkbox checked")
-	}
-	checkbox.SetState(widget.WidgetUnchecked)
-	event.ExecuteDeferred()
-	if game.debugOverlayOpen {
-		t.Fatal("debug overlay did not close after checkbox unchecked")
-	}
-}
-
-func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
-	game := NewGame()
-	called := false
-	game.SetOnCheckForUpdate(func() bool {
-		called = true
-		return true
-	})
-	content := buildSettingsContentForTest(t, game)
-	button := findButtonByLabel(content, "Check for update")
-	if button == nil {
-		t.Fatal("settings content missing Check for update button")
-	}
-	button.Click()
-	event.ExecuteDeferred()
-	if !called {
-		t.Fatal("update button did not invoke callback")
-	}
-	if got := button.Text().Label; got != "Checking..." {
-		t.Fatalf("button label after callback = %q, want Checking...", got)
-	}
-	if got := game.UpdateStatus(); got != "Checking..." {
-		t.Fatalf("game update status = %q, want Checking...", got)
-	}
-}
-
-func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
-	game := NewGame()
-	content := buildSettingsContentForTest(t, game)
-	button := findButtonByLabel(content, "Check for update")
-	if button == nil {
-		t.Fatal("settings content missing Check for update button")
-	}
-	game.SetUpdateStatus(UpdateStatusUpToDate)
-	game.applyUpdateStatus()
-	if got := button.Text().Label; got != "Up To Date!" {
-		t.Fatalf("button label after external status = %q, want Up To Date!", got)
-	}
-}
-
-func TestSettingsUpdateButtonShowsUnavailableWithoutCallback(t *testing.T) {
-	game := NewGame()
-	content := buildSettingsContentForTest(t, game)
-	button := findButtonByLabel(content, "Check for update")
-	if button == nil {
-		t.Fatal("settings content missing Check for update button")
-	}
-	button.Click()
-	event.ExecuteDeferred()
-	if got := button.Text().Label; got != "Unable to check for updates" {
-		t.Fatalf("button label without callback = %q, want Unable to check for updates", got)
-	}
-	if got := game.UpdateStatus(); got != "Unable to check for updates" {
-		t.Fatalf("game update status = %q, want Unable to check for updates", got)
-	}
-	if got := game.UpdateStatusDetail(); got != "No update checker is configured in this build." {
-		t.Fatalf("update detail = %q, want desktop no-checker explanation", got)
 	}
 }
 
@@ -241,8 +150,11 @@ func TestCollapsedMasterDetailStartsWithListAndCanBuildDetailBack(t *testing.T) 
 func TestCollapsedMasterListDoesNotKeepExpandedSplitWidth(t *testing.T) {
 	game := NewGame()
 	game.width = 640
-	if width := game.masterListWidth(); width != 0 {
-		t.Fatalf("collapsed master list width = %d, want 0", width)
+	{
+		width := game.masterListWidth()
+		if width != 0 {
+			t.Fatalf("collapsed master list width = %d, want 0", width)
+		}
 	}
 }
 
@@ -270,8 +182,11 @@ func TestNarrowBodyPreferredWidthsAreBounded(t *testing.T) {
 	for index, tabData := range tabs {
 		body := game.buildActiveTabBody(hud.Snapshot{Tabs: tabs, ActiveIndex: index})
 		width, _ := body.PreferredSize()
-		if maxWidth := game.hudPreferredWidth(); width > maxWidth {
-			t.Fatalf("%s preferred width = %d, want <= %d", tabData.ID(), width, maxWidth)
+		{
+			maxWidth := game.hudPreferredWidth()
+			if width > maxWidth {
+				t.Fatalf("%s preferred width = %d, want <= %d", tabData.ID(), width, maxWidth)
+			}
 		}
 	}
 }
@@ -300,8 +215,11 @@ func collectTextLabels(root *widget.Container) []string {
 		case *widget.Text:
 			labels = append(labels, v.Label)
 		case *widget.Button:
-			if text := v.Text(); text != nil {
-				labels = append(labels, text.Label)
+			{
+				text := v.Text()
+				if text != nil {
+					labels = append(labels, text.Label)
+				}
 			}
 		}
 	})
@@ -311,8 +229,11 @@ func collectTextLabels(root *widget.Container) []string {
 func collectTextNodes(root widget.PreferredSizeLocateableWidget) []*widget.Text {
 	var texts []*widget.Text
 	walkWidget(root, func(node widget.PreferredSizeLocateableWidget) {
-		if text, ok := node.(*widget.Text); ok {
-			texts = append(texts, text)
+		{
+			text, ok := node.(*widget.Text)
+			if ok {
+				texts = append(texts, text)
+			}
 		}
 	})
 	return texts
@@ -328,8 +249,11 @@ func findButtonByLabel(root *widget.Container, label string) *widget.Button {
 		if !ok {
 			return
 		}
-		if text := button.Text(); text != nil && text.Label == label {
-			found = button
+		{
+			text := button.Text()
+			if text != nil && text.Label == label {
+				found = button
+			}
 		}
 	})
 	return found
@@ -345,8 +269,11 @@ func findCheckboxByLabel(root *widget.Container, label string) *widget.Checkbox 
 		if !ok {
 			return
 		}
-		if text := checkbox.Text(); text != nil && text.Label == label {
-			found = checkbox
+		{
+			text := checkbox.Text()
+			if text != nil && text.Label == label {
+				found = checkbox
+			}
 		}
 	})
 	return found
@@ -354,20 +281,29 @@ func findCheckboxByLabel(root *widget.Container, label string) *widget.Checkbox 
 
 func walkWidget(node widget.PreferredSizeLocateableWidget, visit func(widget.PreferredSizeLocateableWidget)) {
 	visit(node)
-	if bounded, ok := node.(*boundedPreferredWidget); ok {
-		walkWidget(bounded.child, visit)
-		return
+	{
+		bounded, ok := node.(*boundedPreferredWidget)
+		if ok {
+			walkWidget(bounded.child, visit)
+			return
+		}
 	}
-	if container, ok := node.(*widget.Container); ok {
-		for _, child := range container.Children() {
-			walkWidget(child, visit)
+	{
+		container, ok := node.(*widget.Container)
+		if ok {
+			for _, child := range container.Children() {
+				walkWidget(child, visit)
+			}
 		}
 	}
 }
 
 func unwrapBounded(node widget.PreferredSizeLocateableWidget) widget.PreferredSizeLocateableWidget {
-	if bounded, ok := node.(*boundedPreferredWidget); ok {
-		return bounded.child
+	{
+		bounded, ok := node.(*boundedPreferredWidget)
+		if ok {
+			return bounded.child
+		}
 	}
 	return node
 }

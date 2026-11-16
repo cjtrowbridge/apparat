@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""No-flag Apparat build target detection and orchestration."""
+"""
+No-flag Apparat build target detection and orchestration.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 from __future__ import annotations
 
 import argparse
@@ -169,4 +172,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(build.main())

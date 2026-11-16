@@ -1,5 +1,7 @@
 //go:build gui
 
+// Loads fonts and defines GUI presentation defaults.
+// Dependencies: github.com/ebitenui/ebitenui/image, github.com/ebitenui/ebitenui/widget, github.com/hajimehoshi/ebiten/v2.
 package gui
 
 import (
@@ -17,6 +19,11 @@ import (
 
 //go:embed DejaVuSans.ttf
 var dejavuSansTTF []byte
+
+// BackgroundARGB exposes the renderer's opaque background to native hosts.
+func BackgroundARGB() int64 {
+	return int64(backgroundColor.A)<<24 | int64(backgroundColor.R)<<16 | int64(backgroundColor.G)<<8 | int64(backgroundColor.B)
+}
 
 func createUITheme() *widget.Theme {
 	theme := widget.Theme{}
@@ -150,8 +157,11 @@ func tabButtonImage() *widget.ButtonImage {
 
 func selectorColor(value string) color.RGBA {
 	var red, green, blue uint8
-	if _, err := fmt.Sscanf(value, "#%02x%02x%02x", &red, &green, &blue); err != nil {
-		return mutedTextColor
+	{
+		_, err := fmt.Sscanf(value, "#%02x%02x%02x", &red, &green, &blue)
+		if err != nil {
+			return mutedTextColor
+		}
 	}
 	return color.RGBA{R: red, G: green, B: blue, A: 255}
 }

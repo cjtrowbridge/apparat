@@ -1,3 +1,5 @@
+// Verifies creates and persists signing identities with encrypted private-key storage.
+// Uses package-local contracts and Go standard-library types.
 package identity
 
 import (
@@ -18,8 +20,11 @@ func TestGenerateSignEncryptRoundTrip(t *testing.T) {
 		t.Fatal("signature did not verify")
 	}
 	path := filepath.Join(t.TempDir(), "device.key.json")
-	if err := SaveEncrypted(path, pair.Private, []byte("pass")); err != nil {
-		t.Fatal(err)
+	{
+		err := SaveEncrypted(path, pair.Private, []byte("pass"))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	loaded, err := LoadEncrypted(path, []byte("pass"))
 	if err != nil {
@@ -28,8 +33,11 @@ func TestGenerateSignEncryptRoundTrip(t *testing.T) {
 	if !Verify(loaded.Public().(ed25519.PublicKey), msg, Sign(loaded, msg)) {
 		t.Fatal("loaded key failed")
 	}
-	if _, err := LoadEncrypted(path, []byte("wrong")); err == nil {
-		t.Fatal("expected wrong passphrase failure")
+	{
+		_, err := LoadEncrypted(path, []byte("wrong"))
+		if err == nil {
+			t.Fatal("expected wrong passphrase failure")
+		}
 	}
 }
 
@@ -39,14 +47,20 @@ func TestManifestStatusAndArchivedReset(t *testing.T) {
 		t.Fatal("expected missing")
 	}
 	pair, _ := Generate()
-	if err := SaveEncrypted(filepath.Join(dir, "device.key.json"), pair.Private, []byte("pass")); err != nil {
-		t.Fatal(err)
+	{
+		err := SaveEncrypted(filepath.Join(dir, "device.key.json"), pair.Private, []byte("pass"))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	if Classify(dir) != StatusInconsistent {
 		t.Fatal("expected inconsistent")
 	}
-	if err := WriteManifest(filepath.Join(dir, "device.manifest.json"), "device", pair.Public); err != nil {
-		t.Fatal(err)
+	{
+		err := WriteManifest(filepath.Join(dir, "device.manifest.json"), "device", pair.Public)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	if Classify(dir) != StatusReady {
 		t.Fatal("expected ready")
@@ -55,19 +69,28 @@ func TestManifestStatusAndArchivedReset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(archive); err != nil {
-		t.Fatal(err)
+	{
+		_, err := os.Stat(archive)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
 func TestRepairRotateAndRevoke(t *testing.T) {
 	dir := t.TempDir()
 	pair, _ := Generate()
-	if err := SaveEncrypted(filepath.Join(dir, "device.key.json"), pair.Private, []byte("pass")); err != nil {
-		t.Fatal(err)
+	{
+		err := SaveEncrypted(filepath.Join(dir, "device.key.json"), pair.Private, []byte("pass"))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
-	if err := RepairManifest(dir, []byte("pass")); err != nil {
-		t.Fatal(err)
+	{
+		err := RepairManifest(dir, []byte("pass"))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	manifestPath := filepath.Join(dir, "device.manifest.json")
 	if Classify(dir) != StatusReady {
@@ -80,8 +103,11 @@ func TestRepairRotateAndRevoke(t *testing.T) {
 	if rotated.Fingerprint == Fingerprint(pair.Public) {
 		t.Fatal("rotation did not change device key")
 	}
-	if err := RevokeManifest(manifestPath); err != nil {
-		t.Fatal(err)
+	{
+		err := RevokeManifest(manifestPath)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {

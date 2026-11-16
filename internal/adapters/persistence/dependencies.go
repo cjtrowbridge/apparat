@@ -1,3 +1,5 @@
+// Records the package dependency boundary.
+// Dependencies: modernc.org/sqlite.
 package persistence
 
 import (

@@ -1,5 +1,7 @@
 //go:build gui
 
+// Manages bounded vertical widget scrolling.
+// Dependencies: github.com/ebitenui/ebitenui/widget, github.com/hajimehoshi/ebiten/v2, github.com/hajimehoshi/ebiten/v2/inpututil.
 package gui
 
 import (
@@ -10,7 +12,7 @@ import (
 
 const (
 	bodyScrollDragThreshold      = 18
-	bodyScrollCancelUpdateFrames = 30
+	bodyScrollCancelUpdateFrames = 2
 )
 
 func (game *Game) registerVerticalScroll(scroll *widget.ScrollContainer) {
@@ -30,38 +32,43 @@ func (game *Game) verticalScrollAt(x int, y int) *widget.ScrollContainer {
 
 func (game *Game) updateBodyScrollMouse(x int, y int) {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !game.pointInPTT(x, y) && !game.pointInDebugOverlay(x, y) {
-		if scroll := game.verticalScrollAt(x, y); scroll != nil {
-			game.bodyScroll = scroll
-			game.bodyScrollDragging = true
-			game.bodyScrollLastY = y
-			game.bodyScrollDragDistance = 0
-			game.bodyScrollDragMoved = false
-			game.lockBodyTabScroll()
+		{
+			scroll := game.verticalScrollAt(x, y)
+			if scroll != nil && game.claimGesture(gestureBody, false, 0) {
+				game.bodyScroll = scroll
+				// One owner captures the complete press/drag/release sequence.
+				game.bodyScrollLastY = y
+				game.bodyScrollDragDistance = 0
+				game.bodyScrollDragMoved = false
+				game.lockBodyTabScroll()
+			}
 		}
 	}
-	if game.bodyScrollDragging && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+	if game.gesture.Owner == gestureBody && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		game.scrollBodyBy(y - game.bodyScrollLastY)
 		game.bodyScrollLastY = y
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		game.finishBodyScroll()
 	}
-	if scroll := game.verticalScrollAt(x, y); scroll != nil {
-		_, wheelY := ebiten.Wheel()
-		if wheelY != 0 {
-			scroll.ScrollTop -= wheelY / 12
+	{
+		scroll := game.verticalScrollAt(x, y)
+		if scroll != nil {
+			_, wheelY := ebiten.Wheel()
+			if wheelY != 0 {
+				scroll.ScrollTop -= wheelY / 12
+			}
 		}
 	}
 }
 
 func (game *Game) beginBodyTouch(id ebiten.TouchID, x int, y int) bool {
 	scroll := game.verticalScrollAt(x, y)
-	if scroll == nil {
+	if scroll == nil || !game.claimGesture(gestureBody, true, id) {
 		return false
 	}
 	game.bodyScroll = scroll
-	game.bodyTouchActive = true
-	game.bodyTouchID = id
+
 	game.bodyScrollLastY = y
 	game.bodyScrollDragDistance = 0
 	game.bodyScrollDragMoved = false
@@ -70,12 +77,12 @@ func (game *Game) beginBodyTouch(id ebiten.TouchID, x int, y int) bool {
 }
 
 func (game *Game) updateBodyTouch() {
-	if inpututil.IsTouchJustReleased(game.bodyTouchID) || game.bodyScroll == nil {
+	if inpututil.IsTouchJustReleased(game.gesture.ID) || game.bodyScroll == nil {
 		game.finishBodyScroll()
-		game.bodyTouchActive = false
+		game.releaseGesture(gestureBody)
 		return
 	}
-	_, y := ebiten.TouchPosition(game.bodyTouchID)
+	_, y := ebiten.TouchPosition(game.gesture.ID)
 	game.scrollBodyBy(y - game.bodyScrollLastY)
 	game.bodyScrollLastY = y
 }
@@ -102,13 +109,13 @@ func (game *Game) finishBodyScroll() {
 		game.bodyTabScrollLocked = false
 	}
 	game.bodyScroll = nil
-	game.bodyScrollDragging = false
+	game.releaseGesture(gestureBody)
 	game.bodyScrollDragDistance = 0
 	game.bodyScrollDragMoved = false
 }
 
 func (game *Game) bodySelectionSuppressed() bool {
-	return game.bodyScrollDragMoved || game.bodyScrollCancelUpdates > 0
+	return game.gesture.Owner == gestureDebug || game.gesture.Owner == gesturePTT || game.bodyScrollDragMoved || game.bodyScrollCancelUpdates > 0
 }
 
 func (game *Game) advanceBodyScrollCancellation() {

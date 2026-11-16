@@ -15,18 +15,18 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 try:
-    from scripts import android_wrapper
+    from scripts import android_wrapper, android_prerequisites, mobile_sources
 except ImportError:
-    import android_wrapper
+    import android_wrapper, android_prerequisites, mobile_sources
 ROOT = Path(__file__).resolve().parents[1]
 ANDROID_API = "35"
 ANDROID_MIN_API = "23"
-ANDROID_TARGET_API = "30"
+ANDROID_TARGET_API = "35"
 ANDROID_PAGE_SIZE = "0x4000"
 ANDROID_BUILD_TOOLS = "35.0.0"
 ANDROID_NDK = "27.2.12479018"
-GOMOBILE_VERSION = "v0.0.0-20250923094054-ea854a63cce1"
-GO_TOOLCHAIN = "go1.26.4"
+GOMOBILE_VERSION = "v0.0.0-20260820040257-d11f821a26a6"
+GO_TOOLCHAIN = "go1.26.11"
 PATCHED_GOMOBILE = ROOT / ".tools" / "bin" / "gomobile-apparat"
 
 @dataclass(frozen=True)
@@ -110,10 +110,7 @@ def default_sdk_root() -> Path:
     env = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     return Path(env).expanduser() if env else ROOT / ".tools" / "android"
 def default_java_home() -> Path | None:
-    if os.environ.get("JAVA_HOME"):
-        return Path(os.environ["JAVA_HOME"]).expanduser()
-    local = ROOT / ".tools" / "jdks" / "openjdk-21" / "usr" / "lib" / "jvm" / "java-21-openjdk-amd64"
-    return local if local.exists() else None
+    return android_prerequisites.java_home()
 def find_executable(name: str, extra_dirs: list[Path] | None = None) -> Path | None:
     for directory in extra_dirs or []:
         candidate = directory / executable(name)
@@ -146,9 +143,9 @@ def resolve_android_toolchain(go: str) -> tuple[AndroidToolchain | None, list[st
     sdk_root = default_sdk_root()
     ndk_root = Path(os.environ.get("ANDROID_NDK_HOME", sdk_root / "ndk" / ANDROID_NDK)).expanduser()
     java_home = default_java_home()
+    failures.extend(android_prerequisites.validate_java(java_home))
     java_dirs = [java_home / "bin"] if java_home else []
     java = find_executable("java", java_dirs)
-    check_path(sdk_root / "cmdline-tools" / "latest" / "bin" / executable("sdkmanager"), "Android SDK command-line tools", failures)
     check_path(sdk_root / "platforms" / f"android-{ANDROID_API}", f"Android platform android-{ANDROID_API}", failures)
     check_path(sdk_root / "build-tools" / ANDROID_BUILD_TOOLS / executable("aapt2"), f"Android build-tools {ANDROID_BUILD_TOOLS}", failures)
     check_path(sdk_root / "build-tools" / ANDROID_BUILD_TOOLS / executable("apksigner"), f"Android apksigner {ANDROID_BUILD_TOOLS}", failures)
@@ -158,10 +155,10 @@ def resolve_android_toolchain(go: str) -> tuple[AndroidToolchain | None, list[st
         failures.append("missing Java runtime; set JAVA_HOME to JDK 21 or install Java on PATH")
     if platform.system().lower() != "linux":
         warnings.append("Android build host is unvalidated on this OS; Linux is the first evidence-producing host")
-    adb = find_executable("adb", [sdk_root / "platform-tools"])
+    adb = find_executable("adb")
     if not adb:
         warnings.append("adb not found; APK build can run, but install/launch validation will be skipped")
-    gomobile = ensure_patched_gomobile(go, failures)
+    gomobile = inspect_gomobile(go, failures)
     if failures or not java or not gomobile:
         return None, failures, warnings
     return AndroidToolchain(sdk_root, ndk_root, java_home, java, gomobile, adb), failures, warnings
@@ -174,6 +171,20 @@ def executable(name: str) -> str:
 def module_cache_dir(go: str) -> Path:
     result = subprocess.run([go, "env", "GOMODCACHE"], cwd=ROOT, check=True, capture_output=True, text=True)
     return Path(result.stdout.strip())
+def inspect_gomobile(go: str, failures: list[str]) -> Path | None:
+    override = os.environ.get("GOMOBILE")
+    if override:
+        path = Path(override).expanduser()
+        check_path(path, "explicit GOMOBILE executable", failures)
+        return path
+    try:
+        source = module_cache_dir(go) / f"github.com/ebitengine/gomobile@{GOMOBILE_VERSION}"
+    except (subprocess.CalledProcessError, FileNotFoundError) as error:
+        failures.append(f"cannot inspect gomobile module cache: {error}")
+        return None
+    check_path(source, "pinned gomobile source; run go mod download github.com/ebitengine/gomobile", failures)
+    return PATCHED_GOMOBILE
+
 def ensure_patched_gomobile(go: str, failures: list[str]) -> Path | None:
     env_tool = os.environ.get("GOMOBILE")
     if env_tool:
@@ -194,6 +205,7 @@ def ensure_patched_gomobile(go: str, failures: list[str]) -> Path | None:
         return None
     return PATCHED_GOMOBILE
 def build_patched_gomobile(go: str, source: Path) -> None:
+    engine = mobile_sources.prepare_engine()
     temp = ROOT / ".tmp" / "gomobile-apparat-src"
     if temp.exists():
         make_writable(temp)
@@ -218,7 +230,7 @@ def build_patched_gomobile(go: str, source: Path) -> None:
     })
     patch_file(temp / "cmd" / "gomobile" / "bind.go", {
         "if f == nil {\n\t\t\treturn nil\n\t\t}":
-        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo {GO_TOOLCHAIN.removeprefix("go")}\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.9.9\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {(ROOT / "third_party" / "game" / "ebiten").as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
+        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo {GO_TOOLCHAIN.removeprefix("go")}\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.10.6\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {engine.as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
     })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
@@ -245,7 +257,17 @@ def main(argv: list[str] | None = None) -> int:
         from scripts import build_orchestrator
     except ImportError:
         import build_orchestrator
-    return build_orchestrator.main(sys.argv[1:] if argv is None else argv)
+    arguments = sys.argv[1:] if argv is None else argv
+    if '--help' not in arguments and '-h' not in arguments:
+        try:
+            from scripts.build_gate import prepare
+        except ImportError:
+            from build_gate import prepare
+        try:
+            os.environ.update(prepare())
+        except subprocess.CalledProcessError as error:
+            return error.returncode
+    return build_orchestrator.main(arguments)
 def check_android_env(go: str) -> int:
     toolchain, failures, warnings = resolve_android_toolchain(go)
     for warning in warnings:
@@ -270,9 +292,17 @@ def build_android(go: str, goarch: str) -> int:
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
         return 1
+    try:
+        ensure_debug_keystore(toolchain, ROOT / ".tools" / "android" / "debug.keystore")
+    except BuildError as error:
+        print(error, file=sys.stderr)
+        return 1
+    prepared = ensure_patched_gomobile(go, failures)
+    if not prepared or failures:
+        print("Android preparation failed: " + "; ".join(failures), file=sys.stderr)
+        return 1
     output = artifact_path("android", goarch, "apparat")
     output.parent.mkdir(parents=True, exist_ok=True)
-    ensure_debug_keystore(toolchain, ROOT / ".tools" / "android" / "debug.keystore")
     print(f"building target=apparat goos=android goarch={goarch} output={output}")
     try:
         android_wrapper.build_wrapper_apk(toolchain, go, goarch, output, {
@@ -320,18 +350,14 @@ def sign_android_apk(toolchain: AndroidToolchain, output: Path) -> None:
     unsigned.unlink(missing_ok=True)
     aligned.unlink(missing_ok=True)
 def ensure_debug_keystore(toolchain: AndroidToolchain, keystore: Path) -> None:
-    if keystore.exists():
-        return
-    keytool = find_executable("keytool", [toolchain.java_home / "bin"] if toolchain.java_home else [])
-    if not keytool:
-        raise BuildError("missing JDK keytool for Android debug keystore generation")
-    keystore.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run([
-        str(keytool), "-genkeypair", "-v", "-keystore", str(keystore),
-        "-storepass", "android", "-keypass", "android", "-alias", "apparat-debug",
-        "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000",
-        "-dname", "CN=Apparat Debug,O=Apparat,C=US",
-    ], check=True)
+    try:
+        from scripts.android_release import validate_keystore
+    except ImportError:
+        from android_release import validate_keystore
+    try:
+        validate_keystore(toolchain.java_home, keystore)
+    except (ValueError, subprocess.CalledProcessError) as error:
+        raise BuildError(str(error)) from error
 def build_desktop(go: str, goos: str, goarch: str, targets: tuple[str, ...]) -> int:
     env = os.environ.copy()
     env["GOOS"] = goos
@@ -361,4 +387,8 @@ def print_build_failure_help(target: str, error: subprocess.CalledProcessError) 
         )
     print("For usage details run: python3 scripts/build.py --help", file=sys.stderr)
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print("Build interrupted", file=sys.stderr)
+        raise SystemExit(130)

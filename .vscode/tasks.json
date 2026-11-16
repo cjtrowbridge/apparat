@@ -4,11 +4,69 @@
     {
       "label": "Apparat: Build Pipeline",
       "type": "process",
-      "command": "powershell",
-      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\scripts\\run_build_pipeline.ps1"],
-      "group": {"kind": "build", "isDefault": true},
-      "presentation": {"reveal": "always", "panel": "dedicated", "clear": true},
+      "command": "python3",
+      "args": [
+        "${workspaceFolder}/scripts/build.py"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": [],
+      "windows": {
+        "command": "powershell",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}\\scripts\\run_build_pipeline.ps1"
+        ]
+      }
+    },
+    {
+      "label": "Apparat: Fast host build",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "build-fast"
+      ],
       "problemMatcher": []
+    },
+    {
+      "label": "Apparat: Fast host tests",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "test-fast"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Apparat: Verify Android publication",
+      "type": "process",
+      "command": "python3",
+      "args": [
+        "${workspaceFolder}/scripts/android_release.py",
+        "--candidate",
+        "${workspaceFolder}/releases/android/arm64/apparat/latest.apk",
+        "--previous",
+        "${input:publishedAndroidApk}"
+      ],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "publishedAndroidApk",
+      "type": "promptString",
+      "description": "Path to freshly downloaded GitHub latest.apk for version comparison",
+      "default": "${workspaceFolder}/.tmp/update-diagnosis/github.apk"
     }
   ]
 }

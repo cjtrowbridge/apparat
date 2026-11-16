@@ -1,76 +1,102 @@
+// Composes the shared node with explicit mock drivers and process lifecycle.
+// Errors return through deferred cleanup before the process exit code is applied.
 package main
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"log/slog"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-
+	"github.com/cjtrowbridge/apparat/internal/adapters/gui"
+	"github.com/cjtrowbridge/apparat/internal/adapters/mockprovider"
 	"github.com/cjtrowbridge/apparat/internal/app"
 	"github.com/cjtrowbridge/apparat/internal/config"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
+	os.Exit(run())
+}
+func run() (code int) {
 	cfg, err := config.Load(config.Options{Args: os.Args[1:], DefaultMode: config.ModeGUI, BinaryName: "apparat"})
 	if err != nil {
-		slog.Error("parse config", "error", err)
-		os.Exit(2)
+		fmt.Fprintln(os.Stderr, err)
+		return 2
 	}
-	runtime, err := app.NewRuntimeWithConfig(cfg)
+	node, err := app.NewRuntimeWithConfig(cfg)
 	if err != nil {
-		slog.Error("create runtime", "error", err)
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, err)
+		return 1
 	}
+	node.SetDrivers(mockprovider.Drivers())
 	defer func() {
-		if recovered := recover(); recovered != nil {
-			_ = runtime.RecordLastRun("error", "process", "panic", "panic before process exit", map[string]any{"panic": fmt.Sprint(recovered)})
-			panic(recovered)
+		closeErr := node.Close()
+		if closeErr != nil {
+			fmt.Fprintln(os.Stderr, "shutdown failed:", closeErr)
+			code = 1
 		}
 	}()
-	defer func() { _ = runtime.Close() }()
-
+	defer func() {
+		if recover() != nil {
+			_ = node.RecordLastRun("error", "process", "panic", "process panic", nil)
+			code = 1
+		}
+	}()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
-	if cfg.SmokeTest {
-		if err := smokeTest(ctx, runtime); err != nil {
-			_ = runtime.RecordLastRun("error", "process", "smoke_failed", "smoke test failed", map[string]any{"error": err.Error()})
-			slog.Error("smoke test", "error", err)
-			os.Exit(1)
+	err = node.Initialize(ctx)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "startup failed:", err)
+		return 1
+	}
+	if cfg.Restore != "" {
+		fmt.Println("backup restored to new root", cfg.RootDir)
+		return 0
+	}
+	if cfg.Backup != "" {
+		err = node.Backup(ctx, cfg.Backup)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
 		}
-		_ = runtime.RecordLastRun("info", "process", "clean_exit", "smoke test completed", nil)
-		return
+		fmt.Println("backup verified", cfg.Backup)
+		return 0
+	}
+	if cfg.Inspect || cfg.SmokeTest {
+		list, queryErr := node.List(ctx)
+		if queryErr != nil {
+			fmt.Fprintln(os.Stderr, queryErr)
+			return 1
+		}
+		if cfg.SmokeTest {
+			fmt.Printf("apparat smoke ok mode=%s services=%d root=%s last_run=%s\n", node.Mode(), len(list), cfg.RootDir, cfg.LastRunPath)
+		}
+		err = json.NewEncoder(os.Stdout).Encode(list)
+		if err != nil {
+			return 1
+		}
+		return 0
 	}
 	if cfg.Doctor {
-		diag := runtime.Doctor(ctx)
-		fmt.Printf("apparat doctor healthy=%t mode=%s root=%s last_run=%s identity=%s message=%s\n", diag.Healthy, diag.Mode, diag.RootDir, diag.LastRunPath, diag.IdentityStatus, diag.Message)
+		diag := node.Doctor(ctx)
+		_ = json.NewEncoder(os.Stdout).Encode(diag)
 		if !diag.Healthy {
-			_ = runtime.RecordLastRun("error", "process", "doctor_failed", "doctor command failed", map[string]any{"message": diag.Message})
-			os.Exit(1)
+			return 1
 		}
-		_ = runtime.RecordLastRun("info", "process", "clean_exit", "doctor command completed", nil)
-		return
+		return 0
 	}
-
-	fmt.Fprintf(os.Stderr, "apparat runtime root=%s last_run=%s\n", cfg.RootDir, cfg.LastRunPath)
-	if err := runtime.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
-		_ = runtime.RecordLastRun("error", "process", "run_failed", "GUI runtime failed", map[string]any{"error": err.Error()})
-		slog.Error("run apparat", "error", err)
-		os.Exit(1)
+	fmt.Fprintf(os.Stderr, "apparat ready root=%s REST=http://%s\n", cfg.RootDir, node.Address())
+	if node.Mode() == app.ModeGUI {
+		wd, _ := os.Getwd()
+		executable, _ := os.Executable()
+		err = gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{WorkingDir: wd, RuntimePath: cfg.RootDir, BinaryPath: executable, Queries: node})
+	} else {
+		err = node.Start(ctx)
 	}
-	_ = runtime.RecordLastRun("info", "process", "clean_exit", "GUI runtime exited cleanly", nil)
-}
-
-func smokeTest(ctx context.Context, runtime *app.Runtime) error {
-	if err := runtime.Initialize(ctx); err != nil {
-		return err
+	if err != nil && ctx.Err() == nil {
+		fmt.Fprintln(os.Stderr, "run failed:", err)
+		return 1
 	}
-	snapshot := runtime.Snapshot()
-	diag := runtime.Doctor(ctx)
-	fmt.Printf("apparat smoke ok mode=%s tabs=%s voice=%s root=%s last_run=%s identity=%s\n", runtime.Mode(), strings.Join(snapshot.TabTitles(), ","), snapshot.VoiceState, diag.RootDir, diag.LastRunPath, diag.IdentityStatus)
-	return nil
+	return 0
 }

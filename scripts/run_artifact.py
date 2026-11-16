@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Run a built artifact with forwarded arguments."""
+"""
+Run a built artifact with forwarded arguments.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 
 from __future__ import annotations
 

@@ -1,5 +1,7 @@
 //go:build gui
 
+// Renders developer diagnostics over the HUD.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/hajimehoshi/ebiten/v2, github.com/hajimehoshi/ebiten/v2/ebitenutil.
 package gui
 
 import (
@@ -72,6 +74,7 @@ func (game *Game) collapsed() bool {
 
 func (game *Game) selectSection(tabID hud.TabID, index int) {
 	for _, tabData := range game.shell.Snapshot().Tabs {
+		tabData = game.presentedTab(tabData)
 		if tabData.ID() == tabID && !tabData.IsSelectableSection(index) {
 			return
 		}
@@ -142,12 +145,19 @@ func (game *Game) requestActiveTabVisible() {
 }
 
 func (game *Game) updatePointerState() {
+	if !ebiten.IsFocused() {
+		game.cancelPointer()
+		return
+	}
+	game.updateTouchDrag()
+	if game.gesture.Touch {
+		return
+	}
 	x, y := ebiten.CursorPosition()
 	game.updateDebugOverlayDrag(x, y)
 	game.updateTabStripDrag(x, y)
 	game.updateBodyScrollMouse(x, y)
 	game.updatePTTMouse(x, y)
-	game.updateTouchDrag()
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		game.splitDragging = false
 	}
@@ -155,73 +165,75 @@ func (game *Game) updatePointerState() {
 
 func (game *Game) updateDebugOverlayDrag(x int, y int) {
 	if !game.debugOverlayOpen {
-		game.debugDrag = false
+		game.releaseGesture(gestureDebug)
 		return
 	}
 	width, _ := game.debugOverlaySize()
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30) {
-		game.debugDrag = true
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30) && game.claimGesture(gestureDebug, false, 0) {
+		game.gesture.Owner = gestureDebug
 		game.debugDragDX = x - game.debugOverlayX
 		game.debugDragDY = y - game.debugOverlayY
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		game.debugDrag = false
+		game.releaseGesture(gestureDebug)
 	}
-	if game.debugDrag {
+	if game.gesture.Owner == gestureDebug {
 		game.clampDebugOverlay(x-game.debugDragDX, y-game.debugDragDY)
 	}
 }
 
 func (game *Game) updateTouchDrag() {
-	for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
-		x, y := ebiten.TouchPosition(id)
-		width, _ := game.debugOverlaySize()
-		if game.debugOverlayOpen && pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30) {
-			game.debugTouchActive = true
-			game.debugTouchID = id
-			game.debugDragDX = x - game.debugOverlayX
-			game.debugDragDY = y - game.debugOverlayY
-			return
-		}
-		if game.tabScroll != nil && imagePoint(x, y).In(game.tabScroll.GetWidget().Rect) {
-			game.tabTouchActive = true
-			game.tabTouchID = id
-			game.tabStripLastX = x
-			game.tabStripDragDistance = 0
-			game.tabStripDragMoved = false
-			return
-		}
-		if !game.pointInPTT(x, y) && !game.pointInDebugOverlay(x, y) && game.beginBodyTouch(id, x, y) {
-			return
-		}
-		if game.pointInPTT(x, y) {
-			game.pttTouchActive = true
-			game.pttTouchID = id
-			game.setPTTHeld(true)
-			return
+	if game.gesture.Owner == gestureNone {
+		for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
+			x, y := ebiten.TouchPosition(id)
+			width, _ := game.debugOverlaySize()
+			switch {
+			case game.pointInDebugOverlay(x, y):
+				game.claimGesture(gestureDebug, true, id)
+				game.debugDragDX = x - game.debugOverlayX
+				game.debugDragDY = y - game.debugOverlayY
+				// The entire overlay captures input; only its title initiates movement.
+				game.gesture.Movable = pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30)
+			case game.pointInPTT(x, y):
+				game.claimGesture(gesturePTT, true, id)
+				game.setPTTHeld(true)
+			case game.tabScroll != nil && imagePoint(x, y).In(game.tabScroll.GetWidget().Rect):
+				game.claimGesture(gestureTabs, true, id)
+				game.tabStripLastX = x
+				game.tabStripDragDistance = 0
+				game.tabStripDragMoved = false
+			default:
+				game.beginBodyTouch(id, x, y)
+			}
+			if game.gesture.Owner != gestureNone {
+				break
+			}
 		}
 	}
-	if game.debugTouchActive {
+	if !game.gesture.Touch {
+		return
+	}
+	switch game.gesture.Owner {
+	case gestureDebug:
 		game.updateDebugTouch()
-	}
-	if game.tabTouchActive {
+	case gestureTabs:
 		game.updateTabTouch()
-	}
-	if game.bodyTouchActive {
+	case gestureBody:
 		game.updateBodyTouch()
-	}
-	if game.pttTouchActive {
+	case gesturePTT:
 		game.updatePTTTouch()
 	}
 }
 
 func (game *Game) updateDebugTouch() {
-	if inpututil.IsTouchJustReleased(game.debugTouchID) {
-		game.debugTouchActive = false
+	if inpututil.IsTouchJustReleased(game.gesture.ID) {
+		game.releaseGesture(gestureDebug)
 		return
 	}
-	x, y := ebiten.TouchPosition(game.debugTouchID)
-	game.clampDebugOverlay(x-game.debugDragDX, y-game.debugDragDY)
+	x, y := ebiten.TouchPosition(game.gesture.ID)
+	if game.gesture.Movable {
+		game.clampDebugOverlay(x-game.debugDragDX, y-game.debugDragDY)
+	}
 }
 
 func (game *Game) clampDebugOverlay(x int, y int) {
@@ -239,12 +251,12 @@ func (game *Game) pointInDebugOverlay(x int, y int) bool {
 }
 
 func (game *Game) updateTabTouch() {
-	if inpututil.IsTouchJustReleased(game.tabTouchID) || game.tabScroll == nil {
+	if inpututil.IsTouchJustReleased(game.gesture.ID) || game.tabScroll == nil {
 		game.finishTabStripDrag()
-		game.tabTouchActive = false
+		game.releaseGesture(gestureTabs)
 		return
 	}
-	x, _ := ebiten.TouchPosition(game.tabTouchID)
+	x, _ := ebiten.TouchPosition(game.gesture.ID)
 	dx := x - game.tabStripLastX
 	game.tabStripLastX = x
 	game.scrollTabStripBy(dx)
@@ -255,17 +267,17 @@ func (game *Game) updateTabStripDrag(x int, y int) {
 		return
 	}
 	rect := game.tabScroll.GetWidget().Rect
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && imagePoint(x, y).In(rect) {
-		game.tabStripDragging = true
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && imagePoint(x, y).In(rect) && !game.pointInDebugOverlay(x, y) && game.claimGesture(gestureTabs, false, 0) {
+		// Gesture ownership was acquired on press.
 		game.tabStripLastX = x
 		game.tabStripDragDistance = 0
 		game.tabStripDragMoved = false
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		game.finishTabStripDrag()
-		game.tabStripDragging = false
+		game.releaseGesture(gestureTabs)
 	}
-	if game.tabStripDragging && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+	if game.gesture.Owner == gestureTabs && ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		dx := x - game.tabStripLastX
 		game.tabStripLastX = x
 		game.scrollTabStripBy(dx)
@@ -322,7 +334,7 @@ func (game *Game) finishTabStripDrag() {
 }
 
 func (game *Game) tabSelectionSuppressed() bool {
-	return game.tabStripDragMoved || game.tabDragCancelUpdates > 0
+	return game.gesture.Owner == gestureDebug || game.gesture.Owner == gesturePTT || game.tabStripDragMoved || game.tabDragCancelUpdates > 0
 }
 
 func (game *Game) advanceTabDragCancellation() {
@@ -332,18 +344,20 @@ func (game *Game) advanceTabDragCancellation() {
 }
 
 func (game *Game) updatePTTMouse(x int, y int) {
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && game.pointInPTT(x, y) {
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && game.pointInPTT(x, y) && !game.pointInDebugOverlay(x, y) && game.claimGesture(gesturePTT, false, 0) {
 		game.setPTTHeld(true)
 	}
-	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) && game.pttHeld && !game.pttTouchActive {
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) && game.pttHeld && game.gesture.Owner == gesturePTT {
 		game.setPTTHeld(false)
+		game.releaseGesture(gesturePTT)
 	}
 }
 
 func (game *Game) updatePTTTouch() {
-	if inpututil.IsTouchJustReleased(game.pttTouchID) {
-		game.pttTouchActive = false
+	if inpututil.IsTouchJustReleased(game.gesture.ID) {
+		game.releaseGesture(gesturePTT)
 		game.setPTTHeld(false)
+		game.releaseGesture(gesturePTT)
 	}
 }
 

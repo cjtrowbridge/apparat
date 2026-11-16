@@ -1,3 +1,5 @@
+// Verifies defines the HUD view-model structures.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 import "testing"
@@ -60,8 +62,11 @@ func TestTabWrapBehavior(t *testing.T) {
 
 func TestDirectTabSelection(t *testing.T) {
 	shell := NewShell()
-	if err := shell.SelectTab(2); err != nil {
-		t.Fatal(err)
+	{
+		err := shell.SelectTab(2)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	if shell.Snapshot().ActiveTab().ID() != TabCluster {
 		t.Fatalf("selected tab = %q, want cluster", shell.Snapshot().ActiveTab().ID())
@@ -70,14 +75,20 @@ func TestDirectTabSelection(t *testing.T) {
 
 func TestActionRoutingUsesNamedActions(t *testing.T) {
 	shell := NewShell()
-	if err := shell.ApplyAction(ActionNextTab); err != nil {
-		t.Fatal(err)
+	{
+		err := shell.ApplyAction(ActionNextTab)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	if shell.Snapshot().ActiveTab().ID() != TabProjects {
 		t.Fatalf("action next selected %q", shell.Snapshot().ActiveTab().ID())
 	}
-	if err := shell.ApplyAction(ActionPreviousTab); err != nil {
-		t.Fatal(err)
+	{
+		err := shell.ApplyAction(ActionPreviousTab)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	if shell.Snapshot().ActiveTab().ID() != TabComrades {
 		t.Fatalf("action previous selected %q", shell.Snapshot().ActiveTab().ID())
@@ -204,4 +215,15 @@ func hasFutureRow(tabs []Tab, id TabID) bool {
 		}
 	}
 	return false
+}
+
+var benchmarkSnapshot Snapshot
+
+func BenchmarkShellSnapshot(b *testing.B) {
+	shell := NewShell()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		benchmarkSnapshot = shell.Snapshot()
+	}
 }

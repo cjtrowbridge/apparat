@@ -9,3 +9,13 @@ Domain code defines identity, projects, queues, tasks, capabilities, workload cl
 - May depend on the Go standard library and other domain packages.
 - Must not depend on `internal/adapters`, `internal/platform`, Ebitengine, SQLite drivers, network clients, or source-reference checkouts.
 - Must remain testable without a window, GPU, database, network, model runtime, microphone, or filesystem layout.
+
+## Source inventory
+
+- `doc.go`: Documents the internal/domain package boundary.
+
+- `id.go`: Creates and validates canonical ULID identifiers without runtime services.
+
+- `service.go`: Defines local service intent and safe immutable query values.
+
+- `id_test.go`: Tests canonical durable identifiers and deterministic intent validation.

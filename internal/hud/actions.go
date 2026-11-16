@@ -1,3 +1,5 @@
+// Defines named HUD actions and input-binding defaults.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 import "fmt"

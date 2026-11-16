@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Validate plan files and regenerate per-status plan indexes."""
+"""
+Validate plan files and regenerate per-status plan indexes.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 
 from __future__ import annotations
 

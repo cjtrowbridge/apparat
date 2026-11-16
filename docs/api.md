@@ -2,7 +2,7 @@
 
 The MVP API is authenticated HTTPS REST over externally configured WireGuard or trusted LAN. Authentication and authorization are mandatory on every non-public endpoint.
 
-This file is the target API contract. The OpenAPI source is a planning skeleton until the secure REST phases implement handlers, clients, conformance tests, and authorization evidence.
+Phase 8 implements six read-only loopback resources. The remaining authenticated operations below are future contracts. OpenAPI operations marked `x-phase: 8` have executable response-conformance coverage; all other paths are explicitly future and return 404 locally.
 
 All cross-device project access, Task invocation, queue submission, worker leasing, progress/heartbeat, and result delivery use this API. No device accesses another device's project filesystem or SQLite database directly.
 
@@ -76,3 +76,13 @@ Workers never pull directly from requesters, accept work by reading replicated q
 Artifact metadata binds artifact ID, owner, SHA-256 digest, size, MIME type, provenance, authorization, retention, and relevant Project/job/result identity. Uploads and downloads enforce limits, deadlines, content ranges or chunk identity, and authorization. Partial bytes remain non-authoritative until the receiver verifies length and digest and atomically finalizes the artifact.
 
 Workers may return bounded inline results or artifact references. A queue owner validates the active lease/fencing token, artifact owner and authorization, metadata, size, and digest before accepting authoritative completion. Expired or deleted artifacts return an explicit durable state rather than an apparently successful empty download.
+
+## Current loopback operations
+
+Start either artifact with `--listen 127.0.0.1:8080` or use the default ephemeral port printed at readiness. Numeric IPv4/IPv6 loopback only; wildcard, hostname and non-loopback addresses fail startup. There is no authentication claim for this local diagnostic server: other processes with host loopback access can read its safe projections. Phase 9 must add mTLS/authorization before any wider listener.
+
+GET `/v1/health` returns version, lifecycle state and readiness; `/v1/device` returns OS, architecture and **local bootstrap-file** identity status. `/v1/services` and `/v1/services/{service_id}` return ID, name, mock driver, desired enablement/revision, health, observation time, safe error and capabilities. `/v1/capabilities` and `/v1/services/{service_id}/capabilities` expose service-scoped capability IDs and workload classes. Canonical ULIDs are required in paths. No provider address, filesystem path, credential reference, raw error, fail-injection switch or key is serialized.
+
+Responses are JSON with `Cache-Control: no-store` and a server-generated `X-Request-ID`. Accept negotiation supports JSON and media wildcards with positive quality. Bodies are rejected (400), non-GET methods return 405/Allow, unsupported Accept returns 406, unknown paths/IDs return 404, unavailable/busy returns 503 and cancelled queries return 504. Unexpected failures return safe codes, never raw errors. Admission is eight in-flight handlers; query deadline two seconds; read/write limits three seconds; headers 8 KiB; encoded responses at most 1 MiB; graceful shutdown three seconds. Query implementations must honor context cancellation. No CORS opt-in, command or setter is exposed.
+
+OpenAPI uses JSON-compatible YAML so Go's standard JSON decoder can parse the same contract without another dependency. Handler tests validate the six route schemas and required fields. Future schemas and mTLS declarations remain separately labeled in that file.

@@ -1,3 +1,5 @@
+// Verifies defines configuration values and their defaults.
+// Uses package-local contracts and Go standard-library types.
 package config
 
 import (
@@ -31,12 +33,12 @@ func TestDefaultRootAvoidsSourceDirectoryName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasSuffix(cfg.RootDir, filepath.Join("data", "apparat", "apparat")) {
+	if !strings.HasSuffix(cfg.RootDir, filepath.Join("data", "apparat", "node")) {
 		t.Fatalf("root = %q", cfg.RootDir)
 	}
 }
 
-func TestDefaultRootsAreBinarySpecific(t *testing.T) {
+func TestDefaultRootsAreShared(t *testing.T) {
 	gui, err := Load(Options{Env: map[string]string{"XDG_DATA_HOME": "/tmp/data"}, DefaultMode: ModeGUI, BinaryName: "apparat"})
 	if err != nil {
 		t.Fatal(err)
@@ -45,7 +47,7 @@ func TestDefaultRootsAreBinarySpecific(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gui.RootDir == headless.RootDir {
-		t.Fatalf("expected separate roots, both = %q", gui.RootDir)
+	if gui.RootDir != headless.RootDir {
+		t.Fatalf("expected shared roots, got = %q", gui.RootDir)
 	}
 }

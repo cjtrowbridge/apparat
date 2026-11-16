@@ -1,3 +1,5 @@
+// Defines configuration values and their defaults.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 type TabPlacement string

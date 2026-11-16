@@ -6,7 +6,7 @@ Each command must stay thin: parse configuration, create the shared runtime, sel
 
 ## Inventory
 
-- `apparat`: GUI console entrypoint.
-- `apparatd`: headless worker/service entrypoint.
+- **`apparat`**: GUI console entrypoint.
+- **`apparatd`**: headless worker/service entrypoint.
 
 Command packages should not own durable product rules, SQL, queue policy, transport semantics, or HUD state. Put those concerns under `internal/`.

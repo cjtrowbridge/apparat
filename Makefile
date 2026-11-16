@@ -14,13 +14,13 @@ GOVULNCHECK_VERSION ?= v1.5.0
 all: verify
 
 fmt:
-	$(GO_ENV) $(GO) fmt ./...
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) fmt ./cmd/... ./internal/...
 
 test:
-	$(GO_ENV) $(GO) test ./...
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) test ./...
 
 test-race:
-	$(GO_ENV) $(GO) test -race ./...
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) test -race ./...
 
 test-build:
 	python3 -m unittest discover -s tests -p '*_test.py'
@@ -32,7 +32,7 @@ check-docs:
 	python3 scripts/check_directory_docs.py
 
 test-gui-deps:
-	$(GO_ENV) $(GO) test -tags gui ./internal/adapters/gui
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) test -tags gui ./internal/adapters/gui
 
 build:
 	$(GO_ENV) python3 scripts/build.py
@@ -50,13 +50,22 @@ run-built-headless:
 	python3 scripts/run_artifact.py "releases/$(HOST_GOOS)/$(HOST_GOARCH)/apparatd/latest" -- --smoke-test --runtime-dir /tmp/apparat-run-built/apparatd
 
 lint:
-	$(GO_ENV) $(TOOLS_BIN)/golangci-lint run ./...
+	$(GO_ENV) python3 scripts/build_gate.py -- $(TOOLS_BIN)/golangci-lint run ./...
 
 audit:
-	$(GO_ENV) $(TOOLS_BIN)/govulncheck ./...
+	$(GO_ENV) python3 scripts/build_gate.py -- $(TOOLS_BIN)/govulncheck ./...
 
 tools:
-	$(GO_ENV) GOBIN=$(TOOLS_BIN) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-	$(GO_ENV) GOBIN=$(TOOLS_BIN) $(GO) install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
+	$(GO_ENV) GOBIN=$(TOOLS_BIN) python3 scripts/build_gate.py -- $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	$(GO_ENV) GOBIN=$(TOOLS_BIN) python3 scripts/build_gate.py -- $(GO) install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
 
 verify: fmt test test-race test-build check-code-size check-docs lint audit
+
+# Fast local outputs are ignored; release orchestration remains scripts/build.py.
+.PHONY: build-fast test-fast
+build-fast:
+	mkdir -p .tmp/dev
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) build -o .tmp/dev/apparatd ./cmd/apparatd
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) build -tags gui -o .tmp/dev/apparat ./cmd/apparat
+
+test-fast: test

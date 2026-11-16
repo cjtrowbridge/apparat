@@ -1,5 +1,14 @@
 # Apparat Roadmap
 
+## Completed submodule remediation checkpoint
+
+The three separately authorized 2026-11-16 remediation plans are complete for Linux builds and Pixel 4a Android 13 validation. Historical Phase 1/5 evidence remains historical; broader platform coverage and Android safe-area/readability hardening remain pending. See docs/platform-matrix.md for tested behavior and limitations.
+
+- [x] [Adopt source/build governance](plans/past/2026-11-16-11-13-17_adopt-framework-source-build-governance.md): public policy, bootstrap v1, mandatory host gate, and behavior-preserving source migration; supports Phase 1/4 tooling.
+- [x] [Reconcile engine/mobile dependencies](plans/past/2026-11-16-11-13-18_reconcile-engine-and-mobile-dependencies.md): resolve the stable-versus-development version decision before dependent changes; supports Phase 1/5 pins.
+- [x] [Repair Android display/build handling](plans/past/2026-11-16-11-13-16_repair-android-display-build.md): preserve display behavior without tracked source mutation and verify on the Pixel 4a; supports Phase 5 and the Phase 8 clean-build requirement.
+
+
 This roadmap translates the product contract in [README.md](./README.md) into ordered implementation phases.
 
 Roadmap items describe goals, dependencies, and completion evidence. They are not atomic execution authority. Before changing application code, dependencies, schemas, protocols, or build systems, create and approve a focused execution plan under `plans/future/` or `plans/current/`.
@@ -642,7 +651,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - [x] Document each source tree's path, upstream URL, license, purpose, pin, and build/reference status.
 - [x] Add stable game/HUD source references.
   - [x] Add `https://github.com/hajimehoshi/ebiten.git` at `third_party/game/ebiten`.
-  - [x] Pin Ebitengine to a stable 2.9.x revision unless a focused plan proves a later feature is required.
+  - [x] Pin Ebitengine to an exact validated stable revision; the initial 2.9.x baseline is superseded by the reviewed 2.10.6 compatibility plan linked above. Development revisions require a demonstrated unmet need and explicit validation.
   - [x] Add `https://github.com/ebitenui/ebitenui.git` at `third_party/game/ebitenui`.
   - [x] Add `https://github.com/ebitengine/debugui.git` at `third_party/game/debugui`.
   - [x] Record which sources are referenced through `replace` directives and which remain audit/reference checkouts.
@@ -1408,147 +1417,160 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 **Deferred:** Enrollment, non-loopback REST access, REST mutations, remote advertisement, real provider calls, distributed queues, routing, and Task triggers.
 
+### Execution and simplicity contract
+
+Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute-phase-8.md), revised 2026-11-16 around seven observable outcomes. Its coverage table preserves the earlier lifecycle, recovery, security, service, REST and GUI requirements. The demonstration is two same-driver mock service instances and one different mock instance, inspected through GUI/headless/REST and preserved through restart and isolated failure. Implementation and local acceptance completed under the user’s 2026-11-16 authorization; the archived plan records tests, measurements, review fixes and exact hardware/future-effect deferrals.
+
+- [x] Deliver this slice with concrete data, ordinary application methods and explicit state ownership; introduce interfaces only for demonstrated external/test boundaries or a shared contract proved by another slice.
+- [x] Separate target inspection from generated-tool/source preparation; prepare Android inputs at most once per normal build invocation and pass the result through packaging without adding a persistent cache.
+- [x] Establish one explicit owner for each active pointer gesture where appropriate, preserving mouse/touch differences, capture precedence, cancellation and controller/keyboard actions. Validate short/held touch, drag and lifecycle interruption on the Pixel.
+- [x] Measure and remove unnecessary per-frame snapshot/status/diagnostic/static-content work before adding caches, workers or widget reconciliation. Preserve visible behavior, freshness, focus and accessibility.
+- [x] Compare relevant startup, idle CPU/memory, query/probe, input/frame and build-preparation costs under recorded comparable conditions. Set experience-driven budgets, disposition material findings and stop when acceptance is met; retain or revert each selected optimization based on behavior and benefit.
+
 ### Shared-core ownership and package seams
 
-- [ ] Establish the real shared-core composition.
-  - [ ] Keep executable entry points in `cmd/apparat` and `cmd/apparatd`.
-  - [ ] Put mode-neutral orchestration in `internal/app`.
-  - [ ] Put durable product rules and value types in `internal/domain`.
-  - [ ] Put SQLite, provider, Git, filesystem, HTTP, and other external integrations in `internal/adapters`.
-  - [ ] Put OS paths, locks, signals, credential stores, services, and lifecycle in `internal/platform`.
-  - [ ] Keep Ebitengine/EbitenUI imports below the GUI adapter boundary.
-- [ ] Remove duplicate backend ownership.
-  - [ ] The core owns no HUD shell.
-  - [ ] The GUI owns navigation, focus, selection, layout, scrolling, gestures, animation, modal state, and unsaved widget text.
-  - [ ] Core state includes identity, backend configuration, Projects, durable drafts, Tasks, queues, jobs, services, capabilities, artifacts, retries, and cached remote state.
-  - [ ] The GUI invokes the internal application API directly in-process and never uses REST to reach its embedded core.
-  - [ ] REST handlers invoke the same internal application API and never access SQLite or duplicate product rules.
-- [ ] Implement the smallest transport-neutral internal application API needed by the first slice.
-  - [ ] Typed commands validate intent and durable invariants.
-  - [ ] Queries return immutable read models.
-  - [ ] Change notifications are hints to re-query, not durable truth.
-  - [ ] GUI actions invoke commands and GUI projections consume query read models without importing REST types.
-  - [ ] REST request/response types map to the same commands and query read models without becoming domain types.
-  - [ ] Inject clock and ID sources into deterministic application logic.
-  - [ ] Add abstractions only after a second slice proves a shared contract.
+- [x] Establish the real shared-core composition.
+  - [x] Keep executable entry points in `cmd/apparat` and `cmd/apparatd`.
+  - [x] Put mode-neutral orchestration in `internal/app`.
+  - [x] Put durable product rules and value types in `internal/domain`.
+  - [x] Put SQLite, provider, Git, filesystem, HTTP, and other external integrations in `internal/adapters`.
+  - [x] Keep OS locks/migration in `internal/platform` and existing deterministic path resolution with `internal/config`; future credential/service integration follows its platform phase.
+  - [x] Keep Ebitengine/EbitenUI imports below the GUI adapter boundary.
+- [x] Remove duplicate backend ownership.
+  - [x] The core owns no HUD shell.
+  - [x] The GUI owns navigation, focus, selection, layout, scrolling, gestures, animation, modal state, and unsaved widget text.
+  - [x] Core ownership is established for identity/configuration/services and persistence; Projects/drafts/Tasks/queues/remote state remain owned by the core when implemented in their later phases.
+  - [x] The GUI invokes the internal application API directly in-process and never uses REST to reach its embedded core.
+  - [x] REST handlers invoke the same internal application API and never access SQLite or duplicate product rules.
+- [x] Implement the smallest transport-neutral internal application API needed by the first slice.
+  - [x] Typed commands validate intent and durable invariants.
+  - [x] Queries return immutable read models.
+  - [x] Change notifications are hints to re-query, not durable truth.
+  - [-] GUI projections consume direct query read models without REST types; interactive provider configuration commands are deferred to Phase 12. Phase 8 implements internal commands and atomic demo configuration.
+  - [x] REST request/response types map to the same commands and query read models without becoming domain types.
+  - [x] Inject clock and ID sources into deterministic application logic.
+  - [x] Add shared abstractions only after another slice proves a shared contract; narrow interfaces for actual external/test boundaries need no speculative component hierarchy.
 
 ### One-node runtime and transactional lifecycle
 
-- [ ] Migrate to one logical default node root for both artifacts.
-  - [ ] Preserve or explicitly migrate current binary-specific roots.
-  - [ ] Acquire an exclusive runtime lock before opening writable state.
-  - [ ] Report the owning PID/artifact and safe recovery guidance on contention.
-  - [ ] Require explicit roots and identities for independent same-host nodes.
-- [ ] Make startup transactional.
-  - [ ] Resolve configuration and paths.
-  - [ ] Acquire the lock.
-  - [ ] Start structured logging and panic capture.
-  - [ ] Open and inspect SQLite.
-  - [ ] Apply checksumed forward migrations.
-  - [ ] Load/validate identity and secret adapters.
-  - [ ] Construct repositories and managers.
-  - [ ] Start supervised background work only after durable dependencies are ready.
-  - [ ] Publish readiness last.
-- [ ] Make shutdown idempotent and ordered.
-  - [ ] Stop admission.
-  - [ ] Cancel supervised work.
-  - [ ] Flush durable state and logs.
-  - [ ] Close managers, repositories, SQLite, and lock.
-  - [ ] Preserve actionable `last_run.log` diagnostics on partial startup or shutdown failure.
+- [x] Migrate to one logical default node root for both artifacts.
+  - [x] Preserve or explicitly migrate current binary-specific roots.
+  - [x] Acquire an exclusive runtime lock before opening writable state.
+  - [x] Report the owning PID/artifact and safe recovery guidance on contention.
+  - [x] Require explicit roots and identities for independent same-host nodes.
+- [x] Make startup transactional.
+  - [x] Resolve configuration and paths.
+  - [x] Acquire the lock.
+  - [x] Start structured logging and panic capture.
+  - [x] Open and inspect SQLite.
+  - [x] Apply checksumed forward migrations.
+  - [x] Load/validate identity and secret adapters.
+  - [x] Construct repositories and managers.
+  - [x] Start supervised background work only after durable dependencies are ready.
+  - [x] Publish readiness last.
+- [x] Make shutdown idempotent and ordered.
+  - [x] Stop admission.
+  - [x] Cancel supervised work.
+  - [x] Flush durable state and logs.
+  - [x] Close managers, repositories, SQLite, and lock.
+  - [x] Preserve actionable `last_run.log` diagnostics on partial startup or shutdown failure.
 
 ### SQLite and recovery hardening
 
-- [ ] Centralize database ownership behind repositories and transactions.
-  - [ ] Define connection limits, busy timeout, foreign-key behavior, and retry classes.
-  - [ ] Keep WAL opt-in until Linux, Windows, macOS, and Android behavior is evidenced.
-  - [ ] Add cancellation-aware transactions and read models.
-  - [ ] Preserve migration checksum mismatch diagnostics.
-- [ ] Define and test backup, integrity, repair, restore, and rollback.
-  - [ ] Never treat file copy during an active uncoordinated write as a valid backup.
-  - [ ] Record schema/app version and integrity evidence with backups.
-  - [ ] Test restore into a disposable root before replacing authoritative state.
-  - [ ] Keep optional database encryption gated on key storage and recovery design.
+- [x] Centralize database ownership behind repositories and transactions.
+  - [x] Define connection limits, busy timeout, foreign-key behavior, and retry classes.
+  - [x] Keep WAL opt-in until Linux, Windows, macOS, and Android behavior is evidenced.
+  - [x] Add cancellation-aware transactions and read models.
+  - [x] Preserve migration checksum mismatch diagnostics.
+- [x] Define and test backup, integrity, repair, restore, and rollback.
+  - [x] Never treat file copy during an active uncoordinated write as a valid backup.
+  - [x] Record schema/app version and integrity evidence with backups.
+  - [x] Test restore into a disposable root before replacing authoritative state.
+  - [x] Keep optional database encryption gated on key storage and recovery design.
 
 ### Initial read-only REST adapter
 
-- [ ] Define the first versioned REST/OpenAPI surface over internal application queries.
-  - [ ] Expose health, version, readiness, and safe local device state.
-  - [ ] Expose the local service-instance and capability read models implemented by this phase.
-  - [ ] Keep endpoint schemas transport-specific while preserving stable core IDs and semantics.
-  - [ ] Generate or implement conformance tests against the OpenAPI contract.
-- [ ] Keep the pre-identity REST listener local and read-only.
-  - [ ] Bind to loopback by default and reject non-loopback configuration until Phase 9 security is active.
-  - [ ] Expose no REST mutation, command, setter, enrollment, or trust operation.
-  - [ ] Omit provider-local URLs, credential references, secrets, private paths, raw failures, and other unsafe state.
-  - [ ] Enforce content negotiation, response limits, deadlines, bounded concurrency, redaction-safe errors, and graceful listener shutdown.
-- [ ] Reuse one internal query implementation across adapters.
-  - [ ] GUI tests call the internal application API directly rather than starting HTTP.
-  - [ ] REST handler tests prove mapping, sanitization, status codes, and schema conformance.
-  - [ ] Integration tests prove GUI and REST projections originate from the same SQLite-backed core state without requiring identical presentation shapes.
+- [x] Define the first versioned REST/OpenAPI surface over internal application queries.
+  - [x] Expose health, version, readiness, and safe local device state.
+  - [x] Expose the local service-instance and capability read models implemented by this phase.
+  - [x] Keep endpoint schemas transport-specific while preserving stable core IDs and semantics.
+  - [x] Generate or implement conformance tests against the OpenAPI contract.
+- [x] Keep the pre-identity REST listener local and read-only.
+  - [x] Bind to loopback by default and reject non-loopback configuration until Phase 9 security is active.
+  - [x] Expose no REST mutation, command, setter, enrollment, or trust operation.
+  - [x] Omit provider-local URLs, credential references, secrets, private paths, raw failures, and other unsafe state.
+  - [x] Enforce content negotiation, response limits, deadlines, bounded concurrency, redaction-safe errors, and graceful listener shutdown.
+- [x] Reuse one internal query implementation across adapters.
+  - [x] GUI tests call the internal application API directly rather than starting HTTP.
+  - [x] REST handler tests prove mapping, sanitization, status codes, and schema conformance.
+  - [x] Integration tests prove GUI and REST projections originate from the same SQLite-backed core state without requiring identical presentation shapes.
 
 ### First durable local-service vertical slice
 
-- [ ] Implement a statically registered mock provider driver.
-  - [ ] Explicit factory registration at both composition roots.
-  - [ ] Stable `ServiceID` and `CapabilityID` types.
-  - [ ] Two configured instances of the same driver and workload class plus one different mock provider.
-  - [ ] Independent desired enablement, observed health, inventory, concurrency, failure, and shutdown.
-- [ ] Persist desired and observed service state separately.
-  - [ ] Service-instance desired configuration table.
-  - [ ] Observation table with safe errors and probe timestamps.
-  - [ ] Capability table keyed by service and capability ID.
-  - [ ] No remote advertisement in this phase.
-- [ ] Expose one shared read model.
-  - [ ] Headless query/diagnostic output lists every instance distinctly.
-  - [ ] GUI Routing detail renders the same core projection.
-  - [ ] Read-only REST resources map from the same internal query result.
-  - [ ] GUI filter/selection/expansion remains GUI-owned.
-  - [ ] Loading, empty, disabled, unhealthy, and error states are explicit.
-- [ ] Prove restart and failure isolation.
-  - [ ] Stable identities survive restart.
-  - [ ] One failed instance does not hide or stop another same-provider instance.
-  - [ ] Removing one instance cannot remove another by driver or workload key.
+- [x] Implement a statically registered mock provider driver.
+  - [x] Explicit factory registration at both composition roots.
+  - [x] Stable canonical validated `ServiceID` and `CapabilityID` values.
+  - [x] Two configured instances of the same driver and workload class plus one different mock provider.
+  - [x] Independent desired enablement, observed health, inventory, concurrency, failure, and shutdown.
+- [x] Persist desired and observed service state separately.
+  - [x] Service-instance desired configuration table.
+  - [x] Observation table with safe errors and probe timestamps.
+  - [x] Capability table keyed by service and capability ID.
+  - [x] No remote advertisement in this phase.
+- [x] Expose one shared read model.
+  - [x] Headless query/diagnostic output lists every instance distinctly.
+  - [x] GUI Routing detail renders the same core projection.
+  - [x] Read-only REST resources map from the same internal query result.
+  - [x] GUI filter/selection/expansion remains GUI-owned.
+  - [x] Loading, empty, disabled, unhealthy, and error states are explicit.
+- [x] Prove restart and failure isolation.
+  - [x] Stable identities survive restart.
+  - [x] One failed instance does not hide or stop another same-provider instance.
+  - [x] Removing one instance cannot remove another by driver or workload key.
 
 ### GUI, test, and build foundation
 
-- [ ] Route controller, keyboard, mouse, and touch through one application action model.
-- [ ] Implement or correctly defer focus, activation, back, context, scrolling, modal, disabled-control, and accessibility semantics.
-- [ ] Replace unconditional widget-tree rebuilds with reconciliation where measured evidence shows churn or state loss.
-- [ ] Standardize loading, empty, stale, offline, unauthorized, retrying, cancelled, and failed data states.
-- [ ] Persist only honest configuration with validation, save state, defaults, and secret references.
-- [ ] Separate headless core tests, display-free GUI state/projection tests, and optional native display integration tests.
-- [ ] Remove placeholder/sentinel packages only when real owners replace them; do not perform a broad speculative rewrite.
-- [ ] Avoid a service-locator, generic event bus, or global registry that hides ownership; use explicit composition roots and narrow interfaces.
-- [ ] Keep Ebitengine update/draw work bounded; move SQLite, network, provider probes, artifact I/O, and other blocking effects outside render/update paths.
-- [ ] Harden existing sensitive foundations before exposing the network.
-  - [ ] Strict identity parsing, validation, permissions, and atomic file replacement.
-  - [ ] Recursive structured-log redaction for secrets and sensitive nested fields.
-  - [ ] Updater trust, hash/signature, temporary-file, cancellation, and rollback boundaries.
-- [ ] Separate fast host builds/tests from release orchestration.
-- [ ] Stop mutating tracked or submodule source during builds; use ignored worktrees/caches or upstreamable patches.
-- [ ] Establish startup, memory, SQLite, frame-time, and probe-concurrency budgets with measurements.
+- [x] Route controller, keyboard, mouse, and touch through one application action model.
+- [x] Implement or correctly defer focus, activation, back, context, scrolling, modal, disabled-control, and accessibility semantics.
+- [x] Suppress timestamp-only service projection rebuilds; retain ordinary rebuilds for actual changes. No measured need justified keyed reconciliation.
+- [x] Implement loading/empty/disabled/healthy/unhealthy/stale/query-error states for the local slice; remote trust states belong to Phase 9, provider states to Phase 12, job/Task effects to Phases 13/15, audio to Phase 16.
+- [x] Persist validated service intent/revisions; keep hard-coded HUD defaults honestly labeled. Real editable settings/secret-reference flows follow Phases 11–12.
+- [x] Separate headless core tests, display-free GUI state/projection tests, and optional native display integration tests.
+- [x] Remove placeholder/sentinel packages only when real owners replace them; do not perform a broad speculative rewrite.
+- [x] Avoid a service-locator, generic event bus, or global registry that hides ownership; use explicit composition roots and narrow interfaces.
+- [x] Keep Ebitengine update/draw work bounded; move SQLite, network, provider probes, artifact I/O, and other blocking effects outside render/update paths.
+- [x] Harden existing sensitive foundations before exposing the network.
+  - [x] Strict identity parsing, validation, permissions, and atomic file replacement.
+  - [x] Recursive structured-log redaction for secrets and sensitive nested fields.
+  - [x] Updater trust, hash/signature, temporary-file, cancellation, and rollback boundaries.
+- [x] Separate fast host builds/tests from release orchestration.
+- [x] Stop mutating tracked or submodule source during builds; the [Android repair checkpoint](plans/past/2026-11-16-11-13-16_repair-android-display-build.md) exports and patches ignored source. Phase 8 must preserve this property on success, failure and interruption.
+- [x] Preserve the [source/build gate and passing lint baseline](plans/past/2026-11-16-11-13-17_adopt-framework-source-build-governance.md) while changing the build path; reuse existing evidence and rerun checks for changed behavior.
+- [x] Establish startup, memory, SQLite, frame-time, and probe-concurrency budgets with measurements.
 
 ### Continuous target evidence
 
-- [ ] Keep Linux GUI and headless builds passing through every later phase.
-- [ ] Prove headless startup imports/initializes no GUI dependency.
-- [ ] Continue Android validation from Phase 5.
-  - [ ] Safe-area and density/readability on a Pixel-class device.
-  - [ ] Touch, keyboard, controller, portrait, landscape, process-liveness, and runtime-path evidence.
-  - [ ] Optional install/launch integration target when tools/device are available.
-  - [ ] No second backend/service registry in the Android GUI.
-- [ ] Carry unresolved input, accessibility, and platform behavior into the exact phase that supplies its real backend effect.
+- [x] Keep Linux GUI and headless builds passing through every later phase.
+- [x] Prove headless startup imports/initializes no GUI dependency.
+- [x] Continue Android validation from Phase 5.
+  - [x] Safe-area and density/readability on a Pixel-class device.
+  - [-] Pixel touch, rotation/resume, process-liveness and runtime-path evidence captured; physical keyboard/controller/finger and native accessibility acceptance remain Phase 17.
+  - [x] Optional install/launch integration target when tools/device are available.
+  - [x] No second backend/service registry in the Android GUI.
+- [x] Carry unresolved input, accessibility, and platform behavior into the exact phase that supplies its real backend effect.
 
 **Exit criteria**
 
-- [ ] One shared core runs headlessly and behind the GUI.
-- [ ] The GUI uses the core's internal application API directly without routing through HTTP.
-- [ ] A loopback-only, read-only REST adapter exposes selected queries from that same API and no setters.
-- [ ] One runtime lock prevents competing writers/advertisements for one node.
-- [ ] Core tests require no GUI, SQLite, network, real clock, or platform service unless explicitly integration-scoped.
-- [ ] Two same-provider mock instances and another provider remain distinct through restart and failure.
-- [ ] The GUI renders core service state without moving GUI state into the core.
-- [ ] Lifecycle, backup/restore, diagnostics, and continuous target checks have reproducible evidence.
+- [x] One shared core runs headlessly and behind the GUI.
+- [x] The GUI uses the core's internal application API directly without routing through HTTP.
+- [x] A loopback-only, read-only REST adapter exposes selected queries from that same API and no setters.
+- [x] One runtime lock prevents competing writers/advertisements for one node.
+- [x] Core tests require no GUI, SQLite, network, real clock, or platform service unless explicitly integration-scoped.
+- [x] Two same-provider mock instances and another provider remain distinct through restart and failure.
+- [x] The GUI renders core service state without moving GUI state into the core.
+- [x] Lifecycle, backup/restore, diagnostics, and continuous target checks have reproducible evidence.
+
+**Acceptance limits:** [Archived execution evidence](plans/past/2026-07-20-09-04-03_execute-phase-8.md#execution-evidence-and-review--2026-11-16) and [platform matrix](docs/platform-matrix.md#phase-8-acceptance--2026-11-16) distinguish passing local evidence from Phase 17 hardware/accessibility/release gates. No full platform-support or real-provider claim follows from Phase 8.
 
 ## Phase 9: Identity, Trusted Device Directory, Resource Telemetry, Authenticated REST Commands, And Reusable Mock Queue
 
@@ -2134,6 +2156,8 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 
 **Scope:** This phase culminates platform validation; it is not the first platform test.
 
+Continuous Android evidence: the [Pixel 10 safe-area correction](plans/past/2026-11-16-14-00-00_fix-android-safe-area.md) validates Android 17 three-button navigation, portrait/landscape, touch alignment and resume. Broader platform acceptance below remains open.
+
 ### Steam Deck and Linux GUI
 
 - [ ] Controller database/mappings and complete application-action equivalence.
@@ -2163,6 +2187,12 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
 - [ ] Install, upgrade, rollback, diagnostics, and target-specific behavior evidence.
 
 ### Android
+
+[GitHub update repair](plans/current/2026-11-16-15-20-00_repair-github-updates.md) pins the installed Pixel signing identity and prepares version 0.1.1 (code 2). Build, verification and Pixel 4a in-place installation pass; source/APK publication and fetched-byte verification remain pending. This does not close production signing custody or release-manifest work below.
+
+[Tab page headings](plans/past/2026-11-16-15-00-00_tab-page-headings.md) add the active tab name beneath icon navigation, validated on Pixel 4a with scrolling and landscape.
+
+Compact icon tabs are tracked in [the icon-tab plan](plans/past/2026-11-16-14-30-00_compact-icon-tabs.md), preserving Phase 8 navigation with Pixel 4a acceptance.
 
 - [ ] Continue from Phase 5 and continuous Phase 8+ validation.
 - [ ] Release signing, versioning, provenance, icons, store/distribution, signed update manifest, installed-versus-latest display, and rollback policy.

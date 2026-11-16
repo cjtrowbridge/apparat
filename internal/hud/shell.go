@@ -1,3 +1,5 @@
+// Coordinates tab selection and HUD shell state.
+// Uses package-local contracts and Go standard-library types.
 package hud
 
 import "fmt"

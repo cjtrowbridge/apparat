@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Generate a project-focused GitIngest digest and provenance manifest."""
+"""
+Generate a project-focused GitIngest digest and provenance manifest.
+Uses repository-local paths; see scripts/README.md for prerequisites and side effects.
+"""
 
 from __future__ import annotations
 

@@ -1,3 +1,5 @@
+// Configures structured logging and redacts sensitive fields.
+// Uses package-local contracts and Go standard-library types.
 package logging
 
 import (
@@ -5,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -46,17 +47,25 @@ func (logger Logger) Write(event Event) error {
 		event.Time = time.Now().UTC().Format(time.RFC3339Nano)
 	}
 	event.Fields = Redact(event.Fields)
-	if err := os.MkdirAll(filepath.Dir(logger.path), 0o700); err != nil {
-		return err
+	{
+		err := os.MkdirAll(filepath.Dir(logger.path), 0o700)
+		if err != nil {
+			return err
+		}
 	}
-	if err := logger.rotateIfNeeded(); err != nil {
-		return err
+	{
+		err := logger.rotateIfNeeded()
+		if err != nil {
+			return err
+		}
 	}
 	file, err := os.OpenFile(logger.path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = file.Close() }()
+	defer func() {
+		_ = file.Close()
+	}()
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err
@@ -65,29 +74,19 @@ func (logger Logger) Write(event Event) error {
 	return err
 }
 
-func Redact(fields map[string]any) map[string]any {
-	if fields == nil {
-		return nil
-	}
-	out := make(map[string]any, len(fields))
-	for key, value := range fields {
-		lower := strings.ToLower(key)
-		if strings.Contains(lower, "token") || strings.Contains(lower, "private") || strings.Contains(lower, "passphrase") || strings.Contains(lower, "prompt") || strings.Contains(lower, "model_output") || strings.Contains(lower, "voice") || strings.Contains(lower, "secret") {
-			out[key] = "[redacted]"
-			continue
-		}
-		out[key] = value
-	}
-	return out
-}
-
 func StartLastRun(path string, fields map[string]any) (LastRun, error) {
 	log := LastRun{path: path}
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return log, err
+	{
+		err := os.MkdirAll(filepath.Dir(path), 0o700)
+		if err != nil {
+			return log, err
+		}
 	}
-	if err := os.WriteFile(path, nil, 0o600); err != nil {
-		return log, err
+	{
+		err := os.WriteFile(path, nil, 0o600)
+		if err != nil {
+			return log, err
+		}
 	}
 	return log, log.Write("info", "runtime", "process_start", "created last_run.log", fields)
 }
@@ -112,7 +111,9 @@ func (log LastRun) Write(level string, component string, event string, message s
 	if err != nil {
 		return err
 	}
-	defer func() { _ = file.Close() }()
+	defer func() {
+		_ = file.Close()
+	}()
 	_, err = file.Write(append(data, '\n'))
 	return err
 }

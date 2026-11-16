@@ -1,3 +1,7 @@
+"""
+Checks gitingest artifact test behavior with isolated unittest fixtures.
+Uses temporary directories and mocks; no device deployment is performed.
+"""
 import hashlib
 import json
 from pathlib import Path

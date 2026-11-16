@@ -1,5 +1,7 @@
 //go:build gui
 
+// Builds and sorts local mock research contribution rows.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui/widget.
 package gui
 
 import (

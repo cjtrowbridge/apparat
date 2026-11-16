@@ -1,0 +1,26 @@
+code:
+  max_lines: 400
+  roots: [cmd, internal, scripts, tests, android]
+  languages:
+    .go:
+      adapter: go
+      comment_pattern: '(?://[^\n]*|(?s:/\*.*?\*/))'
+    .py:
+      adapter: python
+      comment_pattern: '(?:#[^\n]*|(?s:""".*"""|\x27\x27\x27.*\x27\x27\x27))'
+    .java:
+      adapter: cstyle
+      comment_pattern: '(?://[^\n]*|(?s:/\*.*?\*/))'
+    .ps1:
+      adapter: powershell
+      comment_pattern: '(?:#[^\n]*|(?s:<#.*#>))'
+    .sh:
+      adapter: shell
+      comment_pattern: '#[^\n]*'
+  entrypoints:
+    build.py:
+      purpose: Compatibility launcher for the canonical build
+      delegate: scripts/build.py
+    build_environment.sample.py:
+      purpose: Compatibility sample delegating local build environment defaults
+      delegate: scripts/build_environment_sample.py

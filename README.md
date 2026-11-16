@@ -51,6 +51,8 @@ The canonical tab order is:
 4. Research
 5. Settings
 
+The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖥️ Cluster, 🧪 Research and ⚙️ Settings. All five fit at 320 logical pixels; hover tooltips retain their names. A prominent page heading below the icons names the active tab and remains visible while its content scrolls. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
+
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 
 ### Comrades
@@ -177,15 +179,15 @@ All GUI targets use one application action model for tab selection, focus moveme
 
 The initial Steam Deck mapping is:
 
-- `L1`: previous top-level tab.
-- `R1`: next top-level tab.
+- **`L1`**: previous top-level tab.
+- **`R1`**: next top-level tab.
 - D-pad or left stick: move focus.
-- `A`: activate the focused control.
-- `B`: back or cancel.
-- `X`: contextual actions.
+- **`A`**: activate the focused control.
+- **`B`**: back or cancel.
+- **`X`**: contextual actions.
 - Menu: command palette.
 - Right stick: scroll long views.
-- `R2`: hold to talk.
+- **`R2`**: hold to talk.
 
 Holding `R2` begins local audio capture. Releasing it ends capture and submits the buffered audio to the selected ASR route. The HUD must visibly distinguish recording, cancellation, upload or queueing, transcription, failure, and completion.
 
@@ -195,16 +197,16 @@ Steam Deck text fields support the system `Steam+X` on-screen keyboard shortcut 
 
 Debian GUI mode supports the Steam Deck controller mapping unchanged when a compatible controller is attached. Its default keyboard mapping is:
 
-- `Ctrl+PageUp`: previous top-level tab.
-- `Ctrl+PageDown`: next top-level tab.
+- **`Ctrl+PageUp`**: previous top-level tab.
+- **`Ctrl+PageDown`**: next top-level tab.
 - `Alt+1` through `Alt+5`: open Comrades, Projects, Cluster, Research, or Settings directly.
 - `Tab` and `Shift+Tab`: move to the next or previous focusable control.
 - Arrow keys: move within lists, trees, grids, menus, and spatial focus groups.
-- `Enter`: activate the focused control or submit the current form.
-- `Space`: activate a button or toggle the focused checkbox, switch, or selection.
-- `Escape`: close a modal, leave the current focus scope, go back, or cancel the current safe operation.
+- **`Enter`**: activate the focused control or submit the current form.
+- **`Space`**: activate a button or toggle the focused checkbox, switch, or selection.
+- **`Escape`**: close a modal, leave the current focus scope, go back, or cancel the current safe operation.
 - Menu key or `Shift+F10`: open contextual actions for the focused item.
-- `Ctrl+Shift+P`: open the command palette.
+- **`Ctrl+Shift+P`**: open the command palette.
 - `PageUp`, `PageDown`, `Home`, and `End`: navigate long views and collections.
 - Right `Ctrl`: hold to talk; release to submit captured audio to the selected ASR route.
 
@@ -576,9 +578,9 @@ Normal Go dependencies remain pinned through `go.mod` and `go.sum`. Build tools 
 
 | Path | Revision | Purpose and update policy |
 | --- | --- | --- |
-| `agentic-pipelines` | `bdf758c21319b3a2f99d70a9f95417b55e636398` | Selected shared agent-governance baseline and reusable pipeline tooling; update through a reviewed submodule synthesis |
+| `agentic-pipelines` | `51a17b0cff0bde9baf9473adacb1c0c11a50d4a7` | Selected shared agent-governance baseline and reusable pipeline tooling; update through a reviewed submodule synthesis |
 
-The governance framework is not imported by the Apparat binary or its build scripts. Update its gitlink only after reviewing upstream instructions, host overrides, live path references, and local verification.
+The governance framework is not imported by the Apparat binary. Host build entrypoints invoke its canonical source checker before compilation; Apparat retains ownership of prerequisites, targets and artifact paths. Update its gitlink only after reviewing upstream instructions, host overrides, live path references, and local verification.
 
 ### Required Early Sources
 
@@ -594,9 +596,9 @@ The governance framework is not imported by the Apparat binary or its build scri
 | `third_party/inference/llama.cpp` | `https://github.com/ggml-org/llama.cpp.git` | Future local LLM service adapter reference |
 | `third_party/speech/whisper.cpp` | `https://github.com/ggml-org/whisper.cpp.git` | Portable local ASR reference |
 
-Ebitengine should begin from a stable 2.9.x revision unless a focused implementation plan demonstrates a required newer feature.
+Ebitengine uses an exact, validated stable release; the current selected baseline is v2.10.6. Upgrade when concrete fixes or capabilities justify it and Linux/Android regression evidence is recorded. A development revision requires an unmet need plus explicit compatibility evidence; the initial 2.9.x baseline is not a permanent minor-version restriction.
 
-`debugui` remains a source-reference checkout for now. Its current source revision tracks Ebitengine 2.10 alpha work, so it is intentionally not an active Go dependency while Apparat starts on stable Ebitengine 2.9.x.
+`debugui` remains a source-reference checkout; its update does not activate an application dependency.
 
 Every grouping directory requires a README inventory. Every submodule addition requires an intentional revision, license review, purpose statement, update procedure, and declaration of whether it is a source reference or active build dependency.
 
@@ -608,8 +610,8 @@ The root Go module is `github.com/cjtrowbridge/apparat`.
 
 Phase 0 establishes:
 
-- Go toolchain baseline: `1.26.4`.
-- Ebitengine dependency: `github.com/hajimehoshi/ebiten/v2 v2.9.9`.
+- Go toolchain baseline: `1.26.11`.
+- Ebitengine dependency: `github.com/hajimehoshi/ebiten/v2 v2.10.6`, replaced by the matching pinned source checkout.
 - EbitenUI dependency: `github.com/ebitenui/ebitenui v0.7.4-0.20260422023258-b1c31d852489`.
 - SQLite dependency: `modernc.org/sqlite v1.53.1-0.20260625155647-5d243466fa05`.
 - Developer tool pins: `golangci-lint v2.12.2` and `govulncheck v1.5.0`.
@@ -628,6 +630,15 @@ make build
 
 ### Build Process
 
+### Bootstrap and build governance
+
+Run `python3 scripts/bootstrap.py --check` to inspect Go and hook prerequisites without changes. `python3 scripts/bootstrap.py` installs/checks the repository hook. Provision Go 1.26.11 on PATH or copy a verified existing distribution with `--go-source /path/to/go`; `--native-source /path/to/sysroot` copies an existing native development sysroot into ignored local tools. These copies are independent of the original project. On Linux amd64, `python3 scripts/bootstrap.py --install-android` installs checksum-verified API 35, build-tools 35.0.0, NDK 27.2.12479018 and Temurin 21 into `.tools`; `--check --android` validates them without installing. Existing `JAVA_HOME` or PATH JDKs must be OpenJDK 21. ADB is the system Debian package, shared across projects.
+
+Every supported software-build entrypoint runs the read-only bootstrap probe, canonical source gate and physical-line check before compilation. `source-governance.yaml` declares first-party roots and language rules; local API configuration is unrelated. Build prerequisites fail visibly without automatic system installation. Use `python3 scripts/build_gate.py -- COMMAND` for direct compiler/test/tool commands and approved Git commits so the staged hook inherits the local Go path. Make targets already do this. No commit or publication is implied by a build.
+
+The VS Code task and primary launch action use Python on Linux/macOS and the existing native PowerShell wrapper on Windows, entering the same canonical build once. Windows/macOS integration is configured but requires independent host validation. `scripts/build_environment_sample.py` owns optional local environment defaults; the root sample preserves the established copy-to-`build_environment.py` interface.
+
+
 After cloning, initialize Agentic Pipelines:
 
 ```bash
@@ -640,7 +651,7 @@ Run build and verification commands from the repository root. Prefer Makefile ta
 
 Prerequisites:
 
-- Go `1.26.4` on `PATH`, or use the checked local toolchain path when present.
+- Go `1.26.11` on `PATH`, or use the checked local toolchain path when present.
 - Python 3 for repository scripts.
 - Pinned developer tools installed with `make tools` before full verification.
 - Network access the first time Go modules or vulnerability data must be downloaded.
@@ -674,13 +685,15 @@ Android Phase 5 builds the GUI APK only. The canonical Android artifact is:
 releases/android/arm64/apparat/latest.apk
 ```
 
-The same no-flag build pass reports whether Android is possible and builds the APK when the prerequisites are present. The Android pipeline requires an OpenJDK 21 distribution (Eclipse Temurin preferred; Oracle JDK is not permitted), Android SDK command-line tools, platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and Ebitengine's `github.com/ebitengine/gomobile` module. `JAVA_HOME` must expose `java`, `javac`, and `keytool`. Tools are discovered from `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, with ignored repo-local `.tools/` fallbacks when present; `.tmp/` is used only for disposable patched-tool source. If a machine needs custom local paths, copy `build_environment.sample.py` to ignored `build_environment.py` and update environment values there.
+The same no-flag build pass reports whether Android is possible and builds the APK when the prerequisites are present. The Android pipeline requires an OpenJDK 21 distribution (Eclipse Temurin preferred; Oracle JDK is not permitted), Android SDK platform `android-35`, build-tools `35.0.0`, NDK `27.2.12479018`, and Ebitengine's `github.com/ebitengine/gomobile` module. `JAVA_HOME` must expose `java`, `javac`, and `keytool`. Tools are discovered from `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and `ANDROID_NDK_HOME`, with ignored repo-local `.tools/` fallbacks when present; `.tmp/` holds disposable patched-tool and exported engine source. If a machine needs custom local paths, copy `scripts/build_environment_sample.py` to ignored `build_environment.py` and update environment values there.
 
-On Windows, `python -m scripts.build` is the directly usable no-flag invocation when `make` is unavailable. It supports Eclipse Temurin OpenJDK 21 and the ignored repo-local `.tools/android` SDK layout. The first setup downloads the Android command-line tools, platform-tools/ADB, Android platform 35, build-tools 35.0.0, NDK 27.2.12479018, and Go/Gomobile caches; these large local dependencies and the generated debug keystore must remain untracked. A successful APK build is artifact evidence only—use a connected authorized device and ADB install/launch evidence before claiming Windows Android runtime support.
+On Windows, `python -m scripts.build` is the directly usable no-flag invocation when `make` is unavailable. It supports Eclipse Temurin OpenJDK 21 and the ignored repo-local `.tools/android` SDK layout. Provision Android platform 35, build-tools 35.0.0, NDK 27.2.12479018, system-PATH ADB, and Go/Gomobile caches before the build; these large local dependencies and the retained certificate-pinned development keystore must remain untracked. A successful APK build is artifact evidence only—use a connected authorized device and ADB install/launch evidence before claiming Windows Android runtime support.
 
-The pipeline binds `cmd/apparatmobile` with Ebitengine's generated Android mobile view classes, compiles the tracked wrapper in `android/apparat`, and writes a signed APK to the canonical release path. The wrapper is the current Android render path: on-device evidence shows it opens to the Phase 4 HUD and accepts touch tab selection. It generates an ignored patched local `gomobile-apparat` helper under `.tools/bin` because the pinned Ebitengine `gomobile` package scanner checks for `github.com/ebitengine/gomobile/app` while its regular expression only recognizes `golang.org/x` package symbols. This patch broadens the scanner, supports local Apparat/Ebitengine module replacement for AAR binding, and preserves modern Android SDK metadata (`minSdkVersion=23`, `targetSdkVersion=30`) while compiling/package-building against Android platform 35. It also signs the APK with a generated debug keystore and keeps the Android build independent from the ignored `third_party/salvagecore` checkout.
+The pipeline binds `cmd/apparatmobile` with Ebitengine's generated Android mobile view classes, compiles the tracked wrapper in `android/apparat`, and writes a signed APK to the canonical release path. The wrapper is the current Android render path: on-device evidence shows it opens to the Phase 4 HUD and accepts touch tab selection. It generates an ignored patched local `gomobile-apparat` helper under `.tools/bin` because the pinned Ebitengine `gomobile` package scanner checks for `github.com/ebitengine/gomobile/app` while its regular expression only recognizes `golang.org/x` package symbols. This patch broadens the scanner, supports local Apparat/Ebitengine module replacement for AAR binding, and preserves modern Android SDK metadata (`minSdkVersion=23`, `targetSdkVersion=35`) while compiling/package-building against Android platform 35. Mobile preparation exports the pinned engine into ignored `.tmp/mobile-engine` and guards invalid display metrics there, leaving the submodule untouched. The helper is rebuilt from its pinned source and current patches on each preparation. It also signs the APK with a retained certificate-pinned development keystore and keeps the Android build independent from the ignored `third_party/salvagecore` checkout.
 
 During Phase 5, the Settings tab also exposes a temporary `Updates` fieldset with an EbitenUI `Check for update` button and safe explanatory status text. On Android, that button calls the wrapper updater through the Gomobile bridge. The action downloads the tracked GitHub `latest.apk`, compares that file's SHA-256 with the installed APK, opens Android's per-app unknown-source permission screen only when an update is needed and permission is missing, then launches the system package installer for user approval. A successful matching hash reports `Up To Date!`; network, HTTP, download, and verification failures report `Unable to check for updates` with a redacted actionable explanation. A silent startup check follows the same path but only surfaces user-facing state when action is needed. Desktop builds currently have no configured checker and state that limitation honestly. A later Android release-hardening phase replaces this hash-only bridge with installed-version versus latest-version display before offering an update.
+
+The APK retains Android 6/API 23 as its minimum; targeting API 35 does not raise that minimum. Newer Android versions apply newer permission, background-execution and layout rules. The wrapper applies system-bar and camera-cutout insets on Android 15+ so HUD controls stay inside usable screen bounds. Reserved areas use the renderer's background color, with light navigation buttons; the current renderer has a fixed dark palette. Newer and older-device operation require separate validation; Pixel 4a Android 13 evidence alone cannot establish either. The current APK is arm64 only.
 
 Android headless is intentionally out of scope for Phase 5: the build report marks `android/arm64/apparatd` impossible with a clear message. Users who want headless behavior on Android should use a future Termux/service-worker strategy rather than expecting an APK for `apparatd`.
 
@@ -700,25 +713,31 @@ Build troubleshooting:
 
 ### Local Runtime
 
-Phase 3 implemented shared local runtime startup primitives for GUI and headless modes:
+Phase 8 runs one embedded node behind either GUI or headless presentation. Both default to `~/.local/share/apparat/node` on Linux (respecting `XDG_DATA_HOME`); `APPARAT_RUNTIME_DIR` or `--runtime-dir` selects an independent root. An OS lock rejects competing ownership before writable SQLite, probes or REST start. PID metadata is diagnostic; never delete the lock file to defeat an active owner.
 
-- `cmd/apparat` is the GUI entry point.
-- `cmd/apparatd` is the headless worker/service entry point and does not initialize Ebitengine.
-- `--smoke-test` initializes the shared runtime, prints a non-window diagnostic line including `root=` and `last_run=`, and exits for build and CI checks.
-- `--doctor` validates runtime directories, logging, SQLite, identity status, cluster directory, and local messaging setup; its output includes the exact `last_run.log` path.
-- `--runtime-dir` overrides the runtime data root; otherwise `apparat` and `apparatd` use separate platform data directories outside the source tree.
-- Default Linux runtime roots are `~/.local/share/apparat/apparat` for the GUI and `~/.local/share/apparat/apparatd` for the headless worker, unless `XDG_DATA_HOME` is set.
-- Normal GUI and headless startup prints the selected runtime root and `last_run.log` path before entering the long-running process.
-- Runtime subdirectories include database, logs, identity, cache, artifacts, backups, and recovery.
-- `last_run.log` is recreated in the runtime root at every process start and records verbose startup, component, doctor, smoke-test, failure, panic, and shutdown diagnostics for immediate debugging.
-- Append-only JSONL logs remain under the runtime `logs/` directory for durable structured history.
-- GUI builds compiled with the `gui` build tag enter the Ebitengine run loop; headless builds keep the non-window path available for worker and service validation environments.
+Stop older Apparat processes before first startup. Exactly one populated legacy `apparat` or `apparatd` root is renamed atomically to `node`; two populated roots, an existing destination, or a failed rename stop with recovery instructions. Nothing is merged. Choose a root explicitly to inspect a conflict, back up both roots, and make a deliberate offline selection. An interrupted atomic rename leaves the selected root at either its old or new location; inspect both before retrying. Older binaries do not honor the new lock and must remain stopped.
 
-Those binary-specific default roots are current implementation evidence, not the final one-node ownership contract. Phase 8 will make `apparat` and `apparatd` alternative process forms of one logical Apparat node with one identity, database, service inventory, and default runtime root protected by an exclusive node-runtime lock. Simultaneous GUI and daemon ownership of that root is rejected. A later approved daemon-client mode may let the GUI connect to a daemon-owned core. Intentionally independent nodes on one host require explicit separate runtime roots, identities, and local-service ownership so they cannot advertise the same provider accidentally.
+```bash
+make build-fast
+.tmp/dev/apparatd --runtime-dir /tmp/apparat-demo --demo-services --services
+.tmp/dev/apparat --runtime-dir /tmp/apparat-demo
+# After stopping the GUI, run the same node headlessly:
+.tmp/dev/apparatd --runtime-dir /tmp/apparat-demo --listen 127.0.0.1:8080
+```
 
-Contributor verification includes a source-size gate: code files must be at most 400 physical lines unless they are excluded generated/vendor/reference artifacts. Over-limit files should be decomposed into smaller package files with local README context where needed.
+`--demo-services` atomically seeds an empty store with two mock text instances and one mock image instance. Android seeds this demonstration on the first empty-store startup. Existing services are preserved, including deliberate removals. The Cluster tab's **Local services** detail shows live IDs, revisions and health; other HUD content remains mock. Probes run sequentially every five seconds, with one outstanding probe and a one-second cooperative deadline. A 15-second-old observation is stale. No real provider, remote advertisement, routing or Task execution is enabled.
 
-Local startup creates an append-only JSONL log, opens SQLite with foreign keys, applies checksumed forward migrations, initializes local cluster-directory tables, and initializes durable inbox/outbox/replay/cursor primitives.
+The default REST address is `127.0.0.1:0`; startup prints the selected root and actual address. Only six GET resources are implemented: health, device, services, service detail, all capabilities and service capabilities. `--listen` accepts numeric loopback addresses only. See [API operations](docs/api.md). GUI queries call the core directly, never this listener.
+
+`--services` prints safe JSON and exits; `--smoke-test` adds a diagnostic line with root/last-run paths. `--doctor` checks SQLite integrity and local identity status. `--backup /new/path.db` creates a consistent SQLite snapshot plus metadata. `--restore-backup /path.db --runtime-dir /new/root` verifies and restores into a previously absent database and exits. Neither operation overwrites existing backup/destination files. Identity keys and other runtime files are separate: preserve them in an offline root backup when planning full-node recovery. See [recovery procedures](docs/database.md).
+
+`last_run.log` is reset on each owning process start; append-only structured history remains in `logs/`. Startup failures unwind initialized resources; shutdown cancels and joins probes, drains REST, closes SQLite and releases ownership. No GUI dependency is loaded by `apparatd`. Source files retain the 400-physical-line gate.
+
+Fast build/test tasks enter the same source gate and keep outputs under ignored `.tmp`; normal `scripts/build.py` remains the release orchestrator. Android eligibility inspection does not compile tools. Actual Android execution prepares the exact engine export and helper tools once before binding. Go 1.26.11 is required; `python3 scripts/bootstrap.py --install-go` installs a checksum-verified Linux amd64 copy locally.
+
+Android GitHub updates require the retained signing key pinned by `android/apparat/signing-certificate.sha256` and an increasing manifest `versionCode`. The build fails if the key is missing or different. Before publication, run `python3 scripts/android_release.py --candidate releases/android/arm64/apparat/latest.apk --previous PATH_TO_FRESH_GITHUB_APK`; it verifies package/signature continuity and a strictly newer version. Keep the key private and securely backed up; do not regenerate it on another build machine. The old GitHub signer is a separate lineage; this channel now follows the currently installed Pixel builds.
+
+Android update checks now require an explicit Update action. Downloads are bounded, cancel with Activity destruction and must match the installed package/signature with a strictly newer version before the system installer is offered. Public hash equality does not establish release authenticity. Production signed manifests, key custody and rollback remain Phase 17; no install permission is granted automatically.
 
 ### Research Before Adding
 
@@ -794,3 +813,8 @@ Implementation phases will create:
 - Build and release documentation
 
 Open questions and implementation phases are tracked in [ROADMAP.md](./ROADMAP.md).
+
+## Root source entrypoints
+
+- `build.py`: Compatibility dispatcher to the canonical build script.
+- `build_environment.sample.py`: Compatibility sample delegating local environment defaults to scripts/build_environment_sample.py.

@@ -1,5 +1,7 @@
 //go:build gui
 
+// Builds retained tab-body widget layouts.
+// Dependencies: github.com/cjtrowbridge/apparat/internal/hud, github.com/ebitenui/ebitenui, github.com/ebitenui/ebitenui/widget.
 package gui
 
 import (
@@ -42,7 +44,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	shell := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			widget.GridLayoutOpts.Columns(1),
-			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true}),
+			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, false, true}),
 			widget.GridLayoutOpts.Spacing(0, bodyGap),
 		)),
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
@@ -51,6 +53,10 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		})),
 	)
 	shell.AddChild(game.buildTabStrip(snapshot))
+	shell.AddChild(widget.NewText(
+		widget.TextOpts.Text(snapshot.ActiveTab().Title(), game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
+		widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth())),
+	))
 	body := game.buildActiveTabBody(snapshot)
 	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0, MaxWidth: game.hudPreferredWidth()}
 	shell.AddChild(body)
@@ -72,18 +78,21 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 	game.tabButtonCount = len(snapshot.Tabs)
 	left := 0
 	for index, tabData := range snapshot.Tabs {
-		label := fmt.Sprintf("%s %s", tabData.Descriptor.Glyph, tabData.Title())
-		width := tabButtonWidth(label)
+		width := tabIconButtonWidth
 		button := widget.NewButton(
-			widget.ButtonOpts.Text(label, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+			game.tabIconContent(tabData.Descriptor),
 			widget.ButtonOpts.Image(tabButtonImage()),
-			widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
+			widget.ButtonOpts.TextPadding(&widget.Insets{}),
+			widget.ButtonOpts.GraphicPadding(widget.Insets{}),
 			widget.ButtonOpts.ToggleMode(),
 			widget.ButtonOpts.WidgetOpts(
 				widget.WidgetOpts.MinSize(width, tabHeight),
+				widget.WidgetOpts.ToolTip(widget.NewTextToolTip(tabData.Title(), game.theme.ButtonTheme.TextFace, mutedTextColor, game.theme.PanelTheme.BackgroundImage)),
 				widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
 			),
 		)
+		// Explicit tab styling avoids an inherited empty text slot beside graphics.
+		button.GetWidget().SetTheme(&widget.Theme{})
 		if index == snapshot.ActiveIndex {
 			button.SetState(widget.WidgetChecked)
 		}
@@ -150,6 +159,7 @@ func (game *Game) selectTab(index int, button *widget.Button) {
 		button.SetState(widget.WidgetChecked)
 	}
 	_ = game.shell.SelectTab(index)
+	game.requestActiveTabVisible()
 	game.rebuildUI(game.shell.Snapshot())
 }
 
@@ -175,15 +185,12 @@ func (game *Game) syncTabButtonStates() {
 	}
 }
 
-func tabButtonWidth(label string) int {
-	width := 42 + len([]rune(label))*10
-	if width < 130 {
-		return 130
-	}
-	return width
-}
-
 func (game *Game) buildActiveTabBody(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {
+	if snapshot.ActiveTab().ID() == hud.TabCluster && game.runtimeInfo.Queries != nil {
+		tab := game.presentedTab(snapshot.ActiveTab())
+		return game.buildMasterDetailTab(tab)
+	}
+
 	tabData := snapshot.ActiveTab()
 	if tabData.Descriptor.ID == hud.TabSettings {
 		return game.buildSettingsTab(tabData)

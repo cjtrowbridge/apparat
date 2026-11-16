@@ -1,5 +1,7 @@
 //go:build !gui
 
+// Reports the GUI-disabled build behavior.
+// Uses package-local contracts and Go standard-library types.
 package gui
 
 import "context"
