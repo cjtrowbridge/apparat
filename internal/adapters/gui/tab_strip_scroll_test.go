@@ -101,3 +101,22 @@ func TestSixTabsFitMinimumPhoneWidth(t *testing.T) {
 		t.Fatalf("six targets of width %d do not fit %d", width, available)
 	}
 }
+
+func TestResponsivePlacementAdaptsWithoutChangingSavedChoice(t *testing.T) {
+	game := NewGame()
+	p := game.prefs.Preferences
+	p.Placement = "responsive"
+	game.applyPreferences(p)
+	for _, tc := range []struct {
+		width, height int
+		rail          string
+	}{
+		{1100, 800, "left_rail"}, {390, 804, ""}, {1100, 340, ""}, {1000, 620, "left_rail"},
+	} {
+		game.Layout(tc.width, tc.height)
+		game.rebuildUI(game.shell.Snapshot())
+		if game.sideRail() != tc.rail || (game.tabScroll == nil) != (tc.rail != "") || game.prefs.Placement != "responsive" {
+			t.Fatalf("incorrect navigation for %dx%d", tc.width, tc.height)
+		}
+	}
+}

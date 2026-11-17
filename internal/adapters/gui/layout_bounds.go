@@ -105,7 +105,7 @@ func (b *boundedPreferredWidget) GetDropTargets() []widget.HasWidget {
 }
 
 func (game *Game) hudPreferredWidth() int {
-	return max(120, game.width-(windowMargin*2))
+	return max(120, game.contentWidth()-(windowMargin*2))
 }
 
 func (game *Game) hudTextMaxWidth() float64 {
@@ -175,4 +175,44 @@ func wrapSelectorLabel(label string, face ebitentext.Face, width int) string {
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")
+}
+
+const railGutter = tabIconButtonWidth + bodyGap
+
+func placementLabel(setting string) string {
+	switch setting {
+	case "left_rail":
+		return "Left"
+	case "right_rail":
+		return "Right"
+	case "responsive":
+		return "Responsive"
+	default:
+		return "Top"
+	}
+}
+
+// Fall back to the scrollable top strip when a rail cannot fit every tab.
+func (game *Game) sideRail() string {
+	mode := game.prefs.Placement
+	if mode == "top" || mode == "" {
+		return ""
+	}
+	count := len(game.shell.Snapshot().Tabs)
+	if game.height-tabTop-diagnosticsHeight < count*tabHeight+(count-1)*tabGap {
+		return ""
+	}
+	if mode == "responsive" {
+		if game.width-railGutter < collapsedWidth {
+			return ""
+		}
+		return "left_rail"
+	}
+	return mode
+}
+func (game *Game) contentWidth() int {
+	if game.sideRail() != "" {
+		return game.width - railGutter
+	}
+	return game.width
 }

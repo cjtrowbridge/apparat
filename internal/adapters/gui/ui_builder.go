@@ -43,18 +43,38 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		)),
 	)
 
+	rail := game.sideRail()
+	rows := []bool{false, false, true}
+	contentLayout := widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
+	if rail != "" {
+		rows = []bool{false, true}
+		inset := &widget.Insets{}
+		if rail == "left_rail" {
+			inset.Left = railGutter
+		} else {
+			inset.Right = railGutter
+		}
+		contentLayout.Padding = inset
+	}
 	shell := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			widget.GridLayoutOpts.Columns(1),
-			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, false, true}),
+			widget.GridLayoutOpts.Stretch([]bool{true}, rows),
 			widget.GridLayoutOpts.Spacing(0, bodyGap),
 		)),
-		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-			StretchHorizontal: true,
-			StretchVertical:   true,
-		})),
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(contentLayout)),
 	)
-	shell.AddChild(game.buildTabStrip(snapshot))
+	strip := game.buildTabStrip(snapshot)
+	if rail == "" {
+		shell.AddChild(strip)
+	} else {
+		anchor := widget.AnchorLayoutData{}
+		if rail == "right_rail" {
+			anchor.HorizontalPosition = widget.AnchorLayoutPositionEnd
+		}
+		strip.GetWidget().LayoutData = anchor
+		root.AddChild(strip)
+	}
 	shell.AddChild(widget.NewText(
 		widget.TextOpts.Text(snapshot.ActiveTab().Title(), game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
 		widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth())),
@@ -71,9 +91,13 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 }
 
 func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {
+	direction := widget.DirectionHorizontal
+	if game.sideRail() != "" {
+		direction = widget.DirectionVertical
+	}
 	row := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
+			widget.RowLayoutOpts.Direction(direction),
 			widget.RowLayoutOpts.Spacing(tabGap),
 		)),
 	)
@@ -113,6 +137,9 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 			game.handleTabRadioGroupChange(args.Active)
 		}),
 	)
+	if game.sideRail() != "" {
+		return row
+	}
 	scroll := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(row),
 		widget.ScrollContainerOpts.Image(createScrollContainerImage()),

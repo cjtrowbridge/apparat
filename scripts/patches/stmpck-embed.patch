@@ -5,7 +5,7 @@
  
  type Game struct {
 +	embedded                                            bool
-+	OffsetY                                             int
++	OffsetX, OffsetY                                    int
 +	InputScale                                          float64
  	territoryDrafts                                     [3]play.Territory
  	territoryMaps                                       [3]uint64
@@ -21,7 +21,7 @@
 +	if g.InputScale == 0 {
 +		return x, y
 +	}
-+	return int(float64(x) / g.InputScale), int(float64(y-g.OffsetY) / g.InputScale)
++	return int(float64(x-g.OffsetX) / g.InputScale), int(float64(y-g.OffsetY) / g.InputScale)
 +}
 +func newGame(root string) *Game {
  	g := &Game{State: menu.New(), mockOptions: [4]bool{false, true, false, false}, sparkleSeed: rand.Uint64(), width: 480, height: 800}
@@ -63,7 +63,7 @@
  }
  
  func (g *Game) begin(x, y float64) {
-+	if y < 0 {
++	if y < 0 || (g.embedded && (x < 0 || x >= float64(g.width))) {
 +		return
 +	}
  	g.pressed = true

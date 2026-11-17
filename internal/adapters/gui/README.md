@@ -134,3 +134,5 @@ Selector buttons wrap their labels to the pane's inner width as the divider move
 
 - `preferences.go`: Loads preferences before layout, saves asynchronously, and applies confirmed changes.
 - `window_state.go`: Restores desktop placement and coalesces geometry writes until shutdown.
+
+Tab rails share the same buttons and selection handlers as the top strip. The side gutter narrows the available content area, including STMPCK gallery rendering and hit testing. An active game uses the full viewport.

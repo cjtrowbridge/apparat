@@ -41,9 +41,18 @@ func (g *Game) arcadeUpdate() bool {
 	if gallery {
 		top = 116
 	}
-	w, h := s.Layout(g.width, max(1, g.height-top))
+	width := g.width
+	s.OffsetX = 0
+	if gallery && g.sideRail() != "" {
+		top = 60
+		width = g.contentWidth() - windowMargin
+		if g.sideRail() == "left_rail" {
+			s.OffsetX = railGutter + windowMargin
+		}
+	}
+	w, h := s.Layout(width, max(1, g.height-top))
 	s.OffsetY = top
-	s.InputScale = float64(g.width) / float64(w)
+	s.InputScale = float64(width) / float64(w)
 	if a.canvas == nil || a.canvas.Bounds().Dx() != w || a.canvas.Bounds().Dy() != h {
 		if a.canvas != nil {
 			a.canvas.Deallocate()
@@ -63,7 +72,7 @@ func (g *Game) arcadeDraw(dst *ebiten.Image) bool {
 	s.Draw(a.canvas)
 	var op ebiten.DrawImageOptions
 	op.GeoM.Scale(s.InputScale, s.InputScale)
-	op.GeoM.Translate(0, float64(s.OffsetY))
+	op.GeoM.Translate(float64(s.OffsetX), float64(s.OffsetY))
 	dst.DrawImage(a.canvas, &op)
 	return true
 }

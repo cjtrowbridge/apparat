@@ -15,7 +15,7 @@ CREATE TABLE desktop_window(id INTEGER PRIMARY KEY CHECK(id=1),width INTEGER NOT
 
 func (db *DB) Preferences(ctx context.Context) (domain.Preferences, error) {
 	p := domain.DefaultPreferences()
-	err := db.sql.QueryRowContext(ctx, "SELECT theme,font,scale,landing,overlay FROM preferences WHERE id=1").Scan(&p.Theme, &p.Font, &p.Scale, &p.Landing, &p.Overlay)
+	err := db.sql.QueryRowContext(ctx, "SELECT theme,font,scale,landing,overlay,placement FROM preferences WHERE id=1").Scan(&p.Theme, &p.Font, &p.Scale, &p.Landing, &p.Overlay, &p.Placement)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.DefaultPreferences(), nil
 	}
@@ -28,7 +28,7 @@ func (db *DB) SavePreferences(ctx context.Context, p domain.Preferences) error {
 	if !p.Valid() {
 		return errors.New("invalid preferences")
 	}
-	_, err := db.sql.ExecContext(ctx, "INSERT OR REPLACE INTO preferences VALUES(1,?,?,?,?,?)", p.Theme, p.Font, p.Scale, p.Landing, p.Overlay)
+	_, err := db.sql.ExecContext(ctx, "INSERT OR REPLACE INTO preferences VALUES(1,?,?,?,?,?,?)", p.Theme, p.Font, p.Scale, p.Landing, p.Overlay, p.Placement)
 	return err
 }
 func (db *DB) WindowState(ctx context.Context) (domain.WindowState, error) {

@@ -31,5 +31,6 @@ func (db *DB) Migrate(ctx context.Context) error {
 		{Version: 2, Name: "transitional_repositories", SQL: legacySchema},
 		{Version: 3, Name: "local_services", SQL: serviceSchema},
 		{Version: 4, Name: "local_preferences", SQL: preferencesSchema},
+		{Version: 5, Name: "tab_placement", SQL: "ALTER TABLE preferences ADD COLUMN placement TEXT NOT NULL DEFAULT 'top'"},
 	})
 }

@@ -32,6 +32,10 @@ func (shell *Shell) ApplyDisplay(theme Theme, scale float64, font int) {
 	display.FontSize = font
 }
 
+func (shell *Shell) SetTabPlacement(placement TabPlacement) {
+	shell.snapshot.Config.TabView.Placement = placement
+}
+
 func (shell *Shell) NextTab() {
 	shell.snapshot.ActiveIndex = (shell.snapshot.ActiveIndex + 1) % len(shell.snapshot.Tabs)
 	shell.snapshot.FocusIndex = 0

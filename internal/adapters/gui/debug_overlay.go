@@ -69,7 +69,7 @@ func fallback(value string, replacement string) string {
 }
 
 func (game *Game) collapsed() bool {
-	return game.width < collapsedWidth
+	return game.contentWidth() < collapsedWidth
 }
 
 func (game *Game) selectSection(tabID hud.TabID, index int) {
@@ -95,7 +95,7 @@ func (game *Game) clampSplitWidth() {
 	if game.splitWidth < minSplitWidth {
 		game.splitWidth = minSplitWidth
 	}
-	limit := game.width - 220
+	limit := game.contentWidth() - 220
 	if limit > maxSplitWidth {
 		limit = maxSplitWidth
 	}

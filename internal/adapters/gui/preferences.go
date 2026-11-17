@@ -63,6 +63,7 @@ func (g *Game) applyPreferences(p domain.Preferences) {
 		g.theme.ButtonTheme.TextColor.Idle = color.White
 		g.theme.LabelTheme.Color.Idle = color.White
 	}
+	g.shell.SetTabPlacement(hud.TabPlacement(p.Placement))
 	g.shell.ApplyDisplay(theme, float64(p.Scale)/100, p.Font)
 }
 func (g *Game) savePreferences(p domain.Preferences) {
@@ -122,6 +123,9 @@ func (g *Game) preferenceControls(c *widget.Container) {
 	})
 	add(fmt.Sprintf("Font size: %d", p.Font), func(v *domain.Preferences) {
 		v.Font = cycle(v.Font, []int{14, 16, 18, 20})
+	})
+	add("Tab placement: "+placementLabel(p.Placement), func(v *domain.Preferences) {
+		v.Placement = cycle(v.Placement, []string{"top", "left_rail", "right_rail", "responsive"})
 	})
 	add("Startup tab: "+p.Landing, func(v *domain.Preferences) {
 		var ids []string
