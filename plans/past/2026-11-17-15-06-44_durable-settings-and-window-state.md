@@ -2,7 +2,7 @@
 plan_id: 2026-11-17-15-06-44_durable-settings-and-window-state
 title: Implement durable Settings controls and desktop window restoration
 summary: Add SQLite-backed local preferences and restore desktop size, placement and maximized state.
-status: current
+status: past
 created_at: 2026-11-17-15-06-44
 ---
 
@@ -17,4 +17,4 @@ This extends [Phase 4 HUD configuration and Settings](../../ROADMAP.md#phase-4-b
 - [x] Persist and apply display theme, scale, font size, startup tab and developer overlay through the node database. Verified UI edits and cold restart on Linux and Pixel 4a.
 - [x] Restore normal desktop window size and position and maximized state. Verified a maximize/restart/unmaximize cycle on Linux under KWin.
 - [x] Implement top, left, right and responsive placement and preserve existing preference records on upgrade.
-- [ ] Finish with Bottom placement. Verify the horizontal strip, push-to-talk clearance, gallery navigation, and persisted choice, then archive this plan.
+- [x] Added Bottom placement and verified the Linux layout and Pixel 4a cold restart. Touch navigation opened STMPCK and returned to Settings with the bottom strip visible. This completes the plan.
