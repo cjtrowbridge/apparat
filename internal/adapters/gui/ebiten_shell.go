@@ -46,6 +46,8 @@ const (
 )
 
 type Game struct {
+	prefs                          preferenceState
+	window                         windowTracker
 	arcade                         arcadeView
 	shell                          hud.Shell
 	runContext                     context.Context
@@ -166,6 +168,7 @@ func NewGameWithRuntimeInfo(info RuntimeInfo) *Game {
 		game.serviceProjection.State = "loading"
 		game.serviceUpdates = WatchServices(ctx, info.Queries)
 	}
+	game.loadPreferences()
 	game.rebuildUI(game.shell.Snapshot())
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
 	return game
@@ -178,6 +181,8 @@ func (game *Game) Update() error {
 	if game.cancelInputRequested.Swap(false) {
 		game.cancelPointer()
 	}
+	game.receivePreferences()
+	game.trackWindow()
 	game.receiveServices()
 	if game.layoutDirty && game.gesture.Owner == gestureNone {
 		game.layoutDirty = false
@@ -373,6 +378,8 @@ func (game *Game) setPTTHeld(held bool) {
 }
 
 func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {
+	outsideWidth = outsideWidth * 100 / max(1, game.prefs.Scale)
+	outsideHeight = outsideHeight * 100 / max(1, game.prefs.Scale)
 	changed := false
 	if outsideWidth > 0 {
 		changed = changed || outsideWidth != game.width

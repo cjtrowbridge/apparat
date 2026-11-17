@@ -975,7 +975,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
     - [x] Default tab placement: top.
     - [x] Future allowed placements: top, left side rail, right side rail, compact/sidebar-responsive.
     - [x] Tab density: comfortable by default, with compact and expanded options planned.
-    - [x] Tab label mode: icon plus text by default, with icon-only and text-only options planned where usable.
+    - [x] Tab label mode: icon-only by default.
     - [x] Default selected tab.
   - [x] Include key-binding defaults.
     - [x] Previous tab: `L1` and `Ctrl+PageUp`.
@@ -1072,7 +1072,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
 
 **Exit criteria**
 
-- The GUI opens into a usable five-tab HUD with readable basic content for every canonical tab, including Routing and Tasks under Cluster and Pipelines under Projects.
+- The GUI opens into a usable six-tab HUD with readable basic content for every canonical tab, including Routing and Tasks under Cluster and Pipelines under Projects.
 - The tab system is data-driven enough to support future top/side realignment without rewriting tab contents.
 - Key bindings and user-facing display defaults come from a temporary configuration manager rather than scattered literals.
 - Controller, keyboard, mouse, and touch can navigate the basic tab content without backend services.

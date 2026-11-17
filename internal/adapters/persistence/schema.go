@@ -30,5 +30,6 @@ func (db *DB) Migrate(ctx context.Context) error {
 		{Version: 1, Name: "phase3_core", SQL: phase3Schema},
 		{Version: 2, Name: "transitional_repositories", SQL: legacySchema},
 		{Version: 3, Name: "local_services", SQL: serviceSchema},
+		{Version: 4, Name: "local_preferences", SQL: preferencesSchema},
 	})
 }

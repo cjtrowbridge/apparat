@@ -10,6 +10,7 @@ import (
 )
 
 func (game *Game) Close() {
+	game.flushPlacement()
 	if game.cancelQueries != nil {
 		game.cancelQueries()
 		game.cancelQueries = nil

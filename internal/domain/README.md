@@ -19,3 +19,5 @@ Domain code defines identity, projects, queues, tasks, capabilities, workload cl
 - `service.go`: Defines local service intent and safe immutable query values.
 
 - `id_test.go`: Tests canonical durable identifiers and deterministic intent validation.
+
+- `preferences.go`: Defines validated local display preferences and normal desktop window geometry.

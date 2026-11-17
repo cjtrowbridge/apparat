@@ -33,3 +33,5 @@ Persistence code must expose application-level repositories and must not leak ra
 - `retry.go`: Classifies SQLite contention without treating cancellation or corruption as retries.
 
 - `contention_test.go`: Exercises real SQLite lock contention and cancelled transaction admission.
+
+- `preferences.go`: Owns migration 4 and independent atomic SQLite records for display preferences and window placement.

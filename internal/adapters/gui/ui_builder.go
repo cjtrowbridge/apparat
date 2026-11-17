@@ -246,6 +246,11 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 
 		sectionContainer.AddChild(game.hudText(strings.ToUpper(section.Title)))
 
+		if section.Title == "HUD Configuration" {
+			game.preferenceControls(sectionContainer)
+			content.AddChild(sectionContainer)
+			continue
+		}
 		if section.Description != "" {
 			sectionContainer.AddChild(game.hudText(section.Description))
 		}
@@ -301,7 +306,9 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 						game.rebuildUI(game.shell.Snapshot())
 						return
 					}
-					game.debugOverlayOpen = args.State == widget.WidgetChecked
+					p := game.prefs.Preferences
+					p.Overlay = args.State == widget.WidgetChecked
+					game.savePreferences(p)
 					game.rebuildUI(game.shell.Snapshot())
 				}),
 			)

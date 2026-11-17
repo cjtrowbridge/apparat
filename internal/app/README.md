@@ -29,3 +29,5 @@ Every initialized runtime must create or replace `last_run.log` at `config.LastR
 - `lifecycle_test.go`: Injects startup failures and checks shared state through actual adapters.
 
 - `services_unit_test.go`: Tests service orchestration without SQLite, networking, GUI or real clocks.
+
+- `preferences.go`: Exposes typed local preference queries and save commands on the owning runtime.

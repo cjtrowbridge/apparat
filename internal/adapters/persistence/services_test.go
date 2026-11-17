@@ -110,7 +110,7 @@ func TestBackupRestoreAndCorruption(t *testing.T) {
 func TestMigrationRollbackAndReplayErrors(t *testing.T) {
 	db := serviceDB(t)
 	ctx := context.Background()
-	err := db.ApplyMigrations(ctx, []Migration{{Version: 4, Name: "broken", SQL: "CREATE TABLE rollback_probe(id TEXT); INVALID SQL;"}})
+	err := db.ApplyMigrations(ctx, []Migration{{Version: 5, Name: "broken", SQL: "CREATE TABLE rollback_probe(id TEXT); INVALID SQL;"}})
 	if err == nil {
 		t.Fatal("invalid migration accepted")
 	}

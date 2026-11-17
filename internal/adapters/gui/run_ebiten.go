@@ -24,6 +24,7 @@ func RunWithRuntimeInfo(ctx context.Context, info RuntimeInfo) error {
 	ebiten.SetWindowIcon(appIconImages())
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	game := NewGameWithRuntimeInfo(info)
+	game.restoreWindow()
 	game.runContext = ctx
 	defer game.Close()
 	return ebiten.RunGame(game)

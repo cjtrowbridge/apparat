@@ -825,3 +825,5 @@ Open questions and implementation phases are tracked in [ROADMAP.md](./ROADMAP.m
 
 - `build.py`: Compatibility dispatcher to the canonical build script.
 - `build_environment.sample.py`: Compatibility sample delegating local environment defaults to scripts/build_environment_sample.py.
+
+Settings stores theme, UI scale, font size, startup tab and developer overlay preference in the node database. Select a setting to cycle its available values. Desktop also remembers the normal window rectangle and maximized state. Reset window placement centers the window on the current monitor.
