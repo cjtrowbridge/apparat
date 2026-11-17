@@ -33,3 +33,6 @@ Tests here should avoid network access and should not require GUI libraries. Go 
 python3 scripts/build_gate.py -- javac -d .tmp/update-transfer-test android/apparat/src/com/cjtrowbridge/apparat/UpdateTransfer.java tests/UpdateTransferTest.java
 python3 scripts/build_gate.py -- java -cp .tmp/update-transfer-test com.cjtrowbridge.apparat.UpdateTransferTest
 ```
+- `qualification_test.py`: Reject a compiled but unverified GUI without skipping other candidates or replacing existing artifacts.
+
+- `build_delivery_test.py`: Exercises the canonical delivery state transitions using a temporary Git remote, including failed qualification, rejected push, interrupted download verification and repeated identical runs.

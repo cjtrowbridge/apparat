@@ -32,7 +32,7 @@ class BuildGovernanceTest(unittest.TestCase):
     def test_valid_gate_runs_once_and_preserves_failure_status(self):
         with patch.object(sys, 'argv', ['build_gate.py', '--', 'compiler', 'input']), patch.object(
             build_gate.subprocess, 'run'
-        ), patch.object(build_gate.subprocess, 'call', return_value=9) as invoke:
+        ), patch('scripts.stmpck_sources.prepare'), patch.object(build_gate.subprocess, 'call', return_value=9) as invoke:
             self.assertEqual(build_gate.main(), 9)
             self.assertEqual(invoke.call_count, 1)
             self.assertEqual(invoke.call_args.args[0], ['compiler', 'input'])
@@ -40,7 +40,7 @@ class BuildGovernanceTest(unittest.TestCase):
     def test_check_mode_never_copies_or_installs_hooks(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            with patch.object(bootstrap, 'ROOT', root), patch.object(sys, 'argv', [
+            with patch('scripts.checkout_identity.check'), patch.object(bootstrap, 'ROOT', root), patch.object(sys, 'argv', [
                 'bootstrap-v1.py', '--check', '--go-source', '/unavailable'
             ]), patch.object(bootstrap, 'probe', return_value=(False, 'absent')) as probe, patch.object(
                 bootstrap.shutil, 'copytree'
@@ -54,7 +54,7 @@ class BuildGovernanceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / '.tools/go1.26.11').mkdir(parents=True)
-            with patch.object(bootstrap, 'ROOT', root), patch.object(sys, 'argv', [
+            with patch('scripts.checkout_identity.check'), patch.object(bootstrap, 'ROOT', root), patch.object(sys, 'argv', [
                 'bootstrap-v1.py', '--go-source', '/unavailable'
             ]), patch.object(bootstrap, 'probe', return_value=(True, 'go1.26.11')), patch.object(
                 bootstrap.shutil, 'copytree'

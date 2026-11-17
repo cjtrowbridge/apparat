@@ -65,7 +65,20 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 		if game.selectedSectionIndex(tabData) == index {
 			btn.SetState(widget.WidgetChecked)
 		}
-		listContainer.AddChild(btn)
+		if tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline {
+			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
+			btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
+			row.AddChild(btn)
+			row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("1f9e0")),
+				widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+					HorizontalPosition: widget.AnchorLayoutPositionEnd, VerticalPosition: widget.AnchorLayoutPositionCenter,
+					Padding: &widget.Insets{Right: 12},
+				}))))
+			listContainer.AddChild(row)
+		} else {
+			listContainer.AddChild(btn)
+		}
 	}
 	scroll := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(listContainer),
@@ -101,10 +114,14 @@ func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 }
 
 func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionIndex int) *widget.Button {
+	rightPadding := 12
+	if tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline {
+		rightPadding += tabIconSize
+	}
 	return widget.NewButton(
 		widget.ButtonOpts.Text(section.Title, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
 		widget.ButtonOpts.Image(selectorButtonImage(section.SelectorColor)),
-		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 40, Right: 12, Top: 12, Bottom: 12}),
+		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}),
 		widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter),
 		widget.ButtonOpts.ToggleMode(),
 		widget.ButtonOpts.WidgetOpts(

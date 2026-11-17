@@ -77,7 +77,7 @@ func selectTabThroughStrip(t *testing.T, game *Game, id hud.TabID) {
 
 func buildSettingsContentForTest(t *testing.T, game *Game) *widget.Container {
 	t.Helper()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	content := game.buildSettingsContent(settings)
 	content.Validate()
 	return content
@@ -119,7 +119,7 @@ func TestMasterDetailShowsOnlyTheSelectedGroupedDetail(t *testing.T) {
 		}
 	}
 	projects := tabs[1]
-	game.selectSection(projects.ID(), 6)
+	game.selectSection(projects.ID(), 5)
 	details = game.detailSections(projects)
 	if len(details) != 1 || details[0].Title != "What's in the news?" {
 		t.Fatalf("selected project details = %#v, want What's in the news?", details)
@@ -194,7 +194,7 @@ func TestNarrowBodyPreferredWidthsAreBounded(t *testing.T) {
 func TestHUDBodyTextUsesWrappingWidth(t *testing.T) {
 	game := NewGame()
 	game.width = 360
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[4]
+	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
 	for _, text := range collectTextNodes(game.buildSettingsContent(settings)) {
 		if text.MaxWidth <= 0 {
 			t.Fatalf("settings text %q MaxWidth = %.1f, want positive", text.Label, text.MaxWidth)

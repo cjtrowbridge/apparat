@@ -21,6 +21,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		game.tabStripScrollLeft = clampScrollLeft(game.tabScroll.ScrollLeft)
 	}
 	game.updateButton = nil
+	game.updateDetail = nil
 	game.tabScroll = nil
 	game.tabButtonCount = 0
 	game.tabStripContentWidth = 0
@@ -78,7 +79,7 @@ func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocat
 	game.tabButtonCount = len(snapshot.Tabs)
 	left := 0
 	for index, tabData := range snapshot.Tabs {
-		width := tabIconButtonWidth
+		width := tabTargetWidth(game.hudPreferredWidth(), len(snapshot.Tabs))
 		button := widget.NewButton(
 			game.tabIconContent(tabData.Descriptor),
 			widget.ButtonOpts.Image(tabButtonImage()),
@@ -185,6 +186,9 @@ func (game *Game) syncTabButtonStates() {
 }
 
 func (game *Game) buildActiveTabBody(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {
+	if snapshot.ActiveTab().ID() == "stmpck" {
+		return widget.NewContainer()
+	}
 	if snapshot.ActiveTab().ID() == hud.TabCluster && game.runtimeInfo.Queries != nil {
 		tab := game.presentedTab(snapshot.ActiveTab())
 		return game.buildMasterDetailTab(tab)
@@ -253,7 +257,7 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 			sectionContainer.AddChild(game.hudText(rowText))
 		}
 
-		if strings.ToLower(section.Title) == "updates" {
+		if strings.EqualFold(section.Title, "updates") && game.onCheckForUpdate != nil {
 			updateLabel := game.UpdateStatus()
 			if updateLabel == "" {
 				updateLabel = "Check for update"

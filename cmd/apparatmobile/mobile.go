@@ -111,5 +111,12 @@ func RegisterUpdater(u Updater) {
 func SuspendInput() {
 	if game != nil {
 		game.RequestInputCancellation()
+		game.ArcadeSuspend()
+	}
+}
+
+func ArcadeBack() {
+	if game != nil {
+		game.ArcadeBack()
 	}
 }

@@ -63,9 +63,6 @@ verify: fmt test test-race test-build check-code-size check-docs lint audit
 
 # Fast local outputs are ignored; release orchestration remains scripts/build.py.
 .PHONY: build-fast test-fast
-build-fast:
-	mkdir -p .tmp/dev
-	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) build -o .tmp/dev/apparatd ./cmd/apparatd
-	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) build -tags gui -o .tmp/dev/apparat ./cmd/apparat
+build-fast: build
 
 test-fast: test

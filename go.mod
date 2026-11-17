@@ -32,3 +32,6 @@ require (
 )
 
 replace github.com/hajimehoshi/ebiten/v2 => ./third_party/game/ebiten
+
+require ebe-boilerplate v0.0.0
+replace ebe-boilerplate => ./.tmp/stmpck-module

@@ -1,0 +1,1 @@
+stmpck-embed.patch exposes the embedded surface and adapts input and save ownership against the pinned private STMPCK module. Refresh against that exact revision and verify the canonical Linux and Android builds.

@@ -30,15 +30,6 @@
       }
     },
     {
-      "label": "Apparat: Fast host build",
-      "type": "process",
-      "command": "make",
-      "args": [
-        "build-fast"
-      ],
-      "problemMatcher": []
-    },
-    {
       "label": "Apparat: Fast host tests",
       "type": "process",
       "command": "make",

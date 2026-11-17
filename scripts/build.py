@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Apparat artifacts into canonical local release paths.
+"""Build, qualify and publish Apparat artifacts from the designated main checkout.
 Canonical invocation from the repository root:
     python3 scripts/build.py
 The default desktop build produces both `apparat` and `apparatd`. Android
@@ -230,7 +230,7 @@ def build_patched_gomobile(go: str, source: Path) -> None:
     })
     patch_file(temp / "cmd" / "gomobile" / "bind.go", {
         "if f == nil {\n\t\t\treturn nil\n\t\t}":
-        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo {GO_TOOLCHAIN.removeprefix("go")}\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.10.6\\n)\\n\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {engine.as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
+        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo {GO_TOOLCHAIN.removeprefix("go")}\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.10.6\\n)\\n\\nreplace ebe-boilerplate => {(ROOT / ".tmp/stmpck-module").as_posix()}\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {engine.as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
     })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
@@ -283,7 +283,7 @@ def check_android_env(go: str) -> int:
     print(f"gomobile: {toolchain.gomobile}")
     print(f"adb: {toolchain.adb or 'not found; install/launch validation unavailable'}")
     return 0
-def build_android(go: str, goarch: str) -> int:
+def build_android(go: str, goarch: str, destination=None) -> int:
     toolchain, failures, warnings = resolve_android_toolchain(go)
     for warning in warnings:
         print(f"warning: {warning}", file=sys.stderr)
@@ -301,7 +301,7 @@ def build_android(go: str, goarch: str) -> int:
     if not prepared or failures:
         print("Android preparation failed: " + "; ".join(failures), file=sys.stderr)
         return 1
-    output = artifact_path("android", goarch, "apparat")
+    output = destination or artifact_path("android", goarch, "apparat")
     output.parent.mkdir(parents=True, exist_ok=True)
     print(f"building target=apparat goos=android goarch={goarch} output={output}")
     try:
@@ -358,12 +358,12 @@ def ensure_debug_keystore(toolchain: AndroidToolchain, keystore: Path) -> None:
         validate_keystore(toolchain.java_home, keystore)
     except (ValueError, subprocess.CalledProcessError) as error:
         raise BuildError(str(error)) from error
-def build_desktop(go: str, goos: str, goarch: str, targets: tuple[str, ...]) -> int:
+def build_desktop(go: str, goos: str, goarch: str, targets: tuple[str, ...], destination=None) -> int:
     env = os.environ.copy()
     env["GOOS"] = goos
     env["GOARCH"] = goarch
     for target in targets:
-        output = artifact_path(goos, goarch, target)
+        output = destination or artifact_path(goos, goarch, target)
         output.parent.mkdir(parents=True, exist_ok=True)
         command = desktop_build_command(go, target, output)
         print(f"building target={target} goos={goos} goarch={goarch} output={output}")
@@ -389,6 +389,9 @@ def print_build_failure_help(target: str, error: subprocess.CalledProcessError) 
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        print(f"Build delivery incomplete: {error}", file=sys.stderr)
+        raise SystemExit(1)
     except KeyboardInterrupt:
         print("Build interrupted", file=sys.stderr)
         raise SystemExit(130)

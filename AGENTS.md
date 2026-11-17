@@ -2,6 +2,12 @@
 
 Read `./agentic-pipelines/AGENTS.md` in its entirety before doing anything in this repository. Follow its shared instructions as though they are written directly in this file. Explicit Apparat-specific overrides below take precedence.
 
+## Canonical checkout and delivery
+
+Work only on the existing designated main. Before first-party edits run `python3 scripts/checkout_identity.py`. Never create another branch, worktree, nested repository or maintained scratch source copy. Read-only submodules can be detached. Test package identity and runtime isolation do not change source ownership. All app builds use the no-flag scripts/build.py; package tests and scratch artifacts cannot certify an application build.
+
+Settings must always be the final top-level tab, including optional editions. Add or reorganize every other tab before Settings. STMPCK belongs immediately before Settings.
+
 ## Framework Resolution
 
 - Treat `./agentic-pipelines/AGENTS.md` as the selected shared-policy baseline; explicit host-specific overrides in this file take precedence for this repository.
@@ -43,7 +49,8 @@ Supporting ownership:
 ## Apparat Build Pipeline Scope
 
 - Treat each target reported by `scripts/build.py` as a deterministic build entity and the script's existing no-flag orchestration as the main build pipeline.
-- The Apparat build path does not select model inference, PDF conversion, semantic review, rejected-candidate evidence, signing, publication, or remote execution unless an approved plan explicitly adds that separate concern.
+- The Apparat build path does not select model inference, PDF conversion, semantic review, rejected-candidate evidence, remote execution unless an approved plan explicitly adds that separate concern.
+- An ordinary build request authorizes committing reviewed staged changes with every qualified host artifact and pushing to origin/main. Completion requires read-back verification from authenticated GitHub main. Use the same entrypoint for retries. This overrides manual checkpoint prompts for this delivery only.
 - Build commands, prerequisites, target eligibility, artifacts, and validation remain host-owned. Do not introduce a second build engine through Agentic Pipelines.
 
 ## Product Documentation And Planning

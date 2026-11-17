@@ -148,11 +148,11 @@ class BuildPipelineTest(unittest.TestCase):
         ]
         with mock.patch("scripts.build_orchestrator.load_build_environment", return_value=[]), mock.patch(
             "scripts.build_orchestrator.build_plans", return_value=plans
-        ), mock.patch("scripts.build_orchestrator.run_plan", return_value=0) as run:
+        ), mock.patch("scripts.build_orchestrator.build_evidence.qualify", return_value=1) as run:
             with redirect_stdout(StringIO()):
                 result = build_orchestrator.main([])
-        self.assertEqual(result, 0)
-        run.assert_called_once_with("go", plans[0])
+        self.assertEqual(result, 1)
+        self.assertEqual(run.call_args.args[1], plans)
 
     def test_android_env_reports_missing_prerequisites(self):
         with mock.patch("scripts.build.default_sdk_root", return_value=Path("/missing-sdk")), mock.patch(

@@ -2,6 +2,8 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-17-13-38-28 | plans/past/2026-11-17-14-15-00_platform-update-card.md | Match the Settings update card to the client platform | Show desktop manual update instructions and expose the Android installer action only through its registered bridge.
+2026-11-17-12-37-58 | plans/past/2026-11-17-12-24-46_project-repo-selector.md | Unify project repo selection and update Cluster artwork | Present one repo list with an action-status color key and a networked-computers Cluster icon.
 2026-11-16-15-22-50 | plans/past/2026-11-16-16-30-00_remove-tab-tooltips.md | Remove icon tab tooltips | Remove popup tab labels while keeping page headings and navigation.
 2026-11-16-15-18-41 | plans/past/2026-11-16-16-00-00_repair-slow-update-downloads.md | Repair slow Android update downloads | Restore tolerant download behavior and distinguish transfer failures from reachability failures.
 2026-11-16-14-24-32 | plans/past/2026-11-16-15-20-00_repair-github-updates.md | Preserve installed signing identity for GitHub updates | Pin the installed Android signing certificate, advance release versions and verify a data-preserving upgrade.

@@ -46,6 +46,7 @@ const (
 )
 
 type Game struct {
+	arcade                         arcadeView
 	shell                          hud.Shell
 	runContext                     context.Context
 	gesture                        pointerGesture
@@ -181,6 +182,9 @@ func (game *Game) Update() error {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())
 	}
+	if game.arcadeUpdate() {
+		return nil
+	}
 	game.updatePointerState()
 	game.ui.Update()
 	game.enforceBodyTabScrollLock()
@@ -200,7 +204,7 @@ func (game *Game) Update() error {
 	game.pageDownWasHit = pageDownPressed
 	game.pageUpWasHit = pageUpPressed
 
-	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5} {
+	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
 			game.selectTabWithReveal(index)
 		}
@@ -306,6 +310,9 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(backgroundColor)
 	if game.ui != nil {
 		game.ui.Draw(screen)
+	}
+	if game.arcadeDraw(screen) {
+		return
 	}
 	game.drawPTTButton(screen)
 	if game.debugOverlayOpen {

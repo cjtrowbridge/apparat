@@ -11,7 +11,7 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
-func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
+func TestSettingsContentIncludesAllSections(t *testing.T) {
 	game := NewGame()
 	content := buildSettingsContentForTest(t, game)
 	labels := collectTextLabels(content)
@@ -21,8 +21,8 @@ func TestSettingsContentIncludesAllSectionsAndUpdateButton(t *testing.T) {
 			t.Fatalf("settings labels missing %q in %#v", want, labels)
 		}
 	}
-	if findButtonByLabel(content, "Check for update") == nil {
-		t.Fatalf("settings content missing Check for update button; labels: %#v", labels)
+	if findButtonByLabel(content, "Check for update") != nil {
+		t.Fatal("desktop Settings unexpectedly offers an update check")
 	}
 	if findCheckboxByLabel(content, "Open Debug UI overlay") == nil {
 		t.Fatal("settings content missing Debug UI overlay checkbox")
@@ -90,6 +90,9 @@ func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
 
 func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 	game := NewGame()
+	game.SetOnCheckForUpdate(func() bool {
+		return true
+	})
 	content := buildSettingsContentForTest(t, game)
 	button := findButtonByLabel(content, "Check for update")
 	if button == nil {
@@ -101,35 +104,6 @@ func TestSettingsUpdateButtonAppliesExternalStatus(t *testing.T) {
 		got := button.Text().Label
 		if got != "Up To Date!" {
 			t.Fatalf("button label after external status = %q, want Up To Date!", got)
-		}
-	}
-}
-
-func TestSettingsUpdateButtonShowsUnavailableWithoutCallback(t *testing.T) {
-	game := NewGame()
-	content := buildSettingsContentForTest(t, game)
-	button := findButtonByLabel(content, "Check for update")
-	if button == nil {
-		t.Fatal("settings content missing Check for update button")
-	}
-	button.Click()
-	event.ExecuteDeferred()
-	{
-		got := button.Text().Label
-		if got != "Unable to check for updates" {
-			t.Fatalf("button label without callback = %q, want Unable to check for updates", got)
-		}
-	}
-	{
-		got := game.UpdateStatus()
-		if got != "Unable to check for updates" {
-			t.Fatalf("game update status = %q, want Unable to check for updates", got)
-		}
-	}
-	{
-		got := game.UpdateStatusDetail()
-		if got != "No update checker is configured in this build." {
-			t.Fatalf("update detail = %q, want desktop no-checker explanation", got)
 		}
 	}
 }

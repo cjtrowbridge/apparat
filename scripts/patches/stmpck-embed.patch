@@ -1,0 +1,111 @@
+--- a/internal/app/game.go
++++ b/internal/app/game.go
+@@ -19,6 +19,9 @@
+ )
+ 
+ type Game struct {
++	embedded                                            bool
++	OffsetY                                             int
++	InputScale                                          float64
+ 	territoryDrafts                                     [3]play.Territory
+ 	territoryMaps                                       [3]uint64
+ 	territoryStarts                                     uint64
+@@ -58,9 +61,17 @@
+ 	bloomChoice               int
+ }
+ 
+-func NewGame() *Game {
++func NewGame() *Game                { return newGame("") }
++func NewEmbedded(root string) *Game { g := newGame(root); g.embedded = true; return g }
++func (g *Game) local(x, y int) (int, int) {
++	if g.InputScale == 0 {
++		return x, y
++	}
++	return int(float64(x) / g.InputScale), int(float64(y-g.OffsetY) / g.InputScale)
++}
++func newGame(root string) *Game {
+ 	g := &Game{State: menu.New(), mockOptions: [4]bool{false, true, false, false}, sparkleSeed: rand.Uint64(), width: 480, height: 800}
+-	g.initGames()
++	g.initGames(root)
+ 	return g
+ }
+ 
+@@ -205,16 +216,16 @@
+ 		if len(ids) > 0 {
+ 			g.touch = true
+ 			g.touchID = ids[0]
+-			x, y := ebiten.TouchPosition(g.touchID)
++			x, y := g.local(ebiten.TouchPosition(g.touchID))
+ 			g.begin(float64(x), float64(y))
+ 		} else if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+ 			g.touch = false
+-			x, y := ebiten.CursorPosition()
++			x, y := g.local(ebiten.CursorPosition())
+ 			g.begin(float64(x), float64(y))
+ 		}
+ 	}
+ 	if g.pressed {
+-		x, y := ebiten.CursorPosition()
++		x, y := g.local(ebiten.CursorPosition())
+ 		held := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
+ 		if g.touch {
+ 			held = false
+@@ -224,7 +235,7 @@
+ 				}
+ 			}
+ 			if held {
+-				x, y = ebiten.TouchPosition(g.touchID)
++				x, y = g.local(ebiten.TouchPosition(g.touchID))
+ 			} else {
+ 				x, y = int(g.lx), int(g.ly)
+ 			}
+@@ -301,6 +312,9 @@
+ }
+ 
+ func (g *Game) begin(x, y float64) {
++	if y < 0 {
++		return
++	}
+ 	g.pressed = true
+ 	g.sx = x
+ 	g.sy = y
+--- a/internal/app/play.go
++++ b/internal/app/play.go
+@@ -12,9 +12,12 @@
+ 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+ )
+ 
+-func (g *Game) initGames() {
++func (g *Game) initGames(root string) {
+ 	g.games = play.NewCollection()
+-	g.store = &storage.Store{Root: storage.DefaultRoot()}
++	if root == "" {
++		root = storage.DefaultRoot()
++	}
++	g.store = &storage.Store{Root: root}
+ 	g.loadGames()
+ 	g.initPreviews()
+ 	installLifecycle(g)
+--- a/internal/app/draw.go
++++ b/internal/app/draw.go
+@@ -70,7 +70,7 @@
+ 	} else {
+ 		if g.Tab == menu.Worldwide && !g.HasGlobalRanking {
+ 			label(screen, "Popularity estimate", 16, 31, p.muted)
+-		} else {
++		} else if !g.embedded {
+ 			label(screen, "STMPCK", 20, 31, p.ink)
+ 		}
+ 	}
+--- /dev/null
++++ b/surface/surface.go
+@@ -0,0 +1,9 @@
++// Package surface exposes the shared STMPCK game to the private host.
++// It retains the standalone game rules and save format.
++package surface
++
++import "ebe-boilerplate/internal/app"
++
++type Game = app.Game
++
++func New(root string) *Game { return app.NewEmbedded(root) }

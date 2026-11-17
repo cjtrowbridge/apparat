@@ -82,7 +82,7 @@ func TestIconTabsFitPhoneWidthWithTouchTargetsAndNames(t *testing.T) {
 	}
 	for index, button := range game.tabButtons {
 		width, height := button.PreferredSize()
-		if width < 44 || height < 44 || width != tabIconButtonWidth {
+		if width < 44 || height < 44 {
 			t.Fatalf("tab %d size %dx%d violates compact touch target", index, width, height)
 		}
 		if len(button.GetWidget().ToolTips) != 0 {
@@ -91,5 +91,13 @@ func TestIconTabsFitPhoneWidthWithTouchTargetsAndNames(t *testing.T) {
 		if index > 0 && button.GraphicImage().Idle == nil {
 			t.Fatalf("tab %d lacks embedded artwork", index)
 		}
+	}
+}
+
+func TestSixTabsFitMinimumPhoneWidth(t *testing.T) {
+	const available = 320 - 2*windowMargin
+	width := tabTargetWidth(available, 6)
+	if width < 44 || width*6+5*tabGap > available {
+		t.Fatalf("six targets of width %d do not fit %d", width, available)
 	}
 }

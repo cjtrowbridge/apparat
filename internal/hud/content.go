@@ -2,14 +2,26 @@
 // Uses package-local contracts and Go standard-library types.
 package hud
 
+import "runtime"
+
 func DefaultTabs(config HUDConfig) []Tab {
-	return []Tab{
+	tabs := []Tab{
 		comradesTab(config),
 		projectsTab(),
 		clusterTab(),
 		researchTab(),
+		tab(config, "stmpck", "Offline games", nil),
 		settingsTab(config),
 	}
+	ordered := make([]Tab, 0, len(tabs))
+	for _, descriptor := range settingsLast(config.TabView.Tabs) {
+		for _, entry := range tabs {
+			if entry.ID() == descriptor.ID {
+				ordered = append(ordered, entry)
+			}
+		}
+	}
+	return ordered
 }
 
 func comradesTab(config HUDConfig) Tab {
@@ -33,7 +45,7 @@ func selectorHeading(title, description, selectorColor string) Section {
 }
 
 func settingsTab(config HUDConfig) Tab {
-	return tab(config, TabSettings, "Local configuration defaults, runtime paths, diagnostics, and verification hints.", []Section{{Title: "Updates", Description: "Download the latest tracked APK and let Android ask before installing it."}, {Title: "HUD Configuration", Description: "These defaults are hard-coded now and move to durable settings later.", Rows: []Row{{Label: "Tab placement", Detail: string(config.TabView.Placement)}, {Label: "Theme", Detail: string(config.Display.Theme)}, {Label: "Scale", Detail: "1.0"}, {Label: "Font size", Detail: "18"}, {Label: "Settings persistence", Detail: "hard-coded now, future SQLite user settings", Future: true}}}, {Title: "Bindings", Description: "Controller, keyboard, mouse, and touch bindings dispatch the same HUD actions.", Rows: []Row{{Label: "Previous tab", Detail: "L1, Ctrl+PageUp"}, {Label: "Next tab", Detail: "R1, Ctrl+PageDown"}, {Label: "Direct tabs", Detail: "Alt+1..Alt+5"}, {Label: "Push-to-talk", Detail: "R2, right Ctrl"}}}, {Title: "Diagnostics", Description: "Local checks and logs support troubleshooting without backend services.", Rows: []Row{{Label: "Doctor", Detail: "run --doctor"}, {Label: "Smoke test", Detail: "run --smoke-test"}, {Label: "Logs", Detail: "last_run.log and logs/apparat.jsonl"}, {Label: "Verify", Detail: "make verify && make check-docs"}}}})
+	return tab(config, TabSettings, "Local configuration defaults, runtime paths, diagnostics, and verification hints.", []Section{{Title: "Updates", Description: updateDescription(runtime.GOOS)}, {Title: "HUD Configuration", Description: "These defaults are hard-coded now and move to durable settings later.", Rows: []Row{{Label: "Tab placement", Detail: string(config.TabView.Placement)}, {Label: "Theme", Detail: string(config.Display.Theme)}, {Label: "Scale", Detail: "1.0"}, {Label: "Font size", Detail: "18"}, {Label: "Settings persistence", Detail: "hard-coded now, future SQLite user settings", Future: true}}}, {Title: "Bindings", Description: "Controller, keyboard, mouse, and touch bindings dispatch the same HUD actions.", Rows: []Row{{Label: "Previous tab", Detail: "L1, Ctrl+PageUp"}, {Label: "Next tab", Detail: "R1, Ctrl+PageDown"}, {Label: "Direct tabs", Detail: "Alt+1..Alt+6"}, {Label: "Push-to-talk", Detail: "R2, right Ctrl"}}}, {Title: "Diagnostics", Description: "Local checks and logs support troubleshooting without backend services.", Rows: []Row{{Label: "Doctor", Detail: "run --doctor"}, {Label: "Smoke test", Detail: "run --smoke-test"}, {Label: "Logs", Detail: "last_run.log and logs/apparat.jsonl"}, {Label: "Verify", Detail: "make verify && make check-docs"}}}})
 }
 
 func tab(config HUDConfig, id TabID, summary string, sections []Section) Tab {
@@ -51,4 +63,19 @@ func appendScenarioSections(id TabID, sections []Section) []Section {
 		return append(sections, scenarioSections(id)...)
 	}
 	return sections
+}
+
+func updateDescription(platform string) string {
+	switch platform {
+	case "android":
+		return "Check for a new Android release. Android will ask before installing a verified update."
+	case "linux":
+		return "To update on Linux, replace the Apparat executable with the latest Linux build."
+	case "windows":
+		return "To update on Windows, replace Apparat.exe with the latest Windows build."
+	case "darwin":
+		return "To update on macOS, replace the Apparat executable with the latest macOS build."
+	default:
+		return "Update Apparat using the latest build for this platform."
+	}
 }

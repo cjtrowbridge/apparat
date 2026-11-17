@@ -44,6 +44,11 @@ def prepare():
     for command in checks:
         print(f'Build prerequisite: {Path(command[1]).name}', flush=True)
         subprocess.run(command, cwd=ROOT, env=env, check=True)
+    try:
+        from scripts.stmpck_sources import prepare as prepare_games
+    except ImportError:
+        from stmpck_sources import prepare as prepare_games
+    prepare_games()
     return env
 
 

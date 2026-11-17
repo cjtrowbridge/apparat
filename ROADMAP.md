@@ -948,6 +948,8 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 ## Phase 4: Basic HUD Tabs And Content
 
+Cross-cutting navigation invariant: Settings is always last; new tabs, including STMPCK, go before it.
+
 **Goal:** Turn the mock HUD foundation into the first usable local UI before adding more backend networking and service complexity.
 
 **Dependencies:** Phases 1–3.
@@ -2224,6 +2226,10 @@ Compact icon tabs are tracked in [the icon-tab plan](plans/past/2026-11-16-14-30
 - [ ] Release artifacts are reproducible or carry a documented variance, provenance, signer, hashes, and rollback policy.
 - [ ] Upgrades preserve or safely migrate authoritative state.
 
+## Optional STMPCK arcade edition
+
+- [ ] Prove a private sixth HUD tab with shared standalone games, offline saves, exclusive input and Pixel 4a validation. Qualify all 18 games and reproducible distribution before release. Independent of MVP completion and Research validation gameplay. [Execution plan](plans/current/2026-11-17-11-08-46_embed-stmpck.md)
+
 ## Post-MVP Track A: Alternative Transports And Long-Term Resilience
 
 **Independence:** This track depends on stable identity, envelopes, queues, authorization, advertisements, and transport conformance. Tracks B and C do not depend on its completion unless they explicitly select one of its transports.
@@ -2429,3 +2435,5 @@ The MVP is complete only when the applicable cross-cutting requirements and all 
   - [ ] Backup/restore and upgrade/rollback preserve authoritative state.
   - [ ] Steam Deck/Linux GUI and headless releases are packaged and validated.
   - [ ] Other platforms are claimed only to their evidenced level.
+
+Phase 17 local delivery criterion: the ordinary build on main qualifies all host-eligible artifacts, publishes their exact bytes together and verifies remote delivery. Android delivery additionally requires signing continuity and a monotonically increasing package version.

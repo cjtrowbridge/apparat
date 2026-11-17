@@ -99,6 +99,16 @@ public class MainActivity extends Activity {
             decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         }
         content.requestApplyInsets();
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                new android.window.OnBackInvokedCallback() {
+                    @Override
+                    public void onBackInvoked() {
+                        MainActivity.this.onBackPressed();
+                    }
+                });
+        }
         Apparatmobile.registerUpdater(new com.cjtrowbridge.apparat.apparatmobile.Updater() {
             @Override
             public void checkForUpdate() {
@@ -108,6 +118,15 @@ public class MainActivity extends Activity {
         });
         Log.i(TAG, "Updater bridge registered");
         // Downloads and installer handoff require an explicit Update action.
+    }
+
+    @Override
+    public void onBackPressed() {
+        if ("stmpck".equals(Apparatmobile.activeTab())) {
+            Apparatmobile.arcadeBack();
+            return;
+        }
+        finish();
     }
 
     @Override

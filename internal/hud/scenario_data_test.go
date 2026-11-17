@@ -6,7 +6,7 @@ import "testing"
 
 func TestDefaultTabsUseMockupSelectorData(t *testing.T) {
 	for _, tab := range DefaultTabs(DefaultConfigManager{}.Config()) {
-		if tab.ID() == TabSettings {
+		if tab.ID() == TabSettings || tab.ID() == "stmpck" {
 			continue
 		}
 		headings, colored := 0, 0

@@ -19,7 +19,7 @@ def probe(command):
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=30)
         return result.returncode == 0, (result.stdout + result.stderr).strip()
-    except (OSError, subprocess.SubprocessError) as error:
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
         return False, str(error)
 
 
@@ -32,6 +32,11 @@ def main():
     parser.add_argument('--install-android', action='store_true', help='Install verified Linux amd64 SDK/NDK and Temurin 21 locally')
     parser.add_argument("--install-go", action="store_true", help="Install checksum-verified Go 1.26.11 locally on Linux amd64")
     args = parser.parse_args()
+    try:
+        from scripts.checkout_identity import check
+    except ImportError:
+        from checkout_identity import check
+    check(ROOT)
     if args.install_go and not args.check:
         from bootstrap_downloads import install_go
         install_go(GO_VERSION)
@@ -76,6 +81,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('Bootstrap interrupted', file=sys.stderr)
         raise SystemExit(130)
-    except (OSError, subprocess.SubprocessError) as error:
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f'Bootstrap failed: {error}', file=sys.stderr)
         raise SystemExit(1)

@@ -28,3 +28,6 @@
 [submodule "agentic-pipelines"]
 	path = agentic-pipelines
 	url = https://github.com/cjtrowbridge/agentic-pipelines.git
+[submodule "third_party/stmpck"]
+	path = third_party/stmpck
+	url = https://github.com/cjtrowbridge/stmpck.git

@@ -22,12 +22,11 @@ func chatSections(color string) []Section {
 func projectsMockSections() []Section {
 	projectColor, pipelineColor := SelectorPalette[0], SelectorPalette[1]
 	return []Section{
-		selectorHeading("Projects", "Open-ended workspaces for any kind of work.", projectColor),
+		selectorHeading("Project Repos", "Browse repositories to explore their files, chats, and actions.", projectColor),
 		mockSection("Solving Incompleteness", "Mock research workspace with Git and Chat views.", ContentProject, projectColor, "Branch|main · mock clean", "Focus|proof notes and formalization", "Chat|mock review waiting for a collaborator"),
 		mockSection("Invent Quantum AI", "Mock exploratory workspace with Git and Chat views.", ContentProject, projectColor, "Branch|prototype-qai", "Focus|model and hardware notes", "Chat|mock design exchange"),
 		mockSection("Solve Unification", "Mock theory workspace with Git and Chat views.", ContentProject, projectColor, "Branch|geometry-ledger", "Focus|constraint map", "Chat|mock question queue"),
 		mockSection("Mechanical Computers", "Mock hardware workspace with Git and Chat views.", ContentProject, projectColor, "Branch|mechanisms", "Focus|timing diagrams", "Chat|mock fabrication review"),
-		selectorHeading("Pipelines", "Project-oriented workspaces with a Cluster-task entry point.", pipelineColor),
 		mockSection("What's in the news?", "Mock pipeline workspace with a task entry point.", ContentPipeline, pipelineColor, "Entry point|news_digest", "Input|mock feeds and saved topics", "Run|no-op until task execution exists"),
 		mockSection("What's happening tonight?", "Mock pipeline workspace with a task entry point.", ContentPipeline, pipelineColor, "Entry point|tonight_brief", "Input|mock calendar and local events", "Run|no-op until task execution exists"),
 		mockSection("Oppo Analysis", "Mock pipeline workspace with a task entry point.", ContentPipeline, pipelineColor, "Entry point|oppo_analysis", "Input|mock notes and route policy", "Run|no-op until task execution exists"),

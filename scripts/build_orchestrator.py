@@ -14,9 +14,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 try:
-    from scripts import build
+    from scripts import build, build_evidence
 except ImportError:
     import build
+    import build_evidence
 
 
 @dataclass(frozen=True)
@@ -127,15 +128,15 @@ def print_plan_report(plans: list[BuildPlan], notes: list[str]) -> None:
             print(f"  reason: {reason}")
 
 
-def run_plan(go: str, plan: BuildPlan) -> int:
+def run_plan(go: str, plan: BuildPlan, destination: Path) -> int:
     if plan.goos == "android":
-        return build.build_android(go, plan.goarch)
-    return build.build_desktop(go, plan.goos, plan.goarch, (plan.target,))
+        return build.build_android(go, plan.goarch, destination)
+    return build.build_desktop(go, plan.goos, plan.goarch, (plan.target,), destination)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Detect Apparat build capabilities, report target status, and build every possible target.",
+        description="Detect Apparat build capabilities, report target status, and build, test, push and verify every possible target on GitHub main.",
         epilog=(
             "Canonical invocation: python3 scripts/build.py\n\n"
             "Operational target flags were intentionally removed. Use the no-flag "
@@ -163,12 +164,7 @@ def main(argv: list[str] | None = None) -> int:
     if not possible:
         print("No build targets are possible on this machine.", file=sys.stderr)
         return 1
-    exit_code = 0
-    for plan in possible:
-        result = run_plan(args.go, plan)
-        if result != 0:
-            exit_code = result
-    return exit_code
+    return build_evidence.qualify(build.ROOT, plans, lambda plan, dest: run_plan(args.go, plan, dest), publish=True)
 
 
 if __name__ == "__main__":

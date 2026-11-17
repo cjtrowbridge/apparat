@@ -43,15 +43,11 @@ This slice proves the HUD, controller input, identity, networking, API, persiste
 
 The game engine renders the application HUD and input system. For the MVP, there is no RPG world, quest system, progression system, or active gameplay layer. Comrades and Research are visible as future-facing tabs but are not actively developed beyond navigable placeholders.
 
-The canonical tab order is:
+The GUI includes the offline STMPCK gallery on Linux and Android. Its 💉 tab sits immediately before Settings. Settings is always last when adding or reorganizing tabs.
 
-1. Comrades
-2. Projects
-3. Cluster
-4. Research
-5. Settings
+The canonical order is Comrades, Projects, Cluster, Research, STMPCK, Settings.
 
-The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖥️ Cluster, 🧪 Research and ⚙️ Settings. All five fit at 320 logical pixels. Tab buttons have no popup tooltips. A prominent page heading below the icons names the active tab and remains visible while its content scrolls. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
+The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, 💉 STMPCK and ⚙️ Settings. All six fit at 320 logical pixels. Tab buttons have no popup tooltips. A prominent page heading below the icons names the active tab and remains visible while its content scrolls. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
 
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 
@@ -93,6 +89,8 @@ Cluster shows:
 ### Projects
 
 Projects always presents a cluster-wide catalog: local projects plus every authorized project advertised by every other enrolled device. Each project remains a Git repository owned by the device on which its working tree lives and runs. A remote device may browse and operate an authorized project through the owning device's REST API; it does not gain ownership or direct filesystem access.
+
+The Project Repos list uses blue outlines for repos without configured actions and purple outlines for repos with configured actions. Repos with configured actions also show 🧠 on the right. Both open the same workspace view.
 
 Projects opens workspace views with:
 
@@ -632,9 +630,16 @@ make build
 
 ### Bootstrap and build governance
 
+Before first setup, explicitly register the designated Apparat main checkout with
+`python3 scripts/checkout_identity.py --register`. Build with `python3 scripts/build.py`.
+On Linux this now opens the compiled GUI in Xvfb, exercises the headless executable,
+and installs the ordinary signed APK in place on an unlocked, authorized Pixel 4a.
+Missing prerequisites or failed acceptance leave the verified outputs unchanged.
+See scripts/README.md for dependencies and recovery. Stage the source intended for release before building. The pipeline commits staged changes and qualified outputs together, pushes main, and verifies private GitHub downloads using the authenticated GitHub CLI. The Android updater installed on the Pixel 10 uses an anonymous URL and cannot access this private distribution. An unchanged rerun verifies delivery without incrementing the version.
+
 Run `python3 scripts/bootstrap.py --check` to inspect Go and hook prerequisites without changes. `python3 scripts/bootstrap.py` installs/checks the repository hook. Provision Go 1.26.11 on PATH or copy a verified existing distribution with `--go-source /path/to/go`; `--native-source /path/to/sysroot` copies an existing native development sysroot into ignored local tools. These copies are independent of the original project. On Linux amd64, `python3 scripts/bootstrap.py --install-android` installs checksum-verified API 35, build-tools 35.0.0, NDK 27.2.12479018 and Temurin 21 into `.tools`; `--check --android` validates them without installing. Existing `JAVA_HOME` or PATH JDKs must be OpenJDK 21. ADB is the system Debian package, shared across projects.
 
-Every supported software-build entrypoint runs the read-only bootstrap probe, canonical source gate and physical-line check before compilation. `source-governance.yaml` declares first-party roots and language rules; local API configuration is unrelated. Build prerequisites fail visibly without automatic system installation. Use `python3 scripts/build_gate.py -- COMMAND` for direct compiler/test/tool commands and approved Git commits so the staged hook inherits the local Go path. Make targets already do this. No commit or publication is implied by a build.
+Every supported software-build entrypoint runs the read-only bootstrap probe, canonical source gate and physical-line check before compilation. `source-governance.yaml` declares first-party roots and language rules; local API configuration is unrelated. Build prerequisites fail visibly without automatic system installation. Use `python3 scripts/build_gate.py -- COMMAND` for direct compiler/test/tool commands and approved Git commits so the staged hook inherits the local Go path. Make targets already do this.
 
 The VS Code task and primary launch action use Python on Linux/macOS and the existing native PowerShell wrapper on Windows, entering the same canonical build once. Windows/macOS integration is configured but requires independent host validation. `scripts/build_environment_sample.py` owns optional local environment defaults; the root sample preserves the established copy-to-`build_environment.py` interface.
 
@@ -642,7 +647,7 @@ The VS Code task and primary launch action use Python on Linux/macOS and the exi
 After cloning, initialize Agentic Pipelines:
 
 ```bash
-git submodule update --init --recursive agentic-pipelines
+git submodule update --init --recursive agentic-pipelines third_party/stmpck
 ```
 
 `agentic-pipelines/AGENTS.md` is the selected shared governance baseline. Apparat's build targets are the deterministic pipeline entities, and the existing no-flag `scripts/build.py` process remains the sole build engine. The current host-owned VS Code task and play action are Windows-local and enter `scripts/run_build_pipeline.ps1` before delegating to that build script. Linux and macOS retain their documented direct build commands until native VS Code entrypoints can be tested there.
@@ -691,7 +696,7 @@ On Windows, `python -m scripts.build` is the directly usable no-flag invocation 
 
 The pipeline binds `cmd/apparatmobile` with Ebitengine's generated Android mobile view classes, compiles the tracked wrapper in `android/apparat`, and writes a signed APK to the canonical release path. The wrapper is the current Android render path: on-device evidence shows it opens to the Phase 4 HUD and accepts touch tab selection. It generates an ignored patched local `gomobile-apparat` helper under `.tools/bin` because the pinned Ebitengine `gomobile` package scanner checks for `github.com/ebitengine/gomobile/app` while its regular expression only recognizes `golang.org/x` package symbols. This patch broadens the scanner, supports local Apparat/Ebitengine module replacement for AAR binding, and preserves modern Android SDK metadata (`minSdkVersion=23`, `targetSdkVersion=35`) while compiling/package-building against Android platform 35. Mobile preparation exports the pinned engine into ignored `.tmp/mobile-engine` and guards invalid display metrics there, leaving the submodule untouched. The helper is rebuilt from its pinned source and current patches on each preparation. It also signs the APK with a retained certificate-pinned development keystore and keeps the Android build independent from the ignored `third_party/salvagecore` checkout.
 
-During Phase 5, the Settings tab also exposes a temporary `Updates` fieldset with an EbitenUI `Check for update` button and safe explanatory status text. On Android, that button calls the wrapper updater through the Gomobile bridge. The action downloads the tracked GitHub `latest.apk`, compares that file's SHA-256 with the installed APK, opens Android's per-app unknown-source permission screen only when an update is needed and permission is missing, then launches the system package installer for user approval. A successful matching hash reports `Up To Date!`; network, HTTP, download, and verification failures report `Unable to check for updates` with a redacted actionable explanation. A silent startup check follows the same path but only surfaces user-facing state when action is needed. Desktop builds currently have no configured checker and state that limitation honestly. A later Android release-hardening phase replaces this hash-only bridge with installed-version versus latest-version display before offering an update.
+During Phase 5, the Settings tab also exposes a temporary `Updates` fieldset with an EbitenUI `Check for update` button and safe explanatory status text. On Android, that button calls the wrapper updater through the Gomobile bridge. The action downloads the tracked GitHub `latest.apk`, compares that file's SHA-256 with the installed APK, opens Android's per-app unknown-source permission screen only when an update is needed and permission is missing, then launches the system package installer for user approval. A successful matching hash reports `Up To Date!`; network, HTTP, download, and verification failures report `Unable to check for updates` with a redacted actionable explanation. A silent startup check follows the same path but only surfaces user-facing state when action is needed. Desktop Settings gives manual update instructions for the running operating system. Only the Android client registers the in-app update action. A later Android release-hardening phase replaces this hash-only bridge with installed-version versus latest-version display before offering an update.
 
 The APK retains Android 6/API 23 as its minimum; targeting API 35 does not raise that minimum. Newer Android versions apply newer permission, background-execution and layout rules. The wrapper applies system-bar and camera-cutout insets on Android 15+ so HUD controls stay inside usable screen bounds. Reserved areas use the renderer's background color, with light navigation buttons; the current renderer has a fixed dark palette. Newer and older-device operation require separate validation; Pixel 4a Android 13 evidence alone cannot establish either. The current APK is arm64 only.
 
@@ -718,11 +723,11 @@ Phase 8 runs one embedded node behind either GUI or headless presentation. Both 
 Stop older Apparat processes before first startup. Exactly one populated legacy `apparat` or `apparatd` root is renamed atomically to `node`; two populated roots, an existing destination, or a failed rename stop with recovery instructions. Nothing is merged. Choose a root explicitly to inspect a conflict, back up both roots, and make a deliberate offline selection. An interrupted atomic rename leaves the selected root at either its old or new location; inspect both before retrying. Older binaries do not honor the new lock and must remain stopped.
 
 ```bash
-make build-fast
-.tmp/dev/apparatd --runtime-dir /tmp/apparat-demo --demo-services --services
-.tmp/dev/apparat --runtime-dir /tmp/apparat-demo
+make build
+releases/linux/amd64/apparatd/latest --runtime-dir /tmp/apparat-demo --demo-services --services
+releases/linux/amd64/apparat/latest --runtime-dir /tmp/apparat-demo
 # After stopping the GUI, run the same node headlessly:
-.tmp/dev/apparatd --runtime-dir /tmp/apparat-demo --listen 127.0.0.1:8080
+releases/linux/amd64/apparatd/latest --runtime-dir /tmp/apparat-demo --listen 127.0.0.1:8080
 ```
 
 `--demo-services` atomically seeds an empty store with two mock text instances and one mock image instance. Android seeds this demonstration on the first empty-store startup. Existing services are preserved, including deliberate removals. The Cluster tab's **Local services** detail shows live IDs, revisions and health; other HUD content remains mock. Probes run sequentially every five seconds, with one outstanding probe and a one-second cooperative deadline. A 15-second-old observation is stale. No real provider, remote advertisement, routing or Task execution is enabled.
@@ -735,7 +740,7 @@ The default REST address is `127.0.0.1:0`; startup prints the selected root and 
 
 Fast build/test tasks enter the same source gate and keep outputs under ignored `.tmp`; normal `scripts/build.py` remains the release orchestrator. Android eligibility inspection does not compile tools. Actual Android execution prepares the exact engine export and helper tools once before binding. Go 1.26.11 is required; `python3 scripts/bootstrap.py --install-go` installs a checksum-verified Linux amd64 copy locally.
 
-Android GitHub updates require the retained signing key pinned by `android/apparat/signing-certificate.sha256` and an increasing manifest `versionCode`. The build fails if the key is missing or different. Before publication, run `python3 scripts/android_release.py --candidate releases/android/arm64/apparat/latest.apk --previous PATH_TO_FRESH_GITHUB_APK`; it verifies package/signature continuity and a strictly newer version. Keep the key private and securely backed up; do not regenerate it on another build machine. The old GitHub signer is a separate lineage; this channel now follows the currently installed Pixel builds.
+Android GitHub updates require the retained signing key pinned by `android/apparat/signing-certificate.sha256` and an increasing manifest `versionCode`. The build fails if the key is missing or different. The canonical pipeline assigns the next version and checks the candidate against the signed APK on GitHub main. Keep the key private and securely backed up; do not regenerate it on another build machine. The old GitHub signer is a separate lineage; this channel now follows the currently installed Pixel builds.
 
 Android update checks now require an explicit Update action. Downloads are bounded, cancel with Activity destruction and must match the installed package/signature with a strictly newer version before the system installer is offered. Public hash equality does not establish release authenticity. Production signed manifests, key custody and rollback remain Phase 17; no install permission is granted automatically.
 
