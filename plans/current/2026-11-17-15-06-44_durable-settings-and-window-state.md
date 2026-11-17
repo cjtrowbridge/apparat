@@ -46,3 +46,5 @@ Verified through the real Settings widgets and SQLite on Linux, including immedi
 ### Tab placement checkpoint
 
 Implement top, left, right and responsive Settings choices through migration 5 and the existing confirmed-save path. Verify the real Settings button, adaptive layout and database reopen, then exercise placement and navigation on Pixel 4a. Earlier preferences and desktop placement survive the upgrade.
+
+Verified Linux right-rail rendering and Pixel 4a left-rail cold restart. Touch navigation opened STMPCK and returned to Settings. Restored the Pixel's original Top choice. Linux visual inspection exposed a push-to-talk overlap with the right rail at short desktop heights. Reserve the rail gutter for both the control and its hit test and cover it in the GUI suite.

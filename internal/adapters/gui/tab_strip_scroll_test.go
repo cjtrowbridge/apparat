@@ -120,3 +120,13 @@ func TestResponsivePlacementAdaptsWithoutChangingSavedChoice(t *testing.T) {
 		}
 	}
 }
+
+func TestRightRailClearsPushToTalk(t *testing.T) {
+	game := NewGame()
+	game.Layout(640, 480)
+	game.prefs.Placement = "right_rail"
+	x, _ := game.pttCenter()
+	if x+pttRadius >= game.width-windowMargin-tabIconButtonWidth {
+		t.Fatal("push-to-talk overlaps the right rail")
+	}
+}

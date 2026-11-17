@@ -353,12 +353,6 @@ func (game *Game) drawPTTButton(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, "PTT", x-10, y-4)
 }
 
-func (game *Game) pttCenter() (int, int) {
-	x := game.width - pttMargin - pttRadius
-	y := game.height - diagnosticsHeight - pttMargin - pttRadius
-	return x, y
-}
-
 func (game *Game) pointInPTT(x int, y int) bool {
 	cx, cy := game.pttCenter()
 	dx, dy := x-cx, y-cy

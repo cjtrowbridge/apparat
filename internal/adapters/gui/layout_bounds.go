@@ -216,3 +216,12 @@ func (game *Game) contentWidth() int {
 	}
 	return game.width
 }
+
+func (game *Game) pttCenter() (int, int) {
+	x := game.width - pttMargin - pttRadius
+	if game.sideRail() == "right_rail" {
+		x -= railGutter
+	}
+	y := game.height - diagnosticsHeight - pttMargin - pttRadius
+	return x, y
+}
