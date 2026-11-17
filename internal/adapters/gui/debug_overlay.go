@@ -156,11 +156,9 @@ func (game *Game) updatePointerState() {
 	x, y := ebiten.CursorPosition()
 	game.updateDebugOverlayDrag(x, y)
 	game.updateTabStripDrag(x, y)
+	game.updateDividerDrag(x, y)
 	game.updateBodyScrollMouse(x, y)
 	game.updatePTTMouse(x, y)
-	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		game.splitDragging = false
-	}
 }
 
 func (game *Game) updateDebugOverlayDrag(x int, y int) {

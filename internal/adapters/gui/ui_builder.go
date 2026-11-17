@@ -30,6 +30,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.tabButtons = nil
 	game.tabRadioGroup = nil
 	game.verticalScrolls = nil
+	game.divider = nil
 	game.clampSplitWidth()
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(

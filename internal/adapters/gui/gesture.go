@@ -13,6 +13,7 @@ const (
 	gestureDebug
 	gestureTabs
 	gestureBody
+	gestureDivider
 	gesturePTT
 )
 
@@ -49,7 +50,6 @@ func (game *Game) cancelPointer() {
 	game.finishBodyScroll()
 	game.finishTabStripDrag()
 	game.gesture = pointerGesture{}
-	game.splitDragging = false
 	game.rightCtrlHeld = false
 	game.r2Held = false
 }

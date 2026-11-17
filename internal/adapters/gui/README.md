@@ -127,3 +127,5 @@ Updater status text now distinguishes an invalid package, incompatible signing k
 - `arcade.go`: Lazily initializes the embedded STMPCK gallery, translates the viewport, routes Back and saves when the game is suspended.
 
 The Updates card uses platform-specific HUD copy. Its button and status exist only when the client supplies an updater callback through the Android bridge.
+
+The desktop master-detail divider captures the mouse through the shared pointer owner. Resizing preserves both panes' scroll positions while the layout rebuilds.

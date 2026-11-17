@@ -12,6 +12,8 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	uiimage "github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 func (game *Game) buildMasterDetailTab(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
@@ -274,28 +276,44 @@ func rowText(row hud.Row) string {
 }
 
 func (game *Game) buildDivider() widget.PreferredSizeLocateableWidget {
-	return widget.NewButton(
+	divider := widget.NewButton(
 		widget.ButtonOpts.Text("|", game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
 		widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
 		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 4, Right: 4, Top: 8, Bottom: 8}),
 		widget.ButtonOpts.WidgetOpts(
 			widget.WidgetOpts.MinSize(24, tabHeight),
 			widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: 0}),
-			widget.WidgetOpts.MouseButtonPressedHandler(func(args *widget.WidgetMouseButtonPressedEventArgs) {
-				game.splitDragging = true
-			}),
-			widget.WidgetOpts.MouseButtonReleasedHandler(func(args *widget.WidgetMouseButtonReleasedEventArgs) {
-				game.splitDragging = false
-			}),
-			widget.WidgetOpts.CursorMoveHandler(func(args *widget.WidgetCursorMoveEventArgs) {
-				if game.splitDragging {
-					game.splitWidth += args.DiffX
-					game.clampSplitWidth()
-					game.rebuildUI(game.shell.Snapshot())
-				}
-			}),
 		),
 	)
+	game.divider = divider.GetWidget()
+	return divider
+}
+
+func (game *Game) updateDividerDrag(x, y int) {
+	if game.divider == nil || !ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		game.releaseGesture(gestureDivider)
+		return
+	}
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) &&
+		imagePoint(x, y).In(game.divider.Rect) &&
+		!game.pointInDebugOverlay(x, y) && !game.pointInPTT(x, y) &&
+		game.claimGesture(gestureDivider, false, 0) {
+		game.splitGrabOffset = x - game.splitWidth
+	}
+	if game.gesture.Owner != gestureDivider {
+		return
+	}
+	previous := game.splitWidth
+	game.splitWidth = x - game.splitGrabOffset
+	game.clampSplitWidth()
+	if game.splitWidth == previous {
+		return
+	}
+	scrolls := game.verticalScrolls
+	game.rebuildUI(game.shell.Snapshot())
+	for i, scroll := range game.verticalScrolls {
+		scroll.ScrollTop = scrolls[i].ScrollTop
+	}
 }
 
 func (game *Game) masterListWidth() int {

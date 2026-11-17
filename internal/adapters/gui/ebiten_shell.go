@@ -97,7 +97,8 @@ type Game struct {
 	selectedSections               map[hud.TabID]int
 	detailOpen                     map[hud.TabID]bool
 	splitWidth                     int
-	splitDragging                  bool
+	divider                        *widget.Widget
+	splitGrabOffset                int
 	researchContributionSort       hud.ContributionSort
 	researchContributionDescending bool
 	pttHeld                        bool

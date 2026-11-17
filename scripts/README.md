@@ -160,3 +160,5 @@ Host formatting is scoped to `cmd/` and `internal/`; `make fmt` must not format 
 - `stmpck_sources.py`: Exports the indexed private STMPCK gitlink and applies the tracked embedding patch before Go tools run. Initialize third_party/stmpck recursively after cloning. The generated module lives under .tmp. Restore the pinned dependency if preparation fails.
 
 Linux GUI artifact acceptance opens STMPCK with Alt+5, starts Merge, makes moves and checks the isolated save for undo history. Gallery and board screenshots accompany each run.
+
+Linux GUI qualification also drags the Projects divider across two pointer updates and checks that both the held and released frames reflect the new position.

@@ -36,6 +36,52 @@ def pink_pixels(im):
                 yield x, y
 
 
+def check_divider(x, xt, display, window, directory):
+    from PIL import Image
+    x.XResizeWindow(display, ctypes.c_ulong(int(window, 16)), 960, 820)
+    x.XSync(display, 0)
+    time.sleep(.7)
+    start_x, y = 286, 250
+    x.XDefaultRootWindow.restype = ctypes.c_ulong
+    root = x.XDefaultRootWindow(display)
+    root_x, root_y, child = ctypes.c_int(), ctypes.c_int(), ctypes.c_ulong()
+    if not x.XTranslateCoordinates(display, ctypes.c_ulong(int(window, 16)), ctypes.c_ulong(root),
+                                   start_x, y, ctypes.byref(root_x), ctypes.byref(root_y), ctypes.byref(child)):
+        raise ValueError('Could not translate divider position to display coordinates')
+
+    def capture(name):
+        path = directory/f'divider-{name}.png'
+        run('import', '-window', window, path)
+        with Image.open(path) as screenshot:
+            return screenshot.convert('RGB').crop((0, y, 500, y+1))
+
+    before = capture('before')
+    if before.getpixel((start_x, 0)) == before.getpixel((start_x-9, 0)):
+        raise ValueError('Expected a visible Projects divider at its initial position')
+    xt.XTestFakeMotionEvent(display, -1, root_x.value, root_y.value, 0)
+    x.XSync(display, 0)
+    time.sleep(.2)
+    xt.XTestFakeButtonEvent(display, 1, 1, 0)
+    x.XSync(display, 0)
+    time.sleep(.2)
+    try:
+        for offset in (48, 100):
+            xt.XTestFakeMotionEvent(display, -1, root_x.value+offset, root_y.value, 0)
+            x.XSync(display, 0)
+            time.sleep(.3)
+        moved = capture('held')
+    finally:
+        xt.XTestFakeButtonEvent(display, 1, 0, 0)
+        x.XSync(display, 0)
+    time.sleep(.2)
+    released = capture('released')
+    for frame in (moved, released):
+        if frame.getpixel((start_x, 0)) == before.getpixel((start_x, 0)):
+            raise ValueError('Desktop divider did not leave its initial position')
+        if frame.getpixel((start_x+100, 0)) == frame.getpixel((start_x+100-9, 0)):
+            raise ValueError('Desktop divider did not track the second drag step')
+
+
 def desktop_gui(binary, directory):
     x = ctypes.CDLL('libX11.so.6')
     xt = ctypes.CDLL('libXtst.so.6')
@@ -64,6 +110,7 @@ def desktop_gui(binary, directory):
             x.XSync(display, 0)
             time.sleep(.12)
         time.sleep(.4)
+        check_divider(x, xt, display, found[1], directory)
         x.XResizeWindow(display, ctypes.c_ulong(window), 660, 820)
         x.XSync(display, 0)
         time.sleep(.7)
