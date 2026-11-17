@@ -63,7 +63,7 @@
  }
  
  func (g *Game) begin(x, y float64) {
-+	if y < 0 || (g.embedded && (x < 0 || x >= float64(g.width))) {
++	if y < 0 || (g.embedded && (x < 0 || x >= float64(g.width) || y >= float64(g.height))) {
 +		return
 +	}
  	g.pressed = true

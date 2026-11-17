@@ -50,7 +50,12 @@ func (g *Game) arcadeUpdate() bool {
 			s.OffsetX = railGutter + windowMargin
 		}
 	}
-	w, h := s.Layout(width, max(1, g.height-top))
+	bottom := 0
+	if gallery && g.prefs.Placement == "bottom" {
+		top = 60
+		bottom = diagnosticsHeight + tabHeight + bodyGap
+	}
+	w, h := s.Layout(width, max(1, g.height-top-bottom))
 	s.OffsetY = top
 	s.InputScale = float64(width) / float64(w)
 	if a.canvas == nil || a.canvas.Bounds().Dx() != w || a.canvas.Bounds().Dy() != h {

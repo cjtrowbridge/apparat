@@ -130,3 +130,16 @@ func TestRightRailClearsPushToTalk(t *testing.T) {
 		t.Fatal("push-to-talk overlaps the right rail")
 	}
 }
+
+func TestBottomTabsKeepPushToTalkAboveStrip(t *testing.T) {
+	game := NewGame()
+	game.prefs.Placement = "bottom"
+	for _, width := range []int{320, 1024} {
+		game.Layout(width, 600)
+		game.rebuildUI(game.shell.Snapshot())
+		_, cy := game.pttCenter()
+		if game.tabScroll == nil || cy+pttRadius >= game.height-diagnosticsHeight-tabHeight {
+			t.Fatalf("bottom strip obscured at width %d", width)
+		}
+	}
+}

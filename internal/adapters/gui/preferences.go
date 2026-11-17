@@ -125,7 +125,7 @@ func (g *Game) preferenceControls(c *widget.Container) {
 		v.Font = cycle(v.Font, []int{14, 16, 18, 20})
 	})
 	add("Tab placement: "+placementLabel(p.Placement), func(v *domain.Preferences) {
-		v.Placement = cycle(v.Placement, []string{"top", "left_rail", "right_rail", "responsive"})
+		v.Placement = cycle(v.Placement, []string{"top", "bottom", "left_rail", "right_rail", "responsive"})
 	})
 	add("Startup tab: "+p.Landing, func(v *domain.Preferences) {
 		var ids []string

@@ -6,6 +6,7 @@ type TabPlacement string
 
 const (
 	TabPlacementTop        TabPlacement = "top"
+	TabPlacementBottom     TabPlacement = "bottom"
 	TabPlacementLeftRail   TabPlacement = "left_rail"
 	TabPlacementRightRail  TabPlacement = "right_rail"
 	TabPlacementResponsive TabPlacement = "responsive"
@@ -152,7 +153,7 @@ func (DefaultConfigManager) Config() HUDConfig {
 	return HUDConfig{
 		TabView: TabViewConfig{
 			Placement:  TabPlacementTop,
-			Allowed:    []TabPlacement{TabPlacementTop, TabPlacementLeftRail, TabPlacementRightRail, TabPlacementResponsive},
+			Allowed:    []TabPlacement{TabPlacementTop, TabPlacementLeftRail, TabPlacementRightRail, TabPlacementResponsive, TabPlacementBottom},
 			Density:    TabDensityComfortable,
 			LabelMode:  TabLabelIconText,
 			DefaultTab: TabComrades,

@@ -181,6 +181,8 @@ const railGutter = tabIconButtonWidth + bodyGap
 
 func placementLabel(setting string) string {
 	switch setting {
+	case "bottom":
+		return "Bottom"
 	case "left_rail":
 		return "Left"
 	case "right_rail":
@@ -195,7 +197,7 @@ func placementLabel(setting string) string {
 // Fall back to the scrollable top strip when a rail cannot fit every tab.
 func (game *Game) sideRail() string {
 	mode := game.prefs.Placement
-	if mode == "top" || mode == "" {
+	if mode == "bottom" || mode == "top" || mode == "" {
 		return ""
 	}
 	count := len(game.shell.Snapshot().Tabs)
@@ -223,5 +225,8 @@ func (game *Game) pttCenter() (int, int) {
 		x -= railGutter
 	}
 	y := game.height - diagnosticsHeight - pttMargin - pttRadius
+	if game.prefs.Placement == "bottom" {
+		y -= tabHeight + bodyGap
+	}
 	return x, y
 }

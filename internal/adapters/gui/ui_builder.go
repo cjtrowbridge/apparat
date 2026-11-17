@@ -46,6 +46,10 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	rail := game.sideRail()
 	rows := []bool{false, false, true}
 	contentLayout := widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
+	bottom := game.prefs.Placement == "bottom"
+	if bottom {
+		rows = []bool{false, true, false}
+	}
 	if rail != "" {
 		rows = []bool{false, true}
 		inset := &widget.Insets{}
@@ -65,9 +69,9 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(contentLayout)),
 	)
 	strip := game.buildTabStrip(snapshot)
-	if rail == "" {
+	if rail == "" && !bottom {
 		shell.AddChild(strip)
-	} else {
+	} else if rail != "" {
 		anchor := widget.AnchorLayoutData{}
 		if rail == "right_rail" {
 			anchor.HorizontalPosition = widget.AnchorLayoutPositionEnd
@@ -82,6 +86,9 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	body := game.buildActiveTabBody(snapshot)
 	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0, MaxWidth: game.hudPreferredWidth()}
 	shell.AddChild(body)
+	if bottom {
+		shell.AddChild(strip)
+	}
 	root.AddChild(shell)
 
 	game.ui = &ebitenui.UI{

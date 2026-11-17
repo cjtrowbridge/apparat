@@ -828,4 +828,4 @@ Open questions and implementation phases are tracked in [ROADMAP.md](./ROADMAP.m
 
 Settings stores theme, UI scale, font size, startup tab and developer overlay preference in the node database. Select a setting to cycle its available values. Desktop also remembers the normal window rectangle and maximized state. Reset window placement centers the window on the current monitor.
 
-Tab placement in Settings cycles through Top, Left, Right and Responsive. Responsive uses a left rail when there is room for a desktop detail pane. Short windows use the horizontal strip so every tab stays reachable. SQLite remembers the selected mode across resizes and restarts.
+Tab placement in Settings cycles through Top, Bottom, Left, Right and Responsive. Responsive uses a left rail when there is room for a desktop detail pane. Short windows use the horizontal strip so every tab stays reachable. SQLite remembers the selected mode across resizes and restarts.

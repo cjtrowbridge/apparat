@@ -162,7 +162,7 @@ func TestSettingsControlSavesAndAppliesAtRestart(t *testing.T) {
 	click("UI scale: 100%")
 	click("Startup tab: comrades")
 	click("Tab placement: Top")
-	if game.sideRail() != "left_rail" {
+	if game.prefs.Placement != "bottom" || game.sideRail() != "" {
 		t.Fatal("confirmed placement did not reach layout")
 	}
 	width, _ := game.Layout(1000, 800)
@@ -173,7 +173,7 @@ func TestSettingsControlSavesAndAppliesAtRestart(t *testing.T) {
 	reopened := NewGameWithRuntimeInfo(RuntimeInfo{Queries: open()})
 	defer reopened.Close()
 	width, _ = reopened.Layout(1000, 800)
-	if width != 800 || reopened.ActiveTabID() != "projects" || reopened.sideRail() != "left_rail" {
+	if width != 800 || reopened.ActiveTabID() != "projects" || reopened.prefs.Placement != "bottom" {
 		t.Fatalf("restored width %d and tab %s", width, reopened.ActiveTabID())
 	}
 }
