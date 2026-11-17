@@ -129,3 +129,5 @@ Updater status text now distinguishes an invalid package, incompatible signing k
 The Updates card uses platform-specific HUD copy. Its button and status exist only when the client supplies an updater callback through the Android bridge.
 
 The desktop master-detail divider captures the mouse through the shared pointer owner. Resizing preserves both panes' scroll positions while the layout rebuilds.
+
+Selector buttons wrap their labels to the pane's inner width as the divider moves. Projects rows reserve space for the configured-action icon, and wrapped buttons grow vertically within the scrollable list.

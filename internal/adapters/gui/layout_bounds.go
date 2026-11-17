@@ -7,10 +7,12 @@ package gui
 import (
 	"image"
 	"image/color"
+	"strings"
 
 	"github.com/ebitenui/ebitenui/input"
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
+	ebitentext "github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 type boundedPreferredWidget struct {
@@ -131,4 +133,46 @@ func (game *Game) detailText(value string) *widget.Text {
 		widget.TextOpts.Text(value, game.theme.ButtonTheme.TextFace, color.White),
 		widget.TextOpts.MaxWidth(game.detailTextMaxWidth()),
 	)
+}
+
+// Keep words intact where possible, then break long names at rune boundaries.
+func wrapSelectorLabel(label string, face ebitentext.Face, width int) string {
+	fits := func(line string) bool {
+		measured, _ := ebitentext.Measure(line, face, 0)
+		return measured <= float64(width)
+	}
+	if fits(label) {
+		return label
+	}
+
+	var lines []string
+	line := ""
+	for _, word := range strings.Fields(label) {
+		if line != "" {
+			candidate := line + " " + word
+			if fits(candidate) {
+				line = candidate
+				continue
+			}
+			lines = append(lines, line)
+			line = ""
+		}
+		if fits(word) {
+			line = word
+			continue
+		}
+		for _, letter := range word {
+			candidate := line + string(letter)
+			if line != "" && !fits(candidate) {
+				lines = append(lines, line)
+				line = string(letter)
+			} else {
+				line = candidate
+			}
+		}
+	}
+	if line != "" {
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n")
 }

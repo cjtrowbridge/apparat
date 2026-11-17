@@ -78,3 +78,27 @@ func TestMasterDetailTabsStartWithBlankContentPanels(t *testing.T) {
 		}
 	}
 }
+
+func TestSelectorButtonsFitNarrowPaneAndReserveActionIcon(t *testing.T) {
+	game := NewGame()
+	game.width = 960
+	game.splitWidth = minSplitWidth
+	tabs := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())
+	cases := []struct {
+		tab     hud.Tab
+		section hud.Section
+	}{
+		{tabs[2], hud.Section{Title: "Project Pool (Medium priority)"}},
+		{tabs[1], hud.Section{Title: "unbroken-repository-name-with-many-characters", ContentKind: hud.ContentPipeline}},
+	}
+	for _, tc := range cases {
+		button := game.sectionButton(tc.tab, tc.section, 0)
+		button.GetWidget().SetTheme(game.theme)
+		button.Validate()
+		width, height := button.PreferredSize()
+		available := game.splitWidth - 2*selectorListInset
+		if width > available || height <= tabHeight {
+			t.Errorf("%q preferred size = %dx%d, want width <= %d and height > %d", tc.section.Title, width, height, available, tabHeight)
+		}
+	}
+}

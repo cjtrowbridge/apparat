@@ -45,12 +45,14 @@ func (game *Game) buildCollapsedDetail(tabData hud.Tab) widget.PreferredSizeLoca
 	return game.buildDetailScroll(tabData, true)
 }
 
+const selectorListInset = 8
+
 func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widget.PreferredSizeLocateableWidget {
 	listContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
 			widget.RowLayoutOpts.Spacing(4),
-			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 8, Right: 8, Top: 8, Bottom: 8}),
+			widget.RowLayoutOpts.Padding(&widget.Insets{Left: selectorListInset, Right: selectorListInset, Top: 8, Bottom: 8}),
 		)),
 		widget.ContainerOpts.WidgetOpts(
 			widget.WidgetOpts.MinSize(game.masterListWidth(), 0),
@@ -120,10 +122,14 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 	if tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline {
 		rightPadding += tabIconSize
 	}
+	padding := &widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}
+	width := game.masterPanePreferredWidth() - 2*selectorListInset - padding.Left - padding.Right
+	face := game.theme.ButtonTheme.TextFace
+	label := wrapSelectorLabel(section.Title, *face, width)
 	return widget.NewButton(
-		widget.ButtonOpts.Text(section.Title, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+		widget.ButtonOpts.Text(label, face, game.theme.ButtonTheme.TextColor),
 		widget.ButtonOpts.Image(selectorButtonImage(section.SelectorColor)),
-		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}),
+		widget.ButtonOpts.TextPadding(padding),
 		widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter),
 		widget.ButtonOpts.ToggleMode(),
 		widget.ButtonOpts.WidgetOpts(
