@@ -24,6 +24,14 @@ func (shell *Shell) Snapshot() Snapshot {
 	return shell.snapshot
 }
 
+// ApplyDisplay updates diagnostics without disturbing current navigation or focus.
+func (shell *Shell) ApplyDisplay(theme Theme, scale float64, font int) {
+	display := &shell.snapshot.Config.Display
+	display.Theme = theme
+	display.Scale = scale
+	display.FontSize = font
+}
+
 func (shell *Shell) NextTab() {
 	shell.snapshot.ActiveIndex = (shell.snapshot.ActiveIndex + 1) % len(shell.snapshot.Tabs)
 	shell.snapshot.FocusIndex = 0

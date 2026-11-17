@@ -40,3 +40,5 @@ This extends [Phase 4 HUD configuration and Settings](../../ROADMAP.md#phase-4-b
 ### First implementation checkpoint
 
 Migration 4 stores display preferences and desktop geometry independently. Settings includes dark/high-contrast themes, logical scale, font size, startup tab, persistent overlay and reset actions. Runtime queries supply both GUI entry points. Later controls under section 3 remain pending.
+
+Verified through the real Settings widgets and SQLite on Linux, including immediate scale application and startup-tab selection on reopen. Under KWin/X11 the window reopened maximized and restored to its previous 810 × 620 normal bounds at (72, 90). On the Pixel 4a the high-contrast theme remained active after force-stop and cold launch. Other desktop operating systems and monitor-change behavior await native qualification.

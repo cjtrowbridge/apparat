@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"github.com/cjtrowbridge/apparat/internal/hud"
 	uiimage "github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
 	"image/color"
@@ -55,11 +56,14 @@ func (g *Game) applyPreferences(p domain.Preferences) {
 	g.theme.LabelTheme.Face = face
 	g.pageTitleFace = createTextFace(float64(p.Font) * 2)
 	g.selectorDescriptionFace = createTextFace(float64(p.Font) * 0.8)
+	theme := hud.ThemeDark
 	if p.Theme == "High contrast" {
+		theme = hud.ThemeHighContrast
 		g.theme.PanelTheme.BackgroundImage = uiimage.NewNineSliceColor(color.Black)
 		g.theme.ButtonTheme.TextColor.Idle = color.White
 		g.theme.LabelTheme.Color.Idle = color.White
 	}
+	g.shell.ApplyDisplay(theme, float64(p.Scale)/100, p.Font)
 }
 func (g *Game) savePreferences(p domain.Preferences) {
 	if g.prefs.pending != nil {
