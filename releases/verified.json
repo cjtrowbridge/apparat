@@ -1,8 +1,8 @@
 {
   "edition": "ordinary",
   "ref": "refs/heads/main",
-  "head": "43d0eaf2ed87ed8a1733ca4c27202cccf8e090aa",
-  "inputs": "2175126b60abb5e2876af07766cb69b9d090a4e67c4ef5e00940cd36e0e65b26",
+  "head": "649acbf8887a8f14a3aa3049331f00d87dce9cf6",
+  "inputs": "4a64c1d74cdd63b5a4431aea905d95c5ef12a0c377984593c46451616ae88cb4",
   "go": "go version go1.26.11 linux/amd64",
   "targets": [
     {
@@ -10,24 +10,24 @@
       "output": "releases/linux/amd64/apparat/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "44cf874d72ac6bc663e96f419d4eef9aca37b8489180e0c14d6b3734f6774df1",
-      "inputs": "2175126b60abb5e2876af07766cb69b9d090a4e67c4ef5e00940cd36e0e65b26"
+      "sha256": "a22609b722f297cbc42daddfba6e7b1dbedbfbe5281e0fb1069203eb8bf5c212",
+      "inputs": "4a64c1d74cdd63b5a4431aea905d95c5ef12a0c377984593c46451616ae88cb4"
     },
     {
       "name": "linux/amd64/apparatd",
       "output": "releases/linux/amd64/apparatd/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "12f4084fd9f95ff681aada0151d0d4a690aa7cc703a81389425e2b32137db76a",
-      "inputs": "2175126b60abb5e2876af07766cb69b9d090a4e67c4ef5e00940cd36e0e65b26"
+      "sha256": "ddf07bbd18a6724ddb5dcfb85308c9d18f7cf72c36d47095955e1d468ed3bffa",
+      "inputs": "4a64c1d74cdd63b5a4431aea905d95c5ef12a0c377984593c46451616ae88cb4"
     },
     {
       "name": "android/arm64/apparat",
       "output": "releases/android/arm64/apparat/latest.apk",
       "state": "passed",
       "reasons": [],
-      "sha256": "f9324b94ad111f4f93098060801a0319c53aca60426f5eeedcb520d48bb713db",
-      "inputs": "2175126b60abb5e2876af07766cb69b9d090a4e67c4ef5e00940cd36e0e65b26"
+      "sha256": "151196b6fd796d3dc226f2dccbebd18fb8416f361f5e9597cdef8334522a49dd",
+      "inputs": "4a64c1d74cdd63b5a4431aea905d95c5ef12a0c377984593c46451616ae88cb4"
     },
     {
       "name": "android/arm64/apparatd",

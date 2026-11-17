@@ -7,6 +7,9 @@ import hashlib
 import json
 import re
 import subprocess
+import urllib.error
+import urllib.parse
+import urllib.request
 
 try:
     from scripts import android_release, build, build_evidence as evidence
@@ -72,11 +75,17 @@ def allocate(root, remote, baseline):
 
 def verify_download(output, expected):
     endpoint = f'repos/{REPOSITORY}/contents/{output}?ref=main'
-    with subprocess.Popen(['gh','api','-H','Accept: application/vnd.github.raw+json',endpoint],
-                          stdout=subprocess.PIPE) as proc:
-        digest = hashlib.file_digest(proc.stdout,'sha256').hexdigest()
-        if proc.wait() or digest != expected:
-            raise ValueError(f'Private GitHub read-back failed for {output}; retry delivery')
+    address = subprocess.check_output(['gh','api',endpoint,'--jq','.download_url'],text=True).strip()
+    location = urllib.parse.urlsplit(address)
+    if location.scheme != 'https' or location.hostname != 'raw.githubusercontent.com':
+        raise ValueError('Unexpected GitHub artifact download host')
+    try:
+        with urllib.request.urlopen(address,timeout=120) as response:
+            actual = hashlib.file_digest(response,'sha256').hexdigest()
+    except urllib.error.URLError:
+        raise ValueError(f'GitHub artifact download failed for {output}') from None
+    if actual != expected:
+        raise ValueError(f'Private GitHub read-back failed for {output}; retry delivery')
 
 
 def publish(root, rows, verify=verify_download):
