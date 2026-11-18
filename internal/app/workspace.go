@@ -51,9 +51,13 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 		return v, errors.New("project registration unavailable")
 	}
 	switch q.Action {
-	case "read", "create", "list":
+	case "read", "create", "list", "mkdir":
 		v, err = n.workspaceFile(location, q)
 		if err != nil || !v.Editing {
+			return v, err
+		}
+		err = n.reconcileFileSaves(ctx, q, v)
+		if err != nil {
 			return v, err
 		}
 		base, body, found, err := n.database.Draft(ctx, q.ProjectID, q.Path)
@@ -129,7 +133,15 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 			if strings.TrimSpace(q.Argument) == "" || !domain.ValidID(q.ID) {
 				return v, errors.New("enter a message")
 			}
-			err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, kind, "Pending · "+q.Argument)
+			body := "Pending · " + q.Argument
+			if q.RelatedRun != "" {
+				runKind, _, lookup := n.database.ProjectEntry(ctx, q.ProjectID, q.RelatedRun)
+				if lookup != nil || runKind != "run" {
+					return v, errors.New("run unavailable in this project")
+				}
+				body += "\nRun and artifact: " + q.RelatedRun
+			}
+			err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, kind, body)
 			if err != nil {
 				return v, err
 			}

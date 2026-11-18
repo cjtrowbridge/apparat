@@ -98,7 +98,7 @@ After trusted membership is available, the same list will include authorized sum
 
 The Project Repos list uses blue outlines for repos without configured actions and purple outlines for repos with configured actions. Repos with configured actions also show 🧠 on the right. Both open the same workspace view. Each row shows the full checkout location beneath its name, prefixed with `local://` for this device, followed by the current branch and abbreviated checkout commit. On Android, `local://apparat/` starts at this installation’s data directory and `local://~/` starts at primary shared storage. Other volumes keep their own labels.
 
-Phase 9A will add offline file editing, Git operations, durable local drafts and manual Task results before cluster enrollment. Phase 11A will verify those workflows in the mixed local and remote catalog. Phase 11C will add authorized workspace operations on another owner.
+Phase 9A provides offline file editing, Git operations, durable local drafts and manual Task results before cluster enrollment. Phase 11A will verify those workflows in the mixed local and remote catalog. Phase 11C will add authorized workspace operations on another owner.
 
 The planned workspace includes:
 
@@ -848,4 +848,4 @@ For a local Task, place a versioned declaration in `.apparat/tasks.json`. For ex
 {"version":1,"tasks":[{"id":"readme","label":"Snapshot README","enabled":true,"action":"snapshot-text","path":"README.md"}]}
 ```
 
-Select **Tasks**, choose the task by ID and confirm the run. The snapshot copies the named text file into local artifact storage and records its SHA-256 digest. Open a run's artifact to verify the stored bytes after restart. VS Code shell commands remain descriptive labels. Local chat messages remain pending on the project owner.
+Select **Tasks**, choose the named entrypoint and confirm the run. The snapshot copies the named text file into local artifact storage and records its SHA-256 digest. Open a run's artifact to verify the stored bytes after restart. VS Code shell commands remain descriptive labels. The built-in `git-status` action captures the current checkout status as a text artifact. Tasks run with a 15-second default deadline, a maximum 60-second configured deadline and explicit confirmation. Unsupported actions and secret-dependent definitions cannot run on this executor. Artifacts are retained until explicit deletion or an optional `retainSeconds` deadline. Pending chat messages are grouped by project thread and can reference the last opened run and artifact.

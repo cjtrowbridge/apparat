@@ -57,6 +57,9 @@ func (d projectDocuments) WorkspaceFile(uri string, q domain.WorkspaceRequest) (
 			}
 		}
 		return v, nil
+	case "mkdir":
+		_, err = f.call("newdir", q.Path, "")
+		return v, err
 	case "create":
 		_, err = f.call("create", q.Path, "")
 		if err != nil {

@@ -124,6 +124,9 @@ func Files(location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, 
 		_ = parent.Close()
 	}()
 	name := filepath.Base(q.Path)
+	if q.Action == "mkdir" {
+		return v, parent.Mkdir(name, 0700)
+	}
 	if q.Action == "create" {
 		f, err := parent.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err != nil {

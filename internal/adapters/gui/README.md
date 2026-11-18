@@ -142,3 +142,5 @@ Tab rails share the same buttons and selection handlers as the top strip. The si
 workspace.go renders Files, Git, Tasks and Chat for the selected registration. Open a text file to edit individual lines, keep a draft, and explicitly apply it. Pending writes and commits require confirmation.
 
 - `workspace.go`: Presents the local workspace through the Projects detail pane.
+
+- `workspace_controller.go`: In Projects, D-pad up/down traverses and reveals touch-sized controls, the south face button activates, and the east face button returns to the workspace menu or list. Text entry uses the platform keyboard.

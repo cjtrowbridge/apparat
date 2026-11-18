@@ -130,8 +130,8 @@ final class WorkspaceDocuments {
                 resolve(path,true);
                 return "{}";
             }
-            if(op.equals("create")) {
-                create(resolve(parent(path),false),base(path),false);
+            if(op.equals("create") || op.equals("newdir")) {
+                create(resolve(parent(path),false),base(path),op.equals("newdir"));
                 return "{}";
             }
             Uri src=resolve(path,false);

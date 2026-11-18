@@ -107,3 +107,14 @@ The Linux checkout also provides the absent-reference build proof. The third_par
 ## Phase 9 local repositories
 
 Linux registered vibe-modeling through the desktop folder chooser and cloned the public fixture and private Apparat fixture with one system GitHub login. On the Pixel 4a, an existing Documents checkout, an app-private clone and a Documents clone retained distinct IDs after an offline cold start. External task edits appeared after restart. Folder reselection recovered a moved checkout. Two live Linux accounts with disjoint private access and explicit Android grant revocation remain unverified.
+
+## Phase 9A offline local workspace
+
+Linux amd64 ran the Projects GUI in Xvfb inside a network namespace with only loopback. On Pixel 4a, Wi-Fi and mobile data were disabled for the workflow. Both platforms edited a selected file, displayed its diff, staged and committed it, ran the manual snapshot Task, then reopened history and a verified artifact after a cold start. Pixel testing used both app-private storage and a Documents tree selected through the system picker. Both checkouts began at `10af86a5014f`. Native Git independently verified the exported objects, index and working files.
+
+| Pixel checkout | Commit | SHA-256 of edited file and snapshot |
+| --- | --- | --- |
+| App-private | `ff19bfe9f9b5` | `b43fd9eed3f08852b374f01444faa5d890568b1a16d7b71c3c0234e0d40af571` |
+| Documents | `f050c46b8f0b` | `e110a7edd5f8de0b6e903a9f0693c0eda0469ba199c8ad24ea98638765107baa` |
+
+For Phase 11A, repeat with two registrations at the same revision. Stage a distinct edit in the second checkout before using the first. Inspect both indexes and tips independently. Change the first file outside Apparat with a draft pending, restart, revise against its new base, retry and check for a single effect. The app integration tests exercise these recovery and isolation checks. Physical Steam Deck controller acceptance remains open.

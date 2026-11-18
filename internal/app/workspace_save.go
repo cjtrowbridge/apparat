@@ -34,15 +34,11 @@ func (n *Runtime) saveWorkspaceFile(ctx context.Context, location string, q doma
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
 		data, _ := json.Marshal(tx)
-		err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, "save", string(data))
+		err = n.database.PrepareWorkspaceSave(ctx, q, string(data))
 		if err != nil {
 			return v, err
 		}
 	} else {
-		return v, err
-	}
-	err = n.database.SaveDraft(ctx, q.ProjectID, q.Path, q.Base, q.Text)
-	if err != nil {
 		return v, err
 	}
 	v, writeErr := n.workspaceFile(location, q)
@@ -61,4 +57,35 @@ func (n *Runtime) saveWorkspaceFile(ctx context.Context, location string, q doma
 	}
 	v.Report = "Saved to checkout"
 	return v, nil
+}
+
+func (n *Runtime) reconcileFileSaves(ctx context.Context, q domain.WorkspaceRequest, observed domain.WorkspaceView) error {
+	items, err := n.database.PendingFileSaves(ctx, q.ProjectID, q.Path)
+	if err != nil {
+		return err
+	}
+	for _, r := range items {
+		var tx fileTransaction
+		err = json.Unmarshal([]byte(r.Label), &tx)
+		if err != nil {
+			return err
+		}
+		applied := tx.Result == observed.Base
+		switch {
+		case applied:
+			tx.State = "applied"
+		case tx.Base == observed.Base:
+			tx.State = "interrupted"
+			tx.Reason = "Checkout preserved; draft available to retry"
+		default:
+			tx.State = "conflicted"
+			tx.Reason = "Checkout changed before recovery"
+		}
+		record, _ := json.Marshal(tx)
+		err = n.database.FinishWorkspaceSave(ctx, q.ProjectID, r.ID, q.Path, tx.Base, observed.Text, string(record), applied)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

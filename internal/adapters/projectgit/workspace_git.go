@@ -39,7 +39,7 @@ func GitAction(location string, q domain.WorkspaceRequest) (string, error) {
 	})
 }
 func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, read func(string) (string, error)) (string, error) {
-	storage := filesystem.NewStorage(meta, cache.NewObjectLRUDefault())
+	storage := &workspaceStorage{Storage: filesystem.NewStorage(meta, cache.NewObjectLRUDefault()), meta: meta}
 	repo, err := git.Open(storage, work)
 	if err != nil {
 		return "", err
@@ -90,18 +90,35 @@ func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, re
 	if !WorkspacePath(q.Path) || q.Path == "." {
 		return "", errors.New("select a file first")
 	}
-	current, err := read(q.Path)
-	if err != nil {
-		return "", err
+	var current string
+	deletion := q.Action == "stage-deletion" || q.Action == "commit" && q.Base == "deleted"
+	if deletion {
+		_, err = work.Lstat(q.Path)
+		if !os.IsNotExist(err) {
+			return "", errors.New("file must be absent before staging or committing its deletion")
+		}
+	} else if q.Action != "unstage" {
+		current, err = read(q.Path)
+		if err != nil {
+			return "", err
+		}
 	}
 	switch q.Action {
 	case "diff":
 		return gitDiff(repo, q.Path, current)
 	case "conflict":
 		return conflictReport(repo, q.Path)
-	case "stage", "unstage", "resolve":
+	case "stage", "stage-deletion", "unstage", "resolve":
 		return updateFileIndex(repo, meta, work, q, current)
 	case "commit":
+		lock, err := meta.OpenFile("index.lock", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			return "", errors.New("index busy; retry when the other Git operation finishes")
+		}
+		defer func() {
+			_ = lock.Close()
+			_ = meta.Remove("index.lock")
+		}()
 		idx, err := repo.Storer.Index()
 		if err != nil {
 			return "", err
@@ -128,7 +145,31 @@ func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, re
 		if !staged || strings.TrimSpace(q.Argument) == "" {
 			return "", errors.New("stage the selected file and enter a commit message")
 		}
-		hash, err := tree.Commit(q.Argument, &git.CommitOptions{Author: &object.Signature{Name: "Apparat", Email: "apparat@localhost", When: time.Now()}})
+		expected, err := repo.Head()
+		if err != nil && !errors.Is(err, plumbing.ErrReferenceNotFound) {
+			return "", err
+		}
+		storage.expected = expected
+		indexEntry, err := idx.Entry(q.Path)
+		if deletion && indexEntry != nil {
+			return "", errors.New("stage the deletion first")
+		}
+		if !deletion && (err != nil || Digest(current) != q.Base || indexEntry.Hash != plumbing.ComputeHash(plumbing.BlobObject, []byte(current))) {
+			return "", errors.New("working file differs from the reviewed stage; reopen and stage the intended contents")
+		}
+		parents, err := workspaceMergeParents(repo, meta, expected)
+		if err != nil {
+			return "", err
+		}
+		hash, err := tree.Commit(q.Argument, &git.CommitOptions{Parents: parents, Author: &object.Signature{Name: "Apparat", Email: "apparat@localhost", When: time.Now()}})
+		if err == nil && len(parents) > 1 {
+			for _, name := range []string{"MERGE_HEAD", "MERGE_MSG", "MERGE_MODE", "AUTO_MERGE"} {
+				clean := meta.Remove(name)
+				if clean != nil && !os.IsNotExist(clean) {
+					return "Commit " + hash.String() + " created; inspect remaining merge metadata", nil
+				}
+			}
+		}
 		return "Commit " + hash.String(), err
 	}
 	return "", errors.New("unknown Git operation")

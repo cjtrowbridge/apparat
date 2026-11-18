@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
 )
 
@@ -23,6 +24,9 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
+	scrollMode                                   string
+	scrollTop                                    float64
+	restoreScroll                                bool
 	thread                                       string
 	choices                                      []domain.WorkspaceChoice
 	choiceAction                                 string
@@ -43,13 +47,17 @@ func (g *Game) workspaceRequest(action string) {
 	if file == "" {
 		file = w.dir
 	}
-	q := domain.WorkspaceRequest{ProjectID: w.id, Action: action, Path: file, Base: w.base, Thread: w.thread, Text: strings.Join(w.lines, "\n"), Argument: w.argument}
+	q := domain.WorkspaceRequest{Approved: action == "run", ProjectID: w.id, Action: action, Path: file, Base: w.base, Thread: w.thread, Text: strings.Join(w.lines, "\n"), Argument: w.argument}
+	if action == "post-with-run" {
+		q.Action = "post"
+		q.RelatedRun = w.runID
+	}
 	switch action {
 	case "list":
 		q.Path = w.dir
-	case "create":
+	case "create", "mkdir":
 		q.Path = path.Join(w.dir, w.argument)
-	case "save", "post", "run":
+	case "save", "post", "post-with-run", "run":
 		q.ID, _ = domain.NewID(time.Now(), nil)
 	case "artifact", "delete-artifact":
 		q.ID = strings.TrimSpace(w.argument)
@@ -61,6 +69,11 @@ func (g *Game) workspaceRequest(action string) {
 		}
 	}
 	w.confirmation = ""
+	if len(g.verticalScrolls) > 0 {
+		w.scrollMode = w.mode
+		w.scrollTop = g.verticalScrolls[len(g.verticalScrolls)-1].ScrollTop
+		w.restoreScroll = false
+	}
 	g.projectWork(func(ctx context.Context) projectResult {
 		view, err := store.Workspace(ctx, q)
 		result := projectResult{workspace: &workspaceReply{q, view, err}}
@@ -80,6 +93,7 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	if w.id != r.request.ProjectID {
 		return
 	}
+	w.restoreScroll = true
 	if r.err != nil {
 		w.report = r.err.Error()
 		return
@@ -109,7 +123,12 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.mode = "files"
 		w.path = ""
 		w.lines = nil
-	case "move", "delete":
+	case "delete":
+		w.mode = "git"
+		w.base = "deleted"
+		w.lines = nil
+		w.report = "File deleted from the checkout. Stage its deletion to include it in a commit."
+	case "move", "mkdir":
 		w.dir = path.Dir(q.Path)
 		g.workspaceRequest("list")
 	case "run":
@@ -174,7 +193,11 @@ func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
 		g.workspaceActions(c, "Status", "status", "History", "history", "Commit detail", "commit-detail", "Transactions", "transactions", "Branches", "branches", "Switch branch", "switch")
 		if w.path != "" {
 			c.AddChild(g.detailText(w.path))
-			g.workspaceActions(c, "Diff against HEAD", "diff", "Stage file", "stage", "Unstage file", "unstage", "Commit staged file", "commit")
+			if w.base == "deleted" {
+				g.workspaceActions(c, "Stage deletion", "stage-deletion", "Unstage deletion", "unstage", "Commit staged deletion", "commit")
+			} else {
+				g.workspaceActions(c, "Diff against HEAD", "diff", "Stage file", "stage", "Unstage file", "unstage", "Commit staged file", "commit")
+			}
 		}
 	case "tasks":
 		for _, item := range w.choices {
@@ -212,6 +235,9 @@ func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
 		}
 		g.projectField(c, "Project message", &w.argument)
 		g.workspaceActions(c, "Save pending message", "post", "Message history", "chat")
+		if w.runID != "" {
+			g.workspaceActions(c, "Save message with last run", "post-with-run")
+		}
 	}
 	return true
 }
@@ -277,8 +303,8 @@ func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
 			g.layoutDirty = true
 		})
 	}
-	g.projectField(c, "New file name", &w.argument)
-	g.workspaceActions(c, "Create empty text file", "create")
+	g.projectField(c, "New name", &w.argument)
+	g.workspaceActions(c, "Create empty text file", "create", "Create folder", "mkdir")
 }
 func (g *Game) workspaceEditor(c *widget.Container, w *workspacePanel) {
 	c.AddChild(g.detailText(w.path))
@@ -335,5 +361,13 @@ func (g *Game) keepEditingDraft(w *workspacePanel) {
 	if err != nil {
 		w.report = "Draft could not be saved: " + err.Error()
 		g.layoutDirty = true
+	}
+}
+
+func (g *Game) restoreWorkspaceScroll(scroll *widget.ScrollContainer, tab hud.Tab) {
+	w := &g.projects.workspace
+	if tab.ID() == hud.TabProjects && w.restoreScroll && w.id != "" && w.mode == w.scrollMode {
+		scroll.ScrollTop = w.scrollTop
+		w.restoreScroll = false
 	}
 }

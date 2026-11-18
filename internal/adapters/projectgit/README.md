@@ -17,3 +17,7 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 - `workspace_paths.go`: Pins workspace directories and checks their identity before opening children.
 
 - `workspace_index.go`: Publishes a locked index after storing the selected blob, scopes unstaging to one path and exposes Git merge stages for explicit resolution.
+
+- `workspace_refs.go`: Locks and verifies a branch reference before replacing it, including on Android document providers without flock support.
+
+- `workspace_git_test.go`: Simulates failure to publish a Git lockfile and verifies that the previous branch tip and user data survive.

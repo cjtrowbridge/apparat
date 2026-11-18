@@ -16,11 +16,13 @@ Phase 9 supplies registered checkouts. Phase 9A turns a selected checkout into a
 
 ## Work and acceptance
 
-- [ ] Open and edit supported files through Projects. Validate scope, symlinks, races and size limits. Prove edits in place on Linux and on the Pixel in both app-private and picker-granted working trees. A provider capability failure identifies the affected operation and preserves the original files.
-- [ ] Show working-tree status, diff, staging, scoped commit, branches, history and conflicts. Use two registrations of the same remote at the same HEAD with different uncommitted changes. Compare files, index and history in both checkouts before and after operating on one.
-- [ ] Recover drafts, project chat history and pending messages after restart. Record a local transaction against a base revision, change the file externally, then recover and revise the conflicted draft. Retry a successful transaction and verify a single change.
-- [ ] Present enabled, versioned local Task entrypoints with their constraints, inputs and outputs. Run a supported entrypoint through the GUI with zero triggers, inspect its result and verified artifact after restart, and exercise failure or cancellation. Explain unsupported discovered task labels in place. Keep later queue, inference routing and trigger work in its assigned phases.
+- [x] Open and edit supported files through Projects. Validate scope, symlinks, races and size limits. Prove edits in place on Linux and on the Pixel in both app-private and picker-granted working trees. A provider capability failure identifies the affected operation and preserves the original files.
+- [x] Show working-tree status, diff, staging, scoped commit, branches, history and conflicts. Use two registrations of the same remote at the same HEAD with different uncommitted changes. Compare files, index and history in both checkouts before and after operating on one.
+- [x] Recover drafts, project chat history and pending messages after restart. Record a local transaction against a base revision, change the file externally, then recover and revise the conflicted draft. Retry a successful transaction and verify a single change.
+- [x] Present enabled, versioned local Task entrypoints with their constraints, inputs and outputs. Run a supported entrypoint through the GUI with zero triggers, inspect its result and verified artifact after restart, and exercise failure or cancellation. Explain unsupported discovered task labels in place. Keep later queue, inference routing and trigger work in its assigned phases.
 
 ## Evidence and stopping condition
 
 Use the canonical all-target pipeline and disposable checkouts. On Linux and Pixel 4a, disconnect networking, open a registered repo, edit, diff, stage, commit, restart and find the commit in history. Repeat the action-to-result test and record fixture revisions, platform, storage type, visible results and independent Git or digest verification. Exercise the controller workflow on Steam Deck before marking its device criterion complete. Keep a repeatable copy of the scenarios for Phase 11A. Record untested device or provider cases explicitly.
+
+- [?] Physical Steam Deck controller acceptance is outstanding. The device workflow and independent checkout evidence are recorded in the [platform matrix](../../docs/platform-matrix.md#phase-9a-offline-local-workspace).

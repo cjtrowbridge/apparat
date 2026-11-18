@@ -273,6 +273,7 @@ func (game *Game) updateGamepad() {
 		if !ebiten.IsStandardGamepadLayoutAvailable(id) {
 			continue
 		}
+		game.projectPad(id)
 		l1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopLeft)
 		r1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopRight)
 		r2 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontBottomRight)

@@ -1608,67 +1608,68 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 ### Files and Git
 
-- [ ] Add project-scoped local file operations.
-  - [ ] Browse directories and view supported text.
-  - [ ] Create/edit/rename/move/delete with explicit scope and confirmation.
-  - [ ] Protect roots, symlinks, traversal, binary files, large files, and races.
-  - [ ] Preserve unsaved/offline drafts independently from authoritative files.
-- [ ] Add safe Git operations.
-  - [ ] Status, diff, stage, unstage, scoped commit.
-  - [ ] Branch list/switch, history, and commit detail.
-  - [ ] Conflict visualization and explicit resolution transactions.
-  - [ ] No shell escape or arbitrary command construction.
+- [x] Add project-scoped local file operations.
+  - [x] Browse directories and view supported text.
+  - [x] Create/edit/rename/move/delete with explicit scope and confirmation.
+  - [x] Protect roots, symlinks, traversal, binary files, large files, and races.
+  - [x] Preserve unsaved/offline drafts independently from authoritative files.
+- [x] Add safe Git operations.
+  - [x] Status, diff, stage, unstage, scoped commit.
+  - [x] Branch list/switch, history, and commit detail.
+  - [x] Conflict visualization and explicit resolution transactions.
+  - [x] No shell escape or arbitrary command construction.
 
 ### Chats, transactions, drafts, and artifacts
 
-- [ ] Add Project chats.
-  - [ ] Chat list/history and prompt editor.
-  - [ ] Message, job, route, result, and artifact relationships.
-  - [ ] Offline pending messages with durable state.
-- [ ] Add owner-authoritative idempotent Project transactions.
-  - [ ] Stable transaction and base-revision identity.
-  - [ ] Authorization, validation, conflict checks, and owner apply.
-  - [ ] Durable rejection reason and editable content.
-  - [ ] Revise, discard, retry, and duplicate replay.
-- [ ] Implement artifact lifecycle.
-  - [ ] Owner metadata, SHA-256, size, MIME type, provenance, authorization, and retention.
-  - [ ] Verify local artifact digests and finalize writes atomically.
-  - [ ] Explicit expired/deleted/corrupt/unavailable states.
-  - [ ] Cleanup without silently invalidating successful authoritative results.
+- [x] Add Project chats.
+  - [x] Chat list/history and prompt editor.
+  - [x] Link messages to local runs, results and artifacts. Job and route links depend on the queue and routing phases.
+  - [x] Offline pending messages with durable state.
+- [x] Add owner-authoritative idempotent Project transactions.
+  - [x] Stable transaction and base-revision identity.
+  - [x] Authorization, validation, conflict checks, and owner apply.
+  - [x] Durable rejection reason and editable content.
+  - [x] Revise, discard, retry, and duplicate replay.
+- [x] Implement artifact lifecycle.
+  - [x] Owner metadata, SHA-256, size, MIME type, provenance, authorization, and retention.
+  - [x] Verify local artifact digests and finalize writes atomically.
+  - [x] Explicit expired/deleted/corrupt/unavailable states.
+  - [x] Cleanup without silently invalidating successful authoritative results.
 
 ### Pipelines and manual Tasks
 
-- [ ] Derive Pipeline status from one or more enabled Apparat Task entrypoints.
-  - [ ] No separate Pipeline owner, repository, scheduler, or identity.
-- [ ] Define versioned Task entrypoints.
-  - [ ] Stable Task and Project IDs.
-  - [ ] Typed inputs/outputs and schema version.
-  - [ ] Project-owner authority and revision.
-  - [ ] Permissions, secret references, timeouts, retries, approvals, and enabled state.
-  - [ ] Durable run/correlation/idempotency identity and history.
-- [ ] Permit manual execution with zero trigger bindings.
-  - [ ] Owner-local allowlisted application actions.
-  - [ ] Project-scoped filesystem/Git operations.
-  - [ ] Explicit mock/local executor calls.
-  - [ ] Configured human approval for consequential actions.
-  - [ ] No unrestricted remote shell, generic process endpoint, or arbitrary tool execution.
-- [ ] Keep trigger bindings as separate planned records; a manual action is not a persistent trigger.
-- [ ] Explain unsupported discovered task labels and show which enabled entrypoints can run on this device.
+- [x] Derive Pipeline status from one or more enabled Apparat Task entrypoints.
+  - [x] No separate Pipeline owner, repository, scheduler, or identity.
+- [x] Define versioned Task entrypoints.
+  - [x] Stable Task and Project IDs.
+  - [x] Typed inputs/outputs and schema version.
+  - [x] Project-owner authority and revision.
+  - [x] Permissions, secret references, timeouts, retries, approvals, and enabled state.
+  - [x] Durable run/correlation/idempotency identity and history.
+- [x] Permit manual execution with zero trigger bindings.
+  - [x] Owner-local allowlisted application actions.
+  - [x] Project-scoped filesystem/Git operations.
+  - [x] Explicit mock/local executor calls.
+  - [x] Configured human approval for consequential actions.
+  - [x] No unrestricted remote shell, generic process endpoint, or arbitrary tool execution.
+- [x] Keep trigger bindings as separate planned records; a manual action is not a persistent trigger.
+- [x] Explain unsupported discovered task labels and show which enabled entrypoints can run on this device.
 
 ### GUI, recovery, and safety
 
-- [ ] Wire workspace buttons to real routes/commands or visibly disable them with a reason.
-- [ ] Preserve editor focus, selection, scroll, panes, unsaved buffers, and conflict UI as presentation state.
-- [ ] Show transaction pending/accepted/rejected/conflicted, Task approval/running/cancelled/failed/completed, and local artifact states.
-- [ ] Recover drafts, transactions, Task runs, and artifacts across restart.
-- [ ] Redact file contents, prompts, chat bodies, secrets, and artifact bytes from default logs.
+- [x] Wire workspace buttons to real routes/commands or visibly disable them with a reason.
+- [ ] Verify preservation of editor focus, selection, scroll, panes, unsaved buffers, and conflict UI as presentation state.
+- [x] Show transaction pending/accepted/rejected/conflicted, Task approval/running/cancelled/failed/completed, and local artifact states.
+- [x] Recover drafts, transactions, Task runs, and artifacts across restart.
+- [x] Redact file contents, prompts, chat bodies, secrets, and artifact bytes from default logs.
 
 **Exit criteria**
 
-- [ ] On Linux and Pixel 4a use the Projects GUI offline to edit a file, inspect the diff, stage, commit, restart and locate that commit in history. Exercise Linux and Android private and granted storage as applicable. Compare the actual working tree, index and commit with the intended change.
-- [ ] Repeat with two checkouts of the same remote. Verify the other checkout retains its files, staged changes and HEAD. Exercise the local workflow with Steam Deck controls.
-- [ ] Recover an offline draft and pending project chat after restart. Change a file outside Apparat, recover the conflicted transaction, revise it and retry without duplicate effects.
-- [ ] Run an enabled project entrypoint with no trigger, inspect its result, restart and reopen its verified artifact. An unsupported task gives a specific reason. Save the workflows and results as the Phase 11A baseline.
+- [x] On Linux and Pixel 4a use the Projects GUI offline to edit a file, inspect the diff, stage, commit, restart and locate that commit in history. Exercise Linux and Android private and granted storage as applicable. Compare the actual working tree, index and commit with the intended change.
+- [x] Repeat with two checkouts of the same remote. Verify the other checkout retains its files, staged changes and HEAD.
+- [ ] Exercise the local workflow with physical Steam Deck controls.
+- [x] Recover an offline draft and pending project chat after restart. Change a file outside Apparat, recover the conflicted transaction, revise it and retry without duplicate effects.
+- [x] Run an enabled project entrypoint with no trigger, inspect its result, restart and reopen its verified artifact. An unsupported task gives a specific reason. Save the workflows and results as the Phase 11A baseline.
 
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
 

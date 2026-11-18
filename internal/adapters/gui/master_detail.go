@@ -69,7 +69,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 		if game.selectedSectionIndex(tabData) == index {
 			btn.SetState(widget.WidgetChecked)
 		}
-		hasIcon := tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline
+		hasIcon := tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline)
 		if subtitle != nil || hasIcon {
 			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
 				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
@@ -125,7 +125,7 @@ func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 
 func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionIndex int) (*widget.Button, *widget.Text) {
 	rightPadding := 12
-	if tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline {
+	if tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline) {
 		rightPadding += tabIconSize
 	}
 	padding := &widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}
@@ -197,6 +197,7 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(game.detailLayoutData())),
 	)
 	game.registerVerticalScroll(scroll)
+	game.restoreWorkspaceScroll(scroll, tabData)
 	return boundPreferredWidth(scroll, game.detailPanePreferredWidth)
 }
 

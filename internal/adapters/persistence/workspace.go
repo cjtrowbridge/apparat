@@ -131,3 +131,42 @@ func (db *DB) ChatThreads(ctx context.Context, project string) ([]domain.Workspa
 	}
 	return threads, rows.Err()
 }
+
+// PrepareWorkspaceSave commits both the recoverable content and its pending intent.
+func (db *DB) PrepareWorkspaceSave(ctx context.Context, q domain.WorkspaceRequest, record string) error {
+	tx, err := db.sql.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+	_, err = tx.ExecContext(ctx, "INSERT INTO project_drafts VALUES(?,?,?,?) ON CONFLICT(project,path) DO UPDATE SET base=excluded.base,body=excluded.body", q.ProjectID, q.Path, q.Base, q.Text)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, "INSERT INTO project_entries VALUES(?,?,'save',?)", q.ProjectID, q.ID, record)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+func (db *DB) PendingFileSaves(ctx context.Context, project, path string) ([]domain.WorkspaceChoice, error) {
+	rows, err := db.sql.QueryContext(ctx, "SELECT id,body FROM project_entries WHERE project=? AND kind='save' AND json_extract(body,'$.Path')=? AND json_extract(body,'$.State')='pending' ORDER BY rowid", project, path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	var items []domain.WorkspaceChoice
+	for rows.Next() {
+		var r domain.WorkspaceChoice
+		err = rows.Scan(&r.ID, &r.Label)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, r)
+	}
+	return items, rows.Err()
+}

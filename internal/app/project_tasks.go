@@ -21,7 +21,7 @@ import (
 type artifactRun struct {
 	Expires                         int64
 	Task, Path, Digest, State, MIME string
-	Definition, Revision            string
+	Definition, Revision, Reason    string
 	Size                            int
 }
 
@@ -36,6 +36,9 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 			var run artifactRun
 			if json.Unmarshal([]byte(row.Label), &run) == nil {
 				label := run.Task + " · " + run.State
+				if run.Reason != "" {
+					label += " · " + run.Reason
+				}
 				if run.State == "completed" {
 					v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: row.ID, Label: label})
 				} else {
@@ -126,12 +129,12 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 	for _, task := range tasks {
 		if task.Runnable() {
 			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: task.ID, Label: task.Label + " · " + task.ID})
-			lines = append(lines, task.ID+" · "+task.Label+" · snapshot "+task.Path)
+			lines = append(lines, task.ID+" · "+task.Action+" "+task.Path)
 			if task.ID == q.Argument {
 				selected = task
 			}
 		} else {
-			lines = append(lines, task.ID+" · disabled or unsupported entrypoint")
+			lines = append(lines, task.ID+" · "+task.UnavailableReason())
 		}
 	}
 	if q.Action == "tasks" {
@@ -141,8 +144,11 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 		}
 		return v, nil
 	}
+	if !q.Approved {
+		return v, errors.New("confirm the local Task to run")
+	}
 	if selected.ID == "" {
-		return v, errors.New("choose an enabled snapshot-text Task by ID")
+		return v, errors.New("choose an enabled local task")
 	}
 	read.Path = selected.Path
 
@@ -159,9 +165,29 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 	if err != nil {
 		return v, err
 	}
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	timeout := selected.TimeoutSeconds
+	if timeout == 0 {
+		timeout = 15
+	}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()
-	file, err := n.workspaceFile(location, read)
+	var file domain.WorkspaceView
+	if selected.Action == "git-status" {
+		read.Path = "."
+		read.Action = "status"
+		if strings.HasPrefix(location, "content://") {
+			file, err = n.workspaceFile(location, read)
+			file.Text = file.Report
+		} else {
+			file.Text, err = projectgit.GitAction(location, read)
+		}
+		run.Path = "Git status"
+		if !projectgit.ValidText(file.Text) {
+			err = errors.New("status exceeds artifact limits")
+		}
+	} else {
+		file, err = n.workspaceFile(location, read)
+	}
 	if err == nil {
 		err = ctx.Err()
 	}
@@ -178,13 +204,16 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 	} else {
 		run.State = "failed"
 	}
+	if err != nil {
+		run.Reason = err.Error()
+	}
 	data, _ := json.Marshal(run)
 	recordErr := n.database.UpdateRun(context.WithoutCancel(ctx), q.ProjectID, q.ID, string(data))
 	if recordErr != nil {
 		return v, recordErr
 	}
 	if err != nil {
-		return v, errors.New("snapshot failed; see run history")
+		return v, fmt.Errorf("local task %s: %w", run.State, err)
 	}
 	v.Report = fmt.Sprintf("Completed %s · %d bytes\nRun %s\nSHA-256 %s", selected.ID, run.Size, q.ID, run.Digest)
 	return v, nil
@@ -209,13 +238,20 @@ func publishArtifact(dir, digest, body string) error {
 		return closeErr
 	}
 	target := filepath.Join(dir, digest)
-	err = os.Link(f.Name(), target)
-	if errors.Is(err, os.ErrExist) {
-		existing, err := os.ReadFile(target)
-		if err != nil || string(existing) != body {
+	existing, err := os.Open(target)
+	if err == nil {
+		defer func() {
+			_ = existing.Close()
+		}()
+		b, err := io.ReadAll(io.LimitReader(existing, domain.WorkspaceTextLimit+1))
+		if err != nil || string(b) != body {
 			return errors.New("existing artifact failed integrity check")
 		}
 		return nil
 	}
-	return err
+	if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	// The runtime owns this private directory and serializes workspace writes.
+	return os.Rename(f.Name(), target)
 }

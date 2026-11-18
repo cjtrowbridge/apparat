@@ -117,7 +117,7 @@ func TestLocalProjectTabIncludesOnlyRegisteredCheckouts(t *testing.T) {
 		{ID: "b", Name: "plain", Available: true},
 	}
 	tab = game.projectTab(hud.Tab{})
-	if tab.Sections[2].ContentKind != hud.ContentPipeline || tab.Sections[3].ContentKind != hud.ContentProject || tab.Sections[2].SelectorColor == tab.Sections[3].SelectorColor {
+	if !tab.Sections[2].HasConfiguredActions || tab.Sections[2].ContentKind != hud.ContentProject || tab.Sections[3].ContentKind != hud.ContentProject || tab.Sections[2].SelectorColor == tab.Sections[3].SelectorColor {
 		t.Fatal("action decoration does not follow real checkout state")
 	}
 }

@@ -11,11 +11,38 @@ import (
 type LocalTask struct {
 	ID, Label, Action, Path string
 	Enabled                 bool
+	SecretRefs              []string
+	TimeoutSeconds          int
 	RetainSeconds           int64
 }
 
 func (t LocalTask) Runnable() bool {
-	return t.RetainSeconds >= 0 && t.RetainSeconds <= 31536000 && t.Enabled && t.Action == "snapshot-text" && WorkspacePath(t.Path) && t.Path != "."
+	return t.UnavailableReason() == ""
+}
+func (t LocalTask) UnavailableReason() string {
+	switch {
+	case !t.Enabled:
+		return "disabled in the project configuration"
+	case len(t.SecretRefs) > 0:
+		return "this executor cannot supply secret references"
+	case t.TimeoutSeconds < 0 || t.TimeoutSeconds > 60:
+		return "timeout must be between 0 and 60 seconds"
+	case t.RetainSeconds < 0 || t.RetainSeconds > 31536000:
+		return "retention must be between 0 and 31536000 seconds"
+	}
+	switch t.Action {
+	case "git-status":
+		if t.Path != "" && t.Path != "." {
+			return "git-status requires the checkout root"
+		}
+	case "snapshot-text":
+		if !WorkspacePath(t.Path) || t.Path == "." {
+			return "snapshot-text requires a project-relative file path"
+		}
+	default:
+		return "action is unavailable on the local executor"
+	}
+	return ""
 }
 func LocalTasks(raw string) ([]LocalTask, error) {
 	var spec struct {

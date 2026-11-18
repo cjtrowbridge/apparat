@@ -49,7 +49,7 @@ func TestLocalWorkspaceOffline(t *testing.T) {
 	requireSuccess(t, node.StoreProject(ctx, "", second, ""))
 	rows, err := node.Projects(ctx)
 	requireSuccess(t, err)
-	q := domain.WorkspaceRequest{Path: "example.txt"}
+	q := domain.WorkspaceRequest{Path: "example.txt", Approved: true}
 	for _, p := range rows {
 		if p.Location == first {
 			q.ProjectID = p.ID
@@ -111,6 +111,9 @@ func TestLocalWorkspaceOffline(t *testing.T) {
 	requireSuccess(t, err)
 	q.Argument = "pending message"
 	do("post")
+	requireSuccess(t, node.Close())
+	node = nodeFor(t, store, false)
+	requireSuccess(t, node.Initialize(ctx))
 	if !strings.Contains(do("chat").Report, q.Argument) {
 		t.Fatal("message missing")
 	}
@@ -122,5 +125,154 @@ func TestLocalWorkspaceOffline(t *testing.T) {
 	_, err = node.Workspace(ctx, q)
 	if err == nil {
 		t.Fatal("exposed Git internals")
+	}
+}
+
+func TestWorkspaceFileAndArtifactProtection(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	repo := t.TempDir()
+	gitFixtureCommand(t, repo, "init")
+	f := filepath.Join(repo, "file")
+	requireSuccess(t, os.WriteFile(f, []byte("hello"), 0644))
+	requireSuccess(t, os.Symlink(".git", filepath.Join(repo, "alias")))
+	requireSuccess(t, os.Mkdir(filepath.Join(repo, ".apparat"), 0700))
+	config := `{"version":1,"tasks":[{"id":"one","enabled":true,"action":"snapshot-text","path":"file"},{"id":"missing","enabled":true,"action":"snapshot-text","path":"absent"}]}`
+	requireSuccess(t, os.WriteFile(filepath.Join(repo, ".apparat/tasks.json"), []byte(config), 0600))
+	node := nodeFor(t, root, false)
+	requireSuccess(t, node.Initialize(ctx))
+	defer func() {
+		_ = node.Close()
+	}()
+	requireSuccess(t, node.StoreProject(ctx, "", repo, ""))
+	rows, err := node.Projects(ctx)
+	requireSuccess(t, err)
+	q := domain.WorkspaceRequest{Approved: true, ProjectID: rows[0].ID, Path: "file", Action: "read"}
+	call := func(action string) domain.WorkspaceView {
+		t.Helper()
+		q.Action = action
+		v, err := node.Workspace(ctx, q)
+		requireSuccess(t, err)
+		return v
+	}
+	fail := func(action string) {
+		t.Helper()
+		q.Action = action
+		_, err := node.Workspace(ctx, q)
+		if err == nil {
+			t.Fatal("unexpected success", action, q.Path)
+		}
+	}
+	q.Base = call("read").Base
+	q.Argument = "renamed"
+	call("move")
+	q.Path = "renamed"
+	q.Argument = ".apparat/tasks.json"
+	fail("move")
+	q.Argument = "file"
+	call("move")
+	q.Path = "alias/config"
+	fail("read")
+	q.Path = "../file"
+	fail("read")
+	q.Path = "binary"
+	requireSuccess(t, os.WriteFile(filepath.Join(repo, q.Path), []byte{0}, 0600))
+	fail("read")
+	q.Path = "file"
+	newID := func() string {
+		id, err := domain.NewID(time.Now(), nil)
+		requireSuccess(t, err)
+		return id
+	}
+	q.ID = newID()
+	q.Argument = "missing"
+	fail("run")
+	if !strings.Contains(call("runs").Report, "failed") {
+		t.Fatal("failure absent from run history")
+	}
+	q.ID = newID()
+	q.Argument = "one"
+	call("run")
+	one := q.ID
+	q.ID = newID()
+	call("run")
+	two := q.ID
+	requireSuccess(t, node.Close())
+	node = nodeFor(t, root, false)
+	requireSuccess(t, node.Initialize(ctx))
+	q.ID = one
+	call("delete-artifact")
+	fail("artifact")
+	q.ID = two
+	if call("artifact").Report != "Verified file\nhello" {
+		t.Fatal("shared artifact lost after deletion")
+	}
+	q.ID = newID()
+	q.Argument = "test message"
+	q.Thread = "Draft discussion"
+	call("post")
+	requireSuccess(t, node.Close())
+	node = nodeFor(t, root, false)
+	requireSuccess(t, node.Initialize(ctx))
+	if len(call("threads").Choices) != 1 || !strings.Contains(call("chat").Report, "test message") {
+		t.Fatal("chat did not survive restart")
+	}
+}
+
+func TestWorkspaceGitActions(t *testing.T) {
+	ctx := context.Background()
+	repo := t.TempDir()
+	gitFixtureCommand(t, repo, "init")
+	path := filepath.Join(repo, "note")
+	requireSuccess(t, os.WriteFile(path, []byte("base\n"), 0600))
+	gitFixtureCommand(t, repo, "add", "note")
+	gitFixtureCommand(t, repo, "commit", "-m", "base")
+	gitFixtureCommand(t, repo, "checkout", "--detach")
+	node := nodeFor(t, t.TempDir(), false)
+	requireSuccess(t, node.Initialize(ctx))
+	defer func() {
+		_ = node.Close()
+	}()
+	requireSuccess(t, node.StoreProject(ctx, "", repo, ""))
+	rows, err := node.Projects(ctx)
+	requireSuccess(t, err)
+	q := domain.WorkspaceRequest{ProjectID: rows[0].ID, Path: "note"}
+	act := func(op string) domain.WorkspaceView {
+		t.Helper()
+		q.Action = op
+		v, err := node.Workspace(ctx, q)
+		requireSuccess(t, err)
+		return v
+	}
+	q.Argument = strings.TrimSpace(act("branches").Report)
+	act("switch")
+	q.Argument = gitFixtureCommand(t, repo, "rev-parse", "HEAD")
+	if !strings.Contains(act("commit-detail").Report, "base") {
+		t.Fatal("commit details missing")
+	}
+	blob := gitFixtureCommand(t, repo, "rev-parse", "HEAD:note")
+	command := exec.Command("git", "-C", repo, "update-index", "--index-info")
+	command.Stdin = strings.NewReader("0 0000000000000000000000000000000000000000\tnote\n100644 " + blob + " 1\tnote\n100644 " + blob + " 2\tnote\n100644 " + blob + " 3\tnote\n")
+	requireSuccess(t, command.Run())
+	if !strings.Contains(act("conflict").Report, "Stage 3") {
+		t.Fatal("merge stages unavailable")
+	}
+	requireSuccess(t, os.WriteFile(path, []byte("resolved\n"), 0600))
+	q.Base = act("read").Base
+	act("resolve")
+	if gitFixtureCommand(t, repo, "ls-files", "--unmerged") != "" {
+		t.Fatal("unresolved index")
+	}
+	act("unstage")
+	if gitFixtureCommand(t, repo, "show", ":note") != "base" {
+		t.Fatal("unstage altered base")
+	}
+	act("delete")
+	q.Base = "deleted"
+	act("stage-deletion")
+	q.Argument = "remove note"
+	act("commit")
+	if gitFixtureCommand(t, repo, "ls-tree", "HEAD", "note") != "" {
+		t.Fatal("deletion lost")
 	}
 }

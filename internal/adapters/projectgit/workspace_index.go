@@ -23,8 +23,11 @@ func updateFileIndex(repo *git.Repository, meta, work billy.Filesystem, q domain
 	if err != nil {
 		return "", errors.New("index locked or unavailable")
 	}
+	pending := true
 	defer func() {
-		_ = meta.Remove("index.lock")
+		if pending {
+			_ = meta.Remove("index.lock")
+		}
 	}()
 	idx, err := repo.Storer.Index()
 	if err == nil {
@@ -41,6 +44,7 @@ func updateFileIndex(repo *git.Repository, meta, work billy.Filesystem, q domain
 		return "", closeErr
 	}
 	err = meta.Rename("index.lock", "index")
+	pending = err != nil
 	if err != nil {
 		return "", err
 	}
@@ -68,6 +72,12 @@ func editFileIndex(repo *git.Repository, work billy.Filesystem, idx *index.Index
 	}
 	idx.Entries = kept
 	idx.Cache = nil
+	if q.Action == "stage-deletion" {
+		if entry == nil {
+			return errors.New("file has no index entry to delete")
+		}
+		return nil
+	}
 	if q.Action == "unstage" {
 		head, err := repo.Head()
 		if errors.Is(err, plumbing.ErrReferenceNotFound) {

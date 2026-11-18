@@ -12,7 +12,8 @@ type Project struct {
 
 // WorkspaceRequest addresses one registration and repository-relative path.
 type WorkspaceRequest struct {
-	ProjectID, Action, Path, Base, Text, Argument, ID, Thread string
+	ProjectID, Action, Path, Base, Text, Argument, ID, Thread, RelatedRun string
+	Approved                                                              bool
 }
 type WorkspaceEntry struct {
 	Name      string

@@ -40,6 +40,7 @@ type projectResult struct {
 type projectForm struct {
 	workspace                                workspacePanel
 	dataRoot                                 string
+	removeID                                 string
 	workers                                  sync.WaitGroup
 	rows                                     []domain.Project
 	store                                    projectStore
@@ -138,12 +139,15 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 	for _, p := range g.projects.rows {
 		kind := hud.ContentProject
 		tint := hud.SelectorPalette[0]
-		if len(p.Actions)+len(p.Entrypoints) > 0 {
+		if len(p.Entrypoints) > 0 {
 			kind = hud.ContentPipeline
+		}
+		configured := len(p.Actions)+len(p.Entrypoints) > 0
+		if configured {
 			tint = hud.SelectorPalette[1]
 		}
 		status := projectCheckoutStatus(p)
-		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, HasConfiguredActions: configured, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
 		for _, task := range p.Entrypoints {
 			section.Rows = append(section.Rows, hud.Row{Label: "Manual Task", Detail: task})
 		}
@@ -202,7 +206,17 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 					f.account = p.Account
 					g.selectSection(hud.TabProjects, 1)
 				})
-				g.projectButton(c, "Remove from list", func() {
+				removeLabel := "Remove from list"
+				if f.removeID == p.ID {
+					removeLabel = "Confirm removal of project records"
+				}
+				g.projectButton(c, removeLabel, func() {
+					if f.removeID != p.ID {
+						f.removeID = p.ID
+						g.layoutDirty = true
+						return
+					}
+					f.removeID = ""
 					g.changeProjects(func(ctx context.Context) error {
 						return store.RemoveProject(ctx, p.ID)
 					})

@@ -33,17 +33,18 @@ type Row struct {
 }
 
 type Section struct {
-	ProjectID           string
-	SelectorSubtitle    string
-	Title               string
-	Description         string
-	Rows                []Row
-	DetailSections      []Section
-	SelectorKind        SelectorKind
-	SelectorColor       string
-	ContentKind         ContentKind
-	YourContribution    string
-	FriendContributions []FriendContribution
+	ProjectID            string
+	SelectorSubtitle     string
+	Title                string
+	Description          string
+	Rows                 []Row
+	DetailSections       []Section
+	SelectorKind         SelectorKind
+	HasConfiguredActions bool
+	SelectorColor        string
+	ContentKind          ContentKind
+	YourContribution     string
+	FriendContributions  []FriendContribution
 }
 
 type SelectorKind string
