@@ -152,11 +152,16 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 			}
 			body := "Pending on this device · " + q.Argument
 			if q.RelatedRun != "" {
-				runKind, _, lookup := n.database.ProjectEntry(ctx, q.ProjectID, q.RelatedRun)
+				runKind, record, lookup := n.database.ProjectEntry(ctx, q.ProjectID, q.RelatedRun)
 				if lookup != nil || runKind != "run" {
 					return v, errors.New("run unavailable in this project")
 				}
-				body += "\nRun and artifact: " + q.RelatedRun
+				var run artifactRun
+				err = json.Unmarshal([]byte(record), &run)
+				if err != nil {
+					return v, err
+				}
+				body += "\nAttached run: " + run.Task + " · " + run.State + " (" + q.RelatedRun + ")"
 			}
 			err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, kind, body)
 			if err != nil {

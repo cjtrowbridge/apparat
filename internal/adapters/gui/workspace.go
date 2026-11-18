@@ -23,6 +23,7 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
+	outputDetails                                string
 	layout                                       workspaceLayout
 	thread                                       string
 	choices                                      []domain.WorkspaceChoice
@@ -123,6 +124,7 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.message = ""
 		w.attachment = ""
 	case "artifact":
+		w.outputDetails = v.Detail
 		w.mode = "output"
 		w.runID = q.ID
 	case "delete-artifact":
@@ -182,12 +184,12 @@ func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
 			g.workspaceRequest("list")
 		})
 	}
-	for _, e := range w.entries[min(w.page, len(w.entries)):min(w.page+12, len(w.entries))] {
+	for _, e := range w.entries[:min(w.page+24, len(w.entries))] {
 		name := e.Name
 		if e.Directory {
 			name += "/"
 		}
-		g.projectButton(c, name, func() {
+		g.workspaceRow(c, name, func() {
 			dest := path.Join(w.dir, e.Name)
 			if e.Directory {
 				w.dir = dest
@@ -202,15 +204,9 @@ func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
 			}
 		})
 	}
-	if w.page > 0 {
-		g.projectButton(c, "Previous files", func() {
-			w.page = max(0, w.page-12)
-			g.layoutDirty = true
-		})
-	}
-	if w.page+12 < len(w.entries) {
+	if w.page+24 < len(w.entries) {
 		g.projectButton(c, "More files", func() {
-			w.page += 12
+			w.page += 24
 			g.layoutDirty = true
 		})
 	}

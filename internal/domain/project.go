@@ -25,11 +25,11 @@ type WorkspaceChange struct {
 	Staged, Unstaged, Conflict bool
 }
 type WorkspaceView struct {
-	Changes                          []WorkspaceChange
-	Choices                          []WorkspaceChoice
-	Entries                          []WorkspaceEntry
-	Text, Base, Report, ComparedBase string
-	Editing                          bool
+	Changes                                  []WorkspaceChange
+	Choices                                  []WorkspaceChoice
+	Entries                                  []WorkspaceEntry
+	Text, Base, Report, ComparedBase, Detail string
+	Editing                                  bool
 }
 
 const WorkspaceTextLimit = 64 * 1024

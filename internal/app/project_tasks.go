@@ -30,7 +30,7 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 		rows, err := n.database.RecentEntries(ctx, q.ProjectID, "run")
 		v.Report = "No local Task runs"
 		if len(rows) > 0 {
-			v.Report = "Recent runs"
+			v.Report = ""
 		}
 		for _, row := range rows {
 			var run artifactRun
@@ -101,6 +101,7 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 			if err != nil || projectgit.Digest(string(b)) != run.Digest {
 				return v, errors.New("artifact integrity check failed")
 			}
+			v.Detail = fmt.Sprintf("%s · %d bytes\nSHA-256 %s\nCheckout %s", run.MIME, run.Size, run.Digest, run.Revision)
 			v.Report = "Verified " + run.Path + "\n" + string(b)
 			return v, nil
 		}

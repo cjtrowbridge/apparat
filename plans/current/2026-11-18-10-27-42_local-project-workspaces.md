@@ -33,4 +33,5 @@ Use the canonical all-target pipeline and disposable checkouts. On Linux and Pix
 - [x] Implement a multiline document editor and keep storage scope, durable drafts and conflict checks.
 - [x] Make repository selection open Files directly, with Changes, Tasks, Chat and contextual details.
 - [x] Replace command forms with changed file, commit, branch, run, artifact and conversation views.
-- [ ] Verify actual editing, scoped commits, Task output recovery, pending chat and adaptive navigation. Record independent first-use and physical hardware evidence separately.
+- [ ] Verify actual editing, scoped commits, Task output recovery, pending chat and adaptive navigation. 
+- [?] Observe a first-time tester fixing a typo and committing only that file on the Pixel, without navigation instructions.

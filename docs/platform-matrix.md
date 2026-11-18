@@ -118,3 +118,7 @@ Linux amd64 ran the Projects GUI in Xvfb inside a network namespace with only lo
 | Documents | `f050c46b8f0b` | `e110a7edd5f8de0b6e903a9f0693c0eda0469ba199c8ad24ea98638765107baa` |
 
 For Phase 11A, repeat with two registrations at the same revision. Stage a distinct edit in the second checkout before using the first. Inspect both indexes and tips independently. Change the first file outside Apparat with a draft pending, restart, revise against its new base, retry and check for a single effect. The app integration tests exercise these recovery and isolation checks. Physical Steam Deck controller acceptance remains open.
+
+### Workspace usability baseline
+
+The redesigned GUI opened a registered checkout directly and edited a multiline document offline on Linux (GTK 4) and Pixel 4a (Android IME). Both platforms staged and committed the reviewed file and ran a snapshot Task. Both Pixel storage types reopened the verified output after a cold start. Independent Git object checks and byte comparisons matched working tree, index, HEAD and artifact. The app-private test commit was `77f73f7`, and the picker-granted Documents commit was `e4ee288`. The focused app test covers a second outside edit between comparison and rebase. An uncoached first-use observation and physical Steam Deck test are outstanding.

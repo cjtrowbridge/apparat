@@ -14,7 +14,7 @@ type DocumentSession interface {
 type RuntimeInfo struct {
 	PromptValue    func(string, string) (string, bool)
 	DocumentEditor interface {
-		EditDocument(string, string, DocumentSession) error
+		EditDocument(string, string, string, DocumentSession) error
 	}
 	ProjectPicker interface{ ChooseFolder() string }
 	WorkingDir    string

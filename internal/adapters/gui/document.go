@@ -58,7 +58,7 @@ func (s *documentSession) Apply(action, text string) string {
 	s.view = v
 	return ""
 }
-func openDesktopDocument(ctx context.Context, title, body string, session DocumentSession) error {
+func openDesktopDocument(ctx context.Context, title, body string, bookmark *[3]int, session DocumentSession) error {
 	cmd := exec.CommandContext(ctx, "python3", "-I", "-c", desktopEditor)
 	in, err := cmd.StdinPipe()
 	if err != nil {
@@ -74,14 +74,22 @@ func openDesktopDocument(ctx context.Context, title, body string, session Docume
 	}
 	writer := json.NewEncoder(in)
 	reader := json.NewDecoder(out)
-	err = writer.Encode([]string{title, body})
+	err = writer.Encode([]any{title, body, bookmark})
 	for err == nil {
 		var request [2]string
 		err = reader.Decode(&request)
 		if err != nil {
 			break
 		}
-		err = writer.Encode(session.Apply(request[0], request[1]))
+		if request[0] == "position" {
+			err = json.Unmarshal([]byte(request[1]), bookmark)
+			if err != nil {
+				break
+			}
+			err = writer.Encode("")
+		} else {
+			err = writer.Encode(session.Apply(request[0], request[1]))
+		}
 	}
 	in.Close()
 	wait := cmd.Wait()
@@ -101,16 +109,25 @@ func (g *Game) editDocument() {
 	}
 	q := domain.WorkspaceRequest{ProjectID: w.id, Path: w.path, Base: w.base, Action: "document"}
 	v := domain.WorkspaceView{Editing: true, Base: w.base, Text: strings.Join(w.lines, "\n"), Report: w.report}
+	key := [2]string{w.id, w.path}
+	bookmark := g.projects.bookmarks[key]
 	host := g.runtimeInfo.DocumentEditor
 	g.projectWork(func(ctx context.Context) projectResult {
 		session := &documentSession{ctx: ctx, store: store, request: q, view: v}
 		var err error
 		if host != nil {
-			err = host.EditDocument(q.Path, v.Text, session)
+			err = host.EditDocument(q.ProjectID, q.Path, v.Text, session)
 		} else {
-			err = openDesktopDocument(ctx, q.Path, v.Text, session)
+			err = openDesktopDocument(ctx, q.Path, v.Text, &bookmark, session)
 		}
-		return projectResult{workspace: &workspaceReply{q, session.view, err}}
+		return projectResult{workspace: &workspaceReply{q, session.view, err}, applyField: func() {
+			if w.id == q.ProjectID {
+				if g.projects.bookmarks == nil {
+					g.projects.bookmarks = map[[2]string][3]int{}
+				}
+				g.projects.bookmarks[key] = bookmark
+			}
+		}}
 	})
 }
 

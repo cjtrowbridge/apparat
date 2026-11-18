@@ -97,7 +97,7 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	roots := w.mode == "files" || w.mode == "changes" || w.mode == "tasks" || w.mode == "chat"
 	if roots {
 		for _, dest := range []struct{ label, mode, action string }{{"Files", "files", "list"}, {"Changes", "changes", "changes"}, {"Tasks", "tasks", "tasks"}, {"Chat", "chat", "threads"}} {
-			g.projectButton(nav, dest.label, func() {
+			g.workspaceNavButton(nav, dest.label, w.mode == dest.mode, func() {
 				g.workspaceGo(dest.mode, dest.action)
 			})
 		}
@@ -171,7 +171,7 @@ func (g *Game) changesScreen(c *widget.Container, w *workspacePanel) {
 			if item.Conflict {
 				state = "Conflict"
 			}
-			g.projectButton(c, item.Path+" · "+state, func() {
+			g.workspaceRow(c, item.Path+" · "+state, func() {
 				if g.projects.pending != nil {
 					return
 				}
@@ -261,7 +261,7 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 	switch w.mode {
 	case "tasks", "runs", "attachments":
 		for _, item := range w.choices {
-			g.projectButton(c, item.Label, func() {
+			g.workspaceRow(c, item.Label, func() {
 				if g.projects.pending != nil {
 					return
 				}
@@ -306,10 +306,11 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 		goTo("Output details", "output-options", "")
 		return
 	case "output-options":
+		c.AddChild(g.detailText(w.outputDetails))
 		g.workspaceActions(c, "Delete output", "delete-artifact")
 	case "chat":
 		for _, item := range w.choices {
-			g.projectButton(c, item.Label, func() {
+			g.workspaceRow(c, item.Label, func() {
 				w.setThread(item.ID)
 				g.workspaceGo("conversation", "chat")
 			})
@@ -333,19 +334,7 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 	case "conversation":
 		c.AddChild(g.detailText(w.thread))
 		c.AddChild(g.detailText(w.report))
-		g.projectField(c, "Message", &w.message)
-		if w.attachment != "" {
-			c.AddChild(g.detailText(w.attachmentLabel))
-		}
-		g.projectButton(c, "Post locally", func() {
-			w.argument = w.message
-			action := "post"
-			if w.attachment != "" {
-				action = "post-with-run"
-			}
-			g.workspaceRequest(action)
-		})
-		goTo("Attach a run", "attachments", "runs")
+
 		return
 	}
 	if w.report != "" {

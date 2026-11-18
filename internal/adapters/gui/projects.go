@@ -39,6 +39,7 @@ type projectResult struct {
 	reload                          bool
 }
 type projectForm struct {
+	bookmarks                                map[[2]string][3]int
 	workspace                                workspacePanel
 	dataRoot                                 string
 	removeID                                 string

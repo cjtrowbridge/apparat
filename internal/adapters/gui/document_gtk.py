@@ -6,9 +6,9 @@ import sys
 
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gio, Gtk
+from gi.repository import Gio, GLib, Gtk
 
-title, body = json.loads(sys.stdin.readline())
+title, body, position = json.loads(sys.stdin.readline())
 app = Gtk.Application(application_id="app.apparat.Editor", flags=Gio.ApplicationFlags.NON_UNIQUE)
 
 
@@ -74,7 +74,28 @@ def activate(application):
     save.connect("clicked", apply)
     undo.connect("clicked", lambda *_: buf.undo() if buf.get_can_undo() else None)
     review.connect("clicked", compare)
+    def remember(*_):
+        caret = buf.get_iter_at_mark(buf.get_insert()).get_offset()
+        anchor = buf.get_iter_at_mark(buf.get_selection_bound()).get_offset()
+        top = round(scroll.get_vadjustment().get_value())
+        print(json.dumps(["position", json.dumps([caret, anchor, top])]), flush=True)
+        sys.stdin.readline()
+        return False
+
+    def restore():
+        caret, anchor, top = position
+        n = buf.get_char_count()
+        buf.select_range(buf.get_iter_at_offset(min(caret, n)), buf.get_iter_at_offset(min(anchor, n)))
+        scroll.get_vadjustment().set_value(top)
+        return False
+
+    action = Gio.SimpleAction.new("save", None)
+    action.connect("activate", lambda *_: apply())
+    win.add_action(action)
+    application.set_accels_for_action("win.save", ["<Primary>s"])
+    win.connect("close-request", remember)
     win.present()
+    GLib.idle_add(restore)
     view.grab_focus()
 
 

@@ -201,6 +201,7 @@ func (game *Game) Update() error {
 	}
 	game.updatePointerState()
 	game.ui.Update()
+	game.clampWorkspaceScroll()
 	game.enforceBodyTabScrollLock()
 	game.advanceTabDragCancellation()
 	game.advanceBodyScrollCancellation()

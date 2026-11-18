@@ -80,6 +80,14 @@ func TestLocalWorkspaceOffline(t *testing.T) {
 	if got.Text != q.Text || !strings.Contains(got.Report, "conflict") {
 		t.Fatal("draft conflict lost")
 	}
+	q.Argument = do("compare").ComparedBase
+	requireSuccess(t, os.WriteFile(filepath.Join(first, "example.txt"), []byte("newer change\n"), 0600))
+	q.Action = "rebase"
+	_, err = node.Workspace(ctx, q)
+	if err == nil {
+		t.Fatal("rebased onto unreviewed contents")
+	}
+	q.Argument = do("compare").ComparedBase
 	q.Base = do("rebase").Base
 	q.ID, err = domain.NewID(time.Now(), nil)
 	requireSuccess(t, err)
@@ -88,6 +96,14 @@ func TestLocalWorkspaceOffline(t *testing.T) {
 	q.Base = saved.Base
 	if !strings.Contains(do("diff").Report, "+draft text") {
 		t.Fatal("missing working diff")
+	}
+	delta := do("changes").Changes
+	if len(delta) != 1 || delta[0].Path != q.Path || !delta[0].Unstaged {
+		t.Fatal("changed path missing from Changes")
+	}
+	reviewed := do("review")
+	if reviewed.Base != q.Base || !strings.Contains(reviewed.Report, "@@") {
+		t.Fatal("review does not describe current file")
 	}
 	do("stage")
 	q.Argument = "commit selected file"

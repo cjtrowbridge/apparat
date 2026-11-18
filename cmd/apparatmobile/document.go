@@ -16,7 +16,7 @@ type EditorSession interface {
 }
 type Editor interface {
 	Prompt(title, value string) string
-	Open(title, text string, session EditorSession) string
+	Open(project, title, text string, session EditorSession) string
 }
 
 var editor struct {
@@ -29,14 +29,14 @@ func RegisterEditor(host Editor) {
 	defer editor.Unlock()
 	editor.host = host
 }
-func (projectDocuments) EditDocument(title, text string, session gui.DocumentSession) error {
+func (projectDocuments) EditDocument(project, title, text string, session gui.DocumentSession) error {
 	editor.RLock()
 	host := editor.host
 	editor.RUnlock()
 	if host == nil {
 		return errors.New("Android editor unavailable")
 	}
-	reason := host.Open(title, text, session)
+	reason := host.Open(project, title, text, session)
 	if reason != "" {
 		return errors.New(reason)
 	}

@@ -30,7 +30,7 @@ public final class DocumentEditor implements Editor {
     public void close() {
         if (active != null) active.dismiss();
     }
-    @Override public String open(String title, String text, EditorSession session) {
+    @Override public String open(String project, String title, String text, EditorSession session) {
         CountDownLatch done = new CountDownLatch(1);
         activity.runOnUiThread(new Runnable() {
             public void run() {
@@ -40,10 +40,13 @@ public final class DocumentEditor implements Editor {
                 }
                 Dialog dialog = new Dialog(activity, android.R.style.Theme_Material_NoActionBar);
                 active = dialog;
-                LinearLayout column = new LinearLayout(activity);
+                int inset = (int)(12 * activity.getResources().getDisplayMetrics().density);
+                LinearLayout column = new LinearLayout(dialog.getContext());
+                column.setBackgroundColor(0xff0f121c);
+                column.setPadding(inset,inset,inset,inset);
                 column.setOrientation(LinearLayout.VERTICAL);
-                LinearLayout bar = new LinearLayout(activity);
-                Button back = new Button(activity);
+                LinearLayout bar = new LinearLayout(dialog.getContext());
+                Button back = new Button(dialog.getContext());
                 back.setText("Back");
                 back.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
@@ -51,19 +54,23 @@ public final class DocumentEditor implements Editor {
                     }
                 });
                 bar.addView(back);
-                TextView name = new TextView(activity);
+                TextView name = new TextView(dialog.getContext());
+                name.setTextColor(0xffe6e8ed);
                 name.setText(title);
                 bar.addView(name, new LinearLayout.LayoutParams(0,-2,1));
-                Button undo = new Button(activity);
+                Button undo = new Button(dialog.getContext());
                 undo.setText("Undo");
                 bar.addView(undo);
-                Button save = new Button(activity);
+                Button save = new Button(dialog.getContext());
                 save.setText("Save");
                 bar.addView(save);
                 column.addView(bar);
-                TextView status = new TextView(activity);
+                TextView status = new TextView(dialog.getContext());
+                status.setTextColor(0xffb7c5d9);
                 column.addView(status);
-                EditText body = new EditText(activity);
+                EditText body = new EditText(dialog.getContext());
+                body.setTextColor(0xfff0f2f6);
+                body.setTextSize(16);
                 body.setGravity(Gravity.TOP | Gravity.START);
                 body.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
                 body.setTypeface(Typeface.MONOSPACE);
@@ -74,7 +81,7 @@ public final class DocumentEditor implements Editor {
                         body.onTextContextMenuItem(android.R.id.undo);
                     }
                 });
-                int[] position = positions.get(title);
+                int[] position = positions.get(project + "/" + title);
                 if (position != null) {
                     body.setSelection(Math.min(body.length(),position[0]),Math.min(body.length(),position[1]));
                     body.post(new Runnable() {
@@ -123,7 +130,7 @@ public final class DocumentEditor implements Editor {
                         bookmark[0] = Math.max(0,body.getSelectionStart());
                         bookmark[1] = Math.max(0,body.getSelectionEnd());
                         bookmark[2] = body.getScrollY();
-                        positions.put(title,bookmark);
+                        positions.put(project + "/" + title,bookmark);
                         active = null;
                         done.countDown();
                     }

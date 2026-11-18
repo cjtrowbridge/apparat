@@ -198,6 +198,9 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 	)
 	game.registerVerticalScroll(scroll)
 	game.restoreWorkspaceScroll(scroll, tabData)
+	if tabData.ID() == hud.TabProjects && game.inWorkspace() && game.projects.workspace.mode == "conversation" {
+		return game.workspaceChatPane(scroll)
+	}
 	return boundPreferredWidth(scroll, game.detailPanePreferredWidth)
 }
 
