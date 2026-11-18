@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -36,6 +37,7 @@ type projectResult struct {
 	reload                          bool
 }
 type projectForm struct {
+	dataRoot                                 string
 	workers                                  sync.WaitGroup
 	rows                                     []domain.Project
 	store                                    projectStore
@@ -49,6 +51,14 @@ type projectForm struct {
 
 func (g *Game) initProjects() {
 	f := &g.projects
+	if runtime.GOOS == "android" && filepath.IsAbs(g.runtimeInfo.RuntimePath) {
+		f.dataRoot = filepath.Join(g.runtimeInfo.RuntimePath, "data")
+		// Registered filesystem checkouts already resolve symlinks at inspection.
+		resolved, err := filepath.EvalSymlinks(f.dataRoot)
+		if err == nil {
+			f.dataRoot = resolved
+		}
+	}
 	f.store, _ = g.runtimeInfo.Queries.(projectStore)
 	f.ctx, f.close = context.WithCancel(context.Background())
 }
@@ -128,7 +138,7 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 			tint = hud.SelectorPalette[1]
 		}
 		status := projectCheckoutStatus(p)
-		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
 		for _, action := range p.Actions {
 			section.Rows = append(section.Rows, hud.Row{Label: "Configured action", Detail: action})
 		}
@@ -289,13 +299,16 @@ func projectLocation(value string) string {
 
 // Registrations currently belong to this device. Provider document IDs can
 // be opaque, so retain the provider and include the registered folder name.
-func projectListLocation(p domain.Project) string {
+func projectListLocation(p domain.Project, dataRoot string) string {
 	location := p.Location
 	if strings.HasPrefix(location, "content://") {
 		id := projectLocation(location)
 		if strings.HasPrefix(location, "content://com.android.externalstorage.documents/") {
 			volume, path, ok := strings.Cut(id, ":")
 			if ok {
+				if volume == "primary" {
+					volume = "~"
+				}
 				return "local://" + volume + "/" + path
 			}
 		}
@@ -305,6 +318,11 @@ func projectListLocation(p domain.Project) string {
 			if !strings.HasSuffix(location, "/"+p.Name) {
 				location += "/" + p.Name
 			}
+		}
+	} else if dataRoot != "" && filepath.IsAbs(location) {
+		rel, err := filepath.Rel(dataRoot, location)
+		if err == nil && filepath.IsLocal(rel) {
+			location = filepath.Join("apparat", rel)
 		}
 	}
 	return "local://" + location

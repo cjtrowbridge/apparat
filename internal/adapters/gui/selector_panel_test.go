@@ -129,7 +129,8 @@ func TestProjectSelectorShowsFullCheckoutLocation(t *testing.T) {
 	tab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[1]
 	for _, tc := range []struct{ location, want string }{
 		{"/src/two  words/repo", "local:///src/two  words/repo"},
-		{"content://com.android.externalstorage.documents/tree/primary%3ADocuments/document/primary%3ADocuments%2Frepo", "local://primary/Documents/repo"},
+		{"content://com.android.externalstorage.documents/tree/primary%3ADocuments/document/primary%3ADocuments%2Frepo", "local://~/Documents/repo"},
+		{"content://com.android.externalstorage.documents/tree/1234-5678/document/1234-5678%3ADocuments%2Frepo", "local://1234-5678/Documents/repo"},
 		{"content://example/tree/1/document/42", "local://example/42/repo"},
 	} {
 		game.projects.rows = []domain.Project{{ID: "one", Name: "repo", Location: tc.location, Available: true, Branch: "main", Revision: "0123456789ab", Actions: []string{"Build"}}}
@@ -144,6 +145,20 @@ func TestProjectSelectorShowsFullCheckoutLocation(t *testing.T) {
 		width, subHeight := subtitle.PreferredSize()
 		if width > int(subtitle.MaxWidth) || height < subHeight+24 {
 			t.Fatalf("path exceeds its row: %dx%d, row height %d", width, subHeight, height)
+		}
+	}
+}
+
+func TestProjectDataAliasMatchesDirectoryBoundary(t *testing.T) {
+	root := "/arbitrary/install/node/data"
+	for _, tc := range []struct{ path, want string }{
+		{root + "/repos/owner/repo", "local://apparat/repos/owner/repo"},
+		{root + "-other/repo", "local:///arbitrary/install/node/data-other/repo"},
+		{root, "local://apparat"},
+	} {
+		got := projectListLocation(domain.Project{Location: tc.path}, root)
+		if got != tc.want {
+			t.Errorf("projectListLocation(%q) = %q, want %q", tc.path, got, tc.want)
 		}
 	}
 }
