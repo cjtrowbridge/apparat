@@ -21,6 +21,7 @@ type WorkspaceEntry struct {
 }
 type WorkspaceChoice struct{ ID, Label, Detail, State string }
 type WorkspaceChange struct {
+	Marker                     string
 	Path                       string
 	Staged, Unstaged, Conflict bool
 }

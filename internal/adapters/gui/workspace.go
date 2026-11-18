@@ -23,6 +23,7 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
+	virtualDirs                                  map[string]bool
 	outputDetails                                string
 	layout                                       workspaceLayout
 	thread                                       string
@@ -71,9 +72,23 @@ func (g *Game) workspaceRequest(action string) {
 			q.ID = w.runID
 		}
 	}
+	virtual := action == "list" && w.virtualDirs[q.Path]
 	w.confirmation = ""
 	g.projectWork(func(ctx context.Context) projectResult {
-		view, err := store.Workspace(ctx, q)
+		var view domain.WorkspaceView
+		var err error
+		if !virtual {
+			view, err = store.Workspace(ctx, q)
+		}
+		if action == "list" && err == nil {
+			status := domain.WorkspaceRequest{Action: "changes", Path: ".", ProjectID: q.ProjectID}
+			changed, statusErr := store.Workspace(ctx, status)
+			if statusErr != nil {
+				view.Report = "Git status unavailable: " + statusErr.Error()
+			} else {
+				view.Changes = changed.Changes
+			}
+		}
 		result := projectResult{workspace: &workspaceReply{q, view, err}}
 		switch q.Action {
 		case "commit", "switch", "save", "create", "delete", "move":
@@ -129,7 +144,11 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.runID = q.ID
 	case "delete-artifact":
 		g.workspaceGo("runs", "runs")
+	case "save":
+		w.dir = path.Dir(q.Path)
+		g.workspaceGo("files", "list")
 	case "list":
+		w.changes = v.Changes
 		w.entries = v.Entries
 		w.mode = "files"
 		w.path = ""
@@ -176,41 +195,7 @@ func (g *Game) workspaceActions(c *widget.Container, labels ...string) {
 	}
 }
 func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
-	c.AddChild(g.detailText("Folder · " + w.dir))
-	if w.dir != "." {
-		g.projectButton(c, "Parent folder", func() {
-			w.dir = path.Dir(w.dir)
-			w.page = 0
-			g.workspaceRequest("list")
-		})
-	}
-	for _, e := range w.entries[:min(w.page+24, len(w.entries))] {
-		name := e.Name
-		if e.Directory {
-			name += "/"
-		}
-		g.workspaceRow(c, name, func() {
-			dest := path.Join(w.dir, e.Name)
-			if e.Directory {
-				w.dir = dest
-				w.page = 0
-				g.workspaceRequest("list")
-			} else {
-				w.path = dest
-				w.base = ""
-				w.line = 0
-				w.autoEdit = true
-				g.workspaceRequest("read")
-			}
-		})
-	}
-	if w.page+24 < len(w.entries) {
-		g.projectButton(c, "More files", func() {
-			w.page += 24
-			g.layoutDirty = true
-		})
-	}
-
+	g.directoryListing(c, w)
 }
 func (g *Game) workspaceEditor(c *widget.Container, w *workspacePanel) {
 	c.AddChild(g.detailText(w.path))

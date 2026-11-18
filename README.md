@@ -840,7 +840,7 @@ Tab placement in Settings cycles through Top, Bottom, Left, Right and Responsive
 
 ### Using the local project workspace
 
-Tap a registered checkout to open Files. Select a UTF-8 file up to 64 KiB to edit it in the Android document editor or the Linux GTK 4 editor (Python 3 with PyGObject and GTK 4). Changes are kept as local drafts. Save writes the reviewed file on this device. A conflicting save preserves the draft and offers a comparison. The file options also include a fallback line editor.
+Tap a registered checkout to open Files. Select a UTF-8 file up to 64 KiB to edit it in the Android document editor or the Linux GTK 4 editor (Python 3 with PyGObject and GTK 4). Changes are kept as local drafts. Save writes the reviewed file and returns to its containing directory with refreshed Git status. Tap a folder to enter it or `../` to go up. Clean filenames are white. Red names use `U` for new or untracked files, `C` for changed files and `D` for deletions. Staged changes stay marked until committed. A conflicting save preserves the draft and offers a comparison. The file options also include a fallback line editor.
 
 Changes lists staged and unstaged files. Select a path to review its diff, stage the intended file, and commit it with the local identity `Apparat <apparat@localhost>`. Tasks shows manual entrypoints and run history. Chat groups pending local messages by conversation.
 

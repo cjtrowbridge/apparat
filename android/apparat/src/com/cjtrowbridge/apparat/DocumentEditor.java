@@ -40,10 +40,10 @@ public final class DocumentEditor implements Editor {
                 }
                 Dialog dialog = new Dialog(activity, android.R.style.Theme_Material_NoActionBar);
                 active = dialog;
-                int inset = (int)(12 * activity.getResources().getDisplayMetrics().density);
+                int inset = (int)(4 * activity.getResources().getDisplayMetrics().density);
                 LinearLayout column = new LinearLayout(dialog.getContext());
                 column.setBackgroundColor(0xff0f121c);
-                column.setPadding(inset,inset,inset,inset);
+                column.setPadding(0,0,0,0);
                 column.setOrientation(LinearLayout.VERTICAL);
                 LinearLayout bar = new LinearLayout(dialog.getContext());
                 Button back = new Button(dialog.getContext());
@@ -57,6 +57,8 @@ public final class DocumentEditor implements Editor {
                 TextView name = new TextView(dialog.getContext());
                 name.setTextColor(0xffe6e8ed);
                 name.setText(title);
+                name.setSingleLine(true);
+                name.setEllipsize(android.text.TextUtils.TruncateAt.START);
                 bar.addView(name, new LinearLayout.LayoutParams(0,-2,1));
                 Button undo = new Button(dialog.getContext());
                 undo.setText("Undo");
@@ -67,10 +69,12 @@ public final class DocumentEditor implements Editor {
                 column.addView(bar);
                 TextView status = new TextView(dialog.getContext());
                 status.setTextColor(0xffb7c5d9);
+                status.setVisibility(View.GONE);
                 column.addView(status);
                 EditText body = new EditText(dialog.getContext());
                 body.setTextColor(0xfff0f2f6);
                 body.setTextSize(16);
+                body.setPadding(inset,inset,inset,inset);
                 body.setGravity(Gravity.TOP | Gravity.START);
                 body.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
                 body.setTypeface(Typeface.MONOSPACE);
@@ -96,7 +100,9 @@ public final class DocumentEditor implements Editor {
                     public void onTextChanged(CharSequence s,int start,int before,int count) {}
                     public void afterTextChanged(Editable value) {
                         String error = session.apply("draft",value.toString());
-                        status.setText(error.isEmpty() ? "Draft saved on this device" : error);
+                        name.setText(error.isEmpty() ? title + " •" : title);
+                        status.setVisibility(error.isEmpty() ? View.GONE : View.VISIBLE);
+                        status.setText(error);
                     }
                 });
                 save.setOnClickListener(new View.OnClickListener() {
@@ -107,6 +113,7 @@ public final class DocumentEditor implements Editor {
                             dialog.dismiss();
                             return;
                         }
+                        status.setVisibility(View.VISIBLE);
                         status.setText(reason);
                         new AlertDialog.Builder(activity).setTitle("Save needs attention").setMessage(reason)
                         .setNegativeButton("Back",null).setPositiveButton("Review checkout",new DialogInterface.OnClickListener() {

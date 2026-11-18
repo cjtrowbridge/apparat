@@ -44,3 +44,16 @@ func TestWorkspaceResizePreservesPresentation(t *testing.T) {
 		t.Fatal("new file inherited presentation from a different file")
 	}
 }
+
+func TestDirectoryItemsIncludeDirectChangesAndMissingSubtrees(t *testing.T) {
+	entries := []domain.WorkspaceEntry{{Name: "clean"}, {Name: "new"}, {Name: "edited"}}
+	changes := []domain.WorkspaceChange{{Path: "new", Marker: "U"}, {Path: "edited", Marker: "C", Staged: true}, {Path: "old/gone", Marker: "D"}, {Path: "gone", Marker: "D"}}
+	items := directoryItems(".", entries, changes)
+	if len(items) != 5 || items[0].Name != "old" || !items[0].Directory || !items[0].missing || items[1].change.Marker != "" || items[2].change.Marker != "C" || items[3].change.Marker != "D" || items[4].change.Marker != "U" {
+		t.Fatal(items)
+	}
+	nested := directoryItems("old", nil, changes)
+	if len(nested) != 1 || nested[0].Directory || !nested[0].missing || nested[0].change.Path != "old/gone" {
+		t.Fatal(nested)
+	}
+}

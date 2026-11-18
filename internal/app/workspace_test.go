@@ -98,7 +98,7 @@ func TestLocalWorkspaceOffline(t *testing.T) {
 		t.Fatal("missing working diff")
 	}
 	delta := do("changes").Changes
-	if len(delta) != 1 || delta[0].Path != q.Path || !delta[0].Unstaged {
+	if len(delta) != 1 || delta[0].Path != q.Path || delta[0].Marker != "C" || !delta[0].Unstaged {
 		t.Fatal("changed path missing from Changes")
 	}
 	reviewed := do("review")

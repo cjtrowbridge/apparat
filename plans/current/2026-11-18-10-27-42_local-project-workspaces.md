@@ -35,3 +35,5 @@ Use the canonical all-target pipeline and disposable checkouts. On Linux and Pix
 - [x] Replace command forms with changed file, commit, branch, run, artifact and conversation views.
 - [x] Verify actual editing, scoped commits, Task output recovery, pending chat and adaptive navigation.
 - [?] Observe a first-time tester fixing a typo and committing only that file on the Pixel, without navigation instructions.
+
+- [ ] Tighten editor margins. Show one directory at a time as plain filename rows with white clean files and red U/C/D changes, including missing tracked files. Refresh the containing directory immediately after Save.

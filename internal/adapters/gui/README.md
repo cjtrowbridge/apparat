@@ -151,3 +151,5 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 - `document.go`: Routes scoped edit sessions through the Android or Linux multiline editor, including draft persistence and explicit save.
 - `document_gtk.py`: Embedded GTK 4 text editor, using Python 3 with PyGObject on Linux. Exchanges document text over process pipes.
 - `workspace_screens.go`: Renders Files, Changes, Tasks and Chat and maps Back to each screen’s parent.
+
+- `workspace_directory.go`: Shows one folder at a time, combines its files with Git status, and opens missing tracked files in deletion review.

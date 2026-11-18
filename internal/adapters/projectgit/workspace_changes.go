@@ -22,7 +22,16 @@ func workspaceChanges(tree *git.Worktree) (string, error) {
 		if !WorkspacePath(path) {
 			continue
 		}
-		changes = append(changes, domain.WorkspaceChange{Path: path, Staged: s.Staging != git.Unmodified && s.Staging != git.Untracked, Unstaged: s.Worktree != git.Unmodified, Conflict: s.Staging == git.UpdatedButUnmerged || s.Worktree == git.UpdatedButUnmerged})
+		marker := "C"
+		switch {
+		case s.Worktree == git.Deleted || s.Staging == git.Deleted:
+			marker = "D"
+		case s.Worktree == git.Untracked || s.Staging == git.Added:
+			marker = "U"
+		case s.Worktree == git.Unmodified && s.Staging == git.Unmodified:
+			continue
+		}
+		changes = append(changes, domain.WorkspaceChange{Marker: marker, Path: path, Staged: s.Staging != git.Unmodified && s.Staging != git.Untracked, Unstaged: s.Worktree != git.Unmodified, Conflict: s.Staging == git.UpdatedButUnmerged || s.Worktree == git.UpdatedButUnmerged})
 	}
 	sort.Slice(changes, func(i, j int) bool {
 		return changes[i].Path < changes[j].Path

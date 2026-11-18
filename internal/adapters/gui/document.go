@@ -21,6 +21,7 @@ import (
 var desktopEditor string
 
 type documentSession struct {
+	saved    bool
 	compared string
 	ctx      context.Context
 	store    workspaceStore
@@ -54,6 +55,7 @@ func (s *documentSession) Apply(action, text string) string {
 		s.compared = v.ComparedBase
 		return v.Report
 	}
+	s.saved = action == "save"
 	s.request.Base = v.Base
 	s.view = v
 	return ""
@@ -119,6 +121,9 @@ func (g *Game) editDocument() {
 			err = host.EditDocument(q.ProjectID, q.Path, v.Text, session)
 		} else {
 			err = openDesktopDocument(ctx, q.Path, v.Text, &bookmark, session)
+		}
+		if session.saved && err == nil {
+			q.Action = "save"
 		}
 		return projectResult{workspace: &workspaceReply{q, session.view, err}, applyField: func() {
 			if w.id == q.ProjectID {

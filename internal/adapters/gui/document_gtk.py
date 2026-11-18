@@ -33,6 +33,7 @@ def activate(application):
     scroll.set_child(view)
     box.append(scroll)
     status = Gtk.Label(label="")
+    status.set_visible(False)
     box.append(status)
     win.set_child(box)
 
@@ -42,12 +43,16 @@ def activate(application):
         return json.loads(sys.stdin.readline())
 
     def draft(*_):
-        status.set_text(request("draft") or "Draft saved on this device")
+        reason = request("draft")
+        win.set_title(title + " •")
+        status.set_text(reason)
+        status.set_visible(bool(reason))
 
     def apply(*_):
         reason = request("save")
         if reason:
             status.set_text(reason)
+            status.set_visible(True)
             review.set_visible(True)
         else:
             win.close()
