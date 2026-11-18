@@ -38,4 +38,4 @@ Use the canonical all-target pipeline and disposable checkouts. On Linux and Pix
 
 - [x] Tighten editor margins. Show one directory at a time as plain filename rows with white clean files and red U/C/D changes, including missing tracked files. Refresh the containing directory immediately after Save.
 
-- [ ] Verify Files on the real vibe-modeling checkout, scope Git decoration to the open directory, and exercise the enlarged 🔙 target on the Pixel.
+- [x] Verify Files on the real vibe-modeling checkout, scope Git decoration to the open directory, and exercise the enlarged 🔙 target on the Pixel.

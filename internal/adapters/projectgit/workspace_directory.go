@@ -172,7 +172,9 @@ func (s directoryState) change(ctx context.Context, work billy.Filesystem, name 
 		if err != nil {
 			return ch, err
 		}
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 		hash := plumbing.NewHasher(plumbing.BlobObject, s.working.Size())
 		_, err = io.Copy(hash, directoryReader{ctx, f})
 		if err != nil {
@@ -204,7 +206,9 @@ func directoryIgnores(meta, work billy.Filesystem, dir string) (gitignore.Matche
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 		lines := bufio.NewScanner(f)
 		for lines.Scan() {
 			line := lines.Text()

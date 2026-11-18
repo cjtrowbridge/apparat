@@ -315,7 +315,9 @@ func TestDirectoryStatusScope(t *testing.T) {
 	requireSuccess(t, os.RemoveAll(filepath.Join(dir, "nested/gone")))
 	node := nodeFor(t, t.TempDir(), false)
 	requireSuccess(t, node.Initialize(ctx))
-	defer node.Close()
+	defer func() {
+		requireSuccess(t, node.Close())
+	}()
 	requireSuccess(t, node.StoreProject(ctx, "", dir, ""))
 	rows, err := node.Projects(ctx)
 	requireSuccess(t, err)
