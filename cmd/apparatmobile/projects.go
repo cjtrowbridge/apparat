@@ -70,7 +70,9 @@ func (d projectDocuments) CloneTree(ctx context.Context, parent, repo string) (d
 	if err != nil {
 		return domain.Project{}, errors.New("clone storage unavailable")
 	}
-	defer os.RemoveAll(temp)
+	defer func() {
+		_ = os.RemoveAll(temp)
+	}()
 	p, err := projectgit.Clone(ctx, "", temp, repo, "")
 	if err != nil {
 		return p, err

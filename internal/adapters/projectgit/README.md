@@ -4,3 +4,4 @@
 
 - `install_linux.go`: Atomically publishes a completed temporary clone without replacing an occupied destination on Linux and Android.
 - `install_other.go`: Reports an unsupported clone publication operation on unqualified platforms.
+- `checkout_test.go`: Covers cancellation, preservation of user files, concurrent clone publication and isolated account lookup.

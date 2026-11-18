@@ -23,7 +23,9 @@ func (db *DB) Projects(ctx context.Context) ([]domain.Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 	var projects []domain.Project
 	for rows.Next() {
 		var p domain.Project

@@ -43,7 +43,11 @@ func Inspect(path string) (domain.Project, error) {
 	if err != nil {
 		return p, errors.New("checkout unavailable; choose its current folder")
 	}
-	repo, err := git.PlainOpen(root)
+	metadata, err := os.Stat(filepath.Join(root, ".git"))
+	if err != nil || !metadata.IsDir() && (!metadata.Mode().IsRegular() || metadata.Size() > 4096) {
+		return p, errors.New("choose a Git working tree")
+	}
+	repo, err := git.PlainOpenWithOptions(root, &git.PlainOpenOptions{EnableDotGitCommonDir: true})
 	if err != nil {
 		return p, errors.New("choose the root of an existing Git working tree")
 	}
@@ -65,10 +69,18 @@ func Inspect(path string) (domain.Project, error) {
 	if err != nil {
 		return p, err
 	}
-	defer sandbox.Close()
+	defer func() {
+		_ = sandbox.Close()
+	}()
+	info, err := sandbox.Stat(".vscode/tasks.json")
+	if err != nil || !info.Mode().IsRegular() || info.Size() > 1<<20 {
+		return p, nil
+	}
 	f, err := sandbox.Open(".vscode/tasks.json")
 	if err == nil {
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 		info, err := f.Stat()
 		if err == nil && info.Mode().IsRegular() && info.Size() <= 1<<20 {
 			data, err := io.ReadAll(io.LimitReader(f, 1<<20))
@@ -124,16 +136,10 @@ func Clone(ctx context.Context, base, parent, input, account string) (domain.Pro
 		if runtime.GOOS == "android" || !ValidAccount(account) {
 			return p, errors.New("account unavailable on this device")
 		}
-		cmd := exec.CommandContext(ctx, "gh", "auth", "token", "--hostname", "github.com", "--user", account)
-		cmd.Env = os.Environ()
-		for _, key := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
-			cmd.Env = withoutVariable(cmd.Env, key)
-		}
-		token, err := cmd.Output()
+		opts.Auth, err = accountAuth(ctx, account)
 		if err != nil {
-			return p, errors.New("check the selected account with system gh auth login")
+			return p, err
 		}
-		opts.Auth = &http.BasicAuth{Username: "x-access-token", Password: strings.TrimSpace(string(token))}
 	}
 	if parent == "" {
 		err = os.MkdirAll(filepath.Dir(dest), 0700)
@@ -149,7 +155,9 @@ func Clone(ctx context.Context, base, parent, input, account string) (domain.Pro
 	if err != nil {
 		return p, errors.New("cannot write to selected clone parent")
 	}
-	defer os.RemoveAll(stage)
+	defer func() {
+		_ = os.RemoveAll(stage)
+	}()
 	_, err = git.PlainCloneContext(ctx, stage, false, opts)
 	if err != nil {
 		return p, errors.New("clone incomplete; check the connection and the selected account’s repository access")
@@ -170,4 +178,17 @@ func withoutVariable(env []string, key string) []string {
 		}
 	}
 	return filtered
+}
+
+func accountAuth(ctx context.Context, account string) (*http.BasicAuth, error) {
+	cmd := exec.CommandContext(ctx, "gh", "auth", "token", "--hostname", "github.com", "--user", account)
+	cmd.Env = os.Environ()
+	for _, key := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
+		cmd.Env = withoutVariable(cmd.Env, key)
+	}
+	token, err := cmd.Output()
+	if err != nil {
+		return nil, errors.New("check the selected account with system gh auth login")
+	}
+	return &http.BasicAuth{Username: "x-access-token", Password: strings.TrimSpace(string(token))}, nil
 }

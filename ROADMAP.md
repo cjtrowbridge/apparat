@@ -1584,18 +1584,19 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 **Dependency:** Phase 8 internal commands, queries, local node identity and SQLite.
 
-- [ ] First prove a real checkout can be selected, read and reopened after restart on Linux and the Pixel 4a. Resolve Android storage access before choosing how to persist its location.
-- [ ] Replace sample repos with explicit Add repo, validate the selected working tree and permitted root, and handle duplicate registration. Show an empty list before the first registration.
-- [ ] Persist a stable project ID independent of path, local owner ID and reopening information in SQLite. Read Git state and configured actions from the checkout. Keep the existing blue/purple outlines and right-aligned 🧠 for repos with actions.
-- [ ] Show lost access or a moved checkout and support reconnecting the same registration. Removing a registration preserves the working tree.
-- [ ] Offer Open existing repo in place and Clone from GitHub. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
-- [ ] Use the system GitHub CLI on Linux, with a device default account and per-repo overrides. Keep account credentials outside project metadata.
+- [x] First prove a real checkout can be selected, read and reopened after restart on Linux and the Pixel 4a. Resolve Android storage access before choosing how to persist its location.
+- [x] Replace sample repos with explicit Add repo, validate the selected working tree and permitted root, and handle duplicate registration. Show an empty list before the first registration.
+- [x] Persist a stable project ID independent of path, local owner ID and reopening information in SQLite. Read Git state and configured actions from the checkout. Keep the existing blue/purple outlines and right-aligned 🧠 for repos with actions.
+- [x] Show lost access or a moved checkout and support reconnecting the same registration. Removing a registration preserves the working tree.
+- [x] Offer Open existing repo in place and Clone from GitHub. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
+- [x] Use the system GitHub CLI on Linux, with a device default account and per-repo overrides. Keep account credentials outside project metadata.
 
 **Exit criteria**
 
-- [ ] On Linux and Pixel 4a, add a real local repo offline, restart, and reopen it with the same ID. Change its action configuration and verify the list reflects it.
-- [ ] Verify invalid selections, duplicate adds, access loss, reconnection and removal, including preservation of checkout files.
-- [ ] Prove default and chosen clone locations on Linux and Pixel 4a, including Android external-folder access across restart. Use public repos on Android. On Linux, verify concurrent private clones under isolated accounts without switching the terminal account.
+- [x] On Linux and Pixel 4a, add a real local repo offline, restart, and reopen it with the same ID. Change its action configuration and verify the list reflects it.
+- [x] Verify invalid selections, duplicate adds, access loss, reconnection and removal, including preservation of checkout files.
+- [x] Prove default and chosen clone locations on Linux and Pixel 4a, including Android external-folder access across restart. Use public repos on Android.
+- [ ] Verify concurrent private Linux clones under two real accounts with disjoint access, including wrong-account denial and preservation of the terminal account. One real account and concurrent simulated identities have passed.
 
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
 

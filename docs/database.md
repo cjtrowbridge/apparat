@@ -93,3 +93,5 @@ For a full-node backup, stop every GUI/headless/older process and preserve the c
 Migration 4 adds singleton preferences and desktop_window records. Updating geometry preserves display settings. Restore accepts snapshots from schema 3 or 4 and startup applies outstanding migrations.
 
 Migration 5 adds tab placement to the existing preference record. Earlier rows receive the top layout and keep their display, startup and overlay choices. Restore accepts schema versions 3 through 5.
+
+Migration 6 adds the local project registry and account references. Restore accepts schemas 3 through 6. Checkout files remain at their registered locations and require separate backup.
