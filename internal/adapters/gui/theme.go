@@ -39,6 +39,10 @@ func createUITheme() *widget.Theme {
 	disabledTextColor := color.RGBA{R: 148, G: 160, B: 184, A: 255}
 	borderColor := color.RGBA{R: 40, G: 45, B: 60, A: 255}
 
+	// EbitenUI uses this default to allocate separate text colors for each button.
+	// Without it a filename status override mutates the shared button palette.
+	theme.DefaultTextColor = textColor
+
 	// Button styles
 	buttonBgColor := color.RGBA{R: 45, G: 55, B: 78, A: 255}
 	theme.ButtonTheme = &widget.ButtonParams{
