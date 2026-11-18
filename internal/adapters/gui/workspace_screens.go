@@ -98,7 +98,8 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 		})
 	}
 	nav := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal))))
-	nav.AddChild(widget.NewButton(
+	back := widget.NewButton(
+		widget.ButtonOpts.Image(tabButtonImage()),
 		widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon("1f519")}),
 		widget.ButtonOpts.GraphicPadding(widget.Insets{}),
 		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(54, 48)),
@@ -107,7 +108,9 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 				g.workspaceBack()
 			}
 		}),
-	))
+	)
+	back.GetWidget().SetTheme(&widget.Theme{})
+	nav.AddChild(back)
 	roots := w.mode == "files" || w.mode == "changes" || w.mode == "tasks" || w.mode == "chat"
 	if roots {
 		for _, dest := range []struct{ label, mode, action string }{{"Files", "files", "list"}, {"Changes", "changes", "changes"}, {"Tasks", "tasks", "tasks"}, {"Chat", "chat", "threads"}} {
