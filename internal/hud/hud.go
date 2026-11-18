@@ -34,6 +34,7 @@ type Row struct {
 
 type Section struct {
 	ProjectID           string
+	SelectorSubtitle    string
 	Title               string
 	Description         string
 	Rows                []Row

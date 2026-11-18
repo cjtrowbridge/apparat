@@ -65,20 +65,26 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			continue
 		}
 		sectionIndex := index
-		btn := game.sectionButton(tabData, section, sectionIndex)
+		btn, subtitle := game.sectionButton(tabData, section, sectionIndex)
 		if game.selectedSectionIndex(tabData) == index {
 			btn.SetState(widget.WidgetChecked)
 		}
-		if tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline {
+		hasIcon := tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline
+		if subtitle != nil || hasIcon {
 			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
 				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 			btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
 			row.AddChild(btn)
-			row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("1f9e0")),
-				widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-					HorizontalPosition: widget.AnchorLayoutPositionEnd, VerticalPosition: widget.AnchorLayoutPositionCenter,
-					Padding: &widget.Insets{Right: 12},
-				}))))
+			if subtitle != nil {
+				row.AddChild(subtitle)
+			}
+			if hasIcon {
+				row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("1f9e0")),
+					widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+						HorizontalPosition: widget.AnchorLayoutPositionEnd, VerticalPosition: widget.AnchorLayoutPositionCenter,
+						Padding: &widget.Insets{Right: 12},
+					}))))
+			}
 			listContainer.AddChild(row)
 		} else {
 			listContainer.AddChild(btn)
@@ -117,7 +123,7 @@ func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 	return heading
 }
 
-func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionIndex int) *widget.Button {
+func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionIndex int) (*widget.Button, *widget.Text) {
 	rightPadding := 12
 	if tabData.ID() == hud.TabProjects && section.ContentKind == hud.ContentPipeline {
 		rightPadding += tabIconSize
@@ -126,6 +132,20 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 	width := game.masterPanePreferredWidth() - 2*selectorListInset - padding.Left - padding.Right
 	face := game.theme.ButtonTheme.TextFace
 	label := wrapSelectorLabel(section.Title, *face, width)
+	var subtitle *widget.Text
+	if section.SelectorSubtitle != "" {
+		face := game.selectorDescriptionFace
+		text := wrapSelectorPath(section.SelectorSubtitle, *face, width)
+		subtitle = widget.NewText(widget.TextOpts.Text(text, face, mutedTextColor),
+			widget.TextOpts.MaxWidth(float64(width)),
+			widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+				VerticalPosition: widget.AnchorLayoutPositionEnd,
+				Padding:          &widget.Insets{Left: padding.Left, Right: rightPadding, Bottom: padding.Bottom},
+			})))
+		subtitle.Validate()
+		_, height := subtitle.PreferredSize()
+		padding.Bottom += height + 3
+	}
 	return widget.NewButton(
 		widget.ButtonOpts.Text(label, face, game.theme.ButtonTheme.TextColor),
 		widget.ButtonOpts.Image(selectorButtonImage(section.SelectorColor)),
@@ -142,7 +162,7 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 			}
 			game.selectSection(tabData.ID(), sectionIndex)
 		}),
-	)
+	), subtitle
 }
 
 func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.PreferredSizeLocateableWidget {

@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/color"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ebitenui/ebitenui/input"
 	"github.com/ebitenui/ebitenui/widget"
@@ -175,6 +176,24 @@ func wrapSelectorLabel(label string, face ebitentext.Face, width int) string {
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")
+}
+
+// Preserve every character, including repeated spaces in directory names.
+func wrapSelectorPath(path string, face ebitentext.Face, width int) string {
+	var result strings.Builder
+	start := 0
+	for offset := range path {
+		_, bytes := utf8.DecodeRuneInString(path[offset:])
+		end := offset + bytes
+		size, _ := ebitentext.Measure(path[start:end], face, 0)
+		if offset > start && size > float64(width) {
+			result.WriteString(path[start:offset])
+			result.WriteByte('\n')
+			start = offset
+		}
+	}
+	result.WriteString(path[start:])
+	return result.String()
 }
 
 const railGutter = tabIconButtonWidth + bodyGap

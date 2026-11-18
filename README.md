@@ -96,7 +96,7 @@ Choose **Add or clone repo** in Projects. Use **Open existing repo** for a check
 
 After trusted membership is available, the same list will include authorized summaries that other members choose to share. Each entry identifies its host and availability. Two devices with checkouts of the same Git remote own separate projects. The first shared catalog supports browsing. Later workspace operations go through the owning device’s authenticated API.
 
-The Project Repos list uses blue outlines for repos without configured actions and purple outlines for repos with configured actions. Repos with configured actions also show 🧠 on the right. Both open the same workspace view.
+The Project Repos list uses blue outlines for repos without configured actions and purple outlines for repos with configured actions. Repos with configured actions also show 🧠 on the right. Both open the same workspace view. Each row shows the full checkout location beneath its name, prefixed with `local://` for this device.
 
 Projects opens workspace views with:
 

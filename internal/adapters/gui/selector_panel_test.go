@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
@@ -93,7 +94,7 @@ func TestSelectorButtonsFitNarrowPaneAndReserveActionIcon(t *testing.T) {
 		{tabs[1], hud.Section{Title: "unbroken-repository-name-with-many-characters", ContentKind: hud.ContentPipeline}},
 	}
 	for _, tc := range cases {
-		button := game.sectionButton(tc.tab, tc.section, 0)
+		button, _ := game.sectionButton(tc.tab, tc.section, 0)
 		button.GetWidget().SetTheme(game.theme)
 		button.Validate()
 		width, height := button.PreferredSize()
@@ -118,5 +119,31 @@ func TestLocalProjectTabIncludesOnlyRegisteredCheckouts(t *testing.T) {
 	tab = game.projectTab(hud.Tab{})
 	if tab.Sections[2].ContentKind != hud.ContentPipeline || tab.Sections[3].ContentKind != hud.ContentProject || tab.Sections[2].SelectorColor == tab.Sections[3].SelectorColor {
 		t.Fatal("action decoration does not follow real checkout state")
+	}
+}
+
+func TestProjectSelectorShowsFullCheckoutLocation(t *testing.T) {
+	game := NewGame()
+	game.width = 960
+	game.splitWidth = minSplitWidth
+	tab := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[1]
+	for _, tc := range []struct{ location, want string }{
+		{"/src/two  words/repo", "local:///src/two  words/repo"},
+		{"content://com.android.externalstorage.documents/tree/primary%3ADocuments/document/primary%3ADocuments%2Frepo", "local://primary/Documents/repo"},
+		{"content://example/tree/1/document/42", "local://example/42/repo"},
+	} {
+		game.projects.rows = []domain.Project{{ID: "one", Name: "repo", Location: tc.location, Actions: []string{"Build"}}}
+		section := game.projectTab(tab).Sections[2]
+		button, subtitle := game.sectionButton(tab, section, 2)
+		if subtitle == nil || strings.ReplaceAll(subtitle.Label, "\n", "") != tc.want {
+			t.Fatal("missing checkout path", tc.want)
+		}
+		button.GetWidget().SetTheme(game.theme)
+		button.Validate()
+		_, height := button.PreferredSize()
+		width, subHeight := subtitle.PreferredSize()
+		if width > int(subtitle.MaxWidth) || height < subHeight+24 {
+			t.Fatalf("path exceeds its row: %dx%d, row height %d", width, subHeight, height)
+		}
 	}
 }

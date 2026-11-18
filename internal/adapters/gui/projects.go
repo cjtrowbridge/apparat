@@ -131,7 +131,7 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 		if !p.Available {
 			status = "Unavailable · reconnect its folder"
 		}
-		section := hud.Section{Title: p.Name, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p), Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
 		for _, action := range p.Actions {
 			section.Rows = append(section.Rows, hud.Row{Label: "Configured action", Detail: action})
 		}
@@ -289,6 +289,30 @@ func projectLocation(value string) string {
 	}
 	return value
 }
+
+// Registrations currently belong to this device. Provider document IDs can
+// be opaque, so retain the provider and include the registered folder name.
+func projectListLocation(p domain.Project) string {
+	location := p.Location
+	if strings.HasPrefix(location, "content://") {
+		id := projectLocation(location)
+		if strings.HasPrefix(location, "content://com.android.externalstorage.documents/") {
+			volume, path, ok := strings.Cut(id, ":")
+			if ok {
+				return "local://" + volume + "/" + path
+			}
+		}
+		uri, err := url.Parse(location)
+		if err == nil {
+			location = uri.Host + "/" + id
+			if !strings.HasSuffix(location, "/"+p.Name) {
+				location += "/" + p.Name
+			}
+		}
+	}
+	return "local://" + location
+}
+
 func clonePreview(dest, account string) string {
 	if account == "" {
 		account = "public access"

@@ -130,7 +130,7 @@ The Updates card uses platform-specific HUD copy. Its button and status exist on
 
 The desktop master-detail divider captures the mouse through the shared pointer owner. Resizing preserves both panes' scroll positions while the layout rebuilds.
 
-Selector buttons wrap their labels to the pane's inner width as the divider moves. Projects rows reserve space for the configured-action icon, and wrapped buttons grow vertically within the scrollable list.
+Selector buttons wrap their labels to the pane's inner width as the divider moves. Projects rows reserve space for the configured-action icon, and wrapped buttons grow vertically within the scrollable list. Project paths use the smaller muted description face and wrap within the same selectable button.
 
 - `preferences.go`: Loads preferences before layout, saves asynchronously, and applies confirmed changes.
 - `window_state.go`: Restores desktop placement and coalesces geometry writes until shutdown.
