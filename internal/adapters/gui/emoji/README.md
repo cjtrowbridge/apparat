@@ -13,3 +13,5 @@ Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 
 - `1f9e0.png`: Twemoji brain, marking project repos with configured actions.
 - `1f489.png`: STMPCK syringe from the same attributed Twemoji release.
+
+- `1f519.png`: 🔙 workspace Back, from the pinned Twemoji release above.

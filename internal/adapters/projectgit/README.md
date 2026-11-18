@@ -23,3 +23,5 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 - `workspace_git_test.go`: Simulates failure to publish a Git lockfile and verifies that the previous branch tip and user data survive.
 
 - `workspace_changes.go`: Returns changed paths with stage state and the working-file digest reviewed for a scoped Git operation.
+
+- `workspace_directory.go`: Compares immediate children against the index and the corresponding HEAD tree, applies ancestor ignore files, and cancels file hashing when browsing moves elsewhere. Changes continues to use repository-wide Git status.

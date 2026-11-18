@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"context"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	uiimage "github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
@@ -40,9 +41,9 @@ func directoryItems(dir string, entries []domain.WorkspaceEntry, changes []domai
 			if ch.Marker != "D" {
 				continue
 			}
-			item = directoryItem{WorkspaceEntry: domain.WorkspaceEntry{Name: name, Directory: nested}, missing: true}
+			item = directoryItem{WorkspaceEntry: domain.WorkspaceEntry{Name: name, Directory: nested || ch.Directory}, missing: true}
 		}
-		if !nested {
+		if !nested && !ch.Directory {
 			item.change = ch
 		}
 		children[name] = item
@@ -65,6 +66,9 @@ func (g *Game) directoryListing(c *widget.Container, w *workspacePanel) {
 	location := "/"
 	if w.dir != "." {
 		location += w.dir + "/"
+	}
+	if g.projects.directoryStatus != nil {
+		location += "   Checking Git status…"
 	}
 	list.AddChild(g.detailText(location))
 	if w.dir != "." {
@@ -125,4 +129,49 @@ func (g *Game) filenameRow(c *widget.Container, label string, changed bool, clic
 			click()
 		}
 	})))
+}
+
+func (g *Game) stopFolderCheck() {
+	f := &g.projects
+	if f.stopDirectoryStatus != nil {
+		f.stopDirectoryStatus()
+		f.stopDirectoryStatus = nil
+	}
+	f.directoryStatus = nil
+}
+func (g *Game) startDirectoryStatus(q domain.WorkspaceRequest) {
+	g.stopFolderCheck()
+	store, ok := g.runtimeInfo.Queries.(workspaceStore)
+	if !ok {
+		return
+	}
+	f := &g.projects
+	ctx, cancel := context.WithCancel(f.ctx)
+	ch := make(chan workspaceReply, 1)
+	f.directoryStatus = ch
+	f.stopDirectoryStatus = cancel
+	q.Action = "directory-status"
+	f.workers.Add(1)
+	go func() {
+		defer f.workers.Done()
+		defer cancel()
+		v, err := store.Workspace(ctx, q)
+		ch <- workspaceReply{q, v, err}
+	}()
+}
+func (g *Game) pollDirectoryStatus() {
+	f := &g.projects
+	select {
+	case r := <-f.directoryStatus:
+		g.stopFolderCheck()
+		w := &f.workspace
+		if w.mode == "files" && w.id == r.request.ProjectID && w.dir == r.request.Path {
+			w.changes = r.view.Changes
+			if r.err != nil {
+				w.report = "Git status unavailable: " + r.err.Error()
+			}
+			g.layoutDirty = true
+		}
+	default:
+	}
 }

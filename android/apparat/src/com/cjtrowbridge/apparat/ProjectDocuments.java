@@ -123,7 +123,7 @@ final class ProjectDocuments implements Documents {
         }
         return "";
     }
-    public String access(String location,String action,String path,String argument) {
+    public synchronized String access(String location,String action,String path,String argument) {
         return new WorkspaceDocuments(activity,location).access(action,path,argument);
     }
     public String inspect(String location) {

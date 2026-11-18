@@ -186,6 +186,7 @@ func (game *Game) Update() error {
 	}
 	game.receivePreferences()
 	game.pollProjects()
+	game.pollDirectoryStatus()
 	game.workspaceBackEnabled.Store(game.inWorkspace())
 	if game.workspaceBackRequested.Swap(false) {
 		game.workspaceBack()

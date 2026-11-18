@@ -3,6 +3,7 @@
 package projectgit
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -22,6 +23,9 @@ import (
 )
 
 func GitAction(location string, q domain.WorkspaceRequest) (string, error) {
+	return GitActionContext(context.Background(), location, q)
+}
+func GitActionContext(ctx context.Context, location string, q domain.WorkspaceRequest) (string, error) {
 	meta := filepath.Join(location, ".git")
 	info, err := os.Lstat(meta)
 	if err != nil || !info.IsDir() {
@@ -34,11 +38,11 @@ func GitAction(location string, q domain.WorkspaceRequest) (string, error) {
 	defer func() {
 		_ = root.Close()
 	}()
-	return GitOnFilesystems(osfs.New(meta, osfs.WithBoundOS()), osfs.New(location, osfs.WithBoundOS()), q, func(p string) (string, error) {
+	return GitOnFilesystems(ctx, osfs.New(meta, osfs.WithBoundOS()), osfs.New(location, osfs.WithBoundOS()), q, func(p string) (string, error) {
 		return ReadText(root, p)
 	})
 }
-func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, read func(string) (string, error)) (string, error) {
+func GitOnFilesystems(ctx context.Context, meta, work billy.Filesystem, q domain.WorkspaceRequest, read func(string) (string, error)) (string, error) {
 	storage := &workspaceStorage{Storage: filesystem.NewStorage(meta, cache.NewObjectLRUDefault()), meta: meta}
 	repo, err := git.Open(storage, work)
 	if err != nil {
@@ -49,6 +53,8 @@ func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, re
 		return "", err
 	}
 	switch q.Action {
+	case "directory-status":
+		return directoryStatus(ctx, repo, meta, work, q.Path)
 	case "changes":
 		return workspaceChanges(tree)
 	case "review":

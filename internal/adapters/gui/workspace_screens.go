@@ -29,6 +29,10 @@ func (g *Game) workspaceGo(mode, action string) {
 		return
 	}
 	w := &g.projects.workspace
+	g.stopFolderCheck()
+	if mode == "changes" {
+		w.changes = nil
+	}
 	w.mode = mode
 	w.report = ""
 	w.confirmation = ""
@@ -52,6 +56,7 @@ func (g *Game) workspaceBack() {
 			g.workspaceGo("files", "list")
 			return
 		}
+		g.stopFolderCheck()
 		*w = workspacePanel{}
 		delete(g.selectedSections, hud.TabProjects)
 		g.showList(hud.TabProjects)
@@ -93,7 +98,16 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 		})
 	}
 	nav := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal))))
-	g.projectButton(nav, "‹", g.workspaceBack)
+	nav.AddChild(widget.NewButton(
+		widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon("1f519")}),
+		widget.ButtonOpts.GraphicPadding(widget.Insets{}),
+		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(54, 48)),
+		widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
+			if !g.bodySelectionSuppressed() {
+				g.workspaceBack()
+			}
+		}),
+	))
 	roots := w.mode == "files" || w.mode == "changes" || w.mode == "tasks" || w.mode == "chat"
 	if roots {
 		for _, dest := range []struct{ label, mode, action string }{{"Files", "files", "list"}, {"Changes", "changes", "changes"}, {"Tasks", "tasks", "tasks"}, {"Chat", "chat", "threads"}} {

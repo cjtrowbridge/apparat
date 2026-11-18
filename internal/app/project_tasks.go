@@ -116,7 +116,7 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 		}
 	}
 	read := domain.WorkspaceRequest{Action: "read", Path: ".apparat/tasks.json"}
-	config, err := n.workspaceFile(location, read)
+	config, err := n.workspaceFile(ctx, location, read)
 	if err != nil {
 		return v, errors.New("no readable .apparat/tasks.json; VS Code command labels alone cannot run here")
 	}
@@ -176,7 +176,7 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 		read.Path = "."
 		read.Action = "status"
 		if strings.HasPrefix(location, "content://") {
-			file, err = n.workspaceFile(location, read)
+			file, err = n.workspaceFile(ctx, location, read)
 			file.Text = file.Report
 		} else {
 			file.Text, err = projectgit.GitAction(location, read)
@@ -186,7 +186,7 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 			err = errors.New("status exceeds artifact limits")
 		}
 	} else {
-		file, err = n.workspaceFile(location, read)
+		file, err = n.workspaceFile(ctx, location, read)
 	}
 	if err == nil {
 		err = ctx.Err()

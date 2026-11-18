@@ -24,6 +24,7 @@ type WorkspaceChange struct {
 	Marker                     string
 	Path                       string
 	Staged, Unstaged, Conflict bool
+	Directory                  bool `json:",omitempty"`
 }
 type WorkspaceView struct {
 	Changes                                  []WorkspaceChange

@@ -293,3 +293,46 @@ func TestWorkspaceGitActions(t *testing.T) {
 		t.Fatal("deletion lost")
 	}
 }
+
+func TestDirectoryStatusScope(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	gitFixtureCommand(t, dir, "init")
+	requireSuccess(t, os.MkdirAll(filepath.Join(dir, "nested", "gone"), 0700))
+	write := func(name, text string) {
+		t.Helper()
+		requireSuccess(t, os.WriteFile(filepath.Join(dir, name), []byte(text), 0600))
+	}
+	write("tracked", "abc")
+	write(".gitignore", "*.tmp\n")
+	write("nested/gone/file", "old")
+	gitFixtureCommand(t, dir, "add", ".")
+	gitFixtureCommand(t, dir, "commit", "-m", "seed")
+	write("tracked", "xyz")
+	write("new", "new")
+	write("ignored.tmp", "ignored")
+	write("nested/another", "nested")
+	requireSuccess(t, os.RemoveAll(filepath.Join(dir, "nested/gone")))
+	node := nodeFor(t, t.TempDir(), false)
+	requireSuccess(t, node.Initialize(ctx))
+	defer node.Close()
+	requireSuccess(t, node.StoreProject(ctx, "", dir, ""))
+	rows, err := node.Projects(ctx)
+	requireSuccess(t, err)
+	check := func(path string, want map[string]string) {
+		t.Helper()
+		v, err := node.Workspace(ctx, domain.WorkspaceRequest{ProjectID: rows[0].ID, Action: "directory-status", Path: path})
+		requireSuccess(t, err)
+		if len(v.Changes) != len(want) {
+			t.Fatalf("%s: unexpected changes %+v", path, v.Changes)
+		}
+		for _, c := range v.Changes {
+			if want[c.Path] != c.Marker {
+				t.Fatalf("unexpected change %+v", c)
+			}
+		}
+	}
+	check(".", map[string]string{"tracked": "C", "new": "U"})
+	check("nested", map[string]string{"nested/another": "U", "nested/gone": "D"})
+	check("nested/gone", map[string]string{"nested/gone/file": "D"})
+}

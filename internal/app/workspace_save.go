@@ -41,7 +41,7 @@ func (n *Runtime) saveWorkspaceFile(ctx context.Context, location string, q doma
 	} else {
 		return v, err
 	}
-	v, writeErr := n.workspaceFile(location, q)
+	v, writeErr := n.workspaceFile(ctx, location, q)
 	tx.State = "applied"
 	if writeErr != nil {
 		tx.State = "conflicted"

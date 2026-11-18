@@ -39,6 +39,8 @@ type projectResult struct {
 	reload                          bool
 }
 type projectForm struct {
+	directoryStatus                          chan workspaceReply
+	stopDirectoryStatus                      context.CancelFunc
 	bookmarks                                map[[2]string][3]int
 	workspace                                workspacePanel
 	dataRoot                                 string

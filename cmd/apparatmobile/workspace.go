@@ -5,6 +5,7 @@
 package apparatmobile
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"io"
@@ -36,7 +37,7 @@ func (f treeFS) text(name string) (string, error) {
 	}
 	return string(b), nil
 }
-func (d projectDocuments) WorkspaceFile(uri string, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
+func (d projectDocuments) WorkspaceFile(ctx context.Context, uri string, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
 	host := currentDocuments()
 	if host == nil {
 		return v, errors.New("reselect the folder to restore access")
@@ -71,7 +72,7 @@ func (d projectDocuments) WorkspaceFile(uri string, q domain.WorkspaceRequest) (
 		if err != nil {
 			return v, err
 		}
-		v.Report, err = projectgit.GitOnFilesystems(meta, f, q, f.text)
+		v.Report, err = projectgit.GitOnFilesystems(ctx, meta, f, q, f.text)
 		return v, err
 	}
 	text, err := f.text(q.Path)

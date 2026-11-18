@@ -80,15 +80,6 @@ func (g *Game) workspaceRequest(action string) {
 		if !virtual {
 			view, err = store.Workspace(ctx, q)
 		}
-		if action == "list" && err == nil {
-			status := domain.WorkspaceRequest{Action: "changes", Path: ".", ProjectID: q.ProjectID}
-			changed, statusErr := store.Workspace(ctx, status)
-			if statusErr != nil {
-				view.Report = "Git status unavailable: " + statusErr.Error()
-			} else {
-				view.Changes = changed.Changes
-			}
-		}
 		result := projectResult{workspace: &workspaceReply{q, view, err}}
 		switch q.Action {
 		case "commit", "switch", "save", "create", "delete", "move":
@@ -148,7 +139,8 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.dir = path.Dir(q.Path)
 		g.workspaceGo("files", "list")
 	case "list":
-		w.changes = v.Changes
+		w.changes = nil
+		g.startDirectoryStatus(q)
 		w.entries = v.Entries
 		w.mode = "files"
 		w.path = ""

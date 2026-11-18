@@ -15,22 +15,25 @@ import (
 )
 
 type documentWorkspace interface {
-	WorkspaceFile(string, domain.WorkspaceRequest) (domain.WorkspaceView, error)
+	WorkspaceFile(context.Context, string, domain.WorkspaceRequest) (domain.WorkspaceView, error)
 }
 
-func (n *Runtime) workspaceFile(location string, q domain.WorkspaceRequest) (domain.WorkspaceView, error) {
+func (n *Runtime) workspaceFile(ctx context.Context, location string, q domain.WorkspaceRequest) (domain.WorkspaceView, error) {
 	if strings.HasPrefix(location, "content://") {
 		docs, ok := n.documents.(documentWorkspace)
 		if !ok {
 			return domain.WorkspaceView{}, errors.New("this folder provider has no workspace access")
 		}
-		return docs.WorkspaceFile(location, q)
+		return docs.WorkspaceFile(ctx, location, q)
 	}
 	return projectgit.Files(location, q)
 }
 func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
-	n.workspaceMu.Lock()
-	defer n.workspaceMu.Unlock()
+	// Directory decoration is a read-only observation and must not hold up navigation or edits.
+	if q.Action != "directory-status" {
+		n.workspaceMu.Lock()
+		defer n.workspaceMu.Unlock()
+	}
 	err = ctx.Err()
 	if err != nil {
 		return v, err
@@ -53,7 +56,7 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 	}
 	switch q.Action {
 	case "read", "create", "list", "mkdir":
-		v, err = n.workspaceFile(location, q)
+		v, err = n.workspaceFile(ctx, location, q)
 		if err != nil || !v.Editing {
 			return v, err
 		}
@@ -81,7 +84,7 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 		if q.Action == "compare" || q.Action == "rebase" {
 			read := q
 			read.Action = "read"
-			v, err = n.workspaceFile(location, read)
+			v, err = n.workspaceFile(ctx, location, read)
 			if err != nil {
 				return v, err
 			}
@@ -112,20 +115,20 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 			return v, err
 		}
 		q.Action = "read"
-		return n.workspaceFile(location, q)
+		return n.workspaceFile(ctx, location, q)
 	case "move", "delete":
-		v, err = n.workspaceFile(location, q)
+		v, err = n.workspaceFile(ctx, location, q)
 		if err == nil {
 			err = n.database.ClearDraft(ctx, q.ProjectID, q.Path)
 		}
 		return v, err
-	case "review", "changes":
+	case "review", "changes", "directory-status":
 		var raw string
 		if strings.HasPrefix(location, "content://") {
-			file, e := n.workspaceFile(location, q)
+			file, e := n.workspaceFile(ctx, location, q)
 			raw, err = file.Report, e
 		} else {
-			raw, err = projectgit.GitAction(location, q)
+			raw, err = projectgit.GitActionContext(ctx, location, q)
 		}
 		if err == nil {
 			err = json.Unmarshal([]byte(raw), &v)
@@ -181,7 +184,7 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 		return n.projectTask(ctx, location, q)
 	default:
 		if strings.HasPrefix(location, "content://") {
-			return n.workspaceFile(location, q)
+			return n.workspaceFile(ctx, location, q)
 		}
 		v.Report, err = projectgit.GitAction(location, q)
 		if len(v.Report) > domain.WorkspaceTextLimit {

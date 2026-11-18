@@ -1673,7 +1673,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 ### Usability acceptance before cluster work
 
-- [x] Return from Save to a refreshed directory listing with compact, Git-colored filename rows and drill-down folder navigation.
+- [x] Return from Save to a refreshed directory listing with compact, Git-colored filename rows and drill-down folder navigation. Verify responsive opening and 🔙 navigation with the large vibe-modeling checkout.
 
 - [x] Open a registered checkout in one tap. Browse files, Changes, Tasks and Chat through labeled destinations, with contextual Back on compact screens and list/detail on wide screens.
 - [x] Edit a whole document with multiline selection, paste, undo, durable drafts and one explicit Save. Review conflicts before overwrite. Check Android keyboard insets and resize behavior.
