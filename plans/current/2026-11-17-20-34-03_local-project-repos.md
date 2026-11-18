@@ -23,6 +23,8 @@ Project Repos opens real working trees offline on a single device. Both platform
 
 - [x] Show the full checkout location beneath each project name in smaller muted text. Verify narrow-pane wrapping and the existing action marker.
 
+- [x] Reduce the Project Repos selector inset and display the branch and checked-out revision after the location, including detached or unavailable checkouts.
+
 ## Evidence and stopping condition
 
 Use the existing internal commands/queries, SQLite migrations and Projects UI. Keep platform storage and authentication at their respective boundaries. Test migration with existing app data. Exercise Linux and the Pixel 4a through the canonical no-flag build pipeline. For each platform verify existing checkout, default clone and custom-location clone, then reopen offline after restart with the same ID. Change action configuration and confirm the marker follows it. On Linux exercise two accounts with disjoint private repos and verify a wrong account fails visibly. Run overlapping Linux clones with different accounts and destinations and verify the active CLI identity before and after. On Android use a public repo and test lost picker permission and folder reselection. Record evidence and remaining platform limits before closing Phase 9.

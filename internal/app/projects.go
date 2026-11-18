@@ -35,6 +35,7 @@ func (n *Runtime) Projects(ctx context.Context) ([]domain.Project, error) {
 		if err == nil {
 			projects[i].Actions = current.Actions
 			projects[i].Branch = current.Branch
+			projects[i].Revision = current.Revision
 			projects[i].Available = true
 		}
 	}

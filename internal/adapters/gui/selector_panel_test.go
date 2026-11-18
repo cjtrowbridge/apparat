@@ -132,10 +132,10 @@ func TestProjectSelectorShowsFullCheckoutLocation(t *testing.T) {
 		{"content://com.android.externalstorage.documents/tree/primary%3ADocuments/document/primary%3ADocuments%2Frepo", "local://primary/Documents/repo"},
 		{"content://example/tree/1/document/42", "local://example/42/repo"},
 	} {
-		game.projects.rows = []domain.Project{{ID: "one", Name: "repo", Location: tc.location, Actions: []string{"Build"}}}
+		game.projects.rows = []domain.Project{{ID: "one", Name: "repo", Location: tc.location, Available: true, Branch: "main", Revision: "0123456789ab", Actions: []string{"Build"}}}
 		section := game.projectTab(tab).Sections[2]
 		button, subtitle := game.sectionButton(tab, section, 2)
-		if subtitle == nil || strings.ReplaceAll(subtitle.Label, "\n", "") != tc.want {
+		if subtitle == nil || strings.ReplaceAll(subtitle.Label, "\n", "") != tc.want+"main @ 0123456789ab" {
 			t.Fatal("missing checkout path", tc.want)
 		}
 		button.GetWidget().SetTheme(game.theme)

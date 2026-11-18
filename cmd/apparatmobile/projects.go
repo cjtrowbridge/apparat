@@ -54,12 +54,12 @@ func (projectDocuments) ChooseFolder() string {
 	return host.ChooseFolder()
 }
 func (projectDocuments) InspectTree(uri string) (domain.Project, error) {
-	var info struct{ Name, Head, Tasks string }
+	var info struct{ Name, Head, Revision, Tasks string }
 	host := currentDocuments()
 	if host == nil || json.Unmarshal([]byte(host.Inspect(uri)), &info) != nil || info.Name == "" {
 		return domain.Project{}, errors.New("cannot read Git metadata; reselect the working tree or use app-private storage")
 	}
-	return domain.Project{Name: info.Name, Branch: info.Head, Actions: projectgit.TaskNames([]byte(info.Tasks)), Location: uri, Available: true}, nil
+	return domain.Project{Name: info.Name, Branch: info.Head, Revision: info.Revision, Actions: projectgit.TaskNames([]byte(info.Tasks)), Location: uri, Available: true}, nil
 }
 func (d projectDocuments) CloneTree(ctx context.Context, parent, repo string) (domain.Project, error) {
 	host := currentDocuments()

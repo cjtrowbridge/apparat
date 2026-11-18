@@ -16,6 +16,7 @@ import (
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
@@ -58,12 +59,13 @@ func Inspect(path string) (domain.Project, error) {
 	p.Name = filepath.Base(root)
 	p.Location = root
 	p.Available = true
+	ref, err := repo.Reference(plumbing.HEAD, false)
+	if err == nil && ref.Target().IsBranch() {
+		p.Branch = ref.Target().Short()
+	}
 	head, err := repo.Head()
 	if err == nil {
-		p.Branch = head.Name().Short()
-		if !head.Name().IsBranch() {
-			p.Branch = head.Hash().String()[:12]
-		}
+		p.Revision = head.Hash().String()[:12]
 	}
 	sandbox, err := os.OpenRoot(root)
 	if err != nil {

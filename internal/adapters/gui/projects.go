@@ -127,11 +127,8 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 			kind = hud.ContentPipeline
 			tint = hud.SelectorPalette[1]
 		}
-		status := p.Branch
-		if !p.Available {
-			status = "Unavailable · reconnect its folder"
-		}
-		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p), Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		status := projectCheckoutStatus(p)
+		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
 		for _, action := range p.Actions {
 			section.Rows = append(section.Rows, hud.Row{Label: "Configured action", Detail: action})
 		}
@@ -311,6 +308,24 @@ func projectListLocation(p domain.Project) string {
 		}
 	}
 	return "local://" + location
+}
+
+func projectCheckoutStatus(p domain.Project) string {
+	if !p.Available {
+		return "Unavailable · reconnect its folder"
+	}
+	branch := p.Branch
+	if branch == "" {
+		if p.Revision == "" {
+			return "Checkout unavailable"
+		}
+		branch = "Detached HEAD"
+	}
+	revision := p.Revision
+	if revision == "" {
+		revision = "no resolved commit"
+	}
+	return branch + " @ " + revision
 }
 
 func clonePreview(dest, account string) string {

@@ -129,13 +129,20 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 		rightPadding += tabIconSize
 	}
 	padding := &widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}
+	if tabData.ID() == hud.TabProjects {
+		padding.Left = 12
+	}
 	width := game.masterPanePreferredWidth() - 2*selectorListInset - padding.Left - padding.Right
 	face := game.theme.ButtonTheme.TextFace
 	label := wrapSelectorLabel(section.Title, *face, width)
 	var subtitle *widget.Text
 	if section.SelectorSubtitle != "" {
 		face := game.selectorDescriptionFace
-		text := wrapSelectorPath(section.SelectorSubtitle, *face, width)
+		lines := strings.Split(section.SelectorSubtitle, "\n")
+		for i, line := range lines {
+			lines[i] = wrapSelectorPath(line, *face, width)
+		}
+		text := strings.Join(lines, "\n")
 		subtitle = widget.NewText(widget.TextOpts.Text(text, face, mutedTextColor),
 			widget.TextOpts.MaxWidth(float64(width)),
 			widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{

@@ -4,7 +4,7 @@ package domain
 
 type Project struct {
 	ID, Owner, Name, Location, Account string
-	Branch                             string
+	Branch, Revision                   string
 	Actions                            []string
 	Available                          bool
 }

@@ -102,6 +102,27 @@ final class ProjectDocuments implements Documents {
             return out.toString("UTF-8");
         }
     }
+    private String branchRevision(Uri git, String ref) {
+        try {
+            Uri loose = git;
+            for (String component : ref.split("/")) {
+                if (component.isEmpty() || component.equals("..") || component.equals(".")) return "";
+                loose = child(loose, component);
+                if (loose == null) break;
+            }
+            if (loose != null) return read(loose, 128).trim();
+            Uri packed = child(git, "packed-refs");
+            if (packed != null) {
+                for (String line : read(packed, 1 << 20).split("\n")) {
+                    int space = line.indexOf(' ');
+                    if (space > 0 && ref.equals(line.substring(space + 1))) return line.substring(0, space);
+                }
+            }
+        } catch (IOException ignored) {
+            // A checkout can still have a readable branch without a resolvable commit.
+        }
+        return "";
+    }
     public String inspect(String location) {
         try {
             Uri root=Uri.parse(location);
@@ -109,9 +130,14 @@ final class ProjectDocuments implements Documents {
             if (git==null || child(git,"objects")==null || child(git,"refs")==null) return "";
             Uri head=child(git,"HEAD");
             if(head==null) return "";
-            String branch=read(head,4096).trim();
-            if(branch.startsWith("ref: refs/heads/")) branch=branch.substring(16);
-            else if(!branch.matches("[0-9a-fA-F]{40}|[0-9a-fA-F]{64}")) return "";
+            String value = read(head,4096).trim();
+            String branch = "";
+            String revision = value;
+            if (value.startsWith("ref: refs/heads/")) {
+                branch = value.substring(16);
+                revision = branchRevision(git, value.substring(5));
+            } else if (!value.matches("[0-9a-fA-F]{40}|[0-9a-fA-F]{64}")) return "";
+            revision = revision.matches("[0-9a-fA-F]{40}|[0-9a-fA-F]{64}") ? revision.substring(0,12) : "";
             Uri vscode=child(root,".vscode");
             Uri tasks=vscode==null?null:child(vscode,"tasks.json");
             String config="";
@@ -122,7 +148,7 @@ final class ProjectDocuments implements Documents {
                     // A task file is optional.
                 }
             }
-            return new JSONObject().put("Name",name(root)).put("Head",branch).put("Tasks",config).toString();
+            return new JSONObject().put("Name",name(root)).put("Head",branch).put("Revision",revision).put("Tasks",config).toString();
         } catch(Exception ex) {
             return "";
         }
