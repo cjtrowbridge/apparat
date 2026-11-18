@@ -38,28 +38,20 @@ func ValidText(text string) bool {
 	return len(text) <= domain.WorkspaceTextLimit && utf8.ValidString(text) && !strings.ContainsRune(text, 0)
 }
 
-func checkedPath(root *os.Root, path string) error {
-	if !WorkspacePath(path) {
-		return errors.New("choose a path inside this working tree")
-	}
-	prefix := "."
-	for _, part := range strings.Split(path, "/") {
-		prefix = filepath.Join(prefix, part)
-		info, err := root.Lstat(prefix)
-		if err != nil {
-			return err
-		}
-		if info.Mode()&os.ModeSymlink != 0 {
-			return errors.New("workspace links cannot be followed")
-		}
-	}
-	return nil
-}
 func ReadText(root *os.Root, path string) (string, error) {
-	err := checkedPath(root, path)
+	if !WorkspacePath(path) {
+		return "", os.ErrPermission
+	}
+	parent, err := workspaceDirectory(root, filepath.Dir(path))
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		_ = parent.Close()
+	}()
+	return readLeaf(parent, filepath.Base(path))
+}
+func readLeaf(root *os.Root, path string) (string, error) {
 	info, err := root.Lstat(path)
 	if err != nil || !info.Mode().IsRegular() || info.Size() > domain.WorkspaceTextLimit {
 		return "", errors.New("choose a regular text file of at most 64 KiB")
@@ -71,6 +63,10 @@ func ReadText(root *os.Root, path string) (string, error) {
 	defer func() {
 		_ = file.Close()
 	}()
+	opened, err := file.Stat()
+	if err != nil || !os.SameFile(info, opened) {
+		return "", errors.New("file changed while opening")
+	}
 	data, err := io.ReadAll(io.LimitReader(file, domain.WorkspaceTextLimit+1))
 	if err != nil || !ValidText(string(data)) {
 		return "", errors.New("file exceeds text limits or contains binary data")
@@ -89,11 +85,14 @@ func Files(location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, 
 		_ = root.Close()
 	}()
 	if q.Action == "list" {
-		err = checkedPath(root, q.Path)
+		folder, err := workspaceDirectory(root, q.Path)
 		if err != nil {
 			return v, err
 		}
-		dir, err := root.Open(q.Path)
+		defer func() {
+			_ = folder.Close()
+		}()
+		dir, err := folder.Open(".")
 		if err != nil {
 			return v, err
 		}
@@ -117,12 +116,16 @@ func Files(location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, 
 		})
 		return v, nil
 	}
+	parent, err := workspaceDirectory(root, filepath.Dir(q.Path))
+	if err != nil {
+		return v, err
+	}
+	defer func() {
+		_ = parent.Close()
+	}()
+	name := filepath.Base(q.Path)
 	if q.Action == "create" {
-		err = checkedPath(root, filepath.Dir(q.Path))
-		if err != nil {
-			return v, err
-		}
-		f, err := root.OpenFile(q.Path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		f, err := parent.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err != nil {
 			return v, err
 		}
@@ -131,7 +134,7 @@ func Files(location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, 
 			return v, err
 		}
 	}
-	content, err := ReadText(root, q.Path)
+	content, err := readLeaf(parent, name)
 	if err != nil {
 		return v, err
 	}
@@ -152,17 +155,17 @@ func Files(location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, 
 		if !ValidText(q.Text) {
 			return v, errors.New("draft exceeds text limits")
 		}
-		info, err := root.Stat(q.Path)
+		info, err := parent.Lstat(name)
 		if err != nil {
 			return v, err
 		}
-		temp := filepath.Join(filepath.Dir(q.Path), ".apparat-write-"+rand.Text())
-		file, err := root.OpenFile(temp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		temp := ".apparat-write-" + rand.Text()
+		file, err := parent.OpenFile(temp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err != nil {
 			return v, err
 		}
 		defer func() {
-			_ = root.Remove(temp)
+			_ = parent.Remove(temp)
 		}()
 		_, err = file.WriteString(q.Text)
 		if err == nil {
@@ -178,11 +181,11 @@ func Files(location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, 
 		if closeErr != nil {
 			return v, closeErr
 		}
-		current, err := ReadText(root, q.Path)
+		current, err := readLeaf(parent, name)
 		if err != nil || current != content {
 			return v, errors.New("checkout changed during save")
 		}
-		err = root.Rename(temp, q.Path)
+		err = parent.Rename(temp, name)
 		v.Text = q.Text
 		v.Base = Digest(q.Text)
 		return v, err
@@ -190,18 +193,17 @@ func Files(location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, 
 		if !WorkspacePath(q.Argument) {
 			return v, errors.New("invalid destination")
 		}
-		err = checkedPath(root, filepath.Dir(q.Argument))
+		dest, err := workspaceDirectory(root, filepath.Dir(q.Argument))
 		if err != nil {
 			return v, err
 		}
-		// Link first so an occupied destination can never be overwritten.
-		err = root.Link(q.Path, q.Argument)
-		if err != nil {
-			return v, err
-		}
-		return domain.WorkspaceView{}, root.Remove(q.Path)
+		defer func() {
+			_ = dest.Close()
+		}()
+		return domain.WorkspaceView{}, moveWorkspaceFile(parent, name, dest, filepath.Base(q.Argument))
+
 	case "delete":
-		return domain.WorkspaceView{}, root.Remove(q.Path)
+		return domain.WorkspaceView{}, parent.Remove(name)
 	}
 	return v, errors.New("unknown file operation")
 }

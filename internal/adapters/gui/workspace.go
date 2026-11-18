@@ -23,6 +23,9 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
+	thread                                       string
+	choices                                      []domain.WorkspaceChoice
+	choiceAction                                 string
 	id, dir, path, base, report, argument, runID string
 	mode, confirmation                           string
 	entries                                      []domain.WorkspaceEntry
@@ -40,7 +43,7 @@ func (g *Game) workspaceRequest(action string) {
 	if file == "" {
 		file = w.dir
 	}
-	q := domain.WorkspaceRequest{ProjectID: w.id, Action: action, Path: file, Base: w.base, Text: strings.Join(w.lines, "\n"), Argument: w.argument}
+	q := domain.WorkspaceRequest{ProjectID: w.id, Action: action, Path: file, Base: w.base, Thread: w.thread, Text: strings.Join(w.lines, "\n"), Argument: w.argument}
 	switch action {
 	case "list":
 		q.Path = w.dir
@@ -48,8 +51,11 @@ func (g *Game) workspaceRequest(action string) {
 		q.Path = path.Join(w.dir, w.argument)
 	case "save", "post", "run":
 		q.ID, _ = domain.NewID(time.Now(), nil)
-	case "artifact":
+	case "artifact", "delete-artifact":
 		q.ID = strings.TrimSpace(w.argument)
+		if action == "delete-artifact" {
+			q.ID = w.runID
+		}
 		if q.ID == "" {
 			q.ID = w.runID
 		}
@@ -57,7 +63,16 @@ func (g *Game) workspaceRequest(action string) {
 	w.confirmation = ""
 	g.projectWork(func(ctx context.Context) projectResult {
 		view, err := store.Workspace(ctx, q)
-		return projectResult{workspace: &workspaceReply{q, view, err}}
+		result := projectResult{workspace: &workspaceReply{q, view, err}}
+		switch q.Action {
+		case "commit", "switch", "save", "create", "delete", "move":
+			if err == nil && g.projects.store != nil {
+				result.rows, err = g.projects.store.Projects(ctx)
+				result.reload = err == nil
+				result.defaultAccount, _ = g.projects.store.ProjectDefault(ctx)
+			}
+		}
+		return result
 	})
 }
 func (g *Game) applyWorkspace(r *workspaceReply) {
@@ -79,6 +94,16 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.mode = "file"
 	}
 	switch q.Action {
+	case "threads":
+		w.choices = v.Choices
+	case "artifact":
+		w.runID = q.ID
+	case "tasks", "runs":
+		w.choices = v.Choices
+		w.choiceAction = "run"
+		if q.Action == "runs" {
+			w.choiceAction = "artifact"
+		}
 	case "list":
 		w.entries = v.Entries
 		w.mode = "files"
@@ -90,6 +115,8 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	case "run":
 		w.runID = q.ID
 		w.argument = q.ID
+		w.choices = []domain.WorkspaceChoice{{ID: q.ID, Label: "Open verified artifact"}}
+		w.choiceAction = "artifact"
 	}
 }
 func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
@@ -109,6 +136,8 @@ func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
 		for _, mode := range []string{"Files", "Git", "Tasks", "Chat"} {
 			g.projectButton(c, mode, func() {
 				w.mode = strings.ToLower(mode)
+				w.argument = ""
+				w.choices = nil
 				w.report = ""
 				w.confirmation = ""
 				switch mode {
@@ -119,6 +148,9 @@ func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
 				case "Tasks":
 					g.workspaceRequest("tasks")
 				case "Chat":
+					if w.thread == "" {
+						w.thread = "General"
+					}
 					g.workspaceRequest("chat")
 				}
 			})
@@ -145,9 +177,39 @@ func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
 			g.workspaceActions(c, "Diff against HEAD", "diff", "Stage file", "stage", "Unstage file", "unstage", "Commit staged file", "commit")
 		}
 	case "tasks":
-		g.projectField(c, "Task ID or previous run ID", &w.argument)
-		g.workspaceActions(c, "List Tasks", "tasks", "Run Task", "run", "Run history", "runs", "Open verified artifact", "artifact")
+		for _, item := range w.choices {
+			label := item.Label
+			if w.choiceAction == "run" {
+				label = "Run " + label
+				if w.confirmation == item.ID {
+					label = "Confirm " + label
+				}
+			}
+			g.projectButton(c, label, func() {
+				if w.choiceAction == "run" && w.confirmation != item.ID {
+					w.confirmation = item.ID
+					g.layoutDirty = true
+					return
+				}
+				w.argument = item.ID
+				g.workspaceRequest(w.choiceAction)
+			})
+		}
+		g.workspaceActions(c, "List Tasks", "tasks", "Run history", "runs")
+		if w.runID != "" {
+			g.workspaceActions(c, "Delete opened artifact", "delete-artifact")
+		}
+
 	case "chat":
+		g.projectField(c, "Thread title", &w.thread)
+		g.workspaceActions(c, "Browse threads", "threads", "Open thread", "chat")
+		for _, thread := range w.choices {
+			g.projectButton(c, thread.Label, func() {
+				w.thread = thread.ID
+				w.choices = nil
+				g.workspaceRequest("chat")
+			})
+		}
 		g.projectField(c, "Project message", &w.argument)
 		g.workspaceActions(c, "Save pending message", "post", "Message history", "chat")
 	}
@@ -159,7 +221,7 @@ func (g *Game) workspaceActions(c *widget.Container, labels ...string) {
 		label, action := labels[i], labels[i+1]
 		confirm := false
 		switch action {
-		case "delete", "move", "switch", "commit", "discard", "rebase", "run", "save":
+		case "delete-artifact", "delete", "move", "switch", "commit", "discard", "rebase", "resolve", "run", "save":
 			confirm = true
 		}
 		if confirm && w.confirmation == action {
@@ -257,7 +319,7 @@ func (g *Game) workspaceEditor(c *widget.Container, w *workspacePanel) {
 		g.keepEditingDraft(w)
 		g.layoutDirty = true
 	})
-	g.workspaceActions(c, "Keep draft", "draft", "Apply draft to file", "save", "Compare checkout text", "compare", "Use current file as base", "rebase", "Discard saved draft", "discard", "Diff against HEAD", "diff", "Stage file", "stage", "Unstage file", "unstage")
+	g.workspaceActions(c, "Keep draft", "draft", "Apply draft to file", "save", "Compare checkout text", "compare", "Use current file as base", "rebase", "Discard saved draft", "discard", "Inspect Git conflict", "conflict", "Resolve with saved file", "resolve", "Diff against HEAD", "diff", "Stage file", "stage", "Unstage file", "unstage")
 	g.projectField(c, "Commit message or destination path", &w.argument)
 	g.workspaceActions(c, "Commit staged file", "commit", "Move file", "move", "Delete file", "delete")
 	c.AddChild(g.detailText(strings.Join(w.lines, "\n")))
@@ -268,7 +330,7 @@ func (g *Game) keepEditingDraft(w *workspacePanel) {
 	if !ok {
 		return
 	}
-	q := domain.WorkspaceRequest{ProjectID: w.id, Action: "draft", Path: w.path, Base: w.base, Text: strings.Join(w.lines, "\n")}
+	q := domain.WorkspaceRequest{ProjectID: w.id, Action: "draft", Path: w.path, Base: w.base, Thread: w.thread, Text: strings.Join(w.lines, "\n")}
 	_, err := store.Workspace(g.projects.ctx, q)
 	if err != nil {
 		w.report = "Draft could not be saved: " + err.Error()

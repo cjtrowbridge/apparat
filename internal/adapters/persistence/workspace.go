@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"strings"
 )
 
@@ -75,4 +76,58 @@ func (db *DB) FinishWorkspaceSave(ctx context.Context, project, id, path, base, 
 		}
 	}
 	return tx.Commit()
+}
+
+func (db *DB) RecentEntries(ctx context.Context, project, kind string) ([]domain.WorkspaceChoice, error) {
+	rows, err := db.sql.QueryContext(ctx, "SELECT id,body FROM project_entries WHERE project=? AND kind=? ORDER BY rowid DESC LIMIT 30", project, kind)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	var result []domain.WorkspaceChoice
+	for rows.Next() {
+		var item domain.WorkspaceChoice
+		err = rows.Scan(&item.ID, &item.Label)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, item)
+	}
+	return result, rows.Err()
+}
+
+func (db *DB) UpdateRun(ctx context.Context, project, id, body string) error {
+	result, err := db.sql.ExecContext(ctx, "UPDATE project_entries SET body=? WHERE project=? AND id=? AND kind='run'", body, project, id)
+	return changedProject(result, err)
+}
+func (db *DB) ArtifactInUse(ctx context.Context, digest string) (bool, error) {
+	var used bool
+	err := db.sql.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM project_entries WHERE kind='run' AND json_extract(body,'$.Digest')=? AND json_extract(body,'$.State')='completed')", digest).Scan(&used)
+	return used, err
+}
+func (db *DB) RecoverWorkspaceRuns(ctx context.Context) error {
+	_, err := db.sql.ExecContext(ctx, "UPDATE project_entries SET body=json_set(body,'$.State','interrupted') WHERE kind='run' AND json_extract(body,'$.State')='running'")
+	return err
+}
+func (db *DB) ChatThreads(ctx context.Context, project string) ([]domain.WorkspaceChoice, error) {
+	rows, err := db.sql.QueryContext(ctx, "SELECT DISTINCT kind FROM project_entries WHERE project=? AND kind LIKE 'chat:%' ORDER BY kind LIMIT 100", project)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	var threads []domain.WorkspaceChoice
+	for rows.Next() {
+		var kind string
+		err = rows.Scan(&kind)
+		if err != nil {
+			return nil, err
+		}
+		name := strings.TrimPrefix(kind, "chat:")
+		threads = append(threads, domain.WorkspaceChoice{ID: name, Label: name})
+	}
+	return threads, rows.Err()
 }

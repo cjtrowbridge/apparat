@@ -113,22 +113,33 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 	case "transactions":
 		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, "save")
 		return v, err
+	case "threads":
+		v.Choices, err = n.database.ChatThreads(ctx, q.ProjectID)
+		return v, err
 	case "chat", "post":
+		thread := strings.TrimSpace(q.Thread)
+		if thread == "" {
+			thread = "General"
+		}
+		if len(thread) > 100 {
+			return v, errors.New("thread title exceeds 100 bytes")
+		}
+		kind := "chat:" + thread
 		if q.Action == "post" {
 			if strings.TrimSpace(q.Argument) == "" || !domain.ValidID(q.ID) {
 				return v, errors.New("enter a message")
 			}
-			err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, "chat", "Pending · "+q.Argument)
+			err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, kind, "Pending · "+q.Argument)
 			if err != nil {
 				return v, err
 			}
 		}
-		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, "chat")
+		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, kind)
 		if v.Report == "" {
 			v.Report = "No pending project messages"
 		}
 		return v, err
-	case "tasks", "run", "runs", "artifact":
+	case "tasks", "run", "runs", "artifact", "delete-artifact":
 		return n.projectTask(ctx, location, q)
 	default:
 		if strings.HasPrefix(location, "content://") {

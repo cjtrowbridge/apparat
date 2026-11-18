@@ -144,6 +144,10 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	if result != nil {
 		return result
 	}
+	result = node.database.RecoverWorkspaceRuns(ctx)
+	if result != nil {
+		return result
+	}
 	result = node.stage("migrations_ready")
 	if result != nil {
 		return result

@@ -190,6 +190,17 @@ func (f treeFS) Rename(from, to string) error {
 	if err != nil {
 		return err
 	}
+	err = f.MkdirAll(path.Dir(to), 0755)
+	if err != nil {
+		return err
+	}
+	_, err = f.Stat(to)
+	if err == nil {
+		return f.replace(from, to)
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
 	_, err = f.call("rename", from, dest)
 	return err
 }
@@ -198,4 +209,13 @@ func (f treeFS) Symlink(string, string) error {
 }
 func (f treeFS) Readlink(string) (string, error) {
 	return "", os.ErrInvalid
+}
+
+func (f treeFS) replace(from, to string) error {
+	dest, err := f.name(to)
+	if err != nil {
+		return err
+	}
+	_, err = f.call("replace", from, dest)
+	return err
 }

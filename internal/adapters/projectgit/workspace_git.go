@@ -97,16 +97,20 @@ func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, re
 	switch q.Action {
 	case "diff":
 		return gitDiff(repo, q.Path, current)
-	case "stage":
-		if Digest(current) != q.Base {
-			return "", errors.New("file changed; reopen before staging")
-		}
-		_, err = tree.Add(q.Path)
-		return "Staged " + q.Path, err
-	case "unstage":
-		err = tree.Restore(&git.RestoreOptions{Staged: true, Files: []string{q.Path}})
-		return "Unstaged " + q.Path, err
+	case "conflict":
+		return conflictReport(repo, q.Path)
+	case "stage", "unstage", "resolve":
+		return updateFileIndex(repo, meta, work, q, current)
 	case "commit":
+		idx, err := repo.Storer.Index()
+		if err != nil {
+			return "", err
+		}
+		for _, entry := range idx.Entries {
+			if entry.Stage != 0 {
+				return "", errors.New("resolve remaining merge conflicts before committing")
+			}
+		}
 		status, err := tree.Status()
 		if err != nil {
 			return "", err

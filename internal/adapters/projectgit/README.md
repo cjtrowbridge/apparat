@@ -13,3 +13,7 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 - `workspace_files.go`: Exposes bounded working-tree text and directory operations.
 
 - `task_config.go`: Validates version 1 project entrypoints and identifies enabled supported Tasks.
+
+- `workspace_paths.go`: Pins workspace directories and checks their identity before opening children.
+
+- `workspace_index.go`: Publishes a locked index after storing the selected blob, scopes unstaging to one path and exposes Git merge stages for explicit resolution.

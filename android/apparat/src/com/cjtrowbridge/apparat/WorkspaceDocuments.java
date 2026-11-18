@@ -4,6 +4,9 @@
  */
 package com.cjtrowbridge.apparat;
 import android.content.ContentResolver;
+import android.content.Context;
+import android.content.SharedPreferences;
+import java.util.UUID;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
@@ -16,8 +19,10 @@ import org.json.JSONObject;
 final class WorkspaceDocuments {
     private final ContentResolver resolver;
     private final Uri root;
-    WorkspaceDocuments(ContentResolver resolver, String root) {
-        this.resolver = resolver;
+    private final SharedPreferences recovery;
+    WorkspaceDocuments(Context context, String root) {
+        this.resolver = context.getContentResolver();
+        recovery=context.getSharedPreferences("workspace-document-replacement",Context.MODE_PRIVATE);
         this.root = Uri.parse(root);
     }
     private static final String[] COLUMNS = {
@@ -78,8 +83,49 @@ final class WorkspaceDocuments {
         return new JSONObject().put("name",c.getString(1)).put("directory",Document.MIME_TYPE_DIR.equals(c.getString(2)))
             .put("size",c.getLong(3)).put("modified",c.getLong(4));
     }
+    private Uri renameExact(Uri dir,Uri doc,String name) throws Exception {
+        Uri result=DocumentsContract.renameDocument(resolver,doc,name);
+        if(result==null || !result.equals(child(dir,name))) throw new IOException();
+        return result;
+    }
+    private void recoverReplacement() throws Exception {
+        String record=recovery.getString(root.toString(),null);
+        if(record==null) return;
+        JSONObject state=new JSONObject(record);
+        String dest=state.getString("destination");
+        Uri dir=resolve(parent(dest),false);
+        Uri backup=child(dir,state.getString("backup"));
+        Uri current=child(dir,base(dest));
+        if(backup!=null) {
+            if(current==null) renameExact(dir,backup,base(dest));
+            else if(child(dir,state.getString("source"))==null) {
+                if(!DocumentsContract.deleteDocument(resolver,backup)) throw new IOException();
+            } else throw new IOException("replacement conflict");
+        }
+        if(!recovery.edit().remove(root.toString()).commit()) throw new IOException();
+    }
+    private void replace(String from,String dest) throws Exception {
+        if(!parent(from).equals(parent(dest))) throw new IOException();
+        Uri dir=resolve(parent(dest),false);
+        Uri src=resolve(from,false);
+        Uri old=resolve(dest,false);
+        String backup=".apparat-recovery-"+UUID.randomUUID();
+        JSONObject state=new JSONObject().put("destination",dest).put("source",base(from)).put("backup",backup);
+        if(!recovery.edit().putString(root.toString(),state.toString()).commit()) throw new IOException();
+        try {
+            renameExact(dir,old,backup);
+            renameExact(dir,src,base(dest));
+        } finally {
+            recoverReplacement();
+        }
+    }
     String access(String op,String path,String arg) {
         try {
+            recoverReplacement();
+            if(op.equals("replace")) {
+                replace(path,arg);
+                return "{}";
+            }
             if(op.equals("mkdir")) {
                 resolve(path,true);
                 return "{}";

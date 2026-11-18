@@ -5,29 +5,33 @@ package projectgit
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 )
 
 type LocalTask struct {
 	ID, Label, Action, Path string
 	Enabled                 bool
+	RetainSeconds           int64
 }
 
 func (t LocalTask) Runnable() bool {
-	return t.Enabled && t.Action == "snapshot-text" && WorkspacePath(t.Path) && t.Path != "."
+	return t.RetainSeconds >= 0 && t.RetainSeconds <= 31536000 && t.Enabled && t.Action == "snapshot-text" && WorkspacePath(t.Path) && t.Path != "."
 }
 func LocalTasks(raw string) ([]LocalTask, error) {
 	var spec struct {
 		Version int
 		Tasks   []LocalTask
 	}
-	err := json.Unmarshal([]byte(raw), &spec)
-	if err != nil || spec.Version != 1 {
+	decoder := json.NewDecoder(strings.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&spec)
+	if err != nil || !json.Valid([]byte(raw)) || spec.Version != 1 {
 		return nil, errors.New("unsupported Task configuration; expected version 1")
 	}
 	ids := map[string]bool{}
 	for _, t := range spec.Tasks {
 		if t.ID == "" || ids[t.ID] {
-			return nil, errors.New("Task IDs must be nonempty and unique")
+			return nil, errors.New("task IDs must be nonempty and unique")
 		}
 		ids[t.ID] = true
 	}

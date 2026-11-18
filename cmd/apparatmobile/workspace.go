@@ -89,7 +89,8 @@ func (d projectDocuments) WorkspaceFile(uri string, q domain.WorkspaceRequest) (
 		if !projectgit.WorkspacePath(q.Argument) {
 			return v, os.ErrPermission
 		}
-		return domain.WorkspaceView{}, f.Rename(q.Path, q.Argument)
+		_, err = f.call("rename", q.Path, q.Argument)
+		return domain.WorkspaceView{}, err
 	}
 	temp := path.Join(path.Dir(q.Path), ".apparat-write-"+rand.Text())
 	file, err := f.OpenFile(temp, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0600)
@@ -111,20 +112,10 @@ func (d projectDocuments) WorkspaceFile(uri string, q domain.WorkspaceRequest) (
 	if err != nil || again != text {
 		return v, errors.New("document changed during save")
 	}
-	backup := path.Join(path.Dir(q.Path), ".apparat-recovery-"+rand.Text())
-	err = f.Rename(q.Path, backup)
+	err = f.replace(temp, q.Path)
 	if err != nil {
 		return v, err
 	}
-	err = f.Rename(temp, q.Path)
-	if err != nil {
-		restore := f.Rename(backup, q.Path)
-		if restore != nil {
-			return v, errors.New("original document retained at " + backup)
-		}
-		return v, err
-	}
-	err = f.Remove(backup)
 	v.Text = q.Text
 	v.Base = projectgit.Digest(q.Text)
 	return v, err
