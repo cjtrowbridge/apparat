@@ -1677,7 +1677,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Edit a whole document with multiline selection, paste, undo, durable drafts and one explicit Save. Review conflicts before overwrite. Check Android keyboard insets and resize behavior.
 - [x] Review changed paths and staging state, inspect a diff, and commit only the reviewed file. Select history entries and branches directly. Keep registration and destructive operations contextual.
 - [x] Open a Task, inspect its inputs, run it, and revisit its output after restart. Post pending messages in a named conversation and attach a named run.
-- [ ] Repeat offline on Pixel 4a and Linux with two checkouts and competing changes. Capture compact and wide layouts.
+- [x] Repeat offline on Pixel 4a and Linux with two checkouts and competing changes. Capture compact and wide layouts.
 - [ ] Observe an uncoached first-use session before claiming discoverability.
 
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
