@@ -25,4 +25,5 @@ Phase 9 supplies registered checkouts. Phase 9A turns a selected checkout into a
 
 Use the canonical all-target pipeline and disposable checkouts. On Linux and Pixel 4a, disconnect networking, open a registered repo, edit, diff, stage, commit, restart and find the commit in history. Repeat the action-to-result test and record fixture revisions, platform, storage type, visible results and independent Git or digest verification. Exercise the controller workflow on Steam Deck before marking its device criterion complete. Keep a repeatable copy of the scenarios for Phase 11A. Record untested device or provider cases explicitly.
 
+- [x] Exercise a real editor selection and scrolled detail pane across window resizes, including the single-pane breakpoint. Preserve the active file, draft and conflict report.
 - [?] Physical Steam Deck controller acceptance is outstanding. The device workflow and independent checkout evidence are recorded in the [platform matrix](../../docs/platform-matrix.md#phase-9a-offline-local-workspace).

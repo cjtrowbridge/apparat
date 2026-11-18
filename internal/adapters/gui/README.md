@@ -144,3 +144,6 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 - `workspace.go`: Presents the local workspace through the Projects detail pane.
 
 - `workspace_controller.go`: In Projects, D-pad up/down traverses and reveals touch-sized controls, the south face button activates, and the east face button returns to the workspace menu or list. Text entry uses the platform keyboard.
+
+- `workspace_layout.go`: Keeps the active file's text input attached across layout rebuilds so its focus, caret and selection survive a window resize. The detail viewport retains its proportional scroll position within the same workspace view.
+- `workspace_layout_test.go`: Exercises the split and single-pane layouts with a selected draft and a conflict report, and checks that a different file starts with fresh presentation state.

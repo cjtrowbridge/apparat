@@ -17,6 +17,7 @@ import (
 // In the future, this should intelligently update existing widgets instead of rebuilding
 // from scratch, but for this initial migration, rebuilding ensures layout correctness.
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
+	game.projects.workspace.layout.begin()
 	if game.tabScroll != nil {
 		game.tabStripScrollLeft = clampScrollLeft(game.tabScroll.ScrollLeft)
 	}
@@ -95,6 +96,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		Container:    root,
 		PrimaryTheme: game.theme,
 	}
+	game.finishWorkspaceLayout()
 }
 
 func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {

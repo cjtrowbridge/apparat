@@ -24,9 +24,7 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
-	scrollMode                                   string
-	scrollTop                                    float64
-	restoreScroll                                bool
+	layout                                       workspaceLayout
 	thread                                       string
 	choices                                      []domain.WorkspaceChoice
 	choiceAction                                 string
@@ -69,11 +67,6 @@ func (g *Game) workspaceRequest(action string) {
 		}
 	}
 	w.confirmation = ""
-	if len(g.verticalScrolls) > 0 {
-		w.scrollMode = w.mode
-		w.scrollTop = g.verticalScrolls[len(g.verticalScrolls)-1].ScrollTop
-		w.restoreScroll = false
-	}
 	g.projectWork(func(ctx context.Context) projectResult {
 		view, err := store.Workspace(ctx, q)
 		result := projectResult{workspace: &workspaceReply{q, view, err}}
@@ -93,7 +86,6 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	if w.id != r.request.ProjectID {
 		return
 	}
-	w.restoreScroll = true
 	if r.err != nil {
 		w.report = r.err.Error()
 		return
@@ -143,6 +135,7 @@ func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
 	if w.id != id {
 		g.projectButton(c, "Open workspace", func() {
 			*w = workspacePanel{id: id, dir: ".", mode: "files"}
+			g.detailOpen[hud.TabProjects] = true
 			g.workspaceRequest("list")
 		})
 		return false
@@ -309,7 +302,7 @@ func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
 func (g *Game) workspaceEditor(c *widget.Container, w *workspacePanel) {
 	c.AddChild(g.detailText(w.path))
 	id, file, line := w.id, w.path, w.line
-	g.projectInput(c, "Edit line", w.lines[line], func(text string) {
+	g.workspaceLineInput(c, w, func(text string) {
 		if w.id != id || w.path != file || w.mode != "file" || w.line != line || w.lines[line] == text {
 			return
 		}
@@ -361,13 +354,5 @@ func (g *Game) keepEditingDraft(w *workspacePanel) {
 	if err != nil {
 		w.report = "Draft could not be saved: " + err.Error()
 		g.layoutDirty = true
-	}
-}
-
-func (g *Game) restoreWorkspaceScroll(scroll *widget.ScrollContainer, tab hud.Tab) {
-	w := &g.projects.workspace
-	if tab.ID() == hud.TabProjects && w.restoreScroll && w.id != "" && w.mode == w.scrollMode {
-		scroll.ScrollTop = w.scrollTop
-		w.restoreScroll = false
 	}
 }

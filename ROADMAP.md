@@ -1658,7 +1658,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 ### GUI, recovery, and safety
 
 - [x] Wire workspace buttons to real routes/commands or visibly disable them with a reason.
-- [ ] Verify preservation of editor focus, selection, scroll, panes, unsaved buffers, and conflict UI as presentation state.
+- [x] Verify preservation of editor focus, selection, scroll, panes, unsaved buffers, and conflict UI as presentation state.
 - [x] Show transaction pending/accepted/rejected/conflicted, Task approval/running/cancelled/failed/completed, and local artifact states.
 - [x] Recover drafts, transactions, Task runs, and artifacts across restart.
 - [x] Redact file contents, prompts, chat bodies, secrets, and artifact bytes from default logs.
