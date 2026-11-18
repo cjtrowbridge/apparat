@@ -21,3 +21,5 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 - `workspace_refs.go`: Locks and verifies a branch reference before replacing it, including on Android document providers without flock support.
 
 - `workspace_git_test.go`: Simulates failure to publish a Git lockfile and verifies that the previous branch tip and user data survive.
+
+- `workspace_changes.go`: Returns changed paths with stage state and the working-file digest reviewed for a scoped Git operation.

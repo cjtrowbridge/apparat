@@ -33,13 +33,23 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.verticalScrolls = nil
 	game.divider = nil
 	game.clampSplitWidth()
+	title := snapshot.ActiveTab().Title()
+	bottomInset := diagnosticsHeight
+	if game.inWorkspace() {
+		i := game.selectedSections[hud.TabProjects] - 2
+		p := game.projects.rows[i]
+		title = p.Name + " · " + p.Branch
+		if !game.debugOverlayOpen {
+			bottomInset = windowMargin
+		}
+	}
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
 			widget.AnchorLayoutOpts.Padding(&widget.Insets{
 				Left:   windowMargin,
 				Right:  windowMargin,
 				Top:    tabTop,
-				Bottom: diagnosticsHeight,
+				Bottom: bottomInset,
 			}),
 		)),
 	)
@@ -81,7 +91,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		root.AddChild(strip)
 	}
 	shell.AddChild(widget.NewText(
-		widget.TextOpts.Text(snapshot.ActiveTab().Title(), game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
+		widget.TextOpts.Text(title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
 		widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth())),
 	))
 	body := game.buildActiveTabBody(snapshot)

@@ -147,3 +147,7 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 
 - `workspace_layout.go`: Keeps the active file's text input attached across layout rebuilds so its focus, caret and selection survive a window resize. The detail viewport retains its proportional scroll position within the same workspace view.
 - `workspace_layout_test.go`: Exercises the split and single-pane layouts with a selected draft and a conflict report, and checks that a different file starts with fresh presentation state.
+
+- `document.go`: Routes scoped edit sessions through the Android or Linux multiline editor, including draft persistence and explicit save.
+- `document_gtk.py`: Embedded GTK 4 text editor, using Python 3 with PyGObject on Linux. Exchanges document text over process pipes.
+- `workspace_screens.go`: Renders Files, Changes, Tasks and Chat and maps Back to each screen’s parent.

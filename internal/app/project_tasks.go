@@ -19,7 +19,7 @@ import (
 )
 
 type artifactRun struct {
-	Expires                         int64
+	Expires, Started                int64
 	Task, Path, Digest, State, MIME string
 	Definition, Revision, Reason    string
 	Size                            int
@@ -39,11 +39,10 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 				if run.Reason != "" {
 					label += " · " + run.Reason
 				}
-				if run.State == "completed" {
-					v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: row.ID, Label: label})
-				} else {
-					v.Report += "\n" + label
+				if run.Started > 0 {
+					label += " · " + time.Unix(run.Started, 0).Local().Format("Jan 2 15:04")
 				}
+				v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: row.ID, Label: label, State: run.State, Detail: run.Path + " " + run.Reason})
 			}
 		}
 		return v, err
@@ -128,8 +127,8 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 	var lines []string
 	for _, task := range tasks {
 		if task.Runnable() {
-			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: task.ID, Label: task.Label + " · " + task.ID})
-			lines = append(lines, task.ID+" · "+task.Action+" "+task.Path)
+			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: task.ID, Label: task.Label + " · " + task.ID, Detail: task.Action + " " + task.Path + " → local text artifact"})
+
 			if task.ID == q.Argument {
 				selected = task
 			}
@@ -139,7 +138,7 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 	}
 	if q.Action == "tasks" {
 		v.Report = strings.Join(lines, "\n")
-		if v.Report == "" {
+		if v.Report == "" && len(v.Choices) == 0 {
 			v.Report = "No configured entrypoints"
 		}
 		return v, nil
@@ -152,7 +151,7 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 	}
 	read.Path = selected.Path
 
-	run := artifactRun{Task: selected.ID, Path: selected.Path, State: "running", Definition: projectgit.Digest(config.Text)}
+	run := artifactRun{Started: time.Now().Unix(), Task: selected.ID, Path: selected.Path, State: "running", Definition: projectgit.Digest(config.Text)}
 	observed, observeErr := n.inspectProject(location)
 	if observeErr == nil {
 		run.Revision = observed.Revision

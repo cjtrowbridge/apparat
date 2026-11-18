@@ -18,3 +18,5 @@ Regression verification: compile this helper with `tests/UpdateTransferTest.java
 - `ApkHash.java`: Hashes update packages.
 
 - `WorkspaceDocuments.java`: Resolves relative document names beneath the registered tree, queries children, and provides bounded-scope file descriptors and document operations. The host must support the requested operation.
+
+- `DocumentEditor.java`: Full-window Android multiline text editing, IME, selection and explicit save.

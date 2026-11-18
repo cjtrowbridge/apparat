@@ -20,7 +20,7 @@ func TestWorkspaceResizePreservesPresentation(t *testing.T) {
 	g.projects.rows = []domain.Project{{ID: "p", Name: "workspace", Available: true}}
 	selectTabThroughStrip(t, g, hud.TabProjects)
 	w := &g.projects.workspace
-	*w = workspacePanel{id: "p", mode: "file", path: "sample.txt", lines: []string{"draft text"}, report: "Conflict: file changed"}
+	*w = workspacePanel{id: "p", mode: "inline", path: "sample.txt", lines: []string{"draft text"}, report: "Conflict: file changed"}
 	g.detailOpen[hud.TabProjects] = true
 	g.selectSection(hud.TabProjects, 2)
 	l := &w.layout

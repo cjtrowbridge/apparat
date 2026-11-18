@@ -1,0 +1,183 @@
+/*
+* Presents a full-window Android document with IME, selection handles and clipboard.
+* Scoped callbacks persist drafts and check the base before writing a checkout.
+*/
+package com.cjtrowbridge.apparat;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.view.View;
+import android.graphics.Typeface;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
+import android.view.Gravity;
+import android.view.WindowManager;
+import android.widget.*;
+import java.util.concurrent.CountDownLatch;
+import com.cjtrowbridge.apparat.apparatmobile.Editor;
+import com.cjtrowbridge.apparat.apparatmobile.EditorSession;
+
+public final class DocumentEditor implements Editor {
+    private final Activity activity;
+    private Dialog active;
+    private final java.util.Map<String,int[]> positions = new java.util.HashMap<>();
+    DocumentEditor(Activity activity) {
+        this.activity = activity;
+    }
+    public void close() {
+        if (active != null) active.dismiss();
+    }
+    @Override public String open(String title, String text, EditorSession session) {
+        CountDownLatch done = new CountDownLatch(1);
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                if (activity.isFinishing() || activity.isDestroyed()) {
+                    done.countDown();
+                    return;
+                }
+                Dialog dialog = new Dialog(activity, android.R.style.Theme_Material_NoActionBar);
+                active = dialog;
+                LinearLayout column = new LinearLayout(activity);
+                column.setOrientation(LinearLayout.VERTICAL);
+                LinearLayout bar = new LinearLayout(activity);
+                Button back = new Button(activity);
+                back.setText("Back");
+                back.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
+                bar.addView(back);
+                TextView name = new TextView(activity);
+                name.setText(title);
+                bar.addView(name, new LinearLayout.LayoutParams(0,-2,1));
+                Button undo = new Button(activity);
+                undo.setText("Undo");
+                bar.addView(undo);
+                Button save = new Button(activity);
+                save.setText("Save");
+                bar.addView(save);
+                column.addView(bar);
+                TextView status = new TextView(activity);
+                column.addView(status);
+                EditText body = new EditText(activity);
+                body.setGravity(Gravity.TOP | Gravity.START);
+                body.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+                body.setTypeface(Typeface.MONOSPACE);
+                body.setText(text);
+                body.setContentDescription("Document text");
+                undo.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        body.onTextContextMenuItem(android.R.id.undo);
+                    }
+                });
+                int[] position = positions.get(title);
+                if (position != null) {
+                    body.setSelection(Math.min(body.length(),position[0]),Math.min(body.length(),position[1]));
+                    body.post(new Runnable() {
+                        public void run() {
+                            body.scrollTo(0,position[2]);
+                        }
+                    });
+                }
+                column.addView(body, new LinearLayout.LayoutParams(-1,0,1));
+                body.addTextChangedListener(new TextWatcher() {
+                    public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
+                    public void onTextChanged(CharSequence s,int start,int before,int count) {}
+                    public void afterTextChanged(Editable value) {
+                        String error = session.apply("draft",value.toString());
+                        status.setText(error.isEmpty() ? "Draft saved on this device" : error);
+                    }
+                });
+                save.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        String draft = body.getText().toString();
+                        String reason = session.apply("save", draft);
+                        if (reason.isEmpty()) {
+                            dialog.dismiss();
+                            return;
+                        }
+                        status.setText(reason);
+                        new AlertDialog.Builder(activity).setTitle("Save needs attention").setMessage(reason)
+                        .setNegativeButton("Back",null).setPositiveButton("Review checkout",new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface a,int b) {
+                                String current = session.apply("compare",draft);
+                                new AlertDialog.Builder(activity).setTitle("Current checkout").setMessage(current)
+                                .setNegativeButton("Back",null).setPositiveButton("Keep my draft against this version",new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface x,int y) {
+                                        String error = session.apply("rebase",draft);
+                                        status.setText(error.isEmpty() ? "Draft retained. Review before saving." : error);
+                                    }
+                                }).show();
+                            }
+                        }).show();
+                    }
+                });
+                dialog.setContentView(column);
+                dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    public void onDismiss(DialogInterface d) {
+                        int[] bookmark = new int[3];
+                        bookmark[0] = Math.max(0,body.getSelectionStart());
+                        bookmark[1] = Math.max(0,body.getSelectionEnd());
+                        bookmark[2] = body.getScrollY();
+                        positions.put(title,bookmark);
+                        active = null;
+                        done.countDown();
+                    }
+                });
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                dialog.show();
+            }
+        });
+        try {
+            done.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "Editor interrupted";
+        }
+        return "";
+    }
+
+    @Override public String prompt(String title, String value) {
+        CountDownLatch done = new CountDownLatch(1);
+        String[] answer = new String[1];
+        answer[0] = "null";
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                if (activity.isFinishing() || activity.isDestroyed()) {
+                    done.countDown();
+                    return;
+                }
+                EditText input = new EditText(activity);
+                input.setText(value);
+                input.setSelection(input.length());
+                AlertDialog dialog = new AlertDialog.Builder(activity).setTitle(title).setView(input)
+                .setNegativeButton("Cancel",null).setPositiveButton("Done",new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface d,int w) {
+                        answer[0] = org.json.JSONObject.quote(input.getText().toString());
+                    }
+                }).create();
+                active = dialog;
+                dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    public void onDismiss(DialogInterface d) {
+                        active = null;
+                        done.countDown();
+                    }
+                });
+                dialog.create();
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                dialog.show();
+                input.requestFocus();
+            }
+        });
+        try {
+            done.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return answer[0];
+    }
+}

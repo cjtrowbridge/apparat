@@ -9,6 +9,7 @@ import (
 	_ "embed"
 	"fmt"
 	"image/color"
+	"strings"
 
 	"github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
@@ -187,4 +188,32 @@ func createScrollContainerImage() *widget.ScrollContainerImage {
 		Idle: image.NewNineSliceColor(color.RGBA{0, 0, 0, 0}),
 		Mask: image.NewNineSliceColor(color.RGBA{255, 255, 255, 255}),
 	}
+}
+
+func (g *Game) diffText(c *widget.Container, report string) {
+	var face ebitentext.Face = ebitentext.NewGoXFace(basicfont.Face7x13)
+	var block strings.Builder
+	var tint color.Color
+	flush := func() {
+		if block.Len() > 0 {
+			c.AddChild(widget.NewText(widget.TextOpts.Text(strings.TrimSuffix(block.String(), "\n"), &face, tint), widget.TextOpts.MaxWidth(float64(max(100, g.detailPanePreferredWidth()-48)))))
+			block.Reset()
+		}
+	}
+	for line := range strings.SplitSeq(report, "\n") {
+		var next color.Color = color.White
+		if strings.HasPrefix(line, "+") {
+			next = color.RGBA{133, 219, 164, 255}
+		}
+		if strings.HasPrefix(line, "-") {
+			next = color.RGBA{255, 158, 153, 255}
+		}
+		if next != tint {
+			flush()
+			tint = next
+		}
+		block.WriteString(line)
+		block.WriteByte('\n')
+	}
+	flush()
 }

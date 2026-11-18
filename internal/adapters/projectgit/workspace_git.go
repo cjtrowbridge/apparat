@@ -18,7 +18,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/filesystem"
-	"github.com/go-git/go-git/v5/utils/diff"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 func GitAction(location string, q domain.WorkspaceRequest) (string, error) {
@@ -49,6 +49,10 @@ func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, re
 		return "", err
 	}
 	switch q.Action {
+	case "changes":
+		return workspaceChanges(tree)
+	case "review":
+		return workspaceReview(repo, work, q.Path, read)
 	case "history", "commit-detail":
 		return gitHistory(repo, q)
 	case "branches":
@@ -138,7 +142,7 @@ func GitOnFilesystems(meta, work billy.Filesystem, q domain.WorkspaceRequest, re
 				continue
 			}
 			if path != q.Path {
-				return "", errors.New("another file is staged; commit it separately or unstage it first")
+				return "", fmt.Errorf("%s is also staged; review Changes and unstage it before committing %s", path, q.Path)
 			}
 			staged = true
 		}
@@ -224,22 +228,5 @@ func gitDiff(repo *git.Repository, path, current string) (string, error) {
 	} else if !errors.Is(err, plumbing.ErrReferenceNotFound) {
 		return "", err
 	}
-	var out strings.Builder
-	for _, change := range diff.DoWithTimeout(original, current, time.Second) {
-		prefix := " "
-		switch change.Type {
-		case -1:
-			prefix = "-"
-		case 1:
-			prefix = "+"
-		}
-		for line := range strings.SplitAfterSeq(change.Text, "\n") {
-			out.WriteString(prefix)
-			out.WriteString(line)
-			if !strings.HasSuffix(line, "\n") {
-				out.WriteByte('\n')
-			}
-		}
-	}
-	return out.String(), nil
+	return difflib.GetUnifiedDiffString(difflib.UnifiedDiff{A: difflib.SplitLines(original), B: difflib.SplitLines(current), FromFile: path, ToFile: path, Context: 3})
 }

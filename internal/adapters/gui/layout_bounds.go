@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"github.com/cjtrowbridge/apparat/internal/hud"
 	"image"
 	"image/color"
 	"strings"
@@ -248,4 +249,19 @@ func (game *Game) pttCenter() (int, int) {
 		y -= tabHeight + bodyGap
 	}
 	return x, y
+}
+
+func (game *Game) detailSections(tabData hud.Tab) []hud.Section {
+	if len(tabData.Sections) == 0 {
+		return nil
+	}
+	index := game.selectedSectionIndex(tabData)
+	if index < 0 {
+		return nil
+	}
+	return []hud.Section{tabData.Sections[index]}
+}
+
+func (game *Game) collapsed() bool {
+	return game.contentWidth() < collapsedWidth
 }

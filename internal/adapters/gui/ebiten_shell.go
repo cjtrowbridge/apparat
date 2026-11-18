@@ -6,7 +6,6 @@ package gui
 
 import (
 	"context"
-	"fmt"
 	"image/color"
 	"sync/atomic"
 
@@ -53,6 +52,8 @@ type Game struct {
 	shell                          hud.Shell
 	runContext                     context.Context
 	gesture                        pointerGesture
+	workspaceBackEnabled           atomic.Bool
+	workspaceBackRequested         atomic.Bool
 	cancelInputRequested           atomic.Bool
 	serviceUpdates                 <-chan ServiceProjection
 	serviceProjection              ServiceProjection
@@ -185,6 +186,10 @@ func (game *Game) Update() error {
 	}
 	game.receivePreferences()
 	game.pollProjects()
+	game.workspaceBackEnabled.Store(game.inWorkspace())
+	if game.workspaceBackRequested.Swap(false) {
+		game.workspaceBack()
+	}
 	game.trackWindow()
 	game.receiveServices()
 	if game.layoutDirty && game.gesture.Owner == gestureNone {
@@ -324,26 +329,15 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	if game.arcadeDraw(screen) {
 		return
 	}
-	game.drawPTTButton(screen)
+	if !game.inWorkspace() {
+		game.drawPTTButton(screen)
+	}
 	if game.debugOverlayOpen {
 		game.drawDebugOverlay(screen)
 	}
-	snapshot := game.shell.Snapshot()
-	drawDiagnostics(screen, snapshot, game.height)
-}
-
-func drawDiagnostics(screen *ebiten.Image, snapshot hud.Snapshot, height int) {
-	y := height - diagnosticsHeight + 6
-	if screen.Bounds().Dx() < collapsedWidth {
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("voice=%s input=%s", snapshot.VoiceState, snapshot.Diagnostics.Input), windowMargin, y)
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("tab=%s theme=%s", snapshot.ActiveTab().ID(), snapshot.Config.Display.Theme), windowMargin, y+18)
-		ebitenutil.DebugPrintAt(screen, "Swipe tabs | Hold PTT | Ctrl+PgUp/PgDn", windowMargin, y+36)
-		return
+	if game.debugOverlayOpen || !game.inWorkspace() {
+		drawDiagnostics(screen, game.shell.Snapshot(), game.height)
 	}
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("voice=%s route=%s input=%s", snapshot.VoiceState, snapshot.Diagnostics.ActiveRoute, snapshot.Diagnostics.Input), windowMargin, y)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("config tabPlacement=%s theme=%s scale=%.1f", snapshot.Config.TabView.Placement, snapshot.Config.Display.Theme, snapshot.Config.Display.Scale), windowMargin, y+18)
-	ebitenutil.DebugPrintAt(screen, "L1/R1 or Ctrl+PageUp/PageDown switch tabs • R2/right Ctrl push-to-talk", windowMargin, y+36)
-	_ = mutedTextColor
 }
 
 func (game *Game) drawPTTButton(screen *ebiten.Image) {
@@ -358,6 +352,9 @@ func (game *Game) drawPTTButton(screen *ebiten.Image) {
 }
 
 func (game *Game) pointInPTT(x int, y int) bool {
+	if game.inWorkspace() {
+		return false
+	}
 	cx, cy := game.pttCenter()
 	dx, dy := x-cx, y-cy
 	return dx*dx+dy*dy <= pttRadius*pttRadius

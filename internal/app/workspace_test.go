@@ -187,7 +187,8 @@ func TestWorkspaceFileAndArtifactProtection(t *testing.T) {
 	q.ID = newID()
 	q.Argument = "missing"
 	fail("run")
-	if !strings.Contains(call("runs").Report, "failed") {
+	history := call("runs")
+	if len(history.Choices) != 1 || history.Choices[0].State != "failed" {
 		t.Fatal("failure absent from run history")
 	}
 	q.ID = newID()

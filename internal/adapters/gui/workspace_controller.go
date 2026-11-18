@@ -26,16 +26,7 @@ func (g *Game) projectPad(id ebiten.GamepadID) {
 	}
 	activate := inpututil.IsStandardGamepadButtonJustPressed(id, ebiten.StandardGamepadButtonRightBottom)
 	if inpututil.IsStandardGamepadButtonJustPressed(id, ebiten.StandardGamepadButtonRightRight) {
-		w := &g.projects.workspace
-		if w.id != "" && w.mode != "menu" {
-			w.mode = "menu"
-			g.layoutDirty = true
-		} else if w.id != "" {
-			*w = workspacePanel{}
-			g.layoutDirty = true
-		} else if g.collapsed() {
-			g.showList(hud.TabProjects)
-		}
+		g.workspaceBack()
 		return
 	}
 	if dir != 0 || activate {

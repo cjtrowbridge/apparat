@@ -16,3 +16,5 @@ Android safe-area color comes from the GUI renderer through `BackgroundARGB` in 
 
 - `workspace.go`: Opens, lists and updates bounded text documents under an existing persisted grant and supplies the tree to the Git adapter. A failed provider replacement retains the previous document or identifies its recovery file.
 - `workspace_fs.go`: Adapts Android document operations and seekable file descriptors to go-git's filesystem interface. Provider errors propagate to the selected project.
+
+- `document.go`: Binds the Android document editor to the selected file and draft session.

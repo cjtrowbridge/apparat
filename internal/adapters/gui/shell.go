@@ -8,7 +8,14 @@ type Adapter struct {
 	shell hud.Shell
 }
 
+type DocumentSession interface {
+	Apply(action, text string) string
+}
 type RuntimeInfo struct {
+	PromptValue    func(string, string) (string, bool)
+	DocumentEditor interface {
+		EditDocument(string, string, DocumentSession) error
+	}
 	ProjectPicker interface{ ChooseFolder() string }
 	WorkingDir    string
 	RuntimePath   string

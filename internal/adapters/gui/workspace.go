@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
-	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
 )
 
@@ -28,6 +27,11 @@ type workspacePanel struct {
 	thread                                       string
 	choices                                      []domain.WorkspaceChoice
 	choiceAction                                 string
+	selected                                     domain.WorkspaceChoice
+	attachment, attachmentLabel, message         string
+	autoEdit                                     bool
+	change                                       domain.WorkspaceChange
+	changes                                      []domain.WorkspaceChange
 	id, dir, path, base, report, argument, runID string
 	mode, confirmation                           string
 	entries                                      []domain.WorkspaceEntry
@@ -48,7 +52,7 @@ func (g *Game) workspaceRequest(action string) {
 	q := domain.WorkspaceRequest{Approved: action == "run", ProjectID: w.id, Action: action, Path: file, Base: w.base, Thread: w.thread, Text: strings.Join(w.lines, "\n"), Argument: w.argument}
 	if action == "post-with-run" {
 		q.Action = "post"
-		q.RelatedRun = w.runID
+		q.RelatedRun = w.attachment
 	}
 	switch action {
 	case "list":
@@ -87,6 +91,7 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		return
 	}
 	if r.err != nil {
+		w.autoEdit = false
 		w.report = r.err.Error()
 		return
 	}
@@ -100,138 +105,50 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.mode = "file"
 	}
 	switch q.Action {
-	case "threads":
-		w.choices = v.Choices
-	case "artifact":
-		w.runID = q.ID
-	case "tasks", "runs":
-		w.choices = v.Choices
-		w.choiceAction = "run"
-		if q.Action == "runs" {
-			w.choiceAction = "artifact"
+	case "changes":
+		w.changes = v.Changes
+	case "review":
+		w.base = v.Base
+	case "read", "create":
+		if w.autoEdit && v.Editing {
+			w.autoEdit = false
+			g.editDocument()
 		}
+	case "stage", "stage-deletion", "unstage", "commit", "switch", "resolve", "delete":
+		g.workspaceGo("changes", "changes")
+	case "threads", "tasks", "runs":
+		w.choices = v.Choices
+	case "post":
+		w.argument = ""
+		w.message = ""
+		w.attachment = ""
+	case "artifact":
+		w.mode = "output"
+		w.runID = q.ID
+	case "delete-artifact":
+		g.workspaceGo("runs", "runs")
 	case "list":
 		w.entries = v.Entries
 		w.mode = "files"
 		w.path = ""
 		w.lines = nil
-	case "delete":
-		w.mode = "git"
-		w.base = "deleted"
-		w.lines = nil
-		w.report = "File deleted from the checkout. Stage its deletion to include it in a commit."
 	case "move", "mkdir":
 		w.dir = path.Dir(q.Path)
 		g.workspaceRequest("list")
 	case "run":
 		w.runID = q.ID
 		w.argument = q.ID
-		w.choices = []domain.WorkspaceChoice{{ID: q.ID, Label: "Open verified artifact"}}
-		w.choiceAction = "artifact"
+		w.selected.State = "completed"
+		w.selected.Detail = ""
+		w.mode = "result"
 	}
 }
 func (g *Game) workspaceControlsFor(c *widget.Container, id string) bool {
 	w := &g.projects.workspace
-	if w.id != id {
-		g.projectButton(c, "Open workspace", func() {
-			*w = workspacePanel{id: id, dir: ".", mode: "files"}
-			g.detailOpen[hud.TabProjects] = true
-			g.workspaceRequest("list")
-		})
+	if w.id != id || w.mode == "registration" {
 		return false
 	}
-	if w.mode == "menu" {
-		g.projectButton(c, "Registration details", func() {
-			*w = workspacePanel{}
-			g.layoutDirty = true
-		})
-		for _, mode := range []string{"Files", "Git", "Tasks", "Chat"} {
-			g.projectButton(c, mode, func() {
-				w.mode = strings.ToLower(mode)
-				w.argument = ""
-				w.choices = nil
-				w.report = ""
-				w.confirmation = ""
-				switch mode {
-				case "Files":
-					g.workspaceRequest("list")
-				case "Git":
-					g.workspaceRequest("status")
-				case "Tasks":
-					g.workspaceRequest("tasks")
-				case "Chat":
-					if w.thread == "" {
-						w.thread = "General"
-					}
-					g.workspaceRequest("chat")
-				}
-			})
-		}
-		return true
-	}
-	g.projectButton(c, "Workspace menu", func() {
-		w.mode = "menu"
-		g.layoutDirty = true
-	})
-	if w.report != "" {
-		c.AddChild(g.detailText(w.report))
-	}
-	switch w.mode {
-	case "files":
-		g.workspaceBrowser(c, w)
-	case "file":
-		g.workspaceEditor(c, w)
-	case "git":
-		g.projectField(c, "Branch, commit ID or commit message", &w.argument)
-		g.workspaceActions(c, "Status", "status", "History", "history", "Commit detail", "commit-detail", "Transactions", "transactions", "Branches", "branches", "Switch branch", "switch")
-		if w.path != "" {
-			c.AddChild(g.detailText(w.path))
-			if w.base == "deleted" {
-				g.workspaceActions(c, "Stage deletion", "stage-deletion", "Unstage deletion", "unstage", "Commit staged deletion", "commit")
-			} else {
-				g.workspaceActions(c, "Diff against HEAD", "diff", "Stage file", "stage", "Unstage file", "unstage", "Commit staged file", "commit")
-			}
-		}
-	case "tasks":
-		for _, item := range w.choices {
-			label := item.Label
-			if w.choiceAction == "run" {
-				label = "Run " + label
-				if w.confirmation == item.ID {
-					label = "Confirm " + label
-				}
-			}
-			g.projectButton(c, label, func() {
-				if w.choiceAction == "run" && w.confirmation != item.ID {
-					w.confirmation = item.ID
-					g.layoutDirty = true
-					return
-				}
-				w.argument = item.ID
-				g.workspaceRequest(w.choiceAction)
-			})
-		}
-		g.workspaceActions(c, "List Tasks", "tasks", "Run history", "runs")
-		if w.runID != "" {
-			g.workspaceActions(c, "Delete opened artifact", "delete-artifact")
-		}
-
-	case "chat":
-		g.projectField(c, "Thread title", &w.thread)
-		g.workspaceActions(c, "Browse threads", "threads", "Open thread", "chat")
-		for _, thread := range w.choices {
-			g.projectButton(c, thread.Label, func() {
-				w.thread = thread.ID
-				w.choices = nil
-				g.workspaceRequest("chat")
-			})
-		}
-		g.projectField(c, "Project message", &w.argument)
-		g.workspaceActions(c, "Save pending message", "post", "Message history", "chat")
-		if w.runID != "" {
-			g.workspaceActions(c, "Save message with last run", "post-with-run")
-		}
-	}
+	g.workspaceScreen(c, w)
 	return true
 }
 func (g *Game) workspaceActions(c *widget.Container, labels ...string) {
@@ -280,6 +197,7 @@ func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
 				w.path = dest
 				w.base = ""
 				w.line = 0
+				w.autoEdit = true
 				g.workspaceRequest("read")
 			}
 		})
@@ -296,14 +214,13 @@ func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
 			g.layoutDirty = true
 		})
 	}
-	g.projectField(c, "New name", &w.argument)
-	g.workspaceActions(c, "Create empty text file", "create", "Create folder", "mkdir")
+
 }
 func (g *Game) workspaceEditor(c *widget.Container, w *workspacePanel) {
 	c.AddChild(g.detailText(w.path))
 	id, file, line := w.id, w.path, w.line
 	g.workspaceLineInput(c, w, func(text string) {
-		if w.id != id || w.path != file || w.mode != "file" || w.line != line || w.lines[line] == text {
+		if w.id != id || w.path != file || w.mode != "inline" || w.line != line || w.lines[line] == text {
 			return
 		}
 		w.lines[line] = text
@@ -338,9 +255,7 @@ func (g *Game) workspaceEditor(c *widget.Container, w *workspacePanel) {
 		g.keepEditingDraft(w)
 		g.layoutDirty = true
 	})
-	g.workspaceActions(c, "Keep draft", "draft", "Apply draft to file", "save", "Compare checkout text", "compare", "Use current file as base", "rebase", "Discard saved draft", "discard", "Inspect Git conflict", "conflict", "Resolve with saved file", "resolve", "Diff against HEAD", "diff", "Stage file", "stage", "Unstage file", "unstage")
-	g.projectField(c, "Commit message or destination path", &w.argument)
-	g.workspaceActions(c, "Commit staged file", "commit", "Move file", "move", "Delete file", "delete")
+	g.workspaceActions(c, "Save", "save")
 	c.AddChild(g.detailText(strings.Join(w.lines, "\n")))
 }
 

@@ -840,7 +840,9 @@ Tab placement in Settings cycles through Top, Bottom, Left, Right and Responsive
 
 ### Using the local project workspace
 
-In Projects, select a registered checkout and choose **Open workspace**. Browse into a folder or open a UTF-8 text file up to 64 KiB. Edit one line at a time and use **Apply draft to file** to write the checkout. Line edits are saved as local drafts. If another editor changes the file, compare the checkout text and explicitly select the current file as the draft base before retrying. Use **Workspace menu** for Git status, history, branches, pending project messages and manual Tasks. Apparat commits the selected staged file with the local identity `Apparat <apparat@localhost>` and asks you to address other staged files first.
+Tap a registered checkout to open Files. Select a UTF-8 file up to 64 KiB to edit it in the Android document editor or the Linux GTK 4 editor (Python 3 with PyGObject and GTK 4). Changes are kept as local drafts. Save writes the reviewed file on this device. A conflicting save preserves the draft and offers a comparison. The file options also include a fallback line editor.
+
+Changes lists staged and unstaged files. Select a path to review its diff, stage the intended file, and commit it with the local identity `Apparat <apparat@localhost>`. Tasks shows manual entrypoints and run history. Chat groups pending local messages by conversation.
 
 For a local Task, place a versioned declaration in `.apparat/tasks.json`. For example:
 
@@ -848,4 +850,4 @@ For a local Task, place a versioned declaration in `.apparat/tasks.json`. For ex
 {"version":1,"tasks":[{"id":"readme","label":"Snapshot README","enabled":true,"action":"snapshot-text","path":"README.md"}]}
 ```
 
-Select **Tasks**, choose the named entrypoint and confirm the run. The snapshot copies the named text file into local artifact storage and records its SHA-256 digest. Open a run's artifact to verify the stored bytes after restart. VS Code shell commands remain descriptive labels. The built-in `git-status` action captures the current checkout status as a text artifact. Tasks run with a 15-second default deadline, a maximum 60-second configured deadline and explicit confirmation. Unsupported actions and secret-dependent definitions cannot run on this executor. Artifacts are retained until explicit deletion or an optional `retainSeconds` deadline. Pending chat messages are grouped by project thread and can reference the last opened run and artifact.
+Select **Tasks**, open the named entrypoint, review its input and choose **Run**. The snapshot copies the named text file into local artifact storage and records its SHA-256 digest. Open a run's artifact to verify the stored bytes after restart. VS Code shell commands remain descriptive labels. The built-in `git-status` action captures the current checkout status as a text artifact. Tasks run with a 15-second default deadline, a maximum 60-second configured deadline and explicit confirmation. Unsupported actions and secret-dependent definitions cannot run on this executor. Artifacts are retained until explicit deletion or an optional `retainSeconds` deadline. Pending chat messages are grouped by project thread and can reference the last opened run and artifact.

@@ -68,15 +68,22 @@ func fallback(value string, replacement string) string {
 	return filepath.Clean(value)
 }
 
-func (game *Game) collapsed() bool {
-	return game.contentWidth() < collapsedWidth
-}
-
 func (game *Game) selectSection(tabID hud.TabID, index int) {
 	for _, tabData := range game.shell.Snapshot().Tabs {
 		tabData = game.presentedTab(tabData)
 		if tabData.ID() == tabID && !tabData.IsSelectableSection(index) {
 			return
+		}
+	}
+	if tabID == hud.TabProjects && index >= 2 && index-2 < len(game.projects.rows) {
+		if game.projects.pending != nil {
+			return
+		}
+		p := game.projects.rows[index-2]
+		if p.Available && game.projects.workspace.id != p.ID {
+			game.projects.workspace = workspacePanel{id: p.ID, dir: ".", mode: "files"}
+			game.detailOpen[tabID] = true
+			game.workspaceRequest("list")
 		}
 	}
 	game.selectedSections[tabID] = index
@@ -375,4 +382,18 @@ func clamp(value int, low int, high int) int {
 		return high
 	}
 	return value
+}
+
+func drawDiagnostics(screen *ebiten.Image, snapshot hud.Snapshot, height int) {
+	y := height - diagnosticsHeight + 6
+	if screen.Bounds().Dx() < collapsedWidth {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("voice=%s input=%s", snapshot.VoiceState, snapshot.Diagnostics.Input), windowMargin, y)
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("tab=%s theme=%s", snapshot.ActiveTab().ID(), snapshot.Config.Display.Theme), windowMargin, y+18)
+		ebitenutil.DebugPrintAt(screen, "Swipe tabs | Hold PTT | Ctrl+PgUp/PgDn", windowMargin, y+36)
+		return
+	}
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("voice=%s route=%s input=%s", snapshot.VoiceState, snapshot.Diagnostics.ActiveRoute, snapshot.Diagnostics.Input), windowMargin, y)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("config tabPlacement=%s theme=%s scale=%.1f", snapshot.Config.TabView.Placement, snapshot.Config.Display.Theme, snapshot.Config.Display.Scale), windowMargin, y+18)
+	ebitenutil.DebugPrintAt(screen, "L1/R1 or Ctrl+PageUp/PageDown switch tabs • R2/right Ctrl push-to-talk", windowMargin, y+36)
+	_ = mutedTextColor
 }

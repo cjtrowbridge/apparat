@@ -49,11 +49,13 @@ func init() {
 	binaryPath, _ := os.Executable()
 	workingDir, _ := os.Getwd()
 	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
-		ProjectPicker: projectDocuments{},
-		WorkingDir:    workingDir,
-		RuntimePath:   cfg.RootDir,
-		BinaryPath:    binaryPath,
-		Queries:       runtime,
+		ProjectPicker:  projectDocuments{},
+		DocumentEditor: projectDocuments{},
+		PromptValue:    promptValue,
+		WorkingDir:     workingDir,
+		RuntimePath:    cfg.RootDir,
+		BinaryPath:     binaryPath,
+		Queries:        runtime,
 	})
 	game.SetOnCheckForUpdate(func() bool {
 		bridgeMu.Lock()
@@ -122,4 +124,14 @@ func ArcadeBack() {
 	if game != nil {
 		game.ArcadeBack()
 	}
+}
+
+func WorkspaceBack() {
+	if game != nil {
+		game.RequestWorkspaceBack()
+	}
+}
+
+func WorkspaceBackAvailable() bool {
+	return game != nil && game.WorkspaceBackAvailable()
 }

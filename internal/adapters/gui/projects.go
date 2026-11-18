@@ -32,6 +32,7 @@ type projectStore interface {
 	SetProjectDefault(context.Context, string) error
 }
 type projectResult struct {
+	applyField                      func()
 	workspace                       *workspaceReply
 	rows                            []domain.Project
 	folder, message, defaultAccount string
@@ -117,6 +118,9 @@ func (g *Game) pollProjects() {
 	case r := <-f.pending:
 		f.pending = nil
 		f.message = r.message
+		if r.applyField != nil {
+			r.applyField()
+		}
 		if r.workspace != nil {
 			g.applyWorkspace(r.workspace)
 		}
@@ -167,11 +171,6 @@ func (g *Game) projectButton(c *widget.Container, label string, click func()) {
 			}
 		})))
 }
-func (g *Game) projectField(c *widget.Container, label string, value *string) {
-	g.projectInput(c, label, *value, func(text string) {
-		*value = text
-	})
-}
 func (g *Game) projectInput(c *widget.Container, label, initial string, changed func(string)) {
 	c.AddChild(g.detailText(label))
 	c.AddChild(g.newProjectInput(initial, changed))
@@ -191,6 +190,10 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 	}
 	if f.message != "" {
 		c.AddChild(g.detailText(g.projectText(f.message)))
+	}
+	if s.ProjectID != "" && f.workspace.id == s.ProjectID && f.workspace.mode != "registration" {
+		g.workspaceControlsFor(c, s.ProjectID)
+		return
 	}
 	if f.pending != nil {
 		c.AddChild(g.detailText("Working…"))

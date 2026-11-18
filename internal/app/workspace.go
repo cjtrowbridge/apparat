@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -85,10 +86,14 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 				return v, err
 			}
 			if q.Action == "compare" {
+				v.ComparedBase = v.Base
 				v.Report = "Current checkout contents\n" + v.Text
 				v.Text = q.Text
 				v.Base = q.Base
 				return v, nil
+			}
+			if q.Argument != "" && q.Argument != v.Base {
+				return v, errors.New("checkout changed again; review the latest version")
 			}
 			q.Base = v.Base
 		}
@@ -114,6 +119,18 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 			err = n.database.ClearDraft(ctx, q.ProjectID, q.Path)
 		}
 		return v, err
+	case "review", "changes":
+		var raw string
+		if strings.HasPrefix(location, "content://") {
+			file, e := n.workspaceFile(location, q)
+			raw, err = file.Report, e
+		} else {
+			raw, err = projectgit.GitAction(location, q)
+		}
+		if err == nil {
+			err = json.Unmarshal([]byte(raw), &v)
+		}
+		return v, err
 	case "transactions":
 		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, "save")
 		return v, err
@@ -133,7 +150,7 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 			if strings.TrimSpace(q.Argument) == "" || !domain.ValidID(q.ID) {
 				return v, errors.New("enter a message")
 			}
-			body := "Pending · " + q.Argument
+			body := "Pending on this device · " + q.Argument
 			if q.RelatedRun != "" {
 				runKind, _, lookup := n.database.ProjectEntry(ctx, q.ProjectID, q.RelatedRun)
 				if lookup != nil || runKind != "run" {
@@ -146,7 +163,11 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 				return v, err
 			}
 		}
-		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, kind)
+		messages, readErr := n.database.RecentEntries(ctx, q.ProjectID, kind)
+		err = readErr
+		for i := len(messages) - 1; i >= 0; i-- {
+			v.Report += messages[i].Label + "\n"
+		}
 		if v.Report == "" {
 			v.Report = "No pending project messages"
 		}

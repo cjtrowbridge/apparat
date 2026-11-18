@@ -1671,6 +1671,14 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Recover an offline draft and pending project chat after restart. Change a file outside Apparat, recover the conflicted transaction, revise it and retry without duplicate effects.
 - [x] Run an enabled project entrypoint with no trigger, inspect its result, restart and reopen its verified artifact. An unsupported task gives a specific reason. Save the workflows and results as the Phase 11A baseline.
 
+### Usability acceptance before cluster work
+
+- [x] Open a registered checkout in one tap. Browse files, Changes, Tasks and Chat through labeled destinations, with contextual Back on compact screens and list/detail on wide screens.
+- [ ] Edit a whole document with multiline selection, paste, undo, durable drafts and one explicit Save. Review conflicts before overwrite. Check Android keyboard insets and resize behavior.
+- [x] Review changed paths and staging state, inspect a diff, and commit only the reviewed file. Select history entries and branches directly. Keep registration and destructive operations contextual.
+- [x] Open a Task, inspect its inputs, run it, and revisit its output after restart. Post pending messages in a named conversation and attach a named run.
+- [ ] Repeat offline on Pixel 4a and Linux with two checkouts and competing changes. Capture compact and wide layouts. Separately observe an uncoached first-use session before claiming discoverability.
+
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
 
 **User outcome:** Create a cluster on Linux, discover and join it from the Pixel 4a, and recognize the same members after restart or an address change.

@@ -181,7 +181,7 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		)),
 	)
 	selected := game.selectedSectionIndex(tabData)
-	if withBack && selected >= 0 {
+	if withBack && selected >= 0 && !(tabData.ID() == hud.TabProjects && game.projects.workspace.id != "" && tabData.Sections[selected].ProjectID == game.projects.workspace.id && game.projects.workspace.mode != "registration") {
 		detailContainer.AddChild(game.backButton(tabData.ID()))
 	}
 	if selected >= 0 && tabData.Summary != "" {
@@ -236,6 +236,10 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 		)),
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 	)
+	if section.ProjectID != "" && game.projects.workspace.id == section.ProjectID && game.projects.workspace.mode != "registration" {
+		game.projectControls(sectionContainer, section)
+		return sectionContainer
+	}
 	sectionContainer.AddChild(game.detailText(strings.ToUpper(section.Title)))
 	if section.Description != "" {
 		sectionContainer.AddChild(game.detailText(section.Description))
@@ -384,15 +388,4 @@ func (game *Game) selectedSectionIndex(tabData hud.Tab) int {
 		return -1
 	}
 	return index
-}
-
-func (game *Game) detailSections(tabData hud.Tab) []hud.Section {
-	if len(tabData.Sections) == 0 {
-		return nil
-	}
-	index := game.selectedSectionIndex(tabData)
-	if index < 0 {
-		return nil
-	}
-	return []hud.Section{tabData.Sections[index]}
 }

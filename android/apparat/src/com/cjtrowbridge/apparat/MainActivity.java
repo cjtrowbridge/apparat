@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
     private static final String APK_MIME_TYPE = "application/vnd.android.package-archive";
     private EbitenView view;
     private ProjectDocuments documents;
+    private DocumentEditor editor;
     private File downloadedUpdate;
     private final AtomicBoolean checking = new AtomicBoolean();
     private volatile boolean destroyed;
@@ -92,6 +93,8 @@ public class MainActivity extends Activity {
             });
         }
         setContentView(content);
+        editor = new DocumentEditor(this);
+        Apparatmobile.registerEditor(editor);
         documents = new ProjectDocuments(this);
         Apparatmobile.registerDocuments(documents);
         if (Build.VERSION.SDK_INT >= 30) {
@@ -131,6 +134,10 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if ("projects".equals(Apparatmobile.activeTab()) && Apparatmobile.workspaceBackAvailable()) {
+            Apparatmobile.workspaceBack();
+            return;
+        }
         if ("stmpck".equals(Apparatmobile.activeTab())) {
             Apparatmobile.arcadeBack();
             return;
@@ -162,6 +169,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         destroyed = true;
+        Apparatmobile.registerEditor(null);
+        if (editor != null) editor.close();
         HttpURLConnection connection = activeConnection;
         if (connection != null) {
             connection.disconnect();

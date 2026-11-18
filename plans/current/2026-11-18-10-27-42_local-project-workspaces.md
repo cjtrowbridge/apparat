@@ -27,3 +27,10 @@ Use the canonical all-target pipeline and disposable checkouts. On Linux and Pix
 
 - [x] Exercise a real editor selection and scrolled detail pane across window resizes, including the single-pane breakpoint. Preserve the active file, draft and conflict report.
 - [?] Physical Steam Deck controller acceptance is outstanding. The device workflow and independent checkout evidence are recorded in the [platform matrix](../../docs/platform-matrix.md#phase-9a-offline-local-workspace).
+
+## Workspace usability pass
+
+- [x] Implement a multiline document editor and keep storage scope, durable drafts and conflict checks.
+- [x] Make repository selection open Files directly, with Changes, Tasks, Chat and contextual details.
+- [x] Replace command forms with changed file, commit, branch, run, artifact and conversation views.
+- [ ] Verify actual editing, scoped commits, Task output recovery, pending chat and adaptive navigation. Record independent first-use and physical hardware evidence separately.

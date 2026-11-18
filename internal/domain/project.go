@@ -19,12 +19,17 @@ type WorkspaceEntry struct {
 	Name      string
 	Directory bool
 }
-type WorkspaceChoice struct{ ID, Label string }
+type WorkspaceChoice struct{ ID, Label, Detail, State string }
+type WorkspaceChange struct {
+	Path                       string
+	Staged, Unstaged, Conflict bool
+}
 type WorkspaceView struct {
-	Choices            []WorkspaceChoice
-	Entries            []WorkspaceEntry
-	Text, Base, Report string
-	Editing            bool
+	Changes                          []WorkspaceChange
+	Choices                          []WorkspaceChoice
+	Entries                          []WorkspaceEntry
+	Text, Base, Report, ComparedBase string
+	Editing                          bool
 }
 
 const WorkspaceTextLimit = 64 * 1024
