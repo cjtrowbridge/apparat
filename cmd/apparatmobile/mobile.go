@@ -36,6 +36,8 @@ func init() {
 	}
 	runtime.SetDrivers(mockprovider.Drivers())
 	node = runtime
+	nodeCache = cfg.CacheDir
+	node.SetProjectDocuments(projectDocuments{})
 	{
 		err := runtime.Initialize(context.Background())
 		if err != nil {
@@ -47,10 +49,11 @@ func init() {
 	binaryPath, _ := os.Executable()
 	workingDir, _ := os.Getwd()
 	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
-		WorkingDir:  workingDir,
-		RuntimePath: cfg.RootDir,
-		BinaryPath:  binaryPath,
-		Queries:     runtime,
+		ProjectPicker: projectDocuments{},
+		WorkingDir:    workingDir,
+		RuntimePath:   cfg.RootDir,
+		BinaryPath:    binaryPath,
+		Queries:       runtime,
 	})
 	game.SetOnCheckForUpdate(func() bool {
 		bridgeMu.Lock()

@@ -10,6 +10,10 @@ import (
 )
 
 func (game *Game) Close() {
+	if game.projects.close != nil {
+		game.projects.close()
+		game.projects.workers.Wait()
+	}
 	game.flushPlacement()
 	if game.cancelQueries != nil {
 		game.cancelQueries()
@@ -42,6 +46,9 @@ func (game *Game) liveServicesSection() hud.Section {
 }
 
 func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
+	if tab.ID() == hud.TabProjects && game.projects.store != nil {
+		return game.projectTab(tab)
+	}
 	if tab.ID() == hud.TabCluster && game.runtimeInfo.Queries != nil {
 		tab.Summary = "Local services are live mock drivers. Devices, routing pools and tasks remain demonstrations."
 		tab.Sections = append([]hud.Section{game.liveServicesSection()}, tab.Sections...)

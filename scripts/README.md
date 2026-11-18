@@ -162,3 +162,5 @@ Host formatting is scoped to `cmd/` and `internal/`; `make fmt` must not format 
 Linux GUI artifact acceptance opens STMPCK with Alt+5, starts Merge, makes moves and checks the isolated save for undo history. Gallery and board screenshots accompany each run.
 
 Linux GUI qualification also drags the Projects divider across two pointer updates and checks that both the held and released frames reflect the new position.
+
+Projects artifact acceptance checks the selected hammer tab on the published GUI and APK. Registry lifecycle tests independently verify real checkout rows and action markers.

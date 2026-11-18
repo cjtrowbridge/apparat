@@ -31,3 +31,6 @@ Every initialized runtime must create or replace `last_run.log` at `config.LastR
 - `services_unit_test.go`: Tests service orchestration without SQLite, networking, GUI or real clocks.
 
 - `preferences.go`: Exposes typed local preference queries and save commands on the owning runtime.
+
+- `projects.go`: registers and reopens local project checkouts, with per-repo account references and device-local defaults.
+- `projects_test.go`: Exercises registry idempotency, reopening, external edits, reconnection and preservation on removal. Set APPARAT_TEST_PHASE9_GITHUB=1 only when authorized to test the two real example repositories.

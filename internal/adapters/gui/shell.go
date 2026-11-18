@@ -9,10 +9,11 @@ type Adapter struct {
 }
 
 type RuntimeInfo struct {
-	WorkingDir  string
-	RuntimePath string
-	BinaryPath  string
-	Queries     ServiceQueries
+	ProjectPicker interface{ ChooseFolder() string }
+	WorkingDir    string
+	RuntimePath   string
+	BinaryPath    string
+	Queries       ServiceQueries
 }
 
 func NewAdapter() Adapter {

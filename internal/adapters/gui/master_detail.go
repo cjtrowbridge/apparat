@@ -221,6 +221,10 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	for _, detail := range section.DetailSections {
 		sectionContainer.AddChild(game.buildSectionContainer(detail))
 	}
+	if section.ProjectID != "" || section.ContentKind == "project-form" {
+		game.projectControls(sectionContainer, section)
+		return sectionContainer
+	}
 	switch section.ContentKind {
 	case hud.ContentChat:
 		sectionContainer.AddChild(game.chatComposer())

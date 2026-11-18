@@ -12,3 +12,4 @@ The Android wrapper activity owns the Java view lifecycle. This package owns onl
 - `mobile.go`: Exposes the Android game and updater bridge.
 
 Android safe-area color comes from the GUI renderer through `BackgroundARGB` in the mobile bridge. The current fixed dark palette is authoritative; runtime theme switching is not implemented. The native parent and navigation background use that color, with light navigation icons and no automatic contrast scrim. Insets and touch bounds are unchanged. Verify matching background pixels and readable buttons in portrait/landscape on an authorized device; system/OEM styling on other devices requires separate evidence.
+- `projects.go`: bridges user-granted document trees, Git metadata reads and staged public clones into the Android provider.

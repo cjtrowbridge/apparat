@@ -93,3 +93,4 @@ Tab bodies use structured layout patterns rather than free-form text placement:
 Tab descriptors preserve stable IDs, titles and accessibility labels while the GUI presents symbol-only navigation: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, ⚙️ Settings. Comrades retains its existing font glyph; the GUI maps the remaining IDs to bundled artwork.
 
 Tab descriptors and rendered content normalize Settings to the final position while preserving all other ordering. STMPCK belongs before Settings. Tests cover a game appended after Settings and a reordered configuration.
+Live Projects sections use the registration ID and retain the existing pipeline action colors and marker.

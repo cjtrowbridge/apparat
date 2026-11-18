@@ -21,3 +21,5 @@ Domain code defines identity, projects, queues, tasks, capabilities, workload cl
 - `id_test.go`: Tests canonical durable identifiers and deterministic intent validation.
 
 - `preferences.go`: Defines validated local display preferences and normal desktop window geometry.
+
+- `project.go`: describes a local checkout registration and its observed branch and task labels.

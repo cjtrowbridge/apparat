@@ -14,3 +14,5 @@ Updater rejection codes distinguish invalid package, mismatched signer and non-i
 - `UpdateTransfer.java`: Copies APK bytes with a 15-minute monotonic duration bound, 128 MiB limit and lifecycle cancellation; transport allows 60-second idle reads. Typed timeout/size/cancellation failures retain byte count and elapsed-time evidence without content or URLs. Partial APKs are removed on failure.
 
 Regression verification: compile this helper with `tests/UpdateTransferTest.java` through the build gate and run `com.cjtrowbridge.apparat.UpdateTransferTest`. Controlled streams exercise slow progress beyond the old two-minute cap, idle timeout, duration, size and cancellation. Actual mobile network acceptance remains a separate device check.
+- `ProjectDocuments.java`: owns the system folder picker, persisted grants, metadata reads and public clone export.
+- `ApkHash.java`: Hashes update packages.

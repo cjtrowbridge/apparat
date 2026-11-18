@@ -47,6 +47,7 @@ const (
 
 type Game struct {
 	prefs                          preferenceState
+	projects                       projectForm
 	window                         windowTracker
 	arcade                         arcadeView
 	shell                          hud.Shell
@@ -169,6 +170,7 @@ func NewGameWithRuntimeInfo(info RuntimeInfo) *Game {
 		game.serviceUpdates = WatchServices(ctx, info.Queries)
 	}
 	game.loadPreferences()
+	game.initProjects()
 	game.rebuildUI(game.shell.Snapshot())
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
 	return game
@@ -182,6 +184,7 @@ func (game *Game) Update() error {
 		game.cancelPointer()
 	}
 	game.receivePreferences()
+	game.pollProjects()
 	game.trackWindow()
 	game.receiveServices()
 	if game.layoutDirty && game.gesture.Owner == gestureNone {

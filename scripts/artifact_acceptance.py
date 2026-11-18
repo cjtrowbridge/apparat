@@ -19,21 +19,25 @@ def run(*args, **kwargs):
 
 def check_projects(path):
     from PIL import Image
-    from collections import Counter
-    with Image.open(path) as im:
-        counts = Counter(y for x, y in pink_pixels(im.convert('RGB')))
-    lines = sorted(y for y, count in counts.items() if count >= 4)
-    groups = sum(i == 0 or y > lines[i-1]+2 for i, y in enumerate(lines))
-    if groups < 3:
-        raise ValueError('Projects screenshot lacks three separate pink action markers')
+    # The fresh registry may be empty. Check the hammer inside the selected
+    # tab rectangle independently of registration count, device scale or rail.
+    from PIL import ImageChops
+    with Image.open(path) as frame:
+        rgb = frame.convert('RGB')
+    red, green, blue = rgb.split()
 
+    def between(channel, low, high):
+        return channel.point(lambda pixel: 255 if low <= pixel <= high else 0)
 
-def pink_pixels(im):
-    for y in range(im.height):
-        for x in range(im.width):
-            r, g, b = im.getpixel((x, y))
-            if r > 210 and 65 < g < 185 and b > g and r-b > 30:
-                yield x, y
+    selected = ImageChops.multiply(between(red, 58, 74), between(green, 92, 99))
+    selected = ImageChops.multiply(selected, between(blue, 140, 154))
+    bounds = selected.getbbox()
+    if bounds:
+        hammer = rgb.crop(bounds)
+        orange = sum(r > 205 and 90 < g < 172 and b < 65 for r, g, b in hammer.getdata())
+        if orange >= 10:
+            return
+    raise ValueError('Projects hammer tab is not visibly selected')
 
 
 def check_divider(x, xt, display, window, directory):

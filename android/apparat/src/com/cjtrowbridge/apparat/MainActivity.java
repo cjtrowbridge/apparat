@@ -43,6 +43,7 @@ public class MainActivity extends Activity {
     private static final String UPDATE_AUTHORITY = "com.cjtrowbridge.apparat.update";
     private static final String APK_MIME_TYPE = "application/vnd.android.package-archive";
     private EbitenView view;
+    private ProjectDocuments documents;
     private File downloadedUpdate;
     private final AtomicBoolean checking = new AtomicBoolean();
     private volatile boolean destroyed;
@@ -91,6 +92,8 @@ public class MainActivity extends Activity {
             });
         }
         setContentView(content);
+        documents = new ProjectDocuments(this);
+        Apparatmobile.registerDocuments(documents);
         if (Build.VERSION.SDK_INT >= 30) {
             getWindow().getInsetsController().setSystemBarsAppearance(0,
                 WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
@@ -118,6 +121,12 @@ public class MainActivity extends Activity {
         });
         Log.i(TAG, "Updater bridge registered");
         // Downloads and installer handoff require an explicit Update action.
+    }
+
+    @Override
+    protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request,result,data);
+        if (request == ProjectDocuments.REQUEST && documents != null) documents.result(result == RESULT_OK ? data : null);
     }
 
     @Override
@@ -161,6 +170,7 @@ public class MainActivity extends Activity {
             updateThread.interrupt();
         }
         Apparatmobile.registerUpdater(null);
+        if(documents!=null) documents.closePicker();
         super.onDestroy();
     }
 
@@ -202,8 +212,8 @@ public class MainActivity extends Activity {
                     String installedHash;
                     String downloadedHash;
                     try {
-                        installedHash = sha256(new File(getApplicationInfo().sourceDir));
-                        downloadedHash = sha256(apk);
+                        installedHash = ApkHash.sha256(new File(getApplicationInfo().sourceDir));
+                        downloadedHash = ApkHash.sha256(apk);
                     } catch (Exception error) {
                         reportUpdateFailure("unable_verification", userInitiated);
                         apk.delete();
@@ -214,7 +224,7 @@ public class MainActivity extends Activity {
                             reportUpdateStatus("up_to_date");
                             showToast("This download matches the installed APK.");
                         } else {
-                            Log.i(TAG, "Startup update check found current APK " + shortHash(installedHash));
+                            Log.i(TAG, "Startup update check found current APK " + ApkHash.shortHash(installedHash));
                         }
                         return;
                     }
@@ -375,33 +385,6 @@ public class MainActivity extends Activity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
-    }
-
-    private static String shortHash(String hash) {
-        if (hash == null || hash.length() < 12) {
-            return hash;
-        }
-        return hash.substring(0, 12);
-    }
-
-    private static String sha256(File file) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        try (InputStream in = new FileInputStream(file)) {
-            byte[] buffer = new byte[64 * 1024];
-            int read;
-            while (true) {
-                read = in.read(buffer);
-                if (read == -1) {
-                    break;
-                }
-                digest.update(buffer, 0, read);
-            }
-        }
-        StringBuilder builder = new StringBuilder();
-        for (byte value : digest.digest()) {
-            builder.append(String.format(Locale.ROOT, "%02x", value));
-        }
-        return builder.toString();
     }
 
 }

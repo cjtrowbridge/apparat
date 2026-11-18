@@ -7,6 +7,7 @@ package gui
 import (
 	"testing"
 
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
 )
@@ -100,5 +101,22 @@ func TestSelectorButtonsFitNarrowPaneAndReserveActionIcon(t *testing.T) {
 		if width > available || height <= tabHeight {
 			t.Errorf("%q preferred size = %dx%d, want width <= %d and height > %d", tc.section.Title, width, height, available, tabHeight)
 		}
+	}
+}
+
+func TestLocalProjectTabIncludesOnlyRegisteredCheckouts(t *testing.T) {
+	game := NewGameWithRuntimeInfo(RuntimeInfo{})
+	defer game.Close()
+	tab := game.projectTab(hud.Tab{})
+	if len(tab.Sections) != 2 || tab.Sections[1].Title != "Add or clone repo" {
+		t.Fatal("unexpected rows in empty registry")
+	}
+	game.projects.rows = []domain.Project{
+		{ID: "a", Name: "vibe-modeling", Available: true, Branch: "main", Actions: []string{"Rebuild stale CAD designs"}},
+		{ID: "b", Name: "plain", Available: true},
+	}
+	tab = game.projectTab(hud.Tab{})
+	if tab.Sections[2].ContentKind != hud.ContentPipeline || tab.Sections[3].ContentKind != hud.ContentProject || tab.Sections[2].SelectorColor == tab.Sections[3].SelectorColor {
+		t.Fatal("action decoration does not follow real checkout state")
 	}
 }

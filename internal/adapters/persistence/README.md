@@ -35,3 +35,5 @@ Persistence code must expose application-level repositories and must not leak ra
 - `contention_test.go`: Exercises real SQLite lock contention and cancelled transaction admission.
 
 - `preferences.go`: Owns migration 4 and independent atomic SQLite records for display preferences and window placement.
+
+- `projects.go`: owns the schema-v6 registry and account preferences. Removing a registration only deletes its SQLite row.

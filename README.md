@@ -25,7 +25,7 @@ Apparat treats those devices as one personal cluster. From one HUD, a user shoul
 
 The MVP is deliberately smaller than the complete vision. It proves the architecture with one Steam Deck console and one laptop or headless Linux worker.
 
-The canonical first vertical slice is:
+The next milestones deliver offline local repos, then trusted cluster membership, then a read-only catalog of projects hosted by members. The eventual two-device queue proof proceeds as follows:
 
 1. Both devices are connected through an externally configured WireGuard network.
 2. A temporary static peer manifest may be used for the earliest smoke test.
@@ -71,7 +71,9 @@ The Comrades tab is first in the HUD so the long-term product shape remains visi
 
 ### Cluster
 
-Cluster shows:
+The first membership workflow will let a user create a cluster, discover it from another device or use an explicit invite, verify and approve enrollment, reconnect, leave, and revoke access. Discovery supplies candidate addresses. Membership requires confirmation and authentication.
+
+The full Cluster view will show:
 
 - Enrolled and known devices.
 - Device roles, trust, connectivity, and last-seen state.
@@ -88,7 +90,11 @@ Cluster shows:
 
 ### Projects
 
-Projects always presents a cluster-wide catalog: local projects plus every authorized project advertised by every other enrolled device. Each project remains a Git repository owned by the device on which its working tree lives and runs. A remote device may browse and operate an authorized project through the owning device's REST API; it does not gain ownership or direct filesystem access.
+Project Repos lists Git working trees the user explicitly registers on this device. It works offline before the device joins any cluster. SQLite remembers the registration and its stable project ID. The checkout supplies the current Git branch and labeled tasks from a JSON-format .vscode/tasks.json. Apparat displays the labels without running repository commands. A moved or inaccessible checkout can be reconnected, and removing a registration leaves its files intact.
+
+Choose **Add or clone repo** in Projects. Use **Open existing repo** for a checkout already on the device, or enter a GitHub owner/repo, preview the destination and choose **Clone** for a shallow checkout. Clones default to `<node-root>/data/repos/<owner>/<repo>` beside the SQLite database. Users can choose a different parent and review the full destination. The Linux folder button uses Zenity when installed, and the path field also accepts absolute paths. Linux uses the system GitHub CLI for private clones, with a default account and per-repo overrides. Android starts with local checkouts and public clones. Phase 11B adds Android GitHub sign-in and private clones. Local checkouts open offline regardless of sign-in state.
+
+After trusted membership is available, the same list will include authorized summaries that other members choose to share. Each entry identifies its host and availability. Two devices with checkouts of the same Git remote own separate projects. The first shared catalog supports browsing. Later workspace operations go through the owning device’s authenticated API.
 
 The Project Repos list uses blue outlines for repos without configured actions and purple outlines for repos with configured actions. Repos with configured actions also show 🧠 on the right. Both open the same workspace view.
 
@@ -272,7 +278,7 @@ Every project is an ordinary Git repository whose working tree lives on one auth
 
 SQLite stores project metadata, ownership, chats, events, queue routes, artifacts, indexes, transactions, drafts, and sync cursors. It does not replace Git or become the canonical store for every project file.
 
-Each device maintains a cluster-wide project catalog assembled from its local projects and authorized project summaries advertised by other devices. Therefore the Projects list on any enrolled device includes every project in the cluster that the current user/device is authorized to know about, along with its owner, availability, and freshness. Cached metadata may keep an offline owner's project visible as stale or unavailable, but the cache is not the repository and does not become authoritative.
+Once catalog sharing is implemented, each enrolled device maintains a cluster-wide project catalog assembled from its local projects and authorized project summaries advertised by other devices. Therefore the Projects list on any enrolled device includes every project in the cluster that the current user/device is authorized to know about, along with its owner, availability, and freshness. Cached metadata may keep an offline owner's project visible as stale or unavailable, but the cache is not the repository and does not become authoritative.
 
 All remote project listing, metadata, file, Git, Task, and transaction operations go to the project owner through authenticated REST APIs. Remote mutations are submitted as idempotent transactions. Offline edits remain local drafts or explicit Git commits until the owner accepts them. Rejected or conflicting changes retain their editable content and a durable failure reason.
 

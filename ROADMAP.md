@@ -2,7 +2,7 @@
 
 ## Completed submodule remediation checkpoint
 
-The three separately authorized 2026-11-16 remediation plans are complete for Linux builds and Pixel 4a Android 13 validation. Historical Phase 1/5 evidence remains historical; broader platform coverage and Android safe-area/readability hardening remain pending. See docs/platform-matrix.md for tested behavior and limitations.
+The three separately authorized 2026-11-16 remediation plans are complete for Linux builds and Pixel 4a Android 13 validation. Later Pixel checks cover safe-area and readability on the tested configurations. Broader platform qualification continues in Phase 17. See docs/platform-matrix.md for tested behavior and limitations.
 
 - [x] [Adopt source/build governance](plans/past/2026-11-16-11-13-17_adopt-framework-source-build-governance.md): public policy, bootstrap v1, mandatory host gate, and behavior-preserving source migration; supports Phase 1/4 tooling.
 - [x] [Reconcile engine/mobile dependencies](plans/past/2026-11-16-11-13-18_reconcile-engine-and-mobile-dependencies.md): resolve the stable-versus-development version decision before dependent changes; supports Phase 1/5 pins.
@@ -61,7 +61,7 @@ The roadmap assumes these decisions:
   - Settings remains the final tab.
 - **Data and authority**
   - Every Project is an ordinary Git repository owned by the device where its working tree lives and runs.
-  - Every device presents one cluster-wide authorized Projects list assembled from owner-local Projects and signed/cached summaries from every other device.
+  - Project Repos starts with explicitly registered local checkouts. After trusted membership, the list also includes authorized summaries advertised by other owners.
   - A Pipeline is a Project with one or more Apparat Task entrypoints; it is not a separately owned entity.
   - A Task may run manually with no trigger or be bound to intervals, authenticated webhooks, internal application events, or cluster events.
   - SQLite stores identities, metadata, chats, transactions, events, queue state, indexes, and durable workflow state.
@@ -872,10 +872,10 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 
 **Dependencies:** Phase 1 contracts; Phase 2 may proceed partly in parallel.
 
-- [?] Split GUI and headless runtime adapters.
-  - [?] Make the default GUI binary enter a real Ebitengine run loop instead of exiting after runtime initialization.
+- [x] Split GUI and headless runtime adapters.
+  - [x] Make the default GUI binary enter a real Ebitengine run loop instead of exiting after runtime initialization.
     - The Ebitengine loop is implemented behind the `gui` build tag and the release pipeline builds the `apparat` artifact with that tag.
-    - Native desktop-library and display-server validation remains target-specific evidence.
+    - The Linux GUI launched under Xvfb and navigated to Projects. The headless binary passed its own smoke check. Native desktop qualification on other platforms remains in Phase 17.
   - [x] Build GUI and headless artifacts into separate binary-specific release directories.
     - [x] Use `releases/<goos>/<goarch>/apparat/latest[.exe]` for the GUI artifact.
     - [x] Use `releases/<goos>/<goarch>/apparatd/latest[.exe]` for the headless artifact.
@@ -1084,7 +1084,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
 
 **Goal:** Produce a working Android GUI APK artifact for Apparat in the canonical release directory without adding or claiming an Android headless target.
 
-**Current status:** Build pipeline, package inspection, Pixel install, process-liveness validation, app-private runtime storage, Android `last_run.log` creation, wrapper HUD rendering, full-screen Android view sizing, touch tab selection, and screenshot evidence are implemented for Linux-hosted `android/arm64` GUI APK builds. Direct `GoNativeActivity` paths can initialize Apparat runtime state but stay on the Android splash/default icon instead of attaching Ebitengine's view. The current APK now uses tracked Apparat wrapper sources under `android/apparat`, `cmd/apparatmobile`, and Ebitengine's generated mobile view classes. A temporary Settings `Updates` fieldset and native Android button bridge are being added during Phase 5 for the tracked GitHub `latest.apk`; production update manifests, installed/latest version display, and release signing remain future work. Phase 5 remains incomplete until additional device testing, Android safe-area and density hardening, runtime-path validation depth, release-hardening deferrals, and any local Ebitengine patch/submodule reproducibility work are resolved or explicitly deferred.
+**Current status:** The Linux-hosted Android arm64 build and Pixel GUI smoke path are verified. The historical checklist below records how the wrapper was developed. The current build entrypoint is `python3 scripts/build.py`. The [platform matrix](docs/platform-matrix.md#phase-5-closeout-on-the-pixel-4a) records app-private storage, repeated cold launches and the build with salvagecore absent. Physical input, broader device qualification and production release hardening continue in Phase 17.
 
 **Dependencies:** Phase 4 HUD shell and Apparat-owned tracked dependencies. Salvagecore may be inspected temporarily, but the final build pipeline must not require it.
 
@@ -1105,7 +1105,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
   - [x] Keep `golang/mobile` absent as a source checkout; the first APK uses Ebitengine's pinned `github.com/ebitengine/gomobile` Go module instead.
   - [x] Keep `ebitenmobile bind` deferred as future wrapper/AAR reference material rather than the Phase 5 APK path.
   - [x] Add a unit guard that fails if the Android build pipeline references `third_party/salvagecore`.
-  - [ ] Prove the Android build works after temporarily moving or hiding `third_party/salvagecore`; the implemented script has no reference to it, but this destructive local proof still needs an explicit checkpoint if desired.
+  - [x] Prove the Android build works with `third_party/salvagecore` absent. See the [closeout evidence](docs/platform-matrix.md#phase-5-closeout-on-the-pixel-4a).
 - [x] Choose the first APK architecture.
   - [x] Select `android/arm64` as the first APK architecture.
   - [x] Use direct Ebitengine `gomobile build` as the shortest diagnostic path for producing and installing an APK.
@@ -1154,7 +1154,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
   - [x] Define current version metadata: `versionCode=1`, `versionName=0.1.0`.
   - [x] Define orientation behavior: the wrapper no longer forces portrait and should fill the available screen in supported orientations.
   - [x] Define debug signing behavior: direct `gomobile build` emits a debug APK.
-  - [ ] Define release signing, store packaging, and automated version generation in a later release-hardening phase.
+  - [-] Phase 17 owns production signing, store packaging and release version policy. The development pipeline already assigns successive Android versions.
   - [x] Define explicit SDK metadata through the patched helper: `minSdkVersion=23`, `targetSdkVersion=30`, and platform build version `35`.
 - [x] Add Android permissions and platform behavior.
   - [x] Request `android.permission.INTERNET` for HTTPS over external WireGuard/local network.
@@ -1163,13 +1163,13 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
   - [x] Defer VPN-service permissions and app-managed WireGuard to the later transport/platform phase.
   - [x] Validate touch tab selection on Android while keeping keyboard, controller, and text-input coverage as follow-up testing.
   - [x] Defer Android audio/TTS behavior beyond package startup.
-- [ ] Adapt runtime paths for Android GUI.
+- [x] Adapt runtime paths for Android GUI.
   - [x] Reuse the existing runtime startup path so `last_run.log` creation is part of Android app startup.
-  - [ ] Verify the actual Android app-scoped runtime root on device/emulator.
-  - [ ] Verify `last_run.log` is recreated on every Android GUI launch.
-  - [ ] Verify SQLite, logs, identity, cache, artifacts, backups, and recovery directories are Android-safe.
+  - [x] Verify the actual Android app-scoped runtime root on device/emulator.
+  - [x] Verify `last_run.log` is recreated on every Android GUI launch.
+  - [x] Verify SQLite, logs, identity, cache, artifacts, backups, and recovery directories are Android-safe.
   - [x] Document Android runtime-path assumptions and validation gap in `docs/platform-matrix.md`.
-- [ ] Validate the Android GUI smoke path.
+- [x] Validate the Android GUI smoke path.
   - [x] Build a debug APK locally.
   - [x] Inspect package metadata with Android build-tools: package ID, label, `INTERNET` permission, launcher activity, and `arm64-v8a` native code.
   - [x] Install the APK on a physical Pixel device with `adb`.
@@ -1179,19 +1179,19 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
   - [x] Replace the direct `GoNativeActivity` startup path with an Apparat-owned wrapper activity that attaches Ebitengine's generated `EbitenView`.
   - [x] Verify the app opens to the Apparat HUD instead of the Android splash/default icon.
   - [x] Verify the seven tabs render and remain clickable/touchable on Android.
-  - [ ] Verify keyboard/controller navigation where the device supports it.
+  - [-] Phase 17 owns on-device external keyboard and physical controller navigation.
   - [x] Verify `last_run.log` exists in the Android app-private runtime root after launch.
   - [x] Capture `adb logcat` and `last_run.log` evidence for install/startup failures and fixes.
-- [ ] Implement Android GUI parity.
+- [x] Implement Android GUI parity for the tested Pixel configurations.
   - [x] Decide the minimal Apparat-owned Android integration path: tracked wrapper sources plus generated Ebitengine mobile view classes assembled by the Python pipeline.
   - [x] Keep durable Android wrapper sources, manifests, generated-AAR instructions, and scripts in tracked Apparat-owned paths.
-  - [ ] Keep `third_party/salvagecore` as reference-only and prove the final Android GUI path does not depend on it.
+  - [x] Keep `third_party/salvagecore` as reference-only and prove the final Android GUI path does not depend on it.
   - [x] Ensure the Android entrypoint starts the same `internal/app` runtime initialization path as Debian GUI startup.
   - [x] Ensure the Android UI uses the same HUD tab model, tab order, clickable tabs, disabled-placeholder states, runtime diagnostics, and logging behavior as Debian.
-  - [ ] Add Android safe-area/status-bar/navigation-bar layout handling so the HUD is readable on phone screens.
-  - [ ] Add Android scale/density handling so tab buttons and body text remain usable on Pixel-class devices.
+  - [x] Add Android safe-area/status-bar/navigation-bar layout handling so the HUD is readable on phone screens.
+  - [x] Add Android scale/density handling so tab buttons and body text remain usable on Pixel-class devices.
   - [x] Remove fixed portrait orientation and allow the wrapper view to fill the Android screen in supported orientations.
-  - [ ] Validate additional phone, tablet, portrait, landscape, keyboard, controller, process-liveness, and `last_run.log` behavior on real Android devices.
+  - [-] Pixel portrait, landscape, process liveness and startup log checks passed. Additional form factors, physical input and accessibility remain Phase 17 device checks.
   - [x] Capture visual evidence that the Phase 4 HUD renders on Android like it does on Debian.
 - [x] Add Android build tests.
   - [x] Unit-test Android artifact path selection.
@@ -1201,7 +1201,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
   - [x] Unit-test preflight failure reporting for missing SDK/JDK/NDK/tooling.
   - [x] Unit-test `--print-path` for Android APK output.
   - [x] Unit-test that the Android pipeline does not reference `third_party/salvagecore`.
-  - [ ] Add an optional integration test target that installs and launches the APK when Android tools and a device/emulator are available.
+  - [x] Add an optional integration test target that installs and launches the APK when Android tools and a device/emulator are available.
 - [x] Document Android build and troubleshooting.
   - [x] Update root `README.md` with Android APK build commands, prerequisites, artifact path, and support caveats.
   - [x] Update `scripts/README.md` with Android build options, preflight, outputs, side effects, and common failures.
@@ -1219,7 +1219,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
 - [x] The Android wrapper GUI displays the Phase 4 tab HUD and supports touch/click tab selection on Android.
 - [x] The Android wrapper app opens to the Apparat HUD instead of remaining on the Android splash/default icon.
 - [x] The Android wrapper no longer forces portrait orientation and can fill the available screen in supported orientations.
-- [ ] Android safe-area, density, and touch handling make the HUD readable and usable on a Pixel-class device.
+- [x] Android safe-area, density, and touch handling make the HUD readable and usable on a Pixel-class device.
 - [x] Android startup creates a fresh `last_run.log` in the runtime root and exposes enough diagnostics to debug failures.
 - [x] The Android build, tests, and documentation do not require `third_party/salvagecore`.
 - [x] Documentation explains prerequisites, commands, artifact paths, validation evidence, and known limitations.
@@ -1312,6 +1312,8 @@ Shared abstractions grow from completed slices. A phase may not claim support fr
   - [x] Queue completion waits for owner validation of the active lease and every artifact.
 
 ### Decision gates retained for later phases
+
+These assignments record the phase numbering at the Phase 6 checkpoint. The [decision ledger](#architecture-decision-ledger) tracks the current assignments.
 
 - [x] Assign every unresolved decision to the phase that needs it.
   - [x] Phase 8: final migration/backup/restore procedure, lock recovery, clock/ID ports, WAL platform evidence, and whether optional at-rest database encryption is admitted.
@@ -1498,7 +1500,7 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
   - [x] Keep endpoint schemas transport-specific while preserving stable core IDs and semantics.
   - [x] Generate or implement conformance tests against the OpenAPI contract.
 - [x] Keep the pre-identity REST listener local and read-only.
-  - [x] Bind to loopback by default and reject non-loopback configuration until Phase 9 security is active.
+  - [x] Bind to loopback by default and reject non-loopback configuration until Phase 10 security is active.
   - [x] Expose no REST mutation, command, setter, enrollment, or trust operation.
   - [x] Omit provider-local URLs, credential references, secrets, private paths, raw failures, and other unsafe state.
   - [x] Enforce content negotiation, response limits, deadlines, bounded concurrency, redaction-safe errors, and graceful listener shutdown.
@@ -1535,7 +1537,7 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 - [x] Route controller, keyboard, mouse, and touch through one application action model.
 - [x] Implement or correctly defer focus, activation, back, context, scrolling, modal, disabled-control, and accessibility semantics.
 - [x] Suppress timestamp-only service projection rebuilds; retain ordinary rebuilds for actual changes. No measured need justified keyed reconciliation.
-- [x] Implement loading/empty/disabled/healthy/unhealthy/stale/query-error states for the local slice; remote trust states belong to Phase 9, provider states to Phase 12, job/Task effects to Phases 13/15, audio to Phase 16.
+- [x] Implement loading/empty/disabled/healthy/unhealthy/stale/query-error states for the local slice; remote trust states belong to Phase 10, provider states to Phase 12, job/Task effects to Phases 13/15, audio to Phase 16.
 - [x] Persist validated service intent/revisions; keep hard-coded HUD defaults honestly labeled. Real editable settings/secret-reference flows follow Phases 11–12.
 - [x] Separate headless core tests, display-free GUI state/projection tests, and optional native display integration tests.
 - [x] Remove placeholder/sentinel packages only when real owners replace them; do not perform a broad speculative rewrite.
@@ -1574,13 +1576,34 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 
 **Acceptance limits:** [Archived execution evidence](plans/past/2026-07-20-09-04-03_execute-phase-8.md#execution-evidence-and-review--2026-11-16) and [platform matrix](docs/platform-matrix.md#phase-8-acceptance--2026-11-16) distinguish passing local evidence from Phase 17 hardware/accessibility/release gates. No full platform-support or real-provider claim follows from Phase 8.
 
-## Phase 9: Identity, Trusted Device Directory, Resource Telemetry, Authenticated REST Commands, And Reusable Mock Queue
+## Phase 9: Local Project Repos
 
-**User outcome:** Two devices can enroll, authenticate, inspect each other's safe resource and development-update availability across reachable network paths, request a target-owned update through the cluster API, exchange durable work through the owner-authoritative REST protocol, disconnect or restart, and recover one logical result.
+**User outcome:** With networking disabled and no cluster configured, a user can add an existing Git working tree to Project Repos and open its local project view after restart.
 
-**Dependencies:** Phase 8 and Phase 6 identity/envelope contracts.
+Users can clone a public repo on either platform. Linux also supports private clones using a chosen GitHub CLI account. Android GitHub sign-in follows in Phase 11B. [Phase 9 execution plan](plans/current/2026-11-17-20-34-03_local-project-repos.md)
 
-**Deferred:** Automatic endpoint discovery, Project workspaces, real inference providers, pools, and route selection.
+**Dependency:** Phase 8 internal commands, queries, local node identity and SQLite.
+
+- [ ] First prove a real checkout can be selected, read and reopened after restart on Linux and the Pixel 4a. Resolve Android storage access before choosing how to persist its location.
+- [ ] Replace sample repos with explicit Add repo, validate the selected working tree and permitted root, and handle duplicate registration. Show an empty list before the first registration.
+- [ ] Persist a stable project ID independent of path, local owner ID and reopening information in SQLite. Read Git state and configured actions from the checkout. Keep the existing blue/purple outlines and right-aligned 🧠 for repos with actions.
+- [ ] Show lost access or a moved checkout and support reconnecting the same registration. Removing a registration preserves the working tree.
+- [ ] Offer Open existing repo in place and Clone from GitHub. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
+- [ ] Use the system GitHub CLI on Linux, with a device default account and per-repo overrides. Keep account credentials outside project metadata.
+
+**Exit criteria**
+
+- [ ] On Linux and Pixel 4a, add a real local repo offline, restart, and reopen it with the same ID. Change its action configuration and verify the list reflects it.
+- [ ] Verify invalid selections, duplicate adds, access loss, reconnection and removal, including preservation of checkout files.
+- [ ] Prove default and chosen clone locations on Linux and Pixel 4a, including Android external-folder access across restart. Use public repos on Android. On Linux, verify concurrent private clones under isolated accounts without switching the terminal account.
+
+## Phase 10: Cluster Creation, Discovery, And Trusted Membership
+
+**User outcome:** Create a cluster on Linux, discover and join it from the Pixel 4a, and recognize the same members after restart or an address change.
+
+**Dependencies:** The Phase 8 core and Phase 6 identity contracts. Phase 9 remains usable throughout enrollment and after leaving.
+
+- [ ] In Cluster, create the cluster root and initial enrollment authority. Present discover, request to join, confirm, approve, leave and revoke actions with visible pending, trusted, offline and revoked states. Keep transient selections and forms in GUI state.
 
 ### Network configuration and trusted directory
 
@@ -1599,17 +1622,18 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
   - [ ] Explicit revoked, expired, stale, unavailable, and key-changed states.
   - [ ] No authority from a cached record after revocation/expiry.
 
-### Safe resource telemetry
+### Endpoint discovery and presence
 
-- [ ] Publish an authenticated, bounded resource snapshot for each trusted peer.
-  - [ ] Include CPU logical capacity and utilization; RAM and swap total, used, and available; disk capacity, used, and free space; and accelerator identity/availability, utilization, and VRAM total, used, and available where the platform can report them.
-  - [ ] Include snapshot timestamp, collection duration, freshness/expiry, and explicit unavailable/unknown values; do not infer absence from an unsupported platform or device.
-  - [ ] Use stable, non-sensitive disk and accelerator labels. Exclude file contents, project paths, process lists, prompts, model inputs/outputs, secrets, and raw provider payloads.
-  - [ ] Bound collection frequency, payload size, retries, retention, and display precision; failed or stale collection remains visible as stale/unknown rather than silently reusing a current-looking value.
-- [ ] Expose telemetry only through authenticated, authorized device-directory and REST read models.
-  - [ ] Telemetry is observational: it neither establishes trust nor reserves capacity, admits work, selects a route, or changes queue authority.
-  - [ ] Phase 14 may consume fresh telemetry as one explainable routing input; Phase 9 shows it without introducing a scheduler or dynamic optimization.
-  - [ ] Test platform collectors behind fakes and verify unavailable GPU, VRAM, swap, and disk details degrade safely.
+- [ ] Add endpoint discovery alongside explicit endpoint configuration.
+  - [ ] Discovery records are suggestions until matched to an authorized device record and mTLS identity.
+  - [ ] Preserve explicit endpoint configuration as fallback.
+  - [ ] Record last success, failure, clock state, revision, and availability safely.
+  - [ ] Reconcile discovered addresses into the existing peer's multi-address set; never merge peers merely because an address matches or create trust from discovery.
+- [ ] Define and implement directory conflict behavior.
+  - [ ] Newer valid signed revision supersedes older state.
+  - [ ] Revocation and key-change conflicts fail closed.
+  - [ ] Cached offline records remain visible but cannot authorize.
+  - [ ] Surface actionable conflict and recovery information.
 
 ### Enrollment and mTLS
 
@@ -1632,11 +1656,6 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
   - [ ] Permit configured LAN/WireGuard binding only after mTLS, current device-record validation, authorization, limits, and audit are active.
   - [ ] Device profile and trusted-directory projection.
   - [ ] Safe aggregate capabilities.
-  - [ ] Safe per-peer resource telemetry with freshness and active-address state.
-  - [ ] Submit/read/cancel mock jobs.
-  - [ ] Queue-owner submit, worker claim/long-poll, heartbeat, and complete.
-  - [ ] Cursor-based event polling.
-  - [ ] Owner-local Project and Task resources remain placeholders until Phases 10–11.
 - [ ] Map authenticated REST mutations to the same internal commands/setters used directly by the GUI.
   - [ ] Keep authentication, signatures, scopes, replay checks, HTTP status, and transport schemas in the REST/security adapters.
   - [ ] Keep authorization-relevant product invariants and durable transitions in the internal application/domain layers.
@@ -1647,83 +1666,19 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
   - [ ] Validate canonical form, key binding, signature, recipient, hash, expiry, deadline, replay, authorization, size, and schema.
   - [ ] Apply duplicate messages idempotently and return prior durable outcomes where possible.
 
-### Development update visibility and remote orchestration
-
-- [ ] Publish each trusted node's installed version, target/platform, configured development update channel, compatible update availability, update state, and last outcome through the authenticated device-directory read model.
-  - [ ] The Devices/Cluster UI distinguishes current, available, incompatible, downloading, validating, applying, restarting, succeeded, failed, rollback-required, stale, and unknown states.
-  - [ ] Offer an update only when the target/platform, release identity, hash, compatibility decision, disk-space requirement, and rollback policy are known for that node.
-- [ ] Let any node holding an explicit `cluster:update` scope request an update on any other enrolled node in that same cluster through the authenticated cluster API.
-  - [ ] Make the request durable, idempotent, auditable, time-bounded, and queryable by progress/result resource; record requester, target, selected release identity, compatibility decision, and correlation ID.
-  - [ ] A requester cannot stream an arbitrary binary or bypass target policy. The target independently verifies mTLS authorization, release identity/hash, compatibility, disk space, active-work policy, and local platform prerequisites before downloading or applying.
-  - [ ] The target owns quiescing work, backup/migration, atomic replacement, restart, health verification, rollback, and truthful terminal status. Losing the requester connection does not leave the target in an indeterminate command state.
-  - [ ] Deny revoked, expired, unauthorized, incompatible, replayed, or cross-cluster requests; redact sensitive paths, credentials, and release-source details from ordinary UI and logs.
-- [ ] Test update visibility and remote requests with disconnected requesters, target restart, duplicate command delivery, failed download/verification/migration, rollback, authorization loss, and mixed-version development clusters.
-
-### Reusable mock-queue proof
-
-- [ ] Persist requester outbound submission before network delivery.
-- [ ] Have the queue owner authenticate, authorize, validate, and durably accept or reject.
-- [ ] Return `202 Accepted` only after durable acceptance with resource location.
-- [ ] Let an authorized worker poll/long-poll with current mock capabilities.
-- [ ] Issue one bounded owner-created attempt, lease, fencing token, and deadline.
-- [ ] Execute only under the active lease.
-- [ ] Accept bounded heartbeat/progress according to policy.
-- [ ] Post a signed terminal result/failure to the owner.
-- [ ] Let the owner validate worker, lease, fencing, schema, idempotency, and result before authoritative completion.
-- [ ] Support cancellation, timeout, retry, lease expiry, and clear incompatibility rejection.
-- [ ] Reuse these identities and transitions in Phase 13; do not build a disposable echo-only protocol.
-
-### GUI and recovery proof
-
-- [ ] Show enrollment, fingerprint, trust, directory, multiple-address connection/fallback, safe resource telemetry, node update availability/progress, queue/job, attempt, and failure states in existing HUD surfaces.
-- [ ] Keep invite text, selected peer, forms, focus, and navigation in GUI state.
-- [ ] Use stable device, message, job, attempt, lease, and correlation IDs in API, SQLite, logs, events, and GUI.
-- [ ] Demonstrate Steam Deck requester and headless worker.
-  - [ ] Disconnect requester, owner, or worker.
-  - [ ] Restart requester and owner independently.
-  - [ ] Reconnect and retrieve the one authoritative result.
-  - [ ] Reject duplicate delivery, stale completion, replay, and unauthorized work.
-
 **Exit criteria**
 
-- [ ] Two devices repeatedly complete the proof across restart and temporary disconnection.
-- [ ] LAN/WireGuard presence alone grants no trust.
-- [ ] One trusted device remains one peer while connectivity moves between configured LAN and overlay addresses; every selected address revalidates the same mTLS-bound identity.
-- [ ] A trusted peer exposes CPU, RAM, swap, disk, GPU, and VRAM telemetry where available, and explicitly reports stale or unknown values where it is not.
-- [ ] An authorized node can request a compatible development update for another enrolled node, and the target reports a durable target-verified success, failure, or rollback outcome.
-- [ ] Duplicate delivery cannot duplicate the logical job.
-- [ ] Only the queue owner records authoritative acceptance and completion.
-- [ ] The mock queue is a reusable foundation for Phase 13.
+- [ ] Linux and Pixel 4a complete discovery and approved enrollment, reconnect after independent restarts, and authenticate the same peer after an address change. Verify the explicit invite/endpoint fallback when discovery is unavailable.
+- [ ] An unapproved peer cannot read member-only information. Exercise denial, expired and reused invitations, leave, and revocation. Verify the former member loses access and local repos remain usable.
 
-## Phase 10: Discovery, Presence, Project Registry, And Cluster-Wide Project Catalog
+## Phase 11: Browse Projects Hosted By Cluster Members
 
-**User outcome:** Every enrolled device shows every Project it is authorized to discover across the cluster, with correct owner, freshness, and offline state.
+**User outcome:** One Project Repos list shows local repos and the projects other trusted members choose to advertise, labeled with their host and availability.
 
-**Dependencies:** Phase 9 secure REST and trusted directory.
+**Dependencies:** Phase 9 local registry and Phase 10 trusted membership and authenticated REST. This milestone provides read-only catalog browsing. Remote workspace operations follow in Phase 11A.
 
-**Deferred:** File/Git operations, Project mutation, Pipeline execution, and full artifacts until Phase 11.
+### Owner-published summaries
 
-### Endpoint discovery and presence
-
-- [ ] Add endpoint discovery after the explicit Phase 9 seed.
-  - [ ] Discovery records are suggestions until matched to an authorized device record and mTLS identity.
-  - [ ] Preserve explicit endpoint configuration as fallback.
-  - [ ] Record last success, failure, clock state, revision, and availability safely.
-  - [ ] Reconcile discovered addresses into the existing peer's multi-address set; never merge peers merely because an address matches or create trust from discovery.
-- [ ] Define and implement directory conflict behavior.
-  - [ ] Newer valid signed revision supersedes older state.
-  - [ ] Revocation and key-change conflicts fail closed.
-  - [ ] Cached offline records remain visible but cannot authorize.
-  - [ ] Surface actionable conflict and recovery information.
-
-### Owner-local Project registry
-
-- [ ] Register existing filesystem/Git folders.
-  - [ ] Assign stable Project ID and one owner device.
-  - [ ] Validate canonical safe roots and path traversal protection.
-  - [ ] Store owner-local metadata and revision in SQLite.
-  - [ ] Treat the device holding/running the Git working tree as authoritative.
-  - [ ] Do not expose owner-local filesystem paths remotely.
 - [ ] Produce signed authorization-filtered Project summaries.
   - [ ] Project and owner IDs, display metadata, Pipeline/task presence summary, capabilities, revision, observation/expiry, and availability.
   - [ ] Separate permission to discover from file, Git, Task, mutation, artifact, chat, and secret permissions.
@@ -1740,7 +1695,7 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 
 ### GUI and evidence
 
-- [ ] Replace mock Project list data with a core read model.
+- [ ] Extend the Phase 9 Project Repos read model with authorized remote summaries.
 - [ ] Show local/remote owner, online/stale/unavailable, authorization, revision, and last observation.
 - [ ] Keep filter, selection, expansion, sorting, focus, and unsaved search text in GUI state.
 - [ ] Provide loading, empty, partial-cluster, offline, unauthorized, conflict, and retry states.
@@ -1752,16 +1707,17 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 - [ ] Each Git repository remains authoritative only on its owner.
 - [ ] Remote reads go to the owner; no remote filesystem or SQLite access exists.
 - [ ] Cached summaries remain useful offline without granting authority.
+- [ ] On the Pixel 4a, browse a Linux-only repo, disconnect Linux and verify offline status. Verify two checkouts of the same Git remote remain distinct and summaries omit owner-local paths.
 
-## Phase 11: Project Workspaces, Git, Pipelines, And Constrained Manual Tasks
+## Phase 11A: Project Workspaces, Git, Pipelines, And Constrained Manual Tasks
 
 **User outcome:** A user can open a real local or remote Project, perform safe repository work, manage durable drafts/artifacts, and run a Project entrypoint manually without a trigger or unrestricted shell.
 
-**Dependencies:** Phase 10 Project ownership/catalog and Phase 9 secure REST.
+**Dependencies:** Phase 9 for local workspaces and manual execution. Remote operations additionally require Phase 10 security and the Phase 11 catalog.
 
 **Deferred:** Queue-backed Task steps until Phase 13, route selection until Phase 14, and schedules/webhooks/events until Phase 15.
 
-**Parallel-lane rule:** After Phase 10 establishes trusted discovery and the Project catalog, Phase 11 Project/workspace work and Phase 12 local-service work may proceed independently. Phase 13 may begin only after both lanes provide their required artifact and capability foundations.
+**Parallel-lane rule:** Local workspace work can proceed from Phase 9 independently of the cluster catalog and Phase 12 local-service work. Phase 13 may begin only after both lanes provide their required artifact and capability foundations.
 
 ### Files and Git
 
@@ -1830,11 +1786,26 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 - [ ] The same owner-defined Task runs manually with no trigger.
 - [ ] Artifact transfers resume and verify integrity.
 
+## Phase 11B: Android GitHub Authentication And Private Cloning
+
+**User outcome:** On Android, a user can authorize a GitHub account, choose it for a private clone, and reopen the checkout offline.
+
+**Sequencing:** Schedule after the project catalog and workspace milestones. The technical dependency is the Phase 9 local registry, folder selection and public clone workflow. Cluster enrollment is optional.
+
+- [ ] Choose how Android obtains and renews per-account credentials independently of a desktop or Termux session. Evaluate GitHub App user authorization with read-only contents access to selected repositories. Resolve registration, consent and any hosting requirement before implementation.
+- [ ] Support a device default and per-repo account overrides. Protect credentials with Android Keystore-backed encryption, keep only account references in project metadata, and keep secrets out of the APK, logs and checkout URLs.
+- [ ] Handle cancellation, expiry, revocation and reconnection per account. Preserve existing offline access to every checkout.
+
+**Exit criteria**
+
+- [ ] On the Pixel 4a, authorize two accounts with disjoint private repos. Clone one into the default location and the other into a chosen external folder using the intended account. Verify the wrong account fails visibly.
+- [ ] Cancel sign-in and revoke one account. Verify the other session remains usable, the affected account can reconnect, and both checkouts reopen after an offline restart.
+
 ## Phase 12: Multi-Instance Local Inference Drivers, Health, Capabilities, And Advertisements
 
 **User outcome:** One Apparat node can discover, configure, supervise, inspect, and safely advertise any number of local inference services, including duplicates of the same provider.
 
-**Dependencies:** Phase 8 shared core/service slice, Phase 9 identity/gateway, and Phase 6 service contracts.
+**Dependencies:** Phase 8 shared core/service slice, Phase 10 identity/gateway, and Phase 6 service contracts.
 
 **Deferred:** Distributed queue execution to Phase 13 and route/pool selection to Phase 14.
 
@@ -1930,9 +1901,25 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 
 **User outcome:** Typed jobs can be submitted to their queue owner, leased by an eligible worker, completed with verified results/artifacts, and recovered without duplicate authoritative completion.
 
-**Dependencies:** Phase 9 reusable mock queue, Phase 11 artifacts, and Phase 12 capabilities.
+**Dependencies:** Phase 10 trusted REST, Phase 11A artifacts, and Phase 12 capabilities.
 
 **Deferred:** Pool choice, route profiles, and fallback policy to Phase 14.
+
+### Reusable mock-queue proof
+
+- [ ] Persist requester outbound submission before network delivery.
+- [ ] Have the queue owner authenticate, authorize, validate, and durably accept or reject.
+- [ ] Return `202 Accepted` only after durable acceptance with resource location.
+- [ ] Let an authorized worker poll/long-poll with current mock capabilities.
+- [ ] Issue one bounded owner-created attempt, lease, fencing token, and deadline.
+- [ ] Execute only under the active lease.
+- [ ] Accept bounded heartbeat/progress according to policy.
+- [ ] Post a signed terminal result/failure to the owner.
+- [ ] Let the owner validate worker, lease, fencing, schema, idempotency, and result before authoritative completion.
+- [ ] Support cancellation, timeout, retry, lease expiry, and clear incompatibility rejection.
+- [ ] Use the production queue identities and transitions; do not build a disposable echo-only protocol.
+
+- [ ] Verify one logical result across requester, owner and worker disconnects, retries and restarts using the Steam Deck requester and headless worker. Cover submit/read/cancel, claim, heartbeat, completion and cursor-based event polling.
 
 ### Queue definitions and admission
 
@@ -1985,13 +1972,25 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 - [ ] A worker result becomes authoritative only after owner validation.
 - [ ] Restart, reassignment, duplicate delivery, and ambiguous completion never double-complete a logical job.
 - [ ] Artifacts resume and validate before accepted completion.
-- [ ] The Phase 9 mock flow uses the same production queue primitives.
+- [ ] The mock flow uses the same production queue primitives.
 
 ## Phase 14: Pools, Routing Profiles, Deterministic Fallback, And Real Text Generation
 
 **User outcome:** A Project or Task can request typed work, understand why a destination was chosen or excluded, fall back deterministically, and retrieve a real text-generation result.
 
-**Dependencies:** Phases 9–12.
+**Dependencies:** Phase 10 trusted membership, Phase 12 service capabilities and Phase 13 authoritative queues.
+
+### Safe resource telemetry
+
+- [ ] Publish an authenticated, bounded resource snapshot for each trusted peer.
+  - [ ] Include CPU logical capacity and utilization; RAM and swap total, used, and available; disk capacity, used, and free space; and accelerator identity/availability, utilization, and VRAM total, used, and available where the platform can report them.
+  - [ ] Include snapshot timestamp, collection duration, freshness/expiry, and explicit unavailable/unknown values; do not infer absence from an unsupported platform or device.
+  - [ ] Use stable, non-sensitive disk and accelerator labels. Exclude file contents, project paths, process lists, prompts, model inputs/outputs, secrets, and raw provider payloads.
+  - [ ] Bound collection frequency, payload size, retries, retention, and display precision; failed or stale collection remains visible as stale/unknown rather than silently reusing a current-looking value.
+- [ ] Expose telemetry only through authenticated, authorized device-directory and REST read models.
+  - [ ] Telemetry is observational: it neither establishes trust nor reserves capacity, admits work, selects a route, or changes queue authority.
+  - [ ] Show resource freshness in Cluster. Any route that uses telemetry must identify the observation behind its choice.
+  - [ ] Test platform collectors behind fakes and verify unavailable GPU, VRAM, swap, and disk details degrade safely.
 
 ### Pools
 
@@ -2051,7 +2050,7 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 
 **User outcome:** The same Project Task entrypoint can run manually or through authorized triggers, survive restart, await queued work, and produce one auditable outcome.
 
-**Dependencies:** Phase 11 Task entrypoints and Phases 13–14 queue/routing.
+**Dependencies:** Phase 11A Task entrypoints and Phases 13–14 queue/routing.
 
 **Deferred:** Scheduler failover/election to Post-MVP Track A.
 
@@ -2159,6 +2158,18 @@ Use the [existing Phase 8 execution plan](plans/past/2026-07-20-09-04-03_execute
 **Scope:** This phase culminates platform validation; it is not the first platform test.
 
 Continuous Android evidence: the [Pixel 10 safe-area correction](plans/past/2026-11-16-14-00-00_fix-android-safe-area.md) validates Android 17 three-button navigation, portrait/landscape, touch alignment and resume. Broader platform acceptance below remains open.
+
+### Development update visibility and remote orchestration
+
+- [ ] Publish each trusted node's installed version, target/platform, configured development update channel, compatible update availability, update state, and last outcome through the authenticated device-directory read model.
+  - [ ] The Devices/Cluster UI distinguishes current, available, incompatible, downloading, validating, applying, restarting, succeeded, failed, rollback-required, stale, and unknown states.
+  - [ ] Offer an update only when the target/platform, release identity, hash, compatibility decision, disk-space requirement, and rollback policy are known for that node.
+- [ ] Let any node holding an explicit `cluster:update` scope request an update on any other enrolled node in that same cluster through the authenticated cluster API.
+  - [ ] Make the request durable, idempotent, auditable, time-bounded, and queryable by progress/result resource; record requester, target, selected release identity, compatibility decision, and correlation ID.
+  - [ ] A requester cannot stream an arbitrary binary or bypass target policy. The target independently verifies mTLS authorization, release identity/hash, compatibility, disk space, active-work policy, and local platform prerequisites before downloading or applying.
+  - [ ] The target owns quiescing work, backup/migration, atomic replacement, restart, health verification, rollback, and truthful terminal status. Losing the requester connection does not leave the target in an indeterminate command state.
+  - [ ] Deny revoked, expired, unauthorized, incompatible, replayed, or cross-cluster requests; redact sensitive paths, credentials, and release-source details from ordinary UI and logs.
+- [ ] Test update visibility and remote requests with disconnected requesters, target restart, duplicate command delivery, failed download/verification/migration, rollback, authorization loss, and mixed-version development clusters.
 
 ### Steam Deck and Linux GUI
 
@@ -2381,15 +2392,17 @@ Every focused implementation plan includes the applicable items below and its ph
 ### Must resolve before dependent implementation
 
 - [ ] Phase 8: database encryption/restore, WAL/platform policy, lock recovery, and binary-root migration details.
-- [ ] Phase 9: authorization vocabulary, endpoint seed/discovery transition, multi-address priority/fallback, telemetry schema/retention, development-update source/target policy, enrollment recovery, and concrete API limits.
-- [ ] Phase 10: directory conflicts and Project-summary policy.
-- [ ] Phase 11: file/binary limits, platform Task sandboxing, conflicts, and artifact retention defaults.
+- [ ] Phase 9: durable Android checkout access, supported Git working trees and how to recognize configured actions.
+- [ ] Phase 10: enrollment authorization and recovery, discovery and address fallback, directory conflicts and API limits.
+- [ ] Phase 11: Project-summary authorization, disclosure, freshness and eviction.
+- [ ] Phase 11A: file/binary limits, platform Task sandboxing, conflicts and artifact retention defaults.
+- [ ] Phase 11B: Android GitHub authorization flow, registration, credential renewal and account recovery.
 - [ ] Phase 12: discovery/auto-promotion, provider secrets per platform, admission defaults, and approved image drivers.
 - [ ] Phase 13: lease/heartbeat/retry/retention/artifact quota defaults.
-- [ ] Phase 14: routing score/fallback/explanation and freshness policy.
+- [ ] Phase 14: telemetry schema/retention, routing score/fallback/explanation and freshness policy.
 - [ ] Phase 15: webhook/schedule/approval rules; scheduler failover remains post-MVP.
 - [ ] Phase 16: audio formats, adapters, retention, streaming, and permissions.
-- [ ] Phase 17: binary hosting/tracking, signing custody, release-grade manifests, reproducibility, and rollback.
+- [ ] Phase 17: development-update source/target policy, binary hosting/tracking, signing custody, release-grade manifests, reproducibility, and rollback.
 - [ ] Track A: Meshtastic, Signal, app-managed WireGuard, migration, replication, CRDT, dynamic routing.
 - [ ] Track B: Comrades transport/privacy, grants, visibility, quotas, moderation, and abuse.
 - [ ] Track C: BOINC boundary/sources/isolation, validation governance, gameplay, reputation, and anti-gaming.
@@ -2413,6 +2426,7 @@ The MVP is complete only when the applicable cross-cutting requirements and all 
   - [ ] HTTPS REST works over WireGuard and trusted LAN with identical authorization.
   - [ ] Signed envelopes reject canonicalization errors, tampering, key mismatch, replay, expiry, wrong recipient, and unauthorized work.
 - [ ] Durable state and Projects
+  - [ ] Project Repos supports offline registration, restart, reconnection and safe removal on Linux and the Pixel 4a before enrollment.
   - [ ] A job survives duplicate delivery, disconnection, lease expiry, and requester/owner/worker restart.
   - [ ] Every device shows the authorized cluster-wide Project catalog while each repository/Task remains authoritative on its owner.
   - [ ] A real Project supports safe files/Git, durable drafts/transactions, and verified artifacts.
