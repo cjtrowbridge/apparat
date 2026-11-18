@@ -36,7 +36,12 @@ def check_projects(path):
         hammer = rgb.crop(bounds)
         orange = sum(r > 205 and 90 < g < 172 and b < 65 for r, g, b in hammer.getdata())
         if orange >= 10:
-            return
+            # The add/clone control has a teal outline distinct from repo rows.
+            teal = ImageChops.multiply(between(red, 35, 98), between(green, 151, 190))
+            teal = ImageChops.multiply(teal, between(blue, 135, 175))
+            if teal.histogram()[255] >= 120:
+                return
+            raise ValueError('Projects lacks the live add/clone control')
     raise ValueError('Projects hammer tab is not visibly selected')
 
 

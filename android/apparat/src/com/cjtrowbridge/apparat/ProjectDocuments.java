@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.provider.DocumentsContract.Document;
 import com.cjtrowbridge.apparat.apparatmobile.Documents;
+import com.cjtrowbridge.apparat.apparatmobile.Transfer;
 import java.io.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import org.json.JSONObject;
@@ -28,7 +29,7 @@ final class ProjectDocuments implements Documents {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-            try {
+                try {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
                 Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -118,9 +119,9 @@ final class ProjectDocuments implements Documents {
                 try{
                     config=read(tasks,1<<20);
                 } catch(IOException ignored) {
-                // A task file is optional.
+                    // A task file is optional.
+                }
             }
-        }
             return new JSONObject().put("Name",name(root)).put("Head",branch).put("Tasks",config).toString();
         } catch(Exception ex) {
             return "";
@@ -135,12 +136,13 @@ final class ProjectDocuments implements Documents {
         }
         return made;
     }
-    private void copy(File source,Uri dest) throws IOException {
+    private void copy(File source,Uri dest, Transfer transfer) throws IOException {
         File[] files=source.listFiles();
         if(files==null) throw new IOException();
         for(File file:files) {
+            if (transfer.cancelled()) throw new InterruptedIOException();
             if(!file.getCanonicalFile().equals(file.getAbsoluteFile())) throw new IOException();
-            if(file.isDirectory()) copy(file,create(dest,Document.MIME_TYPE_DIR,file.getName()));
+            if(file.isDirectory()) copy(file,create(dest,Document.MIME_TYPE_DIR,file.getName()),transfer);
             else {
                 Uri doc=create(dest,"application/octet-stream",file.getName());
                 try(InputStream in=new FileInputStream(file);
@@ -150,6 +152,7 @@ final class ProjectDocuments implements Documents {
                     int n;
                     n=in.read(buf);
                     while(n!=-1){
+                        if (transfer.cancelled()) throw new InterruptedIOException();
                         out.write(buf,0,n);
                         n=in.read(buf);
                     }
@@ -157,13 +160,13 @@ final class ProjectDocuments implements Documents {
             }
         }
     }
-    public String export(String location,String repo,String source) {
+    public String export(String location,String repo,String source,Transfer transfer) {
         Uri created=null;
         try {
             Uri parent=Uri.parse(location);
             if(child(parent,repo)!=null) return "";
             created=create(parent,Document.MIME_TYPE_DIR,repo);
-            copy(new File(source),created);
+            copy(new File(source),created,transfer);
             return created.toString();
         } catch(Exception ex) {
             if(created!=null) try{

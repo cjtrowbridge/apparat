@@ -224,12 +224,7 @@ func (game *Game) buildActiveTabBody(snapshot hud.Snapshot) widget.PreferredSize
 	if snapshot.ActiveTab().ID() == "stmpck" {
 		return widget.NewContainer()
 	}
-	if snapshot.ActiveTab().ID() == hud.TabCluster && game.runtimeInfo.Queries != nil {
-		tab := game.presentedTab(snapshot.ActiveTab())
-		return game.buildMasterDetailTab(tab)
-	}
-
-	tabData := snapshot.ActiveTab()
+	tabData := game.presentedTab(snapshot.ActiveTab())
 	if tabData.Descriptor.ID == hud.TabSettings {
 		return game.buildSettingsTab(tabData)
 	}

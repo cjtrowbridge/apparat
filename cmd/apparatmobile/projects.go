@@ -18,7 +18,15 @@ import (
 type Documents interface {
 	ChooseFolder() string
 	Inspect(string) string
-	Export(string, string, string) string
+	Export(string, string, string, Transfer) string
+}
+
+// Transfer allows the document provider copy loop to honor a cancelled clone.
+type Transfer interface{ Cancelled() bool }
+type transferContext struct{ ctx context.Context }
+
+func (t transferContext) Cancelled() bool {
+	return t.ctx.Err() != nil
 }
 
 var documents struct {
@@ -71,7 +79,7 @@ func (d projectDocuments) CloneTree(ctx context.Context, parent, repo string) (d
 	if err != nil {
 		return p, err
 	}
-	uri := host.Export(parent, filepath.Base(p.Location), p.Location)
+	uri := host.Export(parent, filepath.Base(p.Location), p.Location, transferContext{ctx})
 	if uri == "" {
 		return domain.Project{}, errors.New("folder cannot preserve this checkout or destination is occupied; try app-private storage")
 	}

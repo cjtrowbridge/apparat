@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -118,7 +119,7 @@ func (g *Game) pollProjects() {
 }
 func (g *Game) projectTab(t hud.Tab) hud.Tab {
 	t.Summary = ""
-	t.Sections = []hud.Section{{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device."}, {Title: "Add or clone repo", ContentKind: "project-form"}}
+	t.Sections = []hud.Section{{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device."}, {Title: "Add or clone repo", SelectorColor: "#36ad9c", ContentKind: "project-form"}}
 	for _, p := range g.projects.rows {
 		kind := hud.ContentProject
 		tint := hud.SelectorPalette[0]
@@ -130,7 +131,7 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 		if !p.Available {
 			status = "Unavailable · reconnect its folder"
 		}
-		section := hud.Section{Title: p.Name, Description: p.Location, ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		section := hud.Section{Title: p.Name, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
 		for _, action := range p.Actions {
 			section.Rows = append(section.Rows, hud.Row{Label: "Configured action", Detail: action})
 		}
@@ -149,7 +150,7 @@ func (g *Game) projectButton(c *widget.Container, label string, click func()) {
 }
 func (g *Game) projectField(c *widget.Container, label string, value *string) {
 	c.AddChild(g.detailText(label))
-	w := widget.NewTextInput(widget.TextInputOpts.Face(g.theme.ButtonTheme.TextFace), widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(panelColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}), widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}), widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.TextInputOpts.ChangedHandler(func(e *widget.TextInputChangedEventArgs) {
+	w := widget.NewTextInput(widget.TextInputOpts.Face(g.theme.ButtonTheme.TextFace), widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(backgroundColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}), widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}), widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.TextInputOpts.ChangedHandler(func(e *widget.TextInputChangedEventArgs) {
 		*value = e.InputText
 	}))
 	w.SetText(*value)
@@ -162,7 +163,7 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		return
 	}
 	if f.message != "" {
-		c.AddChild(g.detailText(f.message))
+		c.AddChild(g.detailText(g.projectText(f.message)))
 	}
 	if f.pending != nil {
 		c.AddChild(g.detailText("Working…"))
@@ -189,7 +190,14 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		}
 		return
 	}
-	g.projectField(c, "Checkout or clone parent (blank uses default for clones)", &f.location)
+	g.projectField(c, "Folder", &f.location)
+	if f.location != "" && f.editID == "" {
+		g.projectButton(c, "Use default clone location", func() {
+			f.location = ""
+			f.message = ""
+			g.layoutDirty = true
+		})
+	}
 	g.projectButton(c, "Choose folder…", func() {
 		g.projectWork(func(ctx context.Context) projectResult {
 			picker := g.runtimeInfo.ProjectPicker
@@ -268,6 +276,19 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		})
 	})
 }
+func (g *Game) projectText(value string) string {
+	return wrapSelectorLabel(value, *g.theme.ButtonTheme.TextFace, int(g.detailTextMaxWidth()))
+}
+func projectLocation(value string) string {
+	if strings.HasPrefix(value, "content://") {
+		_, id, ok := strings.Cut(value, "/document/")
+		decoded, err := url.PathUnescape(id)
+		if ok && err == nil {
+			return decoded
+		}
+	}
+	return value
+}
 func clonePreview(dest, account string) string {
 	if account == "" {
 		account = "public access"
@@ -277,7 +298,7 @@ func clonePreview(dest, account string) string {
 
 func (g *Game) projectDestination(parent, repo string) (string, error) {
 	if strings.HasPrefix(parent, "content://") {
-		return parent + " / " + repo[strings.IndexByte(repo, '/')+1:], nil
+		return projectLocation(parent) + "/" + repo[strings.IndexByte(repo, '/')+1:], nil
 	}
 	return projectgit.Destination(g.runtimeInfo.RuntimePath, parent, repo)
 }
