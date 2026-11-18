@@ -33,5 +33,6 @@ func (db *DB) Migrate(ctx context.Context) error {
 		{Version: 4, Name: "local_preferences", SQL: preferencesSchema},
 		{Version: 5, Name: "tab_placement", SQL: "ALTER TABLE preferences ADD COLUMN placement TEXT NOT NULL DEFAULT 'top'"},
 		{Version: 6, Name: "local_project_registry", SQL: projectsSchema},
+		{Version: 7, Name: "local_workspaces", SQL: workspaceSchema},
 	})
 }

@@ -37,3 +37,7 @@ Persistence code must expose application-level repositories and must not leak ra
 - `preferences.go`: Owns migration 4 and independent atomic SQLite records for display preferences and window placement.
 
 - `projects.go`: owns the schema-v6 registry and account preferences. Removing a registration only deletes its SQLite row.
+
+workspace.go owns migration 7 and stores project-scoped drafts, local pending messages and run outcomes. Unregistering a project cascades to its workspace records.
+
+- `workspace.go`: Stores owner-local drafts, pending chat messages and manual run outcomes.

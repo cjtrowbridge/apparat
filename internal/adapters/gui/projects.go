@@ -32,11 +32,13 @@ type projectStore interface {
 	SetProjectDefault(context.Context, string) error
 }
 type projectResult struct {
+	workspace                       *workspaceReply
 	rows                            []domain.Project
 	folder, message, defaultAccount string
 	reload                          bool
 }
 type projectForm struct {
+	workspace                                workspacePanel
 	dataRoot                                 string
 	workers                                  sync.WaitGroup
 	rows                                     []domain.Project
@@ -114,6 +116,9 @@ func (g *Game) pollProjects() {
 	case r := <-f.pending:
 		f.pending = nil
 		f.message = r.message
+		if r.workspace != nil {
+			g.applyWorkspace(r.workspace)
+		}
 		if r.reload {
 			f.rows = r.rows
 			if f.editID == "" {
@@ -133,14 +138,17 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 	for _, p := range g.projects.rows {
 		kind := hud.ContentProject
 		tint := hud.SelectorPalette[0]
-		if len(p.Actions) > 0 {
+		if len(p.Actions)+len(p.Entrypoints) > 0 {
 			kind = hud.ContentPipeline
 			tint = hud.SelectorPalette[1]
 		}
 		status := projectCheckoutStatus(p)
 		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		for _, task := range p.Entrypoints {
+			section.Rows = append(section.Rows, hud.Row{Label: "Manual Task", Detail: task})
+		}
 		for _, action := range p.Actions {
-			section.Rows = append(section.Rows, hud.Row{Label: "Configured action", Detail: action})
+			section.Rows = append(section.Rows, hud.Row{Label: "VS Code task label", Detail: action})
 		}
 		t.Sections = append(t.Sections, section)
 	}
@@ -156,11 +164,16 @@ func (g *Game) projectButton(c *widget.Container, label string, click func()) {
 		})))
 }
 func (g *Game) projectField(c *widget.Container, label string, value *string) {
+	g.projectInput(c, label, *value, func(text string) {
+		*value = text
+	})
+}
+func (g *Game) projectInput(c *widget.Container, label, initial string, changed func(string)) {
 	c.AddChild(g.detailText(label))
 	w := widget.NewTextInput(widget.TextInputOpts.Face(g.theme.ButtonTheme.TextFace), widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(backgroundColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}), widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}), widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.TextInputOpts.ChangedHandler(func(e *widget.TextInputChangedEventArgs) {
-		*value = e.InputText
+		changed(e.InputText)
 	}))
-	w.SetText(*value)
+	w.SetText(initial)
 	c.AddChild(w)
 }
 func (g *Game) projectControls(c *widget.Container, s hud.Section) {
@@ -178,6 +191,9 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		return
 	}
 	if s.ProjectID != "" {
+		if g.workspaceControlsFor(c, s.ProjectID) {
+			return
+		}
 		for _, p := range f.rows {
 			if p.ID == s.ProjectID {
 				g.projectButton(c, "Edit registration", func() {

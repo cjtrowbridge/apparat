@@ -138,3 +138,7 @@ Selector buttons wrap their labels to the pane's inner width as the divider move
 Tab rails share the same buttons and selection handlers as the top strip. The side gutter narrows the available content area, including STMPCK gallery rendering and hit testing. An active game uses the full viewport.
 
 - `projects.go`: shows SQLite registrations, empty and unavailable states, GitHub clone preview and account selection. The Linux folder button uses Zenity with portal preference and supports typed paths. Git and storage work run off the frame loop. The selected account applies to a single transfer.
+
+workspace.go renders Files, Git, Tasks and Chat for the selected registration. Open a text file to edit individual lines, keep a draft, and explicitly apply it. Pending writes and commits require confirmation.
+
+- `workspace.go`: Presents the local workspace through the Projects detail pane.

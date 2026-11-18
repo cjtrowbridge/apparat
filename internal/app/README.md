@@ -34,3 +34,13 @@ Every initialized runtime must create or replace `last_run.log` at `config.LastR
 
 - `projects.go`: registers and reopens local project checkouts, with per-repo account references and device-local defaults.
 - `projects_test.go`: Exercises registry idempotency, reopening, external edits, reconnection and preservation on removal. Set APPARAT_TEST_PHASE9_GITHUB=1 only when authorized to test the two real example repositories.
+
+workspace.go resolves every command by registered project ID and coordinates draft recovery. project_tasks.go executes version 1 snapshot-text tasks and publishes digest-verified artifacts.
+
+- `workspace.go`: Runs project-scoped workspace commands against the registered checkout.
+
+- `project_tasks.go`: Executes versioned owner-local text snapshot tasks declared by a project.
+
+- `workspace_test.go`: Verifies editable working trees, selection isolation and durable workspace records.
+
+- `workspace_save.go`: Records file transaction identity, base, outcome and rejection before allowing a replay.

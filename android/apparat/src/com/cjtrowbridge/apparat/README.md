@@ -16,3 +16,5 @@ Updater rejection codes distinguish invalid package, mismatched signer and non-i
 Regression verification: compile this helper with `tests/UpdateTransferTest.java` through the build gate and run `com.cjtrowbridge.apparat.UpdateTransferTest`. Controlled streams exercise slow progress beyond the old two-minute cap, idle timeout, duration, size and cancellation. Actual mobile network acceptance remains a separate device check.
 - `ProjectDocuments.java`: owns the system folder picker, persisted grants, metadata reads and public clone export.
 - `ApkHash.java`: Hashes update packages.
+
+- `WorkspaceDocuments.java`: Resolves relative document names beneath the registered tree, queries children, and provides bounded-scope file descriptors and document operations. The host must support the requested operation.

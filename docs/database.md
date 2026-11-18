@@ -95,3 +95,5 @@ Migration 4 adds singleton preferences and desktop_window records. Updating geom
 Migration 5 adds tab placement to the existing preference record. Earlier rows receive the top layout and keep their display, startup and overlay choices. Restore accepts schema versions 3 through 5.
 
 Migration 6 adds the local project registry and account references. Restore accepts schemas 3 through 6. Checkout files remain at their registered locations and require separate backup.
+
+Migration 7 adds project-scoped drafts and durable entries for pending messages and manual Task runs. Restore accepts schemas 3 through 7. Artifact bytes reside in the runtime artifact directory; a database snapshot contains their metadata.

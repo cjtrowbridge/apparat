@@ -123,6 +123,9 @@ final class ProjectDocuments implements Documents {
         }
         return "";
     }
+    public String access(String location,String action,String path,String argument) {
+        return new WorkspaceDocuments(resolver,location).access(action,path,argument);
+    }
     public String inspect(String location) {
         try {
             Uri root=Uri.parse(location);
@@ -148,7 +151,17 @@ final class ProjectDocuments implements Documents {
                     // A task file is optional.
                 }
             }
-            return new JSONObject().put("Name",name(root)).put("Head",branch).put("Revision",revision).put("Tasks",config).toString();
+            String entries="";
+            Uri app=child(root,".apparat");
+            Uri definition=app==null ? null : child(app,"tasks.json");
+            if(definition!=null) {
+                try {
+                    entries=read(definition,65536);
+                } catch(IOException ignored) {
+                    // Optional Task declaration outside the supported text limit.
+                }
+            }
+            return new JSONObject().put("Entrypoints",entries).put("Name",name(root)).put("Head",branch).put("Revision",revision).put("Tasks",config).toString();
         } catch(Exception ex) {
             return "";
         }

@@ -23,3 +23,5 @@ Domain code defines identity, projects, queues, tasks, capabilities, workload cl
 - `preferences.go`: Defines validated local display preferences and normal desktop window geometry.
 
 - `project.go`: describes a local checkout registration and its observed branch and task labels.
+
+project.go also defines the project-scoped workspace request and bounded text view shared by the runtime and UI.

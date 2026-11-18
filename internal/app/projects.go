@@ -34,6 +34,7 @@ func (n *Runtime) Projects(ctx context.Context) ([]domain.Project, error) {
 		current, err := n.inspectProject(p.Location)
 		if err == nil {
 			projects[i].Actions = current.Actions
+			projects[i].Entrypoints = current.Entrypoints
 			projects[i].Branch = current.Branch
 			projects[i].Revision = current.Revision
 			projects[i].Available = true
@@ -42,6 +43,8 @@ func (n *Runtime) Projects(ctx context.Context) ([]domain.Project, error) {
 	return projects, nil
 }
 func (n *Runtime) StoreProject(ctx context.Context, id, location, account string) error {
+	n.workspaceMu.Lock()
+	defer n.workspaceMu.Unlock()
 	if !projectgit.ValidAccount(account) {
 		return errors.New("invalid GitHub account")
 	}
@@ -77,6 +80,8 @@ func (n *Runtime) CloneProject(ctx context.Context, parent, repo, account string
 	return n.registerProject(ctx, p)
 }
 func (n *Runtime) RemoveProject(ctx context.Context, id string) error {
+	n.workspaceMu.Lock()
+	defer n.workspaceMu.Unlock()
 	return n.database.RemoveProject(ctx, id)
 }
 func (n *Runtime) ProjectDefault(ctx context.Context) (string, error) {

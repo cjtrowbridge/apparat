@@ -13,6 +13,8 @@ This roadmap translates the product contract in [README.md](./README.md) into or
 
 Roadmap items describe goals, dependencies, and completion evidence. They are not atomic execution authority. Before changing application code, dependencies, schemas, protocols, or build systems, create and approve a focused execution plan under `plans/future/` or `plans/current/`.
 
+Each phase must deliver a useful outcome even if development stops there. Its exit criteria should name who can do what through the normal interface, what observable result proves success, and which earlier workflows must still work. For example, checkout registration proves acquisition in Phase 9. Editing, committing and recovering work prove a usable local workspace in Phase 9A.
+
 ## Status Key
 
 - `[ ]` not started
@@ -525,11 +527,11 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - **Corrected MVP sequence**
     1. Prove the five-tab shell, controller focus, and push-to-talk interaction with mock data.
     2. Prove shared GUI/headless startup, logging, SQLite migrations, and diagnostics.
-    3. Establish the minimum user/device identity and TLS trust needed for two authorized devices.
-    4. Send one signed, idempotent HTTPS echo job over a trusted LAN or externally configured WireGuard.
-    5. Advertise typed device capabilities and route one text-generation job to one eligible provider.
-    6. Make queue state, retries, cancellation, results, and restart recovery durable.
-    7. Add project workspace and owner-authoritative project transaction behavior.
+    3. Acquire local projects and complete the offline workspace, Git and manual Task workflows.
+    4. Establish the minimum user/device identity and TLS trust needed for two authorized devices.
+    5. Send one signed, idempotent HTTPS echo job over a trusted LAN or externally configured WireGuard.
+    6. Advertise typed device capabilities and route one text-generation job to one eligible provider.
+    7. Make queue state, retries, cancellation, results, and restart recovery durable.
     8. Add task schedules, webhooks, and event-driven execution without scheduler failover.
     9. Validate packaged builds and lifecycle behavior on Steam Deck/Linux before claiming broader platform support.
     10. Add Windows, macOS, and Android through evidence-producing build and runtime checkpoints.
@@ -1598,11 +1600,81 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Prove default and chosen clone locations on Linux and Pixel 4a, including Android external-folder access across restart. Use public repos on Android.
 - [ ] Verify concurrent private Linux clones under two real accounts with disjoint access, including wrong-account denial and preservation of the terminal account. One real account and concurrent simulated identities have passed.
 
+## Phase 9A: Local Project Workspaces
+
+**User outcome:** On one device with networking disabled, open a registered project, edit a file, commit the intended change, and run a supported local Task whose result remains inspectable after restart.
+
+**Dependencies:** Phase 9 registration and the Phase 8 shared application core. Complete the local workflow before cluster enrollment work. Queue-backed steps, route selection and triggers follow in Phases 13, 14 and 15. [Execution plan](plans/current/2026-11-18-10-27-42_local-project-workspaces.md)
+
+### Files and Git
+
+- [ ] Add project-scoped local file operations.
+  - [ ] Browse directories and view supported text.
+  - [ ] Create/edit/rename/move/delete with explicit scope and confirmation.
+  - [ ] Protect roots, symlinks, traversal, binary files, large files, and races.
+  - [ ] Preserve unsaved/offline drafts independently from authoritative files.
+- [ ] Add safe Git operations.
+  - [ ] Status, diff, stage, unstage, scoped commit.
+  - [ ] Branch list/switch, history, and commit detail.
+  - [ ] Conflict visualization and explicit resolution transactions.
+  - [ ] No shell escape or arbitrary command construction.
+
+### Chats, transactions, drafts, and artifacts
+
+- [ ] Add Project chats.
+  - [ ] Chat list/history and prompt editor.
+  - [ ] Message, job, route, result, and artifact relationships.
+  - [ ] Offline pending messages with durable state.
+- [ ] Add owner-authoritative idempotent Project transactions.
+  - [ ] Stable transaction and base-revision identity.
+  - [ ] Authorization, validation, conflict checks, and owner apply.
+  - [ ] Durable rejection reason and editable content.
+  - [ ] Revise, discard, retry, and duplicate replay.
+- [ ] Implement artifact lifecycle.
+  - [ ] Owner metadata, SHA-256, size, MIME type, provenance, authorization, and retention.
+  - [ ] Verify local artifact digests and finalize writes atomically.
+  - [ ] Explicit expired/deleted/corrupt/unavailable states.
+  - [ ] Cleanup without silently invalidating successful authoritative results.
+
+### Pipelines and manual Tasks
+
+- [ ] Derive Pipeline status from one or more enabled Apparat Task entrypoints.
+  - [ ] No separate Pipeline owner, repository, scheduler, or identity.
+- [ ] Define versioned Task entrypoints.
+  - [ ] Stable Task and Project IDs.
+  - [ ] Typed inputs/outputs and schema version.
+  - [ ] Project-owner authority and revision.
+  - [ ] Permissions, secret references, timeouts, retries, approvals, and enabled state.
+  - [ ] Durable run/correlation/idempotency identity and history.
+- [ ] Permit manual execution with zero trigger bindings.
+  - [ ] Owner-local allowlisted application actions.
+  - [ ] Project-scoped filesystem/Git operations.
+  - [ ] Explicit mock/local executor calls.
+  - [ ] Configured human approval for consequential actions.
+  - [ ] No unrestricted remote shell, generic process endpoint, or arbitrary tool execution.
+- [ ] Keep trigger bindings as separate planned records; a manual action is not a persistent trigger.
+- [ ] Explain unsupported discovered task labels and show which enabled entrypoints can run on this device.
+
+### GUI, recovery, and safety
+
+- [ ] Wire workspace buttons to real routes/commands or visibly disable them with a reason.
+- [ ] Preserve editor focus, selection, scroll, panes, unsaved buffers, and conflict UI as presentation state.
+- [ ] Show transaction pending/accepted/rejected/conflicted, Task approval/running/cancelled/failed/completed, and local artifact states.
+- [ ] Recover drafts, transactions, Task runs, and artifacts across restart.
+- [ ] Redact file contents, prompts, chat bodies, secrets, and artifact bytes from default logs.
+
+**Exit criteria**
+
+- [ ] On Linux and Pixel 4a use the Projects GUI offline to edit a file, inspect the diff, stage, commit, restart and locate that commit in history. Exercise Linux and Android private and granted storage as applicable. Compare the actual working tree, index and commit with the intended change.
+- [ ] Repeat with two checkouts of the same remote. Verify the other checkout retains its files, staged changes and HEAD. Exercise the local workflow with Steam Deck controls.
+- [ ] Recover an offline draft and pending project chat after restart. Change a file outside Apparat, recover the conflicted transaction, revise it and retry without duplicate effects.
+- [ ] Run an enabled project entrypoint with no trigger, inspect its result, restart and reopen its verified artifact. An unsupported task gives a specific reason. Save the workflows and results as the Phase 11A baseline.
+
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
 
 **User outcome:** Create a cluster on Linux, discover and join it from the Pixel 4a, and recognize the same members after restart or an address change.
 
-**Dependencies:** The Phase 8 core and Phase 6 identity contracts. Phase 9 remains usable throughout enrollment and after leaving.
+**Dependencies:** The Phase 8 core and Phase 6 identity contracts. Complete Phase 9A first. Its local workspace remains usable throughout enrollment and after leaving.
 
 - [ ] In Cluster, create the cluster root and initial enrollment authority. Present discover, request to join, confirm, approve, leave and revoke actions with visible pending, trusted, offline and revoked states. Keep transient selections and forms in GUI state.
 
@@ -1676,7 +1748,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 **User outcome:** One Project Repos list shows local repos and the projects other trusted members choose to advertise, labeled with their host and availability.
 
-**Dependencies:** Phase 9 local registry and Phase 10 trusted membership and authenticated REST. This milestone provides read-only catalog browsing. Remote workspace operations follow in Phase 11A.
+**Dependencies:** Phase 9 local registry and Phase 10 trusted membership and authenticated REST. This milestone provides read-only catalog browsing. Phase 11A repeats the local workspace tests with the shared catalog. Phase 11C adds remote workspace operations.
 
 ### Owner-published summaries
 
@@ -1710,82 +1782,15 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [ ] Cached summaries remain useful offline without granting authority.
 - [ ] On the Pixel 4a, browse a Linux-only repo, disconnect Linux and verify offline status. Verify two checkouts of the same Git remote remain distinct and summaries omit owner-local paths.
 
-## Phase 11A: Project Workspaces, Git, Pipelines, And Constrained Manual Tasks
+## Phase 11A: Verify Local Workspaces In The Shared Catalog
 
-**User outcome:** A user can open a real local or remote Project, perform safe repository work, manage durable drafts/artifacts, and run a Project entrypoint manually without a trigger or unrestricted shell.
-
-**Dependencies:** Phase 9 for local workspaces and manual execution. Remote operations additionally require Phase 10 security and the Phase 11 catalog.
-
-**Deferred:** Queue-backed Task steps until Phase 13, route selection until Phase 14, and schedules/webhooks/events until Phase 15.
-
-**Parallel-lane rule:** Local workspace work can proceed from Phase 9 independently of the cluster catalog and Phase 12 local-service work. Phase 13 may begin only after both lanes provide their required artifact and capability foundations.
-
-### Files and Git
-
-- [ ] Add constrained owner-served filesystem resources.
-  - [ ] Browse directories and view supported text.
-  - [ ] Create/edit/rename/move/delete with explicit scope and confirmation.
-  - [ ] Protect roots, symlinks, traversal, binary files, large files, and races.
-  - [ ] Preserve unsaved/offline drafts independently from authoritative files.
-- [ ] Add safe Git operations.
-  - [ ] Status, diff, stage, unstage, scoped commit.
-  - [ ] Branch list/switch, history, and commit detail.
-  - [ ] Conflict visualization and explicit resolution transactions.
-  - [ ] No shell escape or arbitrary command construction.
-
-### Chats, transactions, drafts, and artifacts
-
-- [ ] Add Project chats.
-  - [ ] Chat list/history and prompt editor.
-  - [ ] Message, job, route, result, and artifact relationships.
-  - [ ] Offline pending messages with durable state.
-- [ ] Add owner-authoritative idempotent Project transactions.
-  - [ ] Stable transaction and base-revision identity.
-  - [ ] Authorization, validation, conflict checks, and owner apply.
-  - [ ] Durable rejection reason and editable content.
-  - [ ] Revise, discard, retry, and duplicate replay.
-- [ ] Implement artifact lifecycle.
-  - [ ] Owner metadata, SHA-256, size, MIME type, provenance, authorization, and retention.
-  - [ ] Bounded authenticated upload/download with ranges/chunks.
-  - [ ] Temporary partial state, resume, digest verification, and atomic finalization.
-  - [ ] Explicit expired/deleted/corrupt/unavailable states.
-  - [ ] Cleanup without silently invalidating successful authoritative results.
-
-### Pipelines and manual Tasks
-
-- [ ] Derive Pipeline status from one or more enabled Apparat Task entrypoints.
-  - [ ] No separate Pipeline owner, repository, scheduler, or identity.
-- [ ] Define versioned Task entrypoints.
-  - [ ] Stable Task and Project IDs.
-  - [ ] Typed inputs/outputs and schema version.
-  - [ ] Project-owner authority and revision.
-  - [ ] Permissions, secret references, timeouts, retries, approvals, and enabled state.
-  - [ ] Durable run/correlation/idempotency identity and history.
-- [ ] Permit manual execution with zero trigger bindings.
-  - [ ] Owner-local allowlisted application actions.
-  - [ ] Project-scoped filesystem/Git operations.
-  - [ ] Explicit mock/local executor calls.
-  - [ ] Configured human approval for consequential actions.
-  - [ ] No unrestricted remote shell, generic process endpoint, or arbitrary tool execution.
-- [ ] Keep trigger bindings as separate planned records; a manual action is not a persistent trigger.
-- [ ] Expose authorized Task summaries and manual run requests through the Project owner's REST API.
-
-### GUI, recovery, and safety
-
-- [ ] Wire workspace buttons to real routes/commands or visibly disable them with a reason.
-- [ ] Preserve editor focus, selection, scroll, panes, unsaved buffers, and conflict UI as presentation state.
-- [ ] Show transaction pending/accepted/rejected/conflicted, Task approval/running/cancelled/failed/completed, and artifact transfer states.
-- [ ] Recover drafts, transactions, Task runs, and transfers across restart.
-- [ ] Redact file contents, prompts, chat bodies, secrets, and artifact bytes from default logs.
-- [ ] Test authorization distinctions among discovery, read, Git, Task invocation, mutation, artifact, chat, and secret scopes.
+**User outcome:** I can work in my local checkout with the same confidence after other owners’ projects appear, disappear or become stale. Depends on Phases 9A, 10 and 11. [Regression plan](plans/future/2026-11-18-10-27-42_shared-catalog-workspace-regression.md)
 
 **Exit criteria**
 
-- [ ] A Steam Deck can operate a real Project locally or through its owner without arbitrary shell access.
-- [ ] Offline drafts and rejected/conflicted transactions remain recoverable and editable.
-- [ ] A Project with an entrypoint appears as a Pipeline.
-- [ ] The same owner-defined Task runs manually with no trigger.
-- [ ] Artifact transfers resume and verify integrity.
+- [ ] Re-run the Phase 9A edit-to-commit, draft recovery and task-to-artifact workflows on Linux and Pixel 4a with identically named local and remote checkouts. Check owner and project IDs before and after catalog refresh, reordering and restart.
+- [ ] Disconnect the remote owner midway, complete local work and compare both owners’ files, Git indexes, history and run records. A remote selection cannot fall back to a local checkout.
+- [ ] Reconnect, expire a summary and revoke access. Verify the catalog reflects each change, local work stays available, and browse-only access never enables remote edits or execution.
 
 ## Phase 11B: Android GitHub Authentication And Private Cloning
 
@@ -1801,6 +1806,21 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 - [ ] On the Pixel 4a, authorize two accounts with disjoint private repos. Clone one into the default location and the other into a chosen external folder using the intended account. Verify the wrong account fails visibly.
 - [ ] Cancel sign-in and revoke one account. Verify the other session remains usable, the affected account can reconnect, and both checkouts reopen after an offline restart.
+
+## Phase 11C: Operate A Workspace On Its Owning Device
+
+**User outcome:** From a second device, an authorized user can edit and commit a file or run a manual Task on the owning device and retrieve its verified result.
+
+**Dependencies:** Phase 9A commands, Phase 10 trusted REST and Phase 11 owner discovery. Phase 11A supplies the mixed-catalog regression baseline.
+
+- [ ] Serve bounded file reads, Git operations, chat, draft transactions, Task summaries and manual runs through the owner’s authenticated API. Reuse the local commands and enforce separate discovery, read, Git, mutation, invocation, chat, artifact and secret permissions.
+- [ ] Support bounded authenticated artifact uploads and downloads with ranges or chunks, partial state, resume, digest validation, atomic finalization and visible transfer states.
+- [ ] Recover pending drafts, rejected or conflicted transactions and interrupted transfers across client and owner restart. Verify retries are idempotent and preserve editable content.
+
+**Exit criteria**
+
+- [ ] From a second device, including the Steam Deck controller surface, operate a real project through its owner. Verify the edit, commit, manual run and artifact on the owner and verify a discovery-only client cannot perform those actions.
+- [ ] Interrupt a transfer, resume and verify the digest. Exercise an owner-side conflict, duplicate request and revocation. Preserve the local and mixed-catalog workflows proved in 9A and 11A.
 
 ## Phase 12: Multi-Instance Local Inference Drivers, Health, Capabilities, And Advertisements
 
@@ -1902,7 +1922,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 **User outcome:** Typed jobs can be submitted to their queue owner, leased by an eligible worker, completed with verified results/artifacts, and recovered without duplicate authoritative completion.
 
-**Dependencies:** Phase 10 trusted REST, Phase 11A artifacts, and Phase 12 capabilities.
+**Dependencies:** Phase 10 trusted REST, Phase 9A local artifacts, Phase 11C authenticated artifact transfers, and Phase 12 capabilities.
 
 **Deferred:** Pool choice, route profiles, and fallback policy to Phase 14.
 
@@ -2051,7 +2071,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 **User outcome:** The same Project Task entrypoint can run manually or through authorized triggers, survive restart, await queued work, and produce one auditable outcome.
 
-**Dependencies:** Phase 11A Task entrypoints and Phases 13–14 queue/routing.
+**Dependencies:** Phase 9A Task entrypoints and Phases 13–14 queue/routing.
 
 **Deferred:** Scheduler failover/election to Post-MVP Track A.
 
@@ -2394,10 +2414,11 @@ Every focused implementation plan includes the applicable items below and its ph
 
 - [ ] Phase 8: database encryption/restore, WAL/platform policy, lock recovery, and binary-root migration details.
 - [ ] Phase 9: durable Android checkout access, supported Git working trees and how to recognize configured actions.
+- [ ] Phase 9A: file/binary limits, platform Task sandboxing, conflicts and artifact retention defaults.
 - [ ] Phase 10: enrollment authorization and recovery, discovery and address fallback, directory conflicts and API limits.
 - [ ] Phase 11: Project-summary authorization, disclosure, freshness and eviction.
-- [ ] Phase 11A: file/binary limits, platform Task sandboxing, conflicts and artifact retention defaults.
 - [ ] Phase 11B: Android GitHub authorization flow, registration, credential renewal and account recovery.
+- [ ] Phase 11C: operation-specific remote grants, transfer limits and resumption policy.
 - [ ] Phase 12: discovery/auto-promotion, provider secrets per platform, admission defaults, and approved image drivers.
 - [ ] Phase 13: lease/heartbeat/retry/retention/artifact quota defaults.
 - [ ] Phase 14: telemetry schema/retention, routing score/fallback/explanation and freshness policy.
@@ -2428,6 +2449,7 @@ The MVP is complete only when the applicable cross-cutting requirements and all 
   - [ ] Signed envelopes reject canonicalization errors, tampering, key mismatch, replay, expiry, wrong recipient, and unauthorized work.
 - [ ] Durable state and Projects
   - [ ] Project Repos supports offline registration, restart, reconnection and safe removal on Linux and the Pixel 4a before enrollment.
+  - [ ] Before enrollment, Linux and Pixel 4a complete the offline edit-to-commit and task-to-artifact workflows in Phase 9A. Repeat both with remote catalog entries in Phase 11A.
   - [ ] A job survives duplicate delivery, disconnection, lease expiry, and requester/owner/worker restart.
   - [ ] Every device shows the authorized cluster-wide Project catalog while each repository/Task remains authoritative on its owner.
   - [ ] A real Project supports safe files/Git, durable drafts/transactions, and verified artifacts.

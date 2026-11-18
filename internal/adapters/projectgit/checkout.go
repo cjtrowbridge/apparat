@@ -74,6 +74,8 @@ func Inspect(path string) (domain.Project, error) {
 	defer func() {
 		_ = sandbox.Close()
 	}()
+	definition, _ := ReadText(sandbox, ".apparat/tasks.json")
+	p.Entrypoints = EnabledTasks(definition)
 	info, err := sandbox.Stat(".vscode/tasks.json")
 	if err != nil || !info.Mode().IsRegular() || info.Size() > 1<<20 {
 		return p, nil

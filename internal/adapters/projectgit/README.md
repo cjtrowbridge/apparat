@@ -5,3 +5,11 @@
 - `install_linux.go`: Atomically publishes a completed temporary clone without replacing an occupied destination on Linux and Android.
 - `install_other.go`: Reports an unsupported clone publication operation on unqualified platforms.
 - `checkout_test.go`: Covers cancellation, preservation of user files, concurrent clone publication and isolated account lookup.
+
+workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests before replacement. workspace_git.go uses go-git for status, diff, staging, commit, branches and history. Commits refuse unrelated staged files.
+
+- `workspace_git.go`: Implements local Git actions without launching repository commands or hooks.
+
+- `workspace_files.go`: Exposes bounded working-tree text and directory operations.
+
+- `task_config.go`: Validates version 1 project entrypoints and identifies enabled supported Tasks.

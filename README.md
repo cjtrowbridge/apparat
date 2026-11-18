@@ -98,7 +98,9 @@ After trusted membership is available, the same list will include authorized sum
 
 The Project Repos list uses blue outlines for repos without configured actions and purple outlines for repos with configured actions. Repos with configured actions also show 🧠 on the right. Both open the same workspace view. Each row shows the full checkout location beneath its name, prefixed with `local://` for this device, followed by the current branch and abbreviated checkout commit. On Android, `local://apparat/` starts at this installation’s data directory and `local://~/` starts at primary shared storage. Other volumes keep their own labels.
 
-Projects opens workspace views with:
+Phase 9A will add offline file editing, Git operations, durable local drafts and manual Task results before cluster enrollment. Phase 11A will verify those workflows in the mixed local and remote catalog. Phase 11C will add authorized workspace operations on another owner.
+
+The planned workspace includes:
 
 - VS Code-like project chats.
 - File browsing and editing.
@@ -835,3 +837,15 @@ Open questions and implementation phases are tracked in [ROADMAP.md](./ROADMAP.m
 Settings stores theme, UI scale, font size, startup tab and developer overlay preference in the node database. Select a setting to cycle its available values. Desktop also remembers the normal window rectangle and maximized state. Reset window placement centers the window on the current monitor.
 
 Tab placement in Settings cycles through Top, Bottom, Left, Right and Responsive. Responsive uses a left rail when there is room for a desktop detail pane. Short windows use the horizontal strip so every tab stays reachable. SQLite remembers the selected mode across resizes and restarts.
+
+### Using the local project workspace
+
+In Projects, select a registered checkout and choose **Open workspace**. Browse into a folder or open a UTF-8 text file up to 64 KiB. Edit one line at a time and use **Apply draft to file** to write the checkout. Line edits are saved as local drafts. If another editor changes the file, compare the checkout text and explicitly select the current file as the draft base before retrying. Use **Workspace menu** for Git status, history, branches, pending project messages and manual Tasks. Apparat commits the selected staged file with the local identity `Apparat <apparat@localhost>` and asks you to address other staged files first.
+
+For a local Task, place a versioned declaration in `.apparat/tasks.json`. For example:
+
+```json
+{"version":1,"tasks":[{"id":"readme","label":"Snapshot README","enabled":true,"action":"snapshot-text","path":"README.md"}]}
+```
+
+Select **Tasks**, choose the task by ID and confirm the run. The snapshot copies the named text file into local artifact storage and records its SHA-256 digest. Open a run's artifact to verify the stored bytes after restart. VS Code shell commands remain descriptive labels. Local chat messages remain pending on the project owner.

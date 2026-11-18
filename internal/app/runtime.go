@@ -27,6 +27,7 @@ const (
 )
 
 type Runtime struct {
+	workspaceMu    sync.Mutex
 	documents      ProjectDocuments
 	mu             sync.Mutex
 	lifecycle      sync.Mutex
