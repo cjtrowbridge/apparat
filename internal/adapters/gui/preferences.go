@@ -21,6 +21,7 @@ type preferenceStore interface {
 }
 type preferenceState struct {
 	domain.Preferences
+	pane    *widget.ScrollContainer
 	store   preferenceStore
 	pending chan error
 	next    domain.Preferences

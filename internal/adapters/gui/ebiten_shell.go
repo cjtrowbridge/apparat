@@ -113,34 +113,7 @@ type Game struct {
 	updateButton                   *widget.Button
 	updateDetail                   *widget.Text
 	onCheckForUpdate               func() bool
-}
-
-func (game *Game) SetOnCheckForUpdate(f func() bool) {
-	game.onCheckForUpdate = f
-}
-
-func (game *Game) SetUpdateStatus(code UpdateStatusCode) {
-	game.updateStatus.Store(updateStatusFor(code))
-}
-
-func (game *Game) UpdateStatus() string {
-	{
-		status, ok := game.updateStatus.Load().(updateStatus)
-		if ok {
-			return status.Label
-		}
-	}
-	return ""
-}
-
-func (game *Game) UpdateStatusDetail() string {
-	{
-		status, ok := game.updateStatus.Load().(updateStatus)
-		if ok {
-			return status.Detail
-		}
-	}
-	return ""
+	discovery                      updateDiscovery
 }
 
 func NewGame() *Game {
@@ -188,6 +161,7 @@ func (game *Game) Update() error {
 	}
 	game.receivePreferences()
 	game.pollProjects()
+	game.pollUpdateDiscovery()
 	game.pollDirectoryStatus()
 	game.workspaceBackEnabled.Store(game.inWorkspace())
 	if game.workspaceBackRequested.Swap(false) {
@@ -204,7 +178,7 @@ func (game *Game) Update() error {
 	}
 	game.updatePointerState()
 	game.ui.Update()
-	game.clampWorkspaceScroll()
+	game.clampBodyScroll()
 	game.enforceBodyTabScrollLock()
 	game.advanceTabDragCancellation()
 	game.advanceBodyScrollCancellation()

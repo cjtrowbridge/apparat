@@ -18,6 +18,9 @@ import (
 // from scratch, but for this initial migration, rebuilding ensures layout correctness.
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.projects.workspace.layout.begin()
+	if snapshot.ActiveTab().ID() != hud.TabSettings {
+		game.prefs.pane = nil
+	}
 	if game.tabScroll != nil {
 		game.tabStripScrollLeft = clampScrollLeft(game.tabScroll.ScrollLeft)
 	}
@@ -57,7 +60,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	rail := game.sideRail()
 	rows := []bool{false, false, true}
 	contentLayout := widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
-	bottom := game.prefs.Placement == "bottom"
+	bottom := game.bottomTabs()
 	if bottom {
 		rows = []bool{false, true, false}
 	}
@@ -255,6 +258,10 @@ func (game *Game) buildSettingsTab(tabData hud.Tab) widget.PreferredSizeLocateab
 		})),
 	)
 
+	if game.prefs.pane != nil {
+		scrollContainer.ScrollTop = game.prefs.pane.ScrollTop
+	}
+	game.prefs.pane = scrollContainer
 	game.registerVerticalScroll(scrollContainer)
 	return boundPreferredWidth(scrollContainer, game.hudPreferredWidth)
 }
@@ -318,12 +325,7 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 					if game.bodySelectionSuppressed() {
 						return
 					}
-					game.SetUpdateStatus(UpdateStatusChecking)
-					if game.onCheckForUpdate == nil {
-						game.SetUpdateStatus(UpdateStatusUnableNoChecker)
-					} else if !game.onCheckForUpdate() {
-						game.SetUpdateStatus(UpdateStatusUnableBridge)
-					}
+					game.requestUpdateAction()
 					game.applyUpdateStatus()
 				}),
 			)

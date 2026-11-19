@@ -7,7 +7,7 @@ package gui
 import "testing"
 
 func TestTabStripRebuildLeftAlignsWhenTabsFit(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.width = game.tabStripContentWidth + (windowMargin * 2)
 	game.rebuildUI(game.shell.Snapshot())
 	game.tabScroll.ScrollLeft = 0.65
@@ -21,7 +21,7 @@ func TestTabStripRebuildLeftAlignsWhenTabsFit(t *testing.T) {
 }
 
 func TestTabStripRebuildPreservesOverflowDragPosition(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.width = 280
 	game.rebuildUI(game.shell.Snapshot())
 	if !game.tabStripOverflows() {
@@ -38,7 +38,7 @@ func TestTabStripRebuildPreservesOverflowDragPosition(t *testing.T) {
 }
 
 func TestPointerTabSelectionPreservesOverflowDragPosition(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.width = 280
 	game.rebuildUI(game.shell.Snapshot())
 	game.tabScroll.ScrollLeft = 0.42
@@ -52,7 +52,7 @@ func TestPointerTabSelectionPreservesOverflowDragPosition(t *testing.T) {
 }
 
 func TestRequestedTabRevealMovesOnlyWhenSelectedTabIsClipped(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.width = 280
 	game.rebuildUI(game.shell.Snapshot())
 	game.selectTabWithReveal(len(game.shell.Snapshot().Tabs) - 1)
@@ -74,7 +74,7 @@ func TestTabHoverImageDiffersFromSelectedImage(t *testing.T) {
 }
 
 func TestIconTabsFitPhoneWidthWithTouchTargetsAndNames(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.width = 320
 	game.rebuildUI(game.shell.Snapshot())
 	if game.tabStripOverflows() {
@@ -103,7 +103,7 @@ func TestSixTabsFitMinimumPhoneWidth(t *testing.T) {
 }
 
 func TestResponsivePlacementAdaptsWithoutChangingSavedChoice(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	p := game.prefs.Preferences
 	p.Placement = "responsive"
 	game.applyPreferences(p)
@@ -122,7 +122,7 @@ func TestResponsivePlacementAdaptsWithoutChangingSavedChoice(t *testing.T) {
 }
 
 func TestRightRailClearsPushToTalk(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.Layout(640, 480)
 	game.prefs.Placement = "right_rail"
 	x, _ := game.pttCenter()
@@ -132,7 +132,7 @@ func TestRightRailClearsPushToTalk(t *testing.T) {
 }
 
 func TestBottomTabsKeepPushToTalkAboveStrip(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.prefs.Placement = "bottom"
 	for _, width := range []int{320, 1024} {
 		game.Layout(width, 600)

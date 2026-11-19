@@ -12,8 +12,16 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
-func TestNewGameBuildsScrollableTabStripRoot(t *testing.T) {
+func horizontalGame() *Game {
 	game := NewGame()
+	game.prefs.Placement = "top"
+	game.rebuildUI(game.shell.Snapshot())
+	game.ensureActiveTabVisible()
+	return game
+}
+
+func TestNewGameBuildsScrollableTabStripRoot(t *testing.T) {
+	game := horizontalGame()
 	root, ok := game.ui.Container.(*widget.Container)
 	if !ok {
 		t.Fatalf("root type = %T, want *widget.Container", game.ui.Container)
@@ -42,7 +50,7 @@ func TestNewGameBuildsScrollableTabStripRoot(t *testing.T) {
 }
 
 func TestActiveTabStripFollowsHUDSnapshot(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	selectTabThroughStrip(t, game, hud.TabSettings)
 	{
 		id := game.shell.Snapshot().ActiveTab().ID()
@@ -84,7 +92,7 @@ func buildSettingsContentForTest(t *testing.T, game *Game) *widget.Container {
 }
 
 func TestTabStripManualScrollIsNotOverwrittenWithoutRequest(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.tabScroll.ScrollLeft = 0.42
 	game.ensureActiveTabVisible()
 	{

@@ -70,6 +70,15 @@ func init() {
 		current.CheckForUpdate()
 		return true
 	})
+	game.SetInstalledRelease(func() string {
+		bridgeMu.Lock()
+		current := updater
+		bridgeMu.Unlock()
+		if current == nil {
+			return ""
+		}
+		return current.InstalledRelease()
+	})
 	mobile.SetGame(game)
 
 }
@@ -100,6 +109,7 @@ func ReportUpdateStatus(code string) {
 }
 
 type Updater interface {
+	InstalledRelease() string
 	CheckForUpdate()
 }
 

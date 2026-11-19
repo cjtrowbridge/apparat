@@ -21,11 +21,11 @@ import (
 )
 
 type voiceState struct {
-	engine                             *speech.Engine
-	nativeMu                           sync.Mutex
-	native, canvas                     *speech.Session
-	field                              *widget.TextInput
-	original, preview, details, status string
+	engine                                      *speech.Engine
+	nativeMu                                    sync.Mutex
+	native, canvas                              *speech.Session
+	field                                       *widget.TextInput
+	original, preview, details, status, confirm string
 }
 
 func (g *Game) initSpeech() {
@@ -140,8 +140,8 @@ func (g *Game) pollSpeech() {
 		}
 	}
 	if v.engine != nil && g.shell.Snapshot().ActiveTab().ID() == hud.TabSettings {
-		id, msg, busy := v.engine.Status()
-		status := fmt.Sprintf("%s %s %t", id, msg, busy)
+		id, loaded, msg, busy := v.engine.Status()
+		status := fmt.Sprintf("%s %t %s %t", id, loaded, msg, busy)
 		if status != v.status {
 			v.status = status
 			g.layoutDirty = true
@@ -153,10 +153,14 @@ func (g *Game) speechSettings(c *widget.Container) {
 	if v.engine == nil {
 		return
 	}
-	active, msg, busy := v.engine.Status()
+	active, loaded, msg, busy := v.engine.Status()
 	for _, m := range speech.Models {
 		if m.ID == active {
-			c.AddChild(g.detailText("Dictation model · " + m.Label))
+			label := "Selected · " + m.Label + " · Loads on next dictation"
+			if loaded {
+				label = "Loaded · " + m.Label
+			}
+			c.AddChild(g.detailText(label))
 		}
 	}
 	if msg != "" {
@@ -165,6 +169,7 @@ func (g *Game) speechSettings(c *widget.Container) {
 	for _, m := range speech.Models {
 		g.workspaceRow(c, m.Label, func() {
 			v.details = m.ID
+			v.confirm = ""
 			g.layoutDirty = true
 		})
 		if m.ID != v.details {
@@ -180,10 +185,25 @@ func (g *Game) speechSettings(c *widget.Container) {
 			if m.ID == speech.Default || (err == nil && info.Size() == m.Bytes) {
 				label = "Use model"
 			}
-			g.projectButton(c, label, func() {
-				v.engine.Select(g.projects.ctx, m.ID)
-				g.layoutDirty = true
-			})
+			if label == "Download and use" && v.confirm != m.ID {
+				g.projectButton(c, "Download options…", func() {
+					v.confirm = m.ID
+					g.layoutDirty = true
+				})
+			} else {
+				if v.confirm == m.ID {
+					c.AddChild(g.detailText(fmt.Sprintf("Download %.1f MB to this device? Apparat verifies the model, loads it for push-to-talk, and remembers it for your next session.", float64(m.Bytes)/1e6)))
+					g.projectButton(c, "Cancel", func() {
+						v.confirm = ""
+						g.layoutDirty = true
+					})
+				}
+				g.projectButton(c, label, func() {
+					v.confirm = ""
+					v.engine.Select(g.projects.ctx, m.ID)
+					g.layoutDirty = true
+				})
+			}
 		}
 		c.AddChild(g.detailText(fmt.Sprintf("%.1f MB · %s", float64(m.Bytes)/1e6, languages)))
 	}

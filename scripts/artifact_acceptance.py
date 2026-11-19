@@ -50,14 +50,10 @@ def check_divider(x, xt, display, window, directory):
     x.XResizeWindow(display, ctypes.c_ulong(int(window, 16)), 960, 820)
     x.XSync(display, 0)
     time.sleep(.7)
-    start_x, y = 286, 250
+    y = 250
     x.XDefaultRootWindow.restype = ctypes.c_ulong
     root = x.XDefaultRootWindow(display)
     root_x, root_y, child = ctypes.c_int(), ctypes.c_int(), ctypes.c_ulong()
-    if not x.XTranslateCoordinates(display, ctypes.c_ulong(int(window, 16)), ctypes.c_ulong(root),
-                                   start_x, y, ctypes.byref(root_x), ctypes.byref(root_y), ctypes.byref(child)):
-        raise ValueError('Could not translate divider position to display coordinates')
-
     def capture(name):
         path = directory/f'divider-{name}.png'
         run('import', '-window', window, path)
@@ -65,8 +61,18 @@ def check_divider(x, xt, display, window, directory):
             return screenshot.convert('RGB').crop((0, y, 500, y+1))
 
     before = capture('before')
-    if before.getpixel((start_x, 0)) == before.getpixel((start_x-9, 0)):
-        raise ValueError('Expected a visible Projects divider at its initial position')
+    # The responsive rail shifts the divider. Locate its solid 24-pixel band.
+    starts = [i for i in range(160, 450)
+              if before.getpixel((i-1, 0)) != before.getpixel((i, 0))
+              and all(before.getpixel((i+k, 0)) == before.getpixel((i, 0)) for k in range(1, 24))
+              and before.getpixel((i+24, 0)) != before.getpixel((i, 0))]
+    if len(starts) != 1:
+        raise ValueError(f'Expected one Projects divider, found {starts}')
+    start_x = starts[0] + 4
+    if not x.XTranslateCoordinates(display, ctypes.c_ulong(int(window, 16)), ctypes.c_ulong(root),
+                                   start_x, y, ctypes.byref(root_x), ctypes.byref(root_y), ctypes.byref(child)):
+        raise ValueError('Could not translate divider position to display coordinates')
+
     xt.XTestFakeMotionEvent(display, -1, root_x.value, root_y.value, 0)
     x.XSync(display, 0)
     time.sleep(.2)

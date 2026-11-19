@@ -51,7 +51,7 @@ func (g *Game) arcadeUpdate() bool {
 		}
 	}
 	bottom := 0
-	if gallery && g.prefs.Placement == "bottom" {
+	if gallery && g.bottomTabs() {
 		top = 60
 		bottom = diagnosticsHeight + tabHeight + bodyGap
 	}

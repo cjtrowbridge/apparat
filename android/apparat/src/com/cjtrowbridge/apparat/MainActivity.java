@@ -115,13 +115,7 @@ public class MainActivity extends Activity {
                     }
                 });
         }
-        Apparatmobile.registerUpdater(new com.cjtrowbridge.apparat.apparatmobile.Updater() {
-            @Override
-            public void checkForUpdate() {
-                Log.i(TAG, "checkForUpdate bridge invoked");
-                MainActivity.this.checkForUpdate(true);
-            }
-        });
+        Apparatmobile.registerUpdater(new AndroidUpdater(this));
         Log.i(TAG, "Updater bridge registered");
         // Downloads and installer handoff require an explicit Update action.
     }
@@ -183,7 +177,7 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    private void checkForUpdate(final boolean userInitiated) {
+    void checkForUpdate(final boolean userInitiated) {
         if (destroyed || !checking.compareAndSet(false, true)) {
             return;
         }

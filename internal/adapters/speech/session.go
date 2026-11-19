@@ -17,15 +17,18 @@ type Selection interface {
 	SetSpeechModel(context.Context, string) error
 }
 type Engine struct {
-	mu      sync.Mutex
-	dir     string
-	store   Selection
-	active  string
-	loaded  *decoder
-	busy    bool
-	closed  bool
-	workers sync.WaitGroup
-	message string
+	mu         sync.Mutex
+	dir        string
+	store      Selection
+	active     string
+	loaded     *decoder
+	busy       bool
+	switching  bool
+	activating bool
+	idle       chan struct{}
+	closed     bool
+	workers    sync.WaitGroup
+	message    string
 }
 
 func New(root string, store Selection) *Engine {
@@ -35,26 +38,30 @@ func New(root string, store Selection) *Engine {
 	}
 	return &Engine{dir: filepath.Join(root, "data", "whisper"), store: store, active: id}
 }
-func (e *Engine) Status() (string, string, bool) {
+func (e *Engine) Status() (string, bool, string, bool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	return e.active, e.message, e.busy
+	return e.active, e.loaded != nil, e.message, e.busy || e.switching
 }
 func (e *Engine) reserve() bool {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if e.busy || e.closed {
+	if e.busy || e.closed || e.activating || (e.switching && e.loaded == nil) {
 		return false
 	}
 	e.workers.Add(1)
 	e.busy = true
+	e.idle = make(chan struct{})
 	return true
 }
 func (e *Engine) done(message string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.busy = false
-	e.message = message
+	close(e.idle)
+	if !e.switching {
+		e.message = message
+	}
 	e.workers.Done()
 }
 
@@ -76,17 +83,34 @@ func (e *Engine) prepare(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
+	e.mu.Lock()
+	e.message = "Verifying " + m.Label
+	e.mu.Unlock()
 	path, err := Install(ctx, e.dir, m, func(n int64) {
 		e.mu.Lock()
-		e.message = fmt.Sprintf("%s · %d / %d MiB", m.Label, n>>20, m.Bytes>>20)
+		e.message = fmt.Sprintf("Installing %s · %d / %d MiB", m.Label, n>>20, m.Bytes>>20)
 		e.mu.Unlock()
 	})
 	if err != nil {
 		return err
 	}
-	if e.loaded != nil {
-		e.loaded.close()
-		e.loaded = nil
+	e.mu.Lock()
+	idle := e.idle
+	wait := e.switching && e.busy
+	e.activating = true
+	e.message = "Loading " + m.Label
+	e.mu.Unlock()
+	defer func() {
+		e.mu.Lock()
+		e.activating = false
+		e.mu.Unlock()
+	}()
+	if wait {
+		select {
+		case <-idle:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 	candidate, err := load(path)
 	if err != nil {
@@ -98,22 +122,34 @@ func (e *Engine) prepare(ctx context.Context, id string) error {
 		return err
 	}
 	e.mu.Lock()
+	previous := e.loaded
 	e.active = id
 	e.loaded = candidate
 	e.mu.Unlock()
+	if previous != nil {
+		previous.close()
+	}
 	return nil
 }
 func (e *Engine) Select(ctx context.Context, id string) {
-	if !e.reserve() {
+	e.mu.Lock()
+	if e.switching || e.busy || e.closed {
+		e.mu.Unlock()
 		return
 	}
+	e.switching = true
+	e.workers.Add(1)
+	e.mu.Unlock()
 	go func() {
 		err := e.prepare(ctx, id)
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		e.switching = false
+		e.message = "Ready for dictation"
 		if err != nil {
-			e.done(err.Error())
-			return
+			e.message = err.Error()
 		}
-		e.done("Ready for dictation")
+		e.workers.Done()
 	}()
 }
 

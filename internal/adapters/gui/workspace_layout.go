@@ -107,14 +107,9 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 	return boundPreferredWidth(box, g.detailPanePreferredWidth)
 }
 
-func (g *Game) clampWorkspaceScroll() {
-	if !g.inWorkspace() {
-		return
-	}
+func (g *Game) clampBodyScroll() {
 	for _, pane := range g.verticalScrolls {
-		if pane.ViewRect().Dy() > 0 && pane.ContentRect().Dy() <= pane.ViewRect().Dy() {
-			pane.ScrollTop = 0
-		}
+		moveBodyScroll(pane, 0)
 	}
 }
 

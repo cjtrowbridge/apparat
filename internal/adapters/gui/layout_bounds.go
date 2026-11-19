@@ -214,10 +214,14 @@ func placementLabel(setting string) string {
 	}
 }
 
+func (game *Game) bottomTabs() bool {
+	return game.prefs.Placement == "bottom" || game.prefs.Placement == "responsive" && game.height > game.width
+}
+
 // Fall back to the scrollable top strip when a rail cannot fit every tab.
 func (game *Game) sideRail() string {
 	mode := game.prefs.Placement
-	if mode == "bottom" || mode == "top" || mode == "" {
+	if game.bottomTabs() || mode == "top" || mode == "" {
 		return ""
 	}
 	count := len(game.shell.Snapshot().Tabs)
@@ -245,7 +249,7 @@ func (game *Game) pttCenter() (int, int) {
 		x -= railGutter
 	}
 	y := game.height - diagnosticsHeight - pttMargin - pttRadius
-	if game.prefs.Placement == "bottom" {
+	if game.bottomTabs() {
 		y -= tabHeight + bodyGap
 	}
 	return x, y

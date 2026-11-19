@@ -37,6 +37,7 @@ func TestTabStripDragStateChangeKeepsOnlySelectedButtonChecked(t *testing.T) {
 
 func TestTabStripDragScrollsWithoutSelectingReleaseTarget(t *testing.T) {
 	game := NewGame()
+	original := game.shell.Snapshot().ActiveIndex
 	game.width = 280
 	game.rebuildUI(game.shell.Snapshot())
 	event.ExecuteDeferred()
@@ -53,8 +54,8 @@ func TestTabStripDragScrollsWithoutSelectingReleaseTarget(t *testing.T) {
 	event.ExecuteDeferred()
 	{
 		active := game.shell.Snapshot().ActiveIndex
-		if active != 0 {
-			t.Fatalf("active tab after drag release = %d, want 0", active)
+		if active != original {
+			t.Fatalf("active tab after drag release = %d, want %d", active, original)
 		}
 	}
 	assertOnlyActiveTabChecked(t, game)

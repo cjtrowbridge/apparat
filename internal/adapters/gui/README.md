@@ -158,3 +158,4 @@ Workspace Files publishes folder entries first. A cancellable background check d
 
 - `dictation.go`: Owns workspace PTT sessions, targeted text insertion and device-local model selection in Settings.
 - `project_creation.go`: Handles the named local project action, opens its Files workspace, and formats GitHub clone previews.
+- `update_discovery.go`: Checks the Android release manifest on Settings entry, coalesces checks and separates discovery from installation.

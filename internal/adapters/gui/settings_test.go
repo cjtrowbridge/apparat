@@ -8,6 +8,10 @@ import (
 	"context"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"io"
+	"math"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 	"time"
@@ -160,7 +164,8 @@ func TestSettingsControlSavesAndAppliesAtRestart(t *testing.T) {
 		}
 	}
 	click("UI scale: 100%")
-	click("Startup tab: comrades")
+	click("Startup tab: projects")
+	click("Tab placement: Responsive")
 	click("Tab placement: Top")
 	if game.prefs.Placement != "bottom" || game.sideRail() != "" {
 		t.Fatal("confirmed placement did not reach layout")
@@ -173,7 +178,66 @@ func TestSettingsControlSavesAndAppliesAtRestart(t *testing.T) {
 	reopened := NewGameWithRuntimeInfo(RuntimeInfo{Queries: open()})
 	defer reopened.Close()
 	width, _ = reopened.Layout(1000, 800)
-	if width != 800 || reopened.ActiveTabID() != "projects" || reopened.prefs.Placement != "bottom" {
+	if width != 800 || reopened.ActiveTabID() != "cluster" || reopened.prefs.Placement != "bottom" {
 		t.Fatalf("restored width %d and tab %s", width, reopened.ActiveTabID())
+	}
+}
+
+func TestResponsiveLandingAndScrollDistance(t *testing.T) {
+	game := NewGame()
+	defer game.Close()
+	game.Layout(390, 800)
+	if game.ActiveTabID() != "projects" || !game.bottomTabs() {
+		t.Fatal("fresh portrait must show Projects with bottom tabs")
+	}
+	game.Layout(1280, 800)
+	if game.bottomTabs() || game.sideRail() != "left_rail" {
+		t.Fatal("wide landscape must use the responsive rail")
+	}
+	game.prefs.Placement = "top"
+	game.Layout(390, 800)
+	if game.bottomTabs() || game.sideRail() != "" {
+		t.Fatal("explicit top placement was lost on rotation")
+	}
+	for _, overflow := range []int{500, 1000, 2400} {
+		if math.Abs((scrollFraction(.5, -100, overflow)-.5)*float64(overflow)-100) > 0.001 {
+			t.Fatal("drag distance changed with content height")
+		}
+		if scrollFraction(0, 100, overflow) != 0 || scrollFraction(1, -100, overflow) != 1 {
+			t.Fatal("scrolled past content edge")
+		}
+	}
+	if scrollFraction(.5, -100, -300) != 0 || scrollFraction(.5, 100, 0) != 0 {
+		t.Fatal("short viewport scrolled")
+	}
+}
+
+func TestReleaseDiscovery(t *testing.T) {
+	for _, tc := range []struct {
+		code                   int
+		body, installed, label string
+	}{
+		{200, "valid", "10 1.0", "Up To Date!"},
+		{200, "valid", "9 0.9", "Download update"},
+		{404, "", "10 1.0", "Retry update check"},
+		{200, "invalid", "10 1.0", "Retry update check"},
+	} {
+		func() {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.code)
+				if tc.body == "valid" {
+					_, _ = io.WriteString(w, `<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.cjtrowbridge.apparat" android:versionCode="10" android:versionName="1.0"/>`)
+				}
+			}))
+			defer srv.Close()
+			status := readRelease(context.Background(), srv.URL, tc.installed)
+			if status.Label != tc.label {
+				t.Fatal(tc, status)
+			}
+			srv.Close()
+			if readRelease(context.Background(), srv.URL, tc.installed).Label != "Retry update check" {
+				t.Fatal("offline lookup reported success")
+			}
+		}()
 	}
 }

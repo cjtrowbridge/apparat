@@ -14,7 +14,7 @@ type Preferences struct {
 }
 
 func DefaultPreferences() Preferences {
-	return Preferences{Placement: "top", Theme: "Dark", Font: 14, Scale: 100, Landing: "comrades"}
+	return Preferences{Placement: "responsive", Theme: "Dark", Font: 14, Scale: 100, Landing: "projects"}
 }
 
 func (p Preferences) Valid() bool {

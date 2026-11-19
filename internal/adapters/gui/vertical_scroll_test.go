@@ -13,7 +13,7 @@ import (
 )
 
 func TestBodyScrollsRegisterForSettingsAndMasterDetail(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	{
 		got := len(game.verticalScrolls)
 		if got != 2 {
@@ -30,8 +30,14 @@ func TestBodyScrollsRegisterForSettingsAndMasterDetail(t *testing.T) {
 }
 
 func TestBodyScrollChangesOnlyTheTargetViewport(t *testing.T) {
-	game := NewGame()
-	first, second := game.verticalScrolls[0], game.verticalScrolls[1]
+	game := horizontalGame()
+	first := game.verticalScrolls[0]
+	selectTabThroughStrip(t, game, hud.TabSettings)
+	game.Layout(640, 400)
+	game.rebuildUI(game.shell.Snapshot())
+	game.ui.Container.SetLocation(image.Rect(0, 0, 640, 400))
+	game.ui.Draw(ebiten.NewImage(640, 400))
+	second := game.verticalScrolls[0]
 	first.ScrollTop = 0.25
 	second.ScrollTop = 0.75
 	game.bodyScroll = second
@@ -51,7 +57,7 @@ func TestBodyScrollChangesOnlyTheTargetViewport(t *testing.T) {
 }
 
 func TestBodyScrollDragSuppressesReleaseTarget(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.bodyScroll = game.verticalScrolls[0]
 	game.scrollBodyBy(-bodyScrollDragThreshold)
 	game.finishBodyScroll()
@@ -71,7 +77,7 @@ func TestBodyScrollDragSuppressesReleaseTarget(t *testing.T) {
 }
 
 func TestBodyScrollDragRetainsTabStripPosition(t *testing.T) {
-	game := NewGame()
+	game := horizontalGame()
 	game.tabScroll.ScrollLeft = 0.4
 	game.lockBodyTabScroll()
 	game.bodyScroll = game.verticalScrolls[0]
@@ -89,7 +95,7 @@ func TestBodyScrollDragRetainsTabStripPosition(t *testing.T) {
 
 func TestBodyViewportStaysBetweenTabsAndDiagnostics(t *testing.T) {
 	for _, width := range []int{360, 1280} {
-		game := NewGame()
+		game := horizontalGame()
 		game.Layout(width, 800)
 		game.rebuildUI(game.shell.Snapshot())
 		game.ui.Container.SetLocation(image.Rect(0, 0, width, 800))

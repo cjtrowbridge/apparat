@@ -5,6 +5,8 @@
 package gui
 
 import (
+	"image"
+
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -56,7 +58,7 @@ func (game *Game) updateBodyScrollMouse(x int, y int) {
 		if scroll != nil {
 			_, wheelY := ebiten.Wheel()
 			if wheelY != 0 {
-				scroll.ScrollTop -= wheelY / 12
+				moveBodyScroll(scroll, wheelY*48)
 			}
 		}
 	}
@@ -99,9 +101,20 @@ func (game *Game) scrollBodyBy(dy int) {
 	if game.bodyScrollDragDistance >= bodyScrollDragThreshold {
 		game.bodyScrollDragMoved = true
 	}
-	game.bodyScroll.ScrollTop -= float64(dy) / 720
+	moveBodyScroll(game.bodyScroll, float64(dy))
 }
 
+func scrollFraction(current, delta float64, overflow int) float64 {
+	if overflow <= 0 {
+		return 0
+	}
+	return min(1, max(0, current-delta/float64(overflow)))
+}
+func moveBodyScroll(s *widget.ScrollContainer, delta float64) {
+	if s.ViewRect().Dy() > 0 && s.ContentRect() != (image.Rectangle{}) {
+		s.ScrollTop = scrollFraction(s.ScrollTop, delta, s.ContentRect().Dy()-s.ViewRect().Dy())
+	}
+}
 func (game *Game) finishBodyScroll() {
 	if game.bodyScrollDragMoved {
 		game.bodyScrollCancelUpdates = bodyScrollCancelUpdateFrames
