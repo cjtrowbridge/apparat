@@ -35,4 +35,6 @@ Use the existing internal commands/queries, SQLite migrations and Projects UI. K
 
 The Linux portal registered the existing public checkout. Linux integration tests cloned the public and private fixtures concurrently, reopened their registrations and preserved the active system CLI account. Local tests cover cancelled transfers, occupied destinations, conflicting publication and concurrent per-user credential lookup. The Pixel 4a reopened three distinct registrations offline after a cold start and read an external task-label edit. Moving the selected external checkout made it unavailable until folder reselection. Explicit revocation of an Android system grant remains untested. Live concurrent private clones with two accounts and disjoint access remain open pending a second login and private fixture.
 
-- [ ] Create a named local project offline on main under the default or selected parent. Protect existing folders, register the empty checkout, and verify reopening and the first commit.
+- [x] Create a named local project offline on main under the default or selected parent. Protect existing folders, register the empty checkout, and verify reopening and the first commit.
+
+Verified in 0.1.34. The packaged Linux GUI created and opened a named repo. The Pixel 4a created and reopened repos in both app-private and granted Documents storage with HEAD pointing to main. Runtime tests checked the first commit, duplicate creation, invalid names and reopening from SQLite.
