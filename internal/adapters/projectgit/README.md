@@ -25,3 +25,4 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 - `workspace_changes.go`: Returns changed paths with stage state and the working-file digest reviewed for a scoped Git operation.
 
 - `workspace_directory.go`: Compares immediate children against the index and the corresponding HEAD tree, applies ancestor ignore files, and cancels file hashing when browsing moves elsewhere. Changes continues to use repository-wide Git status.
+- `create.go`: Initializes a named, empty local working tree on main and publishes it without replacing an existing folder.

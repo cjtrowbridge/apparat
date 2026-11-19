@@ -6,7 +6,7 @@ package gui
 
 import (
 	"context"
-	"fmt"
+
 	"image/color"
 	"net/url"
 	"os"
@@ -26,6 +26,7 @@ import (
 type projectStore interface {
 	Projects(context.Context) ([]domain.Project, error)
 	StoreProject(context.Context, string, string, string) error
+	CreateProject(context.Context, string, string) (string, error)
 	CloneProject(context.Context, string, string, string) error
 	RemoveProject(context.Context, string) error
 	ProjectDefault(context.Context) (string, error)
@@ -39,21 +40,21 @@ type projectResult struct {
 	reload                          bool
 }
 type projectForm struct {
-	directoryStatus                          chan workspaceReply
-	stopDirectoryStatus                      context.CancelFunc
-	bookmarks                                map[[2]string][3]int
-	workspace                                workspacePanel
-	dataRoot                                 string
-	removeID                                 string
-	workers                                  sync.WaitGroup
-	rows                                     []domain.Project
-	store                                    projectStore
-	pending                                  chan projectResult
-	cancel                                   context.CancelFunc
-	ctx                                      context.Context
-	close                                    context.CancelFunc
-	repo, location, account, message, editID string
-	active                                   bool
+	directoryStatus                                chan workspaceReply
+	stopDirectoryStatus                            context.CancelFunc
+	bookmarks                                      map[[2]string][3]int
+	workspace                                      workspacePanel
+	dataRoot                                       string
+	removeID                                       string
+	workers                                        sync.WaitGroup
+	rows                                           []domain.Project
+	store                                          projectStore
+	pending                                        chan projectResult
+	cancel                                         context.CancelFunc
+	ctx                                            context.Context
+	close                                          context.CancelFunc
+	name, repo, location, account, message, editID string
+	active                                         bool
 }
 
 func (g *Game) initProjects() {
@@ -142,7 +143,7 @@ func (g *Game) pollProjects() {
 }
 func (g *Game) projectTab(t hud.Tab) hud.Tab {
 	t.Summary = ""
-	t.Sections = []hud.Section{{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device."}, {Title: "Add or clone repo", SelectorColor: "#36ad9c", ContentKind: "project-form"}}
+	t.Sections = []hud.Section{{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device."}, {Title: "Add, create or clone repo", SelectorColor: "#36ad9c", ContentKind: "project-form"}}
 	for _, p := range g.projects.rows {
 		kind := hud.ContentProject
 		tint := hud.SelectorPalette[0]
@@ -238,7 +239,7 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 	}
 	g.projectField(c, "Folder", &f.location)
 	if f.location != "" && f.editID == "" {
-		g.projectButton(c, "Use default clone location", func() {
+		g.projectButton(c, "Use default repo location", func() {
 			f.location = ""
 			f.message = ""
 			g.layoutDirty = true
@@ -287,6 +288,7 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		})
 		return
 	}
+	g.createProjectControls(c)
 	g.projectField(c, "GitHub owner/repo or URL", &f.repo)
 	g.projectButton(c, "Preview clone", func() {
 		repo, err := projectgit.RepoName(f.repo)
@@ -380,21 +382,7 @@ func projectCheckoutStatus(p domain.Project) string {
 	}
 	revision := p.Revision
 	if revision == "" {
-		revision = "no resolved commit"
+		return branch + " · No commits yet"
 	}
 	return branch + " @ " + revision
-}
-
-func clonePreview(dest, account string) string {
-	if account == "" {
-		account = "public access"
-	}
-	return fmt.Sprintf("Clone to %s (%s)", dest, account)
-}
-
-func (g *Game) projectDestination(parent, repo string) (string, error) {
-	if strings.HasPrefix(parent, "content://") {
-		return projectLocation(parent) + "/" + repo[strings.IndexByte(repo, '/')+1:], nil
-	}
-	return projectgit.Destination(g.runtimeInfo.RuntimePath, parent, repo)
 }

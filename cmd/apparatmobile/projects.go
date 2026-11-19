@@ -63,18 +63,28 @@ func (projectDocuments) InspectTree(uri string) (domain.Project, error) {
 	return domain.Project{Name: info.Name, Branch: info.Head, Entrypoints: projectgit.EnabledTasks(info.Entrypoints), Revision: info.Revision, Actions: projectgit.TaskNames([]byte(info.Tasks)), Location: uri, Available: true}, nil
 }
 func (d projectDocuments) CloneTree(ctx context.Context, parent, repo string) (domain.Project, error) {
+	return d.exportTree(ctx, parent, func(temp string) (domain.Project, error) {
+		return projectgit.Clone(ctx, "", temp, repo, "")
+	})
+}
+func (d projectDocuments) CreateTree(ctx context.Context, parent, name string) (domain.Project, error) {
+	return d.exportTree(ctx, parent, func(temp string) (domain.Project, error) {
+		return projectgit.Create(ctx, "", temp, name)
+	})
+}
+func (d projectDocuments) exportTree(ctx context.Context, parent string, prepare func(string) (domain.Project, error)) (domain.Project, error) {
 	host := currentDocuments()
 	if host == nil {
 		return domain.Project{}, errors.New("folder access unavailable")
 	}
 	temp, err := os.MkdirTemp(nodeCache, "clone-")
 	if err != nil {
-		return domain.Project{}, errors.New("clone storage unavailable")
+		return domain.Project{}, errors.New("temporary checkout storage unavailable")
 	}
 	defer func() {
 		_ = os.RemoveAll(temp)
 	}()
-	p, err := projectgit.Clone(ctx, "", temp, repo, "")
+	p, err := prepare(temp)
 	if err != nil {
 		return p, err
 	}

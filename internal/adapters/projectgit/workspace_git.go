@@ -196,6 +196,9 @@ func gitHistory(repo *git.Repository, q domain.WorkspaceRequest) (string, error)
 		return fmt.Sprintf("%s\n%s\n%s", c.Hash, c.Author.Name, c.Message), nil
 	}
 	history, err := repo.Log(&git.LogOptions{})
+	if errors.Is(err, plumbing.ErrReferenceNotFound) {
+		return "No commits yet", nil
+	}
 	if err != nil {
 		return "", err
 	}

@@ -103,3 +103,69 @@ func TestPhase9AuthorizedGitHubClones(t *testing.T) {
 	_, err = projectgit.Inspect(filepath.Join(privateParent, "apparat"))
 	requireSuccess(t, err)
 }
+
+func TestCreateLocalProject(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	node := nodeFor(t, root, false)
+	requireSuccess(t, node.Initialize(ctx))
+	for _, parent := range []string{"", t.TempDir()} {
+		path, err := node.CreateProject(ctx, parent, "My project")
+		requireSuccess(t, err)
+		expected := parent
+		if expected == "" {
+			expected = filepath.Join(root, "data", "repos")
+		}
+		if path != filepath.Join(expected, "My project") {
+			t.Fatal("wrong repository location", path)
+		}
+		_, err = node.CreateProject(ctx, parent, "My project")
+		if err == nil {
+			t.Fatal("duplicate creation succeeded")
+		}
+		for _, bad := range []string{".git", "../outside", "nested/name", ""} {
+			_, err = node.CreateProject(ctx, parent, bad)
+			if err == nil {
+				t.Fatal("accepted invalid name", bad)
+			}
+		}
+		rows, err := node.Projects(ctx)
+		requireSuccess(t, err)
+		var id string
+		for _, p := range rows {
+			if p.Location == path && p.Branch == "main" && p.Revision == "" && p.Available {
+				id = p.ID
+			}
+		}
+		q := domain.WorkspaceRequest{ProjectID: id, Path: ".", Action: "list"}
+		_, err = node.Workspace(ctx, q)
+		requireSuccess(t, err)
+		q.Action = "history"
+		_, err = node.Workspace(ctx, q)
+		requireSuccess(t, err)
+		requireSuccess(t, os.WriteFile(filepath.Join(path, "notes.txt"), []byte("hello"), 0600))
+		q.Path = "notes.txt"
+		q.Action = "stage"
+		q.Base = projectgit.Digest("hello")
+		_, err = node.Workspace(ctx, q)
+		requireSuccess(t, err)
+		q.Action = "commit"
+		q.Argument = "First commit"
+		_, err = node.Workspace(ctx, q)
+		requireSuccess(t, err)
+		info, err := projectgit.Inspect(path)
+		requireSuccess(t, err)
+		if info.Revision == "" || info.Branch != "main" {
+			t.Fatal("missing first commit")
+		}
+	}
+	requireSuccess(t, node.Close())
+	node = nodeFor(t, root, false)
+	requireSuccess(t, node.Initialize(ctx))
+	reopened, err := node.Projects(ctx)
+	requireSuccess(t, err)
+	if len(reopened) != 2 || !reopened[0].Available || !reopened[1].Available {
+		t.Fatal("new projects did not reopen")
+	}
+	requireSuccess(t, node.Close())
+}

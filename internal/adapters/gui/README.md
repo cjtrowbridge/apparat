@@ -157,3 +157,4 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 Workspace Files publishes folder entries first. A cancellable background check decorates the current directory. Navigating discards obsolete results, and a failed check leaves filenames accessible with an error message.
 
 - `dictation.go`: Owns workspace PTT sessions, targeted text insertion and device-local model selection in Settings.
+- `project_creation.go`: Handles the named local project action, opens its Files workspace, and formats GitHub clone previews.

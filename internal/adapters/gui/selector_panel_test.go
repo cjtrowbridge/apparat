@@ -109,7 +109,7 @@ func TestLocalProjectTabIncludesOnlyRegisteredCheckouts(t *testing.T) {
 	game := NewGameWithRuntimeInfo(RuntimeInfo{})
 	defer game.Close()
 	tab := game.projectTab(hud.Tab{})
-	if len(tab.Sections) != 2 || tab.Sections[1].Title != "Add or clone repo" {
+	if len(tab.Sections) != 2 || tab.Sections[1].Title != "Add, create or clone repo" {
 		t.Fatal("unexpected rows in empty registry")
 	}
 	game.projects.rows = []domain.Project{

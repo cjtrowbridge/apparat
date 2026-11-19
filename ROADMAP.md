@@ -1590,6 +1590,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Replace sample repos with explicit Add repo, validate the selected working tree and permitted root, and handle duplicate registration. Show an empty list before the first registration.
 - [x] Persist a stable project ID independent of path, local owner ID and reopening information in SQLite. Read Git state and configured actions from the checkout. Keep the existing blue/purple outlines and right-aligned 🧠 for repos with actions.
 - [x] Show lost access or a moved checkout and support reconnecting the same registration. Removing a registration preserves the working tree.
+- [ ] Create a named local repo offline under the default or chosen parent and open its Files workspace on an unborn main branch.
 - [x] Offer Open existing repo in place and Clone from GitHub. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
 - [x] Use the system GitHub CLI on Linux, with a device default account and per-repo overrides. Keep account credentials outside project metadata.
 

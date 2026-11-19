@@ -13,6 +13,7 @@ import (
 
 type ProjectDocuments interface {
 	InspectTree(string) (domain.Project, error)
+	CreateTree(context.Context, string, string) (domain.Project, error)
 	CloneTree(context.Context, string, string) (domain.Project, error)
 }
 
@@ -65,6 +66,26 @@ func (n *Runtime) registerProject(ctx context.Context, p domain.Project) error {
 	}
 	p.ID = id
 	return n.database.RegisterProject(ctx, p)
+}
+func (n *Runtime) CreateProject(ctx context.Context, parent, name string) (string, error) {
+	var p domain.Project
+	var err error
+	if strings.HasPrefix(parent, "content://") {
+		if n.documents == nil {
+			return "", errors.New("folder access unavailable")
+		}
+		p, err = n.documents.CreateTree(ctx, parent, name)
+	} else {
+		p, err = projectgit.Create(ctx, n.config.RootDir, parent, name)
+	}
+	if err != nil {
+		return "", err
+	}
+	err = n.registerProject(ctx, p)
+	if err != nil {
+		return "", errors.New("repository created; choose Open existing repo to finish registration")
+	}
+	return p.Location, nil
 }
 func (n *Runtime) CloneProject(ctx context.Context, parent, repo, account string) error {
 	var p domain.Project
