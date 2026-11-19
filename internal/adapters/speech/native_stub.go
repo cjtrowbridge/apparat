@@ -9,17 +9,17 @@ import "errors"
 type decoder struct{}
 type recorder struct{}
 
-var unavailable = errors.New("Local speech requires the packaged GUI build")
+var errUnavailable = errors.New("local speech requires the packaged GUI build")
 
 func load(string) (*decoder, error) {
-	return nil, unavailable
+	return nil, errUnavailable
 }
 func (*decoder) close() {}
 func (*decoder) decode([]float32) (string, error) {
-	return "", unavailable
+	return "", errUnavailable
 }
 func capture() (*recorder, error) {
-	return nil, unavailable
+	return nil, errUnavailable
 }
 func (*recorder) stop()  {}
 func (*recorder) close() {}

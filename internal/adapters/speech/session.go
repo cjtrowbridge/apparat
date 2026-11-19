@@ -146,7 +146,7 @@ func (s *Session) Cancel() {
 }
 func (e *Engine) Start(parent context.Context) (*Session, error) {
 	if !e.reserve() {
-		return nil, errors.New("Speech is busy")
+		return nil, errors.New("speech is busy")
 	}
 	ctx, cancel := context.WithCancel(parent)
 	s := &Session{result: Result{State: "starting"}, finish: make(chan struct{}), cancel: cancel}
@@ -241,7 +241,7 @@ func (e *Engine) record(ctx context.Context, s *Session) (string, error) {
 		}
 		n := mic.count()
 		if n < 0 {
-			return "", errors.New("Decoder fell behind microphone capture. Retry with a smaller model.")
+			return "", errors.New("decoder fell behind microphone capture; retry with a smaller model")
 		}
 		const chunk = 20 * 16000
 		switch {

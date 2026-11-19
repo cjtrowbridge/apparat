@@ -72,6 +72,9 @@ func Install(ctx context.Context, dir string, m Model, progress func(int64)) (st
 	var src io.ReadCloser
 	if m.ID == Default {
 		src, err = assets.Open(m.File)
+		if err != nil {
+			return "", err
+		}
 	} else {
 		req, e := http.NewRequestWithContext(ctx, "GET", "https://huggingface.co/ggerganov/whisper.cpp/resolve/"+m.Revision+"/"+m.File, nil)
 		if e != nil {
@@ -87,9 +90,6 @@ func Install(ctx context.Context, dir string, m Model, progress func(int64)) (st
 			_ = src.Close()
 			return "", fmt.Errorf("model download returned HTTP %d", res.StatusCode)
 		}
-	}
-	if err != nil {
-		return "", err
 	}
 	defer func() {
 		_ = src.Close()

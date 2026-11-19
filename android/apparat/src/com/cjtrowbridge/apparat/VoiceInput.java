@@ -51,6 +51,10 @@ final class VoiceInput {
     private int start;
     private int end;
     private boolean listening;
+    private String lastState="";
+    private void trace(String event) {
+        android.util.Log.i("ApparatVoice","component=voice event="+event);
+    }
 
     VoiceInput(Activity activity, Dialog dialog, EditText field, Button button, TextView preview) {
         this.activity = activity;
@@ -66,15 +70,18 @@ final class VoiceInput {
                 case MotionEvent.ACTION_DOWN:
                     v.getParent().requestDisallowInterceptTouchEvent(true);
                     paint(true);
+                    trace("touch_down");
                     begin();
                     break;
                 case MotionEvent.ACTION_UP:
                     paint(false);
                     v.getParent().requestDisallowInterceptTouchEvent(false);
+                    trace("touch_up");
                     stop();
                     break;
                 case MotionEvent.ACTION_CANCEL:
                     v.getParent().requestDisallowInterceptTouchEvent(false);
+                    trace("touch_cancel");
                     cancel();
                     break;
             }
@@ -136,6 +143,7 @@ final class VoiceInput {
         handler.removeCallbacks(poll);
         if (!field.isAttachedToWindow() || !field.hasFocus() || !original.contentEquals(field.getText())
                 || start!=field.getSelectionStart() || end!=field.getSelectionEnd()) {
+            trace("editing_target_changed");
             cancel();
             return;
         }
@@ -143,6 +151,10 @@ final class VoiceInput {
             JSONObject r=new JSONObject(json);
             String state=r.getString("State");
             String text=r.getString("Text");
+            if (!state.equals(lastState)) {
+                trace(state);
+                lastState=state;
+            }
             if (state.equals("recording") || state.equals("starting") || state.equals("finishing")) {
                 String label = state.equals("finishing") ? "Finishing" : "Listening";
                 show(text.isEmpty() ? label : label+" · "+text);
