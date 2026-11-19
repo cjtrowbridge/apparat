@@ -13,6 +13,9 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.view.Gravity;
+import android.graphics.drawable.GradientDrawable;
 import android.widget.EditText;
 import android.widget.TextView;
 import com.cjtrowbridge.apparat.apparatmobile.Apparatmobile;
@@ -20,6 +23,27 @@ import org.json.JSONObject;
 
 final class VoiceInput {
     private final Activity activity;
+    private final Button button;
+    static Button floatingButton(FrameLayout frame) {
+        Button button = new Button(frame.getContext());
+        float density = frame.getResources().getDisplayMetrics().density;
+        int size = Math.round(56 * density);
+        int margin = Math.round(12 * density);
+        FrameLayout.LayoutParams bounds = new FrameLayout.LayoutParams(size,size,Gravity.RIGHT | Gravity.BOTTOM);
+        bounds.setMargins(margin,margin,margin,margin);
+        button.setPadding(0,0,0,0);
+        button.setElevation(4 * density);
+        button.setFocusable(false);
+        frame.addView(button,bounds);
+        return button;
+    }
+    private void paint(boolean held) {
+        GradientDrawable circle=new GradientDrawable();
+        circle.setShape(GradientDrawable.OVAL);
+        circle.setColor(held ? 0xff506fa4 : 0xff303d55);
+        button.setBackground(circle);
+        button.setTextColor(0xffffffff);
+    }
     private final EditText field;
     private final TextView preview;
     private final Handler handler = new Handler(android.os.Looper.getMainLooper());
@@ -31,6 +55,8 @@ final class VoiceInput {
     VoiceInput(Activity activity, Dialog dialog, EditText field, Button button, TextView preview) {
         this.activity = activity;
         this.field = field;
+        this.button=button;
+        paint(false);
         this.preview = preview;
         button.setText("PTT");
         button.setContentDescription("Hold to dictate");
@@ -38,12 +64,17 @@ final class VoiceInput {
             public boolean onTouch(View v, MotionEvent event) {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
+                    paint(true);
                     begin();
                     break;
                 case MotionEvent.ACTION_UP:
+                    paint(false);
+                    v.getParent().requestDisallowInterceptTouchEvent(false);
                     stop();
                     break;
                 case MotionEvent.ACTION_CANCEL:
+                    v.getParent().requestDisallowInterceptTouchEvent(false);
                     cancel();
                     break;
             }
@@ -86,6 +117,7 @@ final class VoiceInput {
         if (listening) receive(Apparatmobile.voice("stop"));
     }
     void cancel() {
+        paint(false);
         if (listening) Apparatmobile.voice("cancel");
         listening=false;
         handler.removeCallbacks(poll);
@@ -112,11 +144,13 @@ final class VoiceInput {
             String state=r.getString("State");
             String text=r.getString("Text");
             if (state.equals("recording") || state.equals("starting") || state.equals("finishing")) {
-                show(text.isEmpty() ? state : text);
+                String label = state.equals("finishing") ? "Finishing" : "Listening";
+                show(text.isEmpty() ? label : label+" · "+text);
                 handler.postDelayed(poll,120);
                 return;
             }
             listening=false;
+            paint(false);
             if (state.equals("final") && !text.isEmpty()) {
                 field.getText().replace(Math.min(start,end),Math.max(start,end),text);
             }

@@ -14,13 +14,14 @@ package speech
 #cgo android LDFLAGS: -lm -ldl -llog -landroid -static-libstdc++
 #cgo darwin LDFLAGS: -framework CoreAudio -framework AudioToolbox -framework CoreFoundation
 #include <stdlib.h>
+#include <stdbool.h>
 void *speech_load(const char *);
 void speech_free(void *);
 char *speech_decode(void *,const float *,int);
 void *speech_capture(void);
 void speech_stop(void *);
 void speech_close_capture(void *);
-int speech_snapshot(void *,float *);
+int speech_snapshot(void *,float *,int,bool);
 */
 import "C"
 import (
@@ -70,8 +71,17 @@ func (r *recorder) stop() {
 func (r *recorder) close() {
 	C.speech_close_capture(r.ptr)
 }
-func (r *recorder) snapshot() []float32 {
-	pcm := make([]float32, 30*16000)
-	n := C.speech_snapshot(r.ptr, (*C.float)(unsafe.Pointer(&pcm[0])))
-	return pcm[:int(n)]
+func (r *recorder) count() int {
+	return int(C.speech_snapshot(r.ptr, nil, 0, false))
+}
+func (r *recorder) snapshot(n int, consume bool) []float32 {
+	if n <= 0 {
+		return nil
+	}
+	pcm := make([]float32, n)
+	size := C.speech_snapshot(r.ptr, (*C.float)(unsafe.Pointer(&pcm[0])), C.int(n), C.bool(consume))
+	if size < 0 {
+		return nil
+	}
+	return pcm[:int(size)]
 }

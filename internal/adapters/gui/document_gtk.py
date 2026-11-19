@@ -31,7 +31,10 @@ def activate(application):
     buf.set_enable_undo(True)
     scroll = Gtk.ScrolledWindow(vexpand=True)
     scroll.set_child(view)
-    box.append(scroll)
+    overlay = Gtk.Overlay()
+    overlay.set_child(scroll)
+    overlay.set_vexpand(True)
+    box.append(overlay)
     status = Gtk.Label(label="")
     status.set_visible(False)
     box.append(status)
@@ -75,8 +78,14 @@ def activate(application):
         dialog.connect("response", respond)
         dialog.present()
 
-    hold = Gtk.Button(label="Hold to dictate", focus_on_click=False)
-    bar.pack_start(hold)
+    hold = Gtk.Button(label="PTT", focus_on_click=False, tooltip_text="Hold to dictate")
+    hold.add_css_class("circular")
+    hold.set_size_request(56, 56)
+    hold.set_halign(Gtk.Align.END)
+    hold.set_valign(Gtk.Align.END)
+    hold.set_margin_end(12)
+    hold.set_margin_bottom(12)
+    overlay.add_overlay(hold)
     voice = None
 
     def selection():
@@ -98,7 +107,8 @@ def activate(application):
             return False
         state, text = result["State"], result["Text"]
         if state in ("recording", "finishing", "starting"):
-            status.set_label(text or state)
+            label = "Finishing" if state == "finishing" else "Listening"
+            status.set_label(f"{label} · {text}" if text else label)
             status.set_visible(True)
             return True
         voice = None

@@ -22,3 +22,5 @@ Regression verification: compile this helper with `tests/UpdateTransferTest.java
 - `DocumentEditor.java`: Full-window Android multiline text editing, IME, selection and explicit save.
 
 - `VoiceInput.java`: Holds, cancels and finalizes local dictation in the original Android editor selection. Requests microphone permission on the first press.
+
+The document and input dialogs anchor the circular PTT control to the lower-right editing area above the keyboard. A listening indicator remains visible alongside partial text until release.

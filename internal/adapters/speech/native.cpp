@@ -23,6 +23,7 @@ struct Capture {
     ma_device device{};
     std::mutex mutex;
     std::vector<float> pcm;
+    bool overflow = false;
 };
 constexpr size_t max_samples = 30 * WHISPER_SAMPLE_RATE;
 
@@ -30,6 +31,7 @@ static void record(ma_device *device, void *, const void *input, ma_uint32 frame
     auto *c = static_cast<Capture *>(device->pUserData);
     std::lock_guard<std::mutex> guard(c->mutex);
     size_t count = std::min<size_t>(frames, max_samples - c->pcm.size());
+    if (count != frames) c->overflow = true;
     auto *first = static_cast<const float *>(input);
     if (first && count) {
         c->pcm.insert(c->pcm.end(), first, first + count);
@@ -64,12 +66,15 @@ extern "C" void speech_close_capture(Capture *c) {
     ma_device_uninit(&c->device);
     delete c;
 }
-extern "C" int speech_snapshot(Capture *c, float *out) {
+extern "C" int speech_snapshot(Capture *c, float *out, int capacity, bool consume) {
     std::lock_guard<std::mutex> guard(c->mutex);
-    if (out) {
-        std::copy(c->pcm.begin(), c->pcm.end(), out);
-    }
-    return static_cast<int>(c->pcm.size());
+    if (c->overflow) return -1;
+    int n = static_cast<int>(c->pcm.size());
+    if (!out) return n;
+    n = std::min(n, capacity);
+    std::copy_n(c->pcm.begin(), n, out);
+    if (consume) c->pcm.erase(c->pcm.begin(), c->pcm.begin() + n);
+    return n;
 }
 
 static void quiet(enum ggml_log_level, const char *, void *) {}

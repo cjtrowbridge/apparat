@@ -14,6 +14,9 @@ func (game *Game) Close() {
 		game.projects.close()
 		game.projects.workers.Wait()
 	}
+	if game.voice.engine != nil {
+		game.voice.engine.Close()
+	}
 	game.flushPlacement()
 	if game.cancelQueries != nil {
 		game.cancelQueries()

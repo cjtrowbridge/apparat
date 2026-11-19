@@ -418,7 +418,9 @@ R2 or right-Ctrl audio capture -> ASR queue -> transcribed text -> command or pr
 generated text -> TTS queue -> spoken playback
 ```
 
-Whisper, whisper.cpp, and Qwen3-ASR are speech-to-text systems. whisper.cpp is the first portable local ASR reference. Phase 9B starts with bundled Whisper Tiny for offline PTT. After the Tiny trial, the Phase 9B Settings selector will let users download and select larger models through Medium in the same device-local Whisper directory. Each option will show its language support in its name, such as “Whisper Tiny (English Only)” or “Whisper Tiny (Multilingual)”.
+The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project document, place the caret or select text, then hold the PTT control and speak. Release to insert the final transcript. A live preview stays outside the document. Escape cancels, and saving a document or sending a message is a separate action. Android asks for microphone permission on first use. Audio stays in memory on the device, in bounded chunks while the control is held.
+
+Open **Settings → HUD Configuration** to choose a dictation model. Tiny, Base, Small and Medium each offer English Only and Multilingual variants. Select a variant to inspect its size and languages. Additional models require a connection for their first download. Apparat verifies each file in `<runtime-root>/data/whisper/` and saves the choice in SQLite after the decoder loads. Installed models work offline.
 
 Initial TTS should use an OS-native or lightweight service-backed adapter. Qwen3-TTS is a future routed service because its reference implementation is Python/PyTorch and model-heavy.
 

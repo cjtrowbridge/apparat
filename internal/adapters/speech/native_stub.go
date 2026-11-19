@@ -23,6 +23,9 @@ func capture() (*recorder, error) {
 }
 func (*recorder) stop()  {}
 func (*recorder) close() {}
-func (*recorder) snapshot() []float32 {
+func (*recorder) count() int {
+	return 0
+}
+func (*recorder) snapshot(int, bool) []float32 {
 	return nil
 }

@@ -8,3 +8,5 @@
 - `native_stub.go`: Reports absence of native support in development builds.
 - `models.go`: Verifies and installs bundled or downloaded models using atomic sibling files.
 - `session.go`: Serializes model activation and recording, stops capture on release and finalizes bounded audio on a worker.
+- `models_test.go`: Exercises cancelled and corrupt transfers and file cleanup.
+- `native_test.go`: Loads the bundled weights and checks silence and the upstream speech fixture.

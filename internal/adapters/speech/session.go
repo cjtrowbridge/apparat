@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -22,6 +23,8 @@ type Engine struct {
 	active  string
 	loaded  *decoder
 	busy    bool
+	closed  bool
+	workers sync.WaitGroup
 	message string
 }
 
@@ -40,9 +43,10 @@ func (e *Engine) Status() (string, string, bool) {
 func (e *Engine) reserve() bool {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if e.busy {
+	if e.busy || e.closed {
 		return false
 	}
+	e.workers.Add(1)
 	e.busy = true
 	return true
 }
@@ -51,6 +55,21 @@ func (e *Engine) done(message string) {
 	defer e.mu.Unlock()
 	e.busy = false
 	e.message = message
+	e.workers.Done()
+}
+
+// Close follows cancellation of the GUI lifetime context.
+func (e *Engine) Close() {
+	e.mu.Lock()
+	e.closed = true
+	e.mu.Unlock()
+	e.workers.Wait()
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.loaded != nil {
+		e.loaded.close()
+		e.loaded = nil
+	}
 }
 func (e *Engine) prepare(ctx context.Context, id string) error {
 	m, err := lookup(id)
@@ -73,12 +92,10 @@ func (e *Engine) prepare(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	if id != e.active {
-		err = e.store.SetSpeechModel(ctx, id)
-		if err != nil {
-			candidate.close()
-			return err
-		}
+	err = e.store.SetSpeechModel(ctx, id)
+	if err != nil {
+		candidate.close()
+		return err
 	}
 	e.mu.Lock()
 	e.active = id
@@ -174,6 +191,8 @@ func (e *Engine) record(ctx context.Context, s *Session) (string, error) {
 	busy := true
 	released := false
 	finalizing := false
+	committing := false
+	prefix := ""
 	finish := s.finish
 	var last int
 	decode := func(samples []float32) {
@@ -204,27 +223,36 @@ func (e *Engine) record(ctx context.Context, s *Session) (string, error) {
 				return "", r.err
 			}
 			if finalizing {
-				return r.text, nil
+				return strings.TrimSpace(prefix + " " + r.text), nil
+			}
+			preview := strings.TrimSpace(prefix + " " + r.text)
+			if committing {
+				prefix = preview
+				committing = false
+				last = 0
 			}
 			if !released {
-				s.set("recording", r.text)
+				s.set("recording", preview)
 			}
 		case <-tick.C:
 		}
 		if busy {
 			continue
 		}
-		samples := mic.snapshot()
-		if len(samples) >= 30*16000 && !released {
-			mic.stop()
-			released = true
-			finish = nil
+		n := mic.count()
+		if n < 0 {
+			return "", errors.New("Decoder fell behind microphone capture. Retry with a smaller model.")
 		}
-		if released {
+		const chunk = 20 * 16000
+		switch {
+		case n >= chunk:
+			committing = true
+			decode(mic.snapshot(chunk, true))
+		case released:
 			finalizing = true
-			decode(samples)
-		} else if len(samples) >= last+16000 {
-			decode(samples)
+			decode(mic.snapshot(n, true))
+		case n >= last+16000:
+			decode(mic.snapshot(n, false))
 		}
 	}
 }

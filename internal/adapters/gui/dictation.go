@@ -7,6 +7,7 @@ package gui
 import (
 	"encoding/json"
 	"fmt"
+	"image"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,8 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/adapters/speech"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type voiceState struct {
@@ -104,10 +107,19 @@ func (g *Game) cancelPTT() {
 	g.voice.field = nil
 	g.voice.preview = ""
 }
+func caretMayHaveMoved(f *widget.TextInput) bool {
+	for _, k := range []ebiten.Key{ebiten.KeyArrowLeft, ebiten.KeyArrowRight, ebiten.KeyHome, ebiten.KeyEnd, ebiten.KeyA} {
+		if inpututil.IsKeyJustPressed(k) {
+			return true
+		}
+	}
+	x, y := ebiten.CursorPosition()
+	return inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && image.Pt(x, y).In(f.GetWidget().Rect)
+}
 func (g *Game) pollSpeech() {
 	v := &g.voice
 	if v.canvas != nil {
-		if g.ui.GetFocusedWidget() != v.field || v.field.GetText() != v.original {
+		if g.ui.GetFocusedWidget() != v.field || v.field.GetText() != v.original || caretMayHaveMoved(v.field) {
 			g.cancelPTT()
 			return
 		}
@@ -162,7 +174,6 @@ func (g *Game) speechSettings(c *widget.Container) {
 		if !strings.HasSuffix(m.ID, ".en") {
 			languages = strings.TrimSpace(speech.Languages)
 		}
-		c.AddChild(g.detailText(fmt.Sprintf("%.1f MB · %s", float64(m.Bytes)/1e6, languages)))
 		if !busy && m.ID != active {
 			label := "Download and use"
 			info, err := os.Stat(filepath.Join(g.runtimeInfo.RuntimePath, "data", "whisper", m.File))
@@ -174,5 +185,6 @@ func (g *Game) speechSettings(c *widget.Container) {
 				g.layoutDirty = true
 			})
 		}
+		c.AddChild(g.detailText(fmt.Sprintf("%.1f MB · %s", float64(m.Bytes)/1e6, languages)))
 	}
 }

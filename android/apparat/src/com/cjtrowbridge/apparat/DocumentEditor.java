@@ -85,8 +85,10 @@ public final class DocumentEditor implements Editor {
                         body.onTextContextMenuItem(android.R.id.undo);
                     }
                 });
-                Button ptt=new Button(dialog.getContext());
-                bar.addView(ptt);
+                FrameLayout workspace=new FrameLayout(dialog.getContext());
+                workspace.addView(body);
+                Button ptt=VoiceInput.floatingButton(workspace);
+                body.setPadding(inset,inset,inset,ptt.getLayoutParams().height+6*inset);
                 VoiceInput voice=new VoiceInput(activity,dialog,body,ptt,status);
                 int[] position = positions.get(project + "/" + title);
                 if (position != null) {
@@ -97,7 +99,7 @@ public final class DocumentEditor implements Editor {
                         }
                     });
                 }
-                column.addView(body, new LinearLayout.LayoutParams(-1,0,1));
+                column.addView(workspace, new LinearLayout.LayoutParams(-1,0,1));
                 body.addTextChangedListener(new TextWatcher() {
                     public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
                     public void onTextChanged(CharSequence s,int start,int before,int count) {}
@@ -174,9 +176,13 @@ public final class DocumentEditor implements Editor {
                 input.setSelection(input.length());
                 LinearLayout panel=new LinearLayout(activity);
                 panel.setOrientation(LinearLayout.VERTICAL);
-                panel.addView(input);
-                Button ptt=new Button(activity);
-                panel.addView(ptt);
+                FrameLayout workspace=new FrameLayout(activity);
+                workspace.addView(input);
+                Button ptt=VoiceInput.floatingButton(workspace);
+                int space=ptt.getLayoutParams().height*3/2;
+                input.setMinHeight(space);
+                input.setPadding(input.getPaddingLeft(), input.getPaddingTop(),space,input.getPaddingBottom());
+                panel.addView(workspace);
                 TextView preview=new TextView(activity);
                 panel.addView(preview);
                 AlertDialog dialog = new AlertDialog.Builder(activity).setTitle(title).setView(panel)
