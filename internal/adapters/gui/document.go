@@ -21,6 +21,7 @@ import (
 var desktopEditor string
 
 type documentSession struct {
+	voice    func(string) string
 	saved    bool
 	compared string
 	ctx      context.Context
@@ -30,6 +31,9 @@ type documentSession struct {
 }
 
 func (s *documentSession) Apply(action, text string) string {
+	if strings.HasPrefix(action, "voice-") && s.voice != nil {
+		return s.voice(strings.TrimPrefix(action, "voice-"))
+	}
 	q := s.request
 	switch action {
 	case "draft", "save", "compare", "rebase":
@@ -115,7 +119,8 @@ func (g *Game) editDocument() {
 	bookmark := g.projects.bookmarks[key]
 	host := g.runtimeInfo.DocumentEditor
 	g.projectWork(func(ctx context.Context) projectResult {
-		session := &documentSession{ctx: ctx, store: store, request: q, view: v}
+		defer g.NativeVoice("cancel")
+		session := &documentSession{voice: g.NativeVoice, ctx: ctx, store: store, request: q, view: v}
 		var err error
 		if host != nil {
 			err = host.EditDocument(q.ProjectID, q.Path, v.Text, session)

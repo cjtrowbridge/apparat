@@ -1,0 +1,66 @@
+[
+  {
+    "ID": "tiny.en",
+    "Label": "Whisper Tiny (English Only)",
+    "File": "ggml-tiny.en-q5_1.bin",
+    "Bytes": 32166155,
+    "SHA256": "c77c5766f1cef09b6b7d47f21b546cbddd4157886b3b5d6d4f709e91e66c7c2b",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  },
+  {
+    "ID": "tiny",
+    "Label": "Whisper Tiny (Multilingual)",
+    "File": "ggml-tiny-q5_1.bin",
+    "Bytes": 32152673,
+    "SHA256": "818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  },
+  {
+    "ID": "base.en",
+    "Label": "Whisper Base (English Only)",
+    "File": "ggml-base.en-q5_1.bin",
+    "Bytes": 59721011,
+    "SHA256": "4baf70dd0d7c4247ba2b81fafd9c01005ac77c2f9ef064e00dcf195d0e2fdd2f",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  },
+  {
+    "ID": "base",
+    "Label": "Whisper Base (Multilingual)",
+    "File": "ggml-base-q5_1.bin",
+    "Bytes": 59707625,
+    "SHA256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  },
+  {
+    "ID": "small.en",
+    "Label": "Whisper Small (English Only)",
+    "File": "ggml-small.en-q5_1.bin",
+    "Bytes": 190098681,
+    "SHA256": "bfdff4894dcb76bbf647d56263ea2a96645423f1669176f4844a1bf8e478ad30",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  },
+  {
+    "ID": "small",
+    "Label": "Whisper Small (Multilingual)",
+    "File": "ggml-small-q5_1.bin",
+    "Bytes": 190085487,
+    "SHA256": "ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  },
+  {
+    "ID": "medium.en",
+    "Label": "Whisper Medium (English Only)",
+    "File": "ggml-medium.en-q5_0.bin",
+    "Bytes": 539225533,
+    "SHA256": "76733e26ad8fe1c7a5bf7531a9d41917b2adc0f20f2e4f5531688a8c6cd88eb0",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  },
+  {
+    "ID": "medium",
+    "Label": "Whisper Medium (Multilingual)",
+    "File": "ggml-medium-q5_0.bin",
+    "Bytes": 539212467,
+    "SHA256": "19fea4b380c3a618ec4723c3eef2eb785ffba0d0538cf43f8f235e7b3b34220f",
+    "Revision": "f281eb45af861ab5e5297d23694b7d46e090c02c"
+  }
+]

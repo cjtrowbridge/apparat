@@ -45,6 +45,7 @@ const (
 )
 
 type Game struct {
+	voice                          voiceState
 	prefs                          preferenceState
 	projects                       projectForm
 	window                         windowTracker
@@ -172,6 +173,7 @@ func NewGameWithRuntimeInfo(info RuntimeInfo) *Game {
 	}
 	game.loadPreferences()
 	game.initProjects()
+	game.initSpeech()
 	game.rebuildUI(game.shell.Snapshot())
 	game.activeTabID.Store(string(game.shell.Snapshot().ActiveTab().ID()))
 	return game
@@ -227,17 +229,18 @@ func (game *Game) Update() error {
 	}
 	rightCtrl := ebiten.IsKeyPressed(ebiten.KeyControlRight)
 	if rightCtrl && !game.rightCtrlHeld {
-		game.shell.StartVoiceCapture("right-ctrl")
+		game.beginPTT("right-ctrl")
 	}
 	if !rightCtrl && game.rightCtrlHeld {
-		game.shell.ReleaseVoiceCapture()
+		game.endPTT()
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		game.shell.CancelVoiceCapture()
+		game.cancelPTT()
 		game.setPTTHeld(false)
 	}
 	game.rightCtrlHeld = rightCtrl
 	game.updateGamepad()
+	game.pollSpeech()
 	{
 		activeIndex := game.shell.Snapshot().ActiveIndex
 		if activeIndex != startIndex {
@@ -291,10 +294,10 @@ func (game *Game) updateGamepad() {
 			game.applyTabAction(hud.ActionPreviousTab)
 		}
 		if r2 && !game.r2Held {
-			game.shell.StartVoiceCapture("gamepad-r2")
+			game.beginPTT("gamepad-r2")
 		}
 		if !r2 && game.r2Held {
-			game.shell.ReleaseVoiceCapture()
+			game.endPTT()
 		}
 		game.l1WasPressed = l1
 		game.r1WasPressed = r1
@@ -331,7 +334,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	if game.arcadeDraw(screen) {
 		return
 	}
-	if !game.inWorkspace() {
+	if !game.inWorkspace() || game.ui.GetFocusedWidget() != nil || game.voice.canvas != nil {
 		game.drawPTTButton(screen)
 	}
 	if game.debugOverlayOpen {
@@ -351,10 +354,11 @@ func (game *Game) drawPTTButton(screen *ebiten.Image) {
 	vector.DrawFilledCircle(screen, float32(x), float32(y), float32(pttRadius), fill, true)
 	vector.StrokeCircle(screen, float32(x), float32(y), float32(pttRadius), 2, color.RGBA{R: 220, G: 232, B: 255, A: 255}, true)
 	ebitenutil.DebugPrintAt(screen, "PTT", x-10, y-4)
+	ebitenutil.DebugPrintAt(screen, game.voice.preview, windowMargin, y-24)
 }
 
 func (game *Game) pointInPTT(x int, y int) bool {
-	if game.inWorkspace() {
+	if game.inWorkspace() && game.ui.GetFocusedWidget() == nil && game.voice.canvas == nil {
 		return false
 	}
 	cx, cy := game.pttCenter()
@@ -368,10 +372,10 @@ func (game *Game) setPTTHeld(held bool) {
 	}
 	game.pttHeld = held
 	if held {
-		game.shell.StartVoiceCapture("floating-ptt")
+		game.beginPTT("floating-ptt")
 		return
 	}
-	game.shell.ReleaseVoiceCapture()
+	game.endPTT()
 }
 
 func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {

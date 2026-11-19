@@ -45,7 +45,7 @@ func (game *Game) cancelPointer() {
 		game.bodyScrollCancelUpdates = 2
 		game.tabDragCancelUpdates = 2
 	}
-	game.shell.CancelVoiceCapture()
+	game.cancelPTT()
 	game.setPTTHeld(false)
 	game.finishBodyScroll()
 	game.finishTabStripDrag()

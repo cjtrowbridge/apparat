@@ -155,3 +155,5 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 - `workspace_directory.go`: Shows one folder at a time, combines its files with Git status, and opens missing tracked files in deletion review.
 
 Workspace Files publishes folder entries first. A cancellable background check decorates the current directory. Navigating discards obsolete results, and a failed check leaves filenames accessible with an error message.
+
+- `dictation.go`: Owns workspace PTT sessions, targeted text insertion and device-local model selection in Settings.

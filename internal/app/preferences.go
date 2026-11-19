@@ -19,3 +19,10 @@ func (n *Runtime) WindowState(ctx context.Context) (domain.WindowState, error) {
 func (n *Runtime) SaveWindowState(ctx context.Context, w domain.WindowState) error {
 	return n.database.SaveWindowState(ctx, w)
 }
+
+func (n *Runtime) SpeechModel(ctx context.Context) (string, error) {
+	return n.database.SpeechModel(ctx)
+}
+func (n *Runtime) SetSpeechModel(ctx context.Context, id string) error {
+	return n.database.SetSpeechModel(ctx, id)
+}

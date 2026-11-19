@@ -115,6 +115,7 @@ func RegisterUpdater(u Updater) {
 // SuspendInput cancels captured input on the next game update after Activity pause.
 func SuspendInput() {
 	if game != nil {
+		game.NativeVoice("cancel")
 		game.RequestInputCancellation()
 		game.ArcadeSuspend()
 	}
@@ -134,4 +135,9 @@ func WorkspaceBack() {
 
 func WorkspaceBackAvailable() bool {
 	return game != nil && game.WorkspaceBackAvailable()
+}
+
+// Voice forwards controls from the active Android text editor to the local decoder.
+func Voice(action string) string {
+	return game.NativeVoice(action)
 }

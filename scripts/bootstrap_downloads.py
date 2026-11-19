@@ -57,6 +57,21 @@ def unpack_zip(archive, stage):
                     target.chmod(mode & 0o777)
 
 
+def install_cmake():
+    if shutil.which('cmake') or (ROOT/'.tools/cmake/cmake/data/bin/cmake').is_file():
+        return
+    if platform.system() != 'Linux' or platform.machine() != 'x86_64':
+        raise RuntimeError('Install CMake 3.21 or later for local speech builds')
+    dest = ROOT/'.tools/cmake'
+    dest.mkdir(parents=True, exist_ok=True)
+    wheel = dest/'cmake.whl'
+    url = ('https://files.pythonhosted.org/packages/59/e8/096984b89133681533650b9078c5ed1c5c9b534e869b5487f22d4de1935c/'
+           'cmake-3.31.6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl')
+    download(url, wheel, '1c8b05df0602365da91ee6a3336fe57525b137706c4ab5675498f662ae1dbcec', 'sha256')
+    unpack_zip(wheel, dest)
+    wheel.unlink()
+
+
 def install_android():
     if platform.system() != 'Linux' or platform.machine() not in ('x86_64', 'amd64'):
         raise RuntimeError('Automatic Android archive setup supports Linux amd64 only; configure SDK/JDK paths on other hosts')

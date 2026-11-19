@@ -85,6 +85,9 @@ public final class DocumentEditor implements Editor {
                         body.onTextContextMenuItem(android.R.id.undo);
                     }
                 });
+                Button ptt=new Button(dialog.getContext());
+                bar.addView(ptt);
+                VoiceInput voice=new VoiceInput(activity,dialog,body,ptt,status);
                 int[] position = positions.get(project + "/" + title);
                 if (position != null) {
                     body.setSelection(Math.min(body.length(),position[0]),Math.min(body.length(),position[1]));
@@ -138,6 +141,7 @@ public final class DocumentEditor implements Editor {
                         bookmark[1] = Math.max(0,body.getSelectionEnd());
                         bookmark[2] = body.getScrollY();
                         positions.put(project + "/" + title,bookmark);
+                        voice.cancel();
                         active = null;
                         done.countDown();
                     }
@@ -168,15 +172,24 @@ public final class DocumentEditor implements Editor {
                 EditText input = new EditText(activity);
                 input.setText(value);
                 input.setSelection(input.length());
-                AlertDialog dialog = new AlertDialog.Builder(activity).setTitle(title).setView(input)
+                LinearLayout panel=new LinearLayout(activity);
+                panel.setOrientation(LinearLayout.VERTICAL);
+                panel.addView(input);
+                Button ptt=new Button(activity);
+                panel.addView(ptt);
+                TextView preview=new TextView(activity);
+                panel.addView(preview);
+                AlertDialog dialog = new AlertDialog.Builder(activity).setTitle(title).setView(panel)
                 .setNegativeButton("Cancel",null).setPositiveButton("Done",new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface d,int w) {
                         answer[0] = org.json.JSONObject.quote(input.getText().toString());
                     }
                 }).create();
+                VoiceInput voice=new VoiceInput(activity,dialog,input,ptt,preview);
                 active = dialog;
                 dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                     public void onDismiss(DialogInterface d) {
+                        voice.cancel();
                         active = null;
                         done.countDown();
                     }

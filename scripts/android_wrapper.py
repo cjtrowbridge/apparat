@@ -29,10 +29,12 @@ def build_wrapper_apk(toolchain, go: str, goarch: str, output: Path, settings: d
     for path in (source_dir, classes_dir, dex_dir, apk_dir):
         path.mkdir(parents=True, exist_ok=True)
     aar = work / "apparat.aar"
+    from speech_build import prepare as prepare_speech
+    prepare_speech(toolchain.ndk_root)
     env = wrapper_env(toolchain, settings)
     subprocess.run([
         str(toolchain.gomobile), "bind", "-target", "android/arm64", "-androidapi", settings["api"],
-        "-javapkg", JAVA_PACKAGE, "-o", str(aar), "-tags", "gui",
+        "-javapkg", JAVA_PACKAGE, "-o", str(aar), "-tags", "gui,speech",
         "-ldflags", f"-extldflags=-Wl,-z,max-page-size={settings['page_size']}", "./cmd/apparatmobile",
         "github.com/hajimehoshi/ebiten/v2/mobile/ebitenmobileview",
     ], cwd=ROOT, env=env, check=True)

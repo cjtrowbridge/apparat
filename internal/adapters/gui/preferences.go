@@ -142,6 +142,7 @@ func (g *Game) preferenceControls(c *widget.Container) {
 			g.resetWindow()
 		})
 	}
+	g.speechSettings(c)
 	if g.prefs.message != "" {
 		c.AddChild(g.hudText(g.prefs.message))
 	}

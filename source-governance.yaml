@@ -8,6 +8,9 @@ code:
     .py:
       adapter: python
       comment_pattern: '(?:#[^\n]*|(?s:""".*"""|\x27\x27\x27.*\x27\x27\x27))'
+    .cpp:
+      adapter: cstyle
+      comment_pattern: '(?://[^\n]*|(?s:/\*.*?\*/))'
     .java:
       adapter: cstyle
       comment_pattern: '(?://[^\n]*|(?s:/\*.*?\*/))'

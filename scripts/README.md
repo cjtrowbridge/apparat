@@ -164,3 +164,5 @@ Linux GUI artifact acceptance opens STMPCK with Alt+5, starts Merge, makes moves
 Linux GUI qualification also drags the Projects divider across two pointer updates and checks that both the held and released frames reflect the new position.
 
 Projects artifact acceptance checks the selected hammer tab on the published GUI and APK. Registry lifecycle tests independently verify real checkout rows and action markers.
+
+- `speech_build.py`: Called by the canonical GUI build to verify bundled Tiny and incrementally build static whisper.cpp for the host compiler or Android NDK under .tmp. Requires CMake, make and C/C++; bootstrap.py --install-cmake installs pinned CMake locally on Linux amd64. An unavailable compiler, dirty speech checkout or digest mismatch stops the build. Inspect helper usage with --help.

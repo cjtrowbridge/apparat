@@ -1161,7 +1161,7 @@ Cross-cutting navigation invariant: Settings is always last; new tabs, including
 - [x] Add Android permissions and platform behavior.
   - [x] Request `android.permission.INTERNET` for HTTPS over external WireGuard/local network.
   - [x] Avoid broad storage permissions; runtime data remains app-scoped by default.
-  - [x] Request microphone permission for the existing push-to-talk state path while keeping real Android audio capture validation as future Phase 11 work.
+  - [x] Request microphone permission for the existing push-to-talk state path while keeping real Android audio capture validation as Phase 9B work.
   - [x] Defer VPN-service permissions and app-managed WireGuard to the later transport/platform phase.
   - [x] Validate touch tab selection on Android while keeping keyboard, controller, and text-input coverage as follow-up testing.
   - [x] Defer Android audio/TTS behavior beyond package startup.
@@ -1682,11 +1682,33 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Repeat offline on Pixel 4a and Linux with two checkouts and competing changes. Capture compact and wide layouts.
 - [ ] Observe an uncoached first-use session before claiming discoverability.
 
+## Phase 9B: Offline Push-to-Talk Dictation and Whisper Model Selection
+
+**User outcome:** Dictate editable text into the local workspace and choose which installed speech model handles the next utterance.
+
+**Dependencies:** Phase 9A local workspace, shared input actions, device-local settings and GUI packaging.
+
+### First milestone — offline dictation with bundled Whisper Tiny
+
+- [ ] Pin the whisper.cpp runtime and one Tiny model with a digest and redistribution notices. Package both through the canonical build for each eligible GUI target. On first use, install the verified bundled weights in `<runtime-root>/data/whisper/`. Reuse them across restarts and upgrades. Keep model bytes in files and the selected model ID in device-local SQLite settings.
+- [ ] Connect the existing hold, release and cancel actions to real microphone capture on each platform. Feed bounded 16 kHz mono samples to a local decoder off the UI thread. Stop capture and discard incomplete work on cancellation or interruption.
+- [ ] Deliver release-to-edit first, then show revisable partial text while held. On release, finalize the trailing audio and insert the result once at the original selection. Preserve existing text on cancellation or loss of the editing target. Keep sending a message a separate action.
+- [ ] Verify the packaged app on a fresh offline install, including local model loading, microphone permission, silence, repeated holds, mid-phrase release, cancellation and restart. On Linux and the Pixel 4a measure time to first preview, release-to-final latency, peak memory and corrections on representative phrases. Compare with the Pixel 10 XL when available. Verify every eligible build target through the canonical pipeline.
+
+### Settings model selection after the Tiny trial
+
+- [ ] Add a Settings model selector offering Tiny, Base, Small and Medium. Download additional models on demand into the same Whisper directory. Show size and progress, verify the digest before publishing the file, and reuse installed copies offline. Switch between utterances. Persist the selection after the new decoder loads successfully and use it for subsequent PTT sessions and after restart. Recover the working model if download or activation fails.
+- [ ] Label every installed and downloadable model with its language support, including the active selection. Use names such as “Whisper Tiny (English Only)” and “Whisper Tiny (Multilingual)”. For multilingual variants, make the supported languages available in the model details before download or selection.
+**Exit criteria**
+
+- [ ] In a fresh offline installation, hold PTT in a local text field, see a live preview, then release to insert editable text once. Cancelling preserves the original draft.
+- [ ] In Settings, inspect a model's language support, download and activate it, then restart offline and dictate with the selected model. Switch back to bundled Tiny without downloading it again.
+
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
 
 **User outcome:** Create a cluster on Linux, discover and join it from the Pixel 4a, and recognize the same members after restart or an address change.
 
-**Dependencies:** The Phase 8 core and Phase 6 identity contracts. Complete Phase 9A first. Its local workspace remains usable throughout enrollment and after leaving.
+**Dependencies:** The Phase 8 core and Phase 6 identity contracts. Phases 9A and 9B precede enrollment. Local workspace editing and offline dictation remain usable throughout enrollment and after leaving.
 
 - [ ] In Cluster, create the cluster root and initial enrollment authority. Present discover, request to join, confirm, approve, leave and revoke actions with visible pending, trusted, offline and revoked states. Keep transient selections and forms in GUI state.
 
@@ -2136,7 +2158,12 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 **User outcome:** Holding and releasing the configured control produces editable transcribed text through a selected local or remote route, and spoken output can be controlled independently.
 
-**Dependencies:** Display-free input contract and Phases 11–14.
+Phase 16 builds on local dictation and model selection from Phase 9B. Remote speech routing depends on Phases 11–14.
+
+### Later voice controls
+
+- [ ] Support double-click to lock PTT recording and a single click to stop it. Flesh out gesture timing, cancellation and touch/controller equivalents later.
+- [ ] Add opt-in trigger-word listening, disabled by default. When enabled, default the word to `apparat` and let the user replace it with a word of their choice. Define listening lifecycle, activation feedback and false-trigger tests before implementation.
 
 ### Audio capture and presentation boundary
 

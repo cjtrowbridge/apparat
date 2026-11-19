@@ -46,3 +46,16 @@ func (db *DB) SaveWindowState(ctx context.Context, w domain.WindowState) error {
 	_, err := db.sql.ExecContext(ctx, "INSERT OR REPLACE INTO desktop_window VALUES(1,?,?,?,?,?,?)", w.Width, w.Height, w.X, w.Y, w.Maximized, w.Monitor)
 	return err
 }
+
+func (db *DB) SpeechModel(ctx context.Context) (string, error) {
+	var id string
+	err := db.sql.QueryRowContext(ctx, "SELECT value FROM local_runtime WHERE key='speech_model'").Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return id, err
+}
+func (db *DB) SetSpeechModel(ctx context.Context, id string) error {
+	_, err := db.sql.ExecContext(ctx, "INSERT INTO local_runtime VALUES('speech_model',?,0) ON CONFLICT(key) DO UPDATE SET value=excluded.value", id)
+	return err
+}

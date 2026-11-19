@@ -31,7 +31,11 @@ def main():
     parser.add_argument('--android', action='store_true', help='Require Android SDK, NDK, OpenJDK 21 and system ADB')
     parser.add_argument('--install-android', action='store_true', help='Install verified Linux amd64 SDK/NDK and Temurin 21 locally')
     parser.add_argument("--install-go", action="store_true", help="Install checksum-verified Go 1.26.11 locally on Linux amd64")
+    parser.add_argument('--install-cmake', action='store_true', help='Install verified local CMake on Linux amd64 for Whisper builds')
     args = parser.parse_args()
+    if args.install_cmake and not args.check:
+        from bootstrap_downloads import install_cmake
+        install_cmake()
     try:
         from scripts.checkout_identity import check
     except ImportError:

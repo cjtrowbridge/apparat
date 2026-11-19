@@ -15,9 +15,9 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 try:
-    from scripts import android_wrapper, android_prerequisites, mobile_sources
+    from scripts import android_wrapper, android_prerequisites, mobile_sources, speech_build
 except ImportError:
-    import android_wrapper, android_prerequisites, mobile_sources
+    import android_wrapper, android_prerequisites, mobile_sources, speech_build
 ROOT = Path(__file__).resolve().parents[1]
 ANDROID_API = "35"
 ANDROID_MIN_API = "23"
@@ -366,6 +366,9 @@ def build_desktop(go: str, goos: str, goarch: str, targets: tuple[str, ...], des
         output = destination or artifact_path(goos, goarch, target)
         output.parent.mkdir(parents=True, exist_ok=True)
         command = desktop_build_command(go, target, output)
+        if target == "apparat":
+            speech_build.prepare()
+            command[command.index("-tags") + 1] += ",speech"
         print(f"building target={target} goos={goos} goarch={goarch} output={output}")
         try:
             subprocess.run(command, cwd=ROOT, env=env, check=True)
