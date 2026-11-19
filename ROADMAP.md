@@ -1690,19 +1690,20 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 ### First milestone — offline dictation with bundled Whisper Tiny
 
-- [ ] Pin the whisper.cpp runtime and one Tiny model with a digest and redistribution notices. Package both through the canonical build for each eligible GUI target. On first use, install the verified bundled weights in `<runtime-root>/data/whisper/`. Reuse them across restarts and upgrades. Keep model bytes in files and the selected model ID in device-local SQLite settings.
-- [ ] Connect the existing hold, release and cancel actions to real microphone capture on each platform. Feed bounded 16 kHz mono samples to a local decoder off the UI thread. Stop capture and discard incomplete work on cancellation or interruption.
-- [ ] Deliver release-to-edit first, then show revisable partial text while held. On release, finalize the trailing audio and insert the result once at the original selection. Preserve existing text on cancellation or loss of the editing target. Keep sending a message a separate action.
-- [ ] Verify the packaged app on a fresh offline install, including local model loading, microphone permission, silence, repeated holds, mid-phrase release, cancellation and restart. On Linux and the Pixel 4a measure time to first preview, release-to-final latency, peak memory and corrections on representative phrases. Compare with the Pixel 10 XL when available. Verify every eligible build target through the canonical pipeline.
+- [x] Pin the whisper.cpp runtime and one Tiny model with a digest and redistribution notices. Package both through the canonical build for each eligible GUI target. On first use, install the verified bundled weights in `<runtime-root>/data/whisper/`. Reuse them across restarts and upgrades. Keep model bytes in files and the selected model ID in device-local SQLite settings.
+- [x] Connect the existing hold, release and cancel actions to real microphone capture on each platform. Feed bounded 16 kHz mono samples to a local decoder off the UI thread. Stop capture and discard incomplete work on cancellation or interruption.
+- [x] Deliver release-to-edit first, then show revisable partial text while held. On release, finalize the trailing audio and insert the result once at the original selection. Preserve existing text on cancellation or loss of the editing target. Keep sending a message a separate action.
+- [x] Verify the packaged app on a fresh offline install, including local model loading, microphone permission, silence, repeated holds, mid-phrase release, cancellation and restart. On Linux and the Pixel 4a measure time to first preview, release-to-final latency, peak memory and corrections on representative phrases. Compare with the Pixel 10 XL when available. Verify every eligible build target through the canonical pipeline.
 
 ### Settings model selection after the Tiny trial
 
-- [ ] Add a Settings model selector offering Tiny, Base, Small and Medium. Download additional models on demand into the same Whisper directory. Show size and progress, verify the digest before publishing the file, and reuse installed copies offline. Switch between utterances. Persist the selection after the new decoder loads successfully and use it for subsequent PTT sessions and after restart. Recover the working model if download or activation fails.
-- [ ] Label every installed and downloadable model with its language support, including the active selection. Use names such as “Whisper Tiny (English Only)” and “Whisper Tiny (Multilingual)”. For multilingual variants, make the supported languages available in the model details before download or selection.
+- [x] Add a Settings model selector offering Tiny, Base, Small and Medium. Download additional models on demand into the same Whisper directory. Show size and progress, verify the digest before publishing the file, and reuse installed copies offline. Switch between utterances. Persist the selection after the new decoder loads successfully and use it for subsequent PTT sessions and after restart. Recover the working model if download or activation fails.
+- [x] Label every installed and downloadable model with its language support, including the active selection. Use names such as “Whisper Tiny (English Only)” and “Whisper Tiny (Multilingual)”. For multilingual variants, make the supported languages available in the model details before download or selection.
+
 **Exit criteria**
 
-- [ ] In a fresh offline installation, hold PTT in a local text field, see a live preview, then release to insert editable text once. Cancelling preserves the original draft.
-- [ ] In Settings, inspect a model's language support, download and activate it, then restart offline and dictate with the selected model. Switch back to bundled Tiny without downloading it again.
+- [x] In a fresh offline installation, hold PTT in a local text field, see a live preview, then release to insert editable text once. Cancelling preserves the original draft.
+- [x] In Settings, inspect a model's language support, download and activate it, then restart offline and dictate with the selected model. Switch back to bundled Tiny without downloading it again.
 
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
 

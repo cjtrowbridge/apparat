@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-19-11-43-25 | plans/past/2026-11-19-10-06-17_local-dictation.md | Offline workspace dictation | Bundle and exercise local Whisper PTT and persistent model selection.
 2026-11-17-15-56-50 | plans/past/2026-11-17-15-06-44_durable-settings-and-window-state.md | Implement durable Settings controls and desktop window restoration | Add SQLite-backed local preferences and restore desktop size, placement and maximized state.
 2026-11-17-13-38-28 | plans/past/2026-11-17-14-15-00_platform-update-card.md | Match the Settings update card to the client platform | Show desktop manual update instructions and expose the Android installer action only through its registered bridge.
 2026-11-17-12-37-58 | plans/past/2026-11-17-12-24-46_project-repo-selector.md | Unify project repo selection and update Cluster artwork | Present one repo list with an action-status color key and a networked-computers Cluster icon.

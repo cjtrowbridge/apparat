@@ -32,13 +32,12 @@ def activate(application):
     scroll = Gtk.ScrolledWindow(vexpand=True)
     scroll.set_child(view)
     overlay = Gtk.Overlay()
-    overlay.set_child(scroll)
-    overlay.set_vexpand(True)
-    box.append(overlay)
+    box.append(scroll)
+    overlay.set_child(box)
     status = Gtk.Label(label="")
     status.set_visible(False)
     box.append(status)
-    win.set_child(box)
+    win.set_child(overlay)
 
     def request(action):
         text = "" if action.startswith("voice-") else buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
@@ -135,11 +134,16 @@ def activate(application):
         if voice is not None:
             receive_voice(json.loads(request("voice-stop")))
 
-    gesture = Gtk.GestureClick()
-    gesture.connect("pressed", begin_voice)
-    gesture.connect("released", end_voice)
-    gesture.connect("cancel", cancel_voice)
-    hold.add_controller(gesture)
+    def pointer_down(gesture, *_):
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        begin_voice()
+
+    pointer = Gtk.GestureClick()
+    pointer.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+    pointer.connect("pressed", pointer_down)
+    pointer.connect("released", end_voice)
+    pointer.connect("cancel", cancel_voice)
+    hold.add_controller(pointer)
     keys = Gtk.EventControllerKey()
     keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
     def key_down(_, key, code, mods):
