@@ -10,6 +10,7 @@ import (
 )
 
 func (game *Game) Close() {
+	game.closeDesktopUpdates()
 	if game.projects.close != nil {
 		game.projects.close()
 		game.projects.workers.Wait()

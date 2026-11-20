@@ -2,7 +2,12 @@
 // Dependencies: github.com/cjtrowbridge/apparat/internal/hud.
 package gui
 
-import "github.com/cjtrowbridge/apparat/internal/hud"
+import (
+	"errors"
+	"github.com/cjtrowbridge/apparat/internal/hud"
+)
+
+var ErrRestart = errors.New("restart Apparat after update")
 
 type Adapter struct {
 	shell hud.Shell

@@ -42,7 +42,7 @@ If additional custom Ebitengine rendering is required for dense visualizations o
 
 Tab bodies are rendered as EbitenUI widget trees. Do not draw new content as unconstrained text or floating overlays. Settings uses a scrollable vertical fieldset stack. Non-Settings tabs use an EbitenUI master-detail pattern while their durable data remains placeholder/mock content.
 
-Settings renders each `internal/hud` section as a fieldset. The `Updates` section owns an EbitenUI-rendered `Check for update` button plus a wrapped status explanation. `update_status.go` maps stable update reason codes to safe short labels and actionable details; render only those mappings, never raw exceptions, response bodies, tokens, private paths, or unverified release data. Android reports codes through the mobile bridge. Desktop has no checker yet, so it truthfully reports `Unable to check for updates` with a no-checker explanation. Production signed manifests, desktop update checks, and remote node updates remain later roadmap work. Do not add a native Android overlay button for this path.
+Settings renders each `internal/hud` section as a fieldset. The `Updates` section owns an EbitenUI-rendered `Check for update` button plus a wrapped status explanation. `update_status.go` maps stable update reason codes to safe short labels and actionable details; render only those mappings, never raw exceptions, response bodies, tokens, private paths, or unverified release data. Android reports codes through the mobile bridge. Linux uses the public qualified development channel through `selfupdate`: check/download, explicit installation, then restart after graceful node shutdown. Production signed manifests and remote node updates remain Phase 17 work. Do not add a native Android overlay button for this path.
 
 The Settings Diagnostics fieldset owns the Debug UI overlay toggle. The overlay is a development-only floating panel rendered by the Ebitengine game loop so it can report live screen size, FPS, UPS, runtime path, working directory, binary path, active tab, route, input, voice state, focus, and queue diagnostics. It is draggable by its title bar and must remain opt-in from Settings.
 
@@ -126,7 +126,7 @@ Updater status text now distinguishes an invalid package, incompatible signing k
 
 - `arcade.go`: Lazily initializes the embedded STMPCK gallery, translates the viewport, routes Back and saves when the game is suspended.
 
-The Updates card uses platform-specific HUD copy. Its button and status exist only when the client supplies an updater callback through the Android bridge.
+The Updates card uses platform-specific HUD copy. Its button and status exist when the Linux runner or Android bridge supplies an updater callback.
 
 The desktop master-detail divider captures the mouse through the shared pointer owner. Resizing preserves both panes' scroll positions while the layout rebuilds.
 
@@ -159,3 +159,12 @@ Workspace Files publishes folder entries first. A cancellable background check d
 - `dictation.go`: Owns workspace PTT sessions, targeted text insertion and device-local model selection in Settings.
 - `project_creation.go`: Handles the named local project action, opens its Files workspace, and formats GitHub clone previews.
 - `update_discovery.go`: Checks the Android release manifest on Settings entry, coalesces checks and separates discovery from installation.
+
+- `desktop_updates.go`: Owns one cancellable Linux update worker, candidate cleanup, UI status and restart intent. No network I/O runs on the frame thread.
+- `desktop_updates_test.go`: Tests check/install/restart and up-to-date states with a disposable executable, untargeted PTT and native-aspect layout.
+- `gamescope.go`: Uses the active monitor geometry and fullscreen under Gamescope while ordinary desktops retain saved placement.
+- `ptt_overlay.go`: Draws and captures the existing PTT overlay, split from the shell to preserve its 400-line limit. Pressing PTT without an editable target is silent.
+
+Linux updates use the existing Settings card. Check downloads and verifies the current qualified artifact; Install update atomically replaces the executable and keeps `.previous`; Restart Apparat closes GUI/core state before exec. Steam continues tracking the same process and path. Failures keep installed bytes and show safe retry text. Closing cancels and joins the worker and deletes staged candidates.
+
+The embedded gallery toolbar centers popularity, friends, discovery and settings in that order, including matching click targets. The host tab order is unchanged and the pinned standalone game source remains untouched.

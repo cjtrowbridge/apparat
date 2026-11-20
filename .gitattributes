@@ -1,0 +1,2 @@
+# Unified patch context prefixes a tab-indented Go line with one literal space.
+scripts/patches/*.patch whitespace=-space-before-tab

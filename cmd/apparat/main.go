@@ -5,18 +5,28 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/adapters/gui"
 	"github.com/cjtrowbridge/apparat/internal/adapters/mockprovider"
 	"github.com/cjtrowbridge/apparat/internal/app"
 	"github.com/cjtrowbridge/apparat/internal/config"
+	"github.com/cjtrowbridge/apparat/internal/platform"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
-	os.Exit(run())
+	code := run()
+	if code == 75 {
+		err := platform.RestartProcess()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Update installed. Close and reopen Apparat to finish restarting.")
+			code = 1
+		}
+	}
+	os.Exit(code)
 }
 func run() (code int) {
 	cfg, err := config.Load(config.Options{Args: os.Args[1:], DefaultMode: config.ModeGUI, BinaryName: "apparat"})
@@ -93,6 +103,9 @@ func run() (code int) {
 		err = gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{WorkingDir: wd, RuntimePath: cfg.RootDir, BinaryPath: executable, Queries: node})
 	} else {
 		err = node.Start(ctx)
+	}
+	if errors.Is(err, gui.ErrRestart) {
+		return 75
 	}
 	if err != nil && ctx.Err() == nil {
 		fmt.Fprintln(os.Stderr, "run failed:", err)

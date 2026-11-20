@@ -81,7 +81,7 @@ def verify_download(output, expected):
         raise ValueError('Unexpected GitHub artifact download host')
     try:
         with urllib.request.urlopen(address,timeout=120) as response:
-            actual = hashlib.file_digest(response,'sha256').hexdigest()
+            actual = evidence.stream_digest(response)
     except urllib.error.URLError:
         raise ValueError(f'GitHub artifact download failed for {output}') from None
     if actual != expected:
@@ -115,8 +115,7 @@ def deliver(root, plans, compile_target, storage):
     git(root,'merge-base','--is-ancestor',remote,head)
     expected = {plan.name for plan in plans if plan.possible}
     for plan in plans:
-        if not plan.possible and (plan.goos != 'android' or
-                (build.host_goos() == 'linux' and plan.target == 'apparat')):
+        if not plan.possible and plan.goos != 'android':
             raise ValueError('Required target unavailable: '+plan.name+' '+str(plan.reasons))
     report = root/REPORT
     prior = json.loads(report.read_text()) if report.exists() else {}

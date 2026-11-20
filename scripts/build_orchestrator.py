@@ -14,10 +14,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 try:
-    from scripts import build, build_evidence
+    from scripts import build, build_evidence, artifact_acceptance
 except ImportError:
     import build
     import build_evidence
+    import artifact_acceptance
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,10 @@ def build_plans(go: str) -> list[BuildPlan]:
         append_unsupported_host_plans(plans, error, go_missing)
     toolchain, failures, warnings = build.resolve_android_toolchain(go)
     android_reasons = tuple(failures)
+    if not android_reasons and toolchain is not None:
+        device_reason = artifact_acceptance.android_device_reason()
+        if device_reason:
+            android_reasons = (device_reason,)
     if go_missing:
         android_reasons = (*go_missing, *android_reasons)
     plans.append(BuildPlan(

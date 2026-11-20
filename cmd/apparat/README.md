@@ -32,3 +32,5 @@ On Linux, normal GUI builds require Ebitengine native desktop dependencies such 
 - `main.go`: Parses command options and runs the GUI console.
 
 Phase 8 adds `--demo-services`, `--services`, `--listen`, `--backup`, and `--restore-backup`. GUI/headless are alternative owners of the same locked node root; see root README for migration and recovery. Startup reports the actual loopback REST address.
+
+A Linux self-update restart returns reserved exit result 75 internally after GUI close. The entrypoint closes the node before re-executing its original path and arguments; failed shutdown prevents restart. No shell, detached launcher or second node owner is involved. A failed exec leaves the updated binary available for a normal Steam relaunch.

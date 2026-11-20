@@ -166,3 +166,25 @@ Linux GUI qualification also drags the Projects divider across two pointer updat
 Projects artifact acceptance checks the selected hammer tab on the published GUI and APK. Registry lifecycle tests independently verify real checkout rows and action markers.
 
 - `speech_build.py`: Called by the canonical GUI build to verify bundled Tiny and incrementally build static whisper.cpp for the host compiler or Android NDK under .tmp. Requires CMake, make and C/C++; bootstrap.py --install-cmake installs pinned CMake locally on Linux amd64. An unavailable compiler, dirty speech checkout or digest mismatch stops the build. Inspect helper usage with --help.
+
+Android GUI target eligibility includes its mandatory canonical Pixel 4a qualification
+precondition. If system ADB or that authorized device is unavailable, the no-flag
+pipeline reports Android unavailable, delivers the qualified Linux host matrix and
+preserves the existing APK and its original input/hash evidence. It does not mark
+an untested Android candidate passed. `artifact_acceptance.py` rechecks the device
+again before installation when Android is eligible. Regression tests cover the
+availability decision and preservation of prior Android publication.
+
+Host Python 3.10 uses chunked SHA-256 reads in `build_evidence.py`,
+`build_delivery.py` and `speech_build.py`; no Python 3.11-only digest helper is
+required. Linux GUI qualification may use an independently staged native sysroot
+through `bootstrap.py --native-source`; it needs Xvfb, xauth, ImageMagick, libXtst
+and their runtime libraries in addition to the desktop development headers.
+
+The physical-line checker prunes excluded dependency/generated directories and
+private `.aws`, `.codex`, `.agents` mounts before traversal; disappearing private
+mounts cannot interrupt the first-party scan. Errors in included directories still
+fail the gate. Xvfb qualification explicitly sets `EGL_PLATFORM=x11` for its child
+process: an inherited Wayland EGL platform can crash before window creation.
+This affects host verification only, not the installed Steam Deck graphics driver
+or the parent desktop environment.

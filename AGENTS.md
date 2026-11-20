@@ -30,6 +30,7 @@ Agentic Pipelines routes reusable pipeline concerns. Apparat owns product-develo
 | Add or modify a tool wrapper | `playbooks/how_to_add_or_modify_a_tool_wrapper_safely.md` |
 | Add or modify HUD tab contents | `playbooks/how_to_add_or_modify_hud_tab_contents.md` |
 | Create a host playbook | `playbooks/how_to_create_a_new_playbook.md` |
+| Install Apparat on Steam Deck, configure SSH, or add its Gaming Mode launcher | `playbooks/how_to_install_apparat_on_steam_deck_and_add_it_to_steam.md` |
 | Assimilate another agentic framework | `playbooks/how_to_assimilate_another_agentic_framework.md` |
 | Migrate README roadmap work into execution plans | `playbooks/how_to_migrate_readme_roadmaps_to_plans_system.md` |
 | Bootstrap or update the framework submodule | `playbooks/how_to_bootstrap_framework_submodule_into_host_repo.md` or `playbooks/how_to_update_submodule_and_synthesize_host_overrides.md` |

@@ -16,6 +16,31 @@ Requires controller-first HUD, readable 1280x800 sizing, keyboard/mouse fallback
 
 Phase 3 keeps `--smoke-test` non-window for CI and build environments. The Ebitengine run loop is wired behind the `gui` build tag so native GUI validation can be performed on systems with the required desktop libraries.
 
+### Steam Deck persistent install — 2026-11-20
+
+The existing qualified Linux amd64 GUI from delivery commit `dd1594c` was
+installed as `/home/deck/.local/bin/apparat` on SteamOS 3.9.5 (x86_64). Installed
+and source SHA-256 both equal
+`7e2a9de3638342df95b3af66b2b834a52299c021e99836008b493c98243f96c4`.
+All ELF dependencies resolved without a system package change. The binary has
+mode 755 and its validated desktop entry has mode 644.
+
+Valve's installed `steamos-add-to-steam` helper registered exactly one native
+Apparat shortcut in the logged-in Steam account. Steam launch URI
+`steam://rungameid/13604856810501570560` opened the Apparat window on Gamescope's
+game display. Graceful shutdown and a second launch through the same Steam
+entry reused `~/.local/share/apparat/node` and reached runtime ready with no
+error-level startup events. The observed X window was 640x480; full 1280x800
+layout and physical controls were not qualified by this installation check.
+SSH key access works without an agent and sshd is enabled and active. No reboot
+or suspend/resume trial was performed. Local hostname discovery timed out, so
+the SSH alias uses the owner-confirmed current IP and needs a DHCP reservation
+or an address update if it changes.
+
+This proves installation and native launcher startup, not the broader controller,
+Steam+X, microphone, workspace, update/migration, suspend or release-support gates.
+See the [deployment playbook](../playbooks/how_to_install_apparat_on_steam_deck_and_add_it_to_steam.md).
+
 ## Linux Headless
 
 Requires no Ebitengine initialization, CLI/API/service-manager control, health checks, graceful `SIGINT`/`SIGTERM`, durable storage paths, runtime-root `last_run.log`, and generated release artifact under `releases/linux/<arch>/apparatd/latest`.

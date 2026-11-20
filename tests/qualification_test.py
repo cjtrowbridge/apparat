@@ -3,6 +3,7 @@ Use disposable files and injected build/test outcomes, never an actual phone.
 """
 from pathlib import Path
 import tempfile
+import os
 import unittest
 from unittest.mock import patch
 from scripts import build_evidence as evidence
@@ -10,6 +11,13 @@ from scripts.build_orchestrator import BuildPlan
 
 
 class QualificationTest(unittest.TestCase):
+    def test_xvfb_uses_x11_without_changing_host_environment(self):
+        plan = BuildPlan('linux/amd64/apparat', 'linux', 'amd64', 'apparat', Path('latest'), True)
+        with patch.dict(os.environ, {'EGL_PLATFORM': 'wayland'}), patch.object(evidence.artifact_acceptance, 'run') as run:
+            evidence.artifact_acceptance.validate(plan, Path('latest'), Path('evidence'), 'digest')
+            self.assertEqual(run.call_args.kwargs['env']['EGL_PLATFORM'], 'x11')
+            self.assertEqual(os.environ['EGL_PLATFORM'], 'wayland')
+
     def test_failed_gui_never_promotes_or_skips_next_target(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -20,7 +20,14 @@ except ImportError:
 
 def digest(path):
     with path.open('rb') as handle:
-        return hashlib.file_digest(handle, 'sha256').hexdigest()
+        return stream_digest(handle)
+
+
+def stream_digest(handle):
+    checksum = hashlib.sha256()
+    for block in iter(lambda: handle.read(1024 * 1024), b''):
+        checksum.update(block)
+    return checksum.hexdigest()
 
 
 def write(path, data):
@@ -112,9 +119,6 @@ def locked_run(root, plans, compile_target, storage):
         row = {'name':plan.name,'output':str(Path('releases')/rel),'state':'unsupported','reasons':plan.reasons}
         report['targets'].append(row)
         if not plan.possible:
-            if plan.goos == 'android' and plan.target == 'apparat' and os.name == 'posix' and os.sys.platform.startswith('linux'):
-                row['state'] = 'missing prerequisites'
-                good = False
             continue
         try:
             if dest.resolve() != root/'releases'/rel:

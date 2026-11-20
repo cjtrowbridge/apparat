@@ -2235,6 +2235,19 @@ Continuous Android evidence: the [Pixel 10 safe-area correction](plans/past/2026
 
 ### Steam Deck and Linux GUI
 
+The [Deck UI and Linux updater plan](plans/current/2026-11-20-08-15-00_steam-deck-ui-and-linux-updates.md)
+covers Gamescope display sizing, embedded gallery controls, silent untargeted PTT
+and the development-channel check/install/restart flow. Linux delivery can proceed
+when Android's mandatory qualification device is unavailable; retain the existing
+APK with its own prior evidence. Release signatures, downgrade/schema rollback
+policy and independent Android qualification remain open.
+
+The [persistent Deck installation checkpoint](plans/past/2026-11-20-00-20-00_steam-deck-local-install.md)
+qualifies local installation and Steam launcher startup using the existing Linux
+artifact. It does not close the broader controller, audio, lifecycle or release
+acceptance below. The repeatable procedure is in the
+[installation playbook](playbooks/how_to_install_apparat_on_steam_deck_and_add_it_to_steam.md).
+
 - [ ] Controller database/mappings and complete application-action equivalence.
 - [ ] Debian keyboard text precedence, mouse/touchpad, right-`Ctrl` PTT, and configurable binding conflicts.
 - [ ] Settings for bindings and HUD aesthetics, including fonts, glyphs, and panel/button colors.

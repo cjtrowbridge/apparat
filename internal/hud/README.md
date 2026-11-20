@@ -94,3 +94,5 @@ Tab descriptors preserve stable IDs, titles and accessibility labels while the G
 
 Tab descriptors and rendered content normalize Settings to the final position while preserving all other ordering. STMPCK belongs before Settings. Tests cover a game appended after Settings and a reordered configuration.
 Live Projects sections use the registration ID and retain the existing pipeline action colors and marker.
+
+Linux Updates copy describes the built-in verified check/install/restart flow; the GUI adapter supplies the platform callback. The host tab order remains Settings last.

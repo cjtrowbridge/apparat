@@ -7,6 +7,7 @@ Uses repository-local paths; see scripts/README.md for prerequisites and side ef
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -17,6 +18,9 @@ EXCLUDED_DIRS = {
     ".git",
     ".tools",
     ".tmp",
+    ".aws",
+    ".codex",
+    ".agents",
     "__pycache__",
     "agentic-pipelines",
     "agents",
@@ -38,11 +42,14 @@ def is_excluded(path: Path) -> bool:
 
 def iter_code_files(root: Path) -> list[Path]:
     files: list[Path] = []
-    for path in root.rglob("*"):
-        if path.is_dir() or is_excluded(path.relative_to(root)):
-            continue
-        if is_code_file(path):
-            files.append(path)
+    def scan_error(error):
+        raise error
+    for base, directories, names in os.walk(root, onerror=scan_error):
+        directories[:] = [name for name in directories if name not in EXCLUDED_DIRS]
+        for name in names:
+            path = Path(base) / name
+            if is_code_file(path):
+                files.append(path)
     return sorted(files)
 
 

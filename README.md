@@ -643,9 +643,9 @@ make build
 Before first setup, explicitly register the designated Apparat main checkout with
 `python3 scripts/checkout_identity.py --register`. Build with `python3 scripts/build.py`.
 On Linux this now opens the compiled GUI in Xvfb, exercises the headless executable,
-and installs the ordinary signed APK in place on an unlocked, authorized Pixel 4a.
+and, when Android prerequisites and the canonical authorized Pixel 4a are available, installs the ordinary signed APK in place for qualification. Otherwise it reports Android unavailable and preserves the previously qualified APK while delivering eligible host targets.
 Missing prerequisites or failed acceptance leave the verified outputs unchanged.
-See scripts/README.md for dependencies and recovery. Stage the source intended for release before building. The pipeline commits staged changes and qualified outputs together, pushes main, and verifies GitHub downloads using the authenticated GitHub CLI. Apparat is distributed through its public GitHub repository. The Android updater reads the published version and downloads an approved update without a GitHub login. An unchanged rerun verifies delivery without incrementing the version.
+See scripts/README.md for dependencies and recovery. Stage the source intended for release before building. The pipeline commits staged changes and qualified outputs together, pushes main, and verifies GitHub downloads using the authenticated GitHub CLI. Apparat is distributed through its public GitHub repository. The Android updater reads the published version and downloads an approved update without a GitHub login. Linux updates pin verification metadata and artifact bytes to one GitHub commit. An unchanged rerun verifies delivery without incrementing the version.
 
 Run `python3 scripts/bootstrap.py --check` to inspect Go and hook prerequisites without changes. `python3 scripts/bootstrap.py` installs/checks the repository hook. Provision Go 1.26.11 on PATH or copy a verified existing distribution with `--go-source /path/to/go`; `--native-source /path/to/sysroot` copies an existing native development sysroot into ignored local tools. These copies are independent of the original project. On Linux amd64, `python3 scripts/bootstrap.py --install-android` installs checksum-verified API 35, build-tools 35.0.0, NDK 27.2.12479018 and Temurin 21 into `.tools`; `--check --android` validates them without installing. Existing `JAVA_HOME` or PATH JDKs must be OpenJDK 21. ADB is the system Debian package, shared across projects.
 
@@ -706,7 +706,7 @@ On Windows, `python -m scripts.build` is the directly usable no-flag invocation 
 
 The pipeline binds `cmd/apparatmobile` with Ebitengine's generated Android mobile view classes, compiles the tracked wrapper in `android/apparat`, and writes a signed APK to the canonical release path. The wrapper is the current Android render path: on-device evidence shows it opens to the Phase 4 HUD and accepts touch tab selection. It generates an ignored patched local `gomobile-apparat` helper under `.tools/bin` because the pinned Ebitengine `gomobile` package scanner checks for `github.com/ebitengine/gomobile/app` while its regular expression only recognizes `golang.org/x` package symbols. This patch broadens the scanner, supports local Apparat/Ebitengine module replacement for AAR binding, and preserves modern Android SDK metadata (`minSdkVersion=23`, `targetSdkVersion=35`) while compiling/package-building against Android platform 35. Mobile preparation exports the pinned engine into ignored `.tmp/mobile-engine` and guards invalid display metrics there, leaving the submodule untouched. The helper is rebuilt from its pinned source and current patches on each preparation. It also signs the APK with a retained certificate-pinned development keystore and keeps the Android build independent from the ignored `third_party/salvagecore` checkout.
 
-Android Settings checks the published version when opened, including when it is the startup tab. It reuses a recent check for one minute. A newer version enables **Download update**. Private Git delivery requires a host update when the release metadata is inaccessible. Desktop Settings gives manual instructions for the running operating system.
+Android Settings checks the published version when opened, including when it is the startup tab. It reuses a recent check for one minute. A newer version enables **Download update**. Private Git delivery requires a host update when the release metadata is inaccessible. Linux Settings provides Check for update, Install update and Restart Apparat. Windows and macOS retain manual update instructions.
 
 The APK retains Android 6/API 23 as its minimum; targeting API 35 does not raise that minimum. Newer Android versions apply newer permission, background-execution and layout rules. The wrapper applies system-bar and camera-cutout insets on Android 15+ so HUD controls stay inside usable screen bounds. Reserved areas use the renderer's background color, with light navigation buttons; the current renderer has a fixed dark palette. Newer and older-device operation require separate validation; Pixel 4a Android 13 evidence alone cannot establish either. The current APK is arm64 only.
 
@@ -727,6 +727,30 @@ Build troubleshooting:
 - If documentation checks fail, add or update the closest relevant directory `README.md` and ensure new scripts are listed in `scripts/README.md`.
 
 ### Local Runtime
+
+For a persistent Steam Deck installation, copy the qualified Linux amd64 GUI to
+`/home/deck/.local/bin/apparat` and add it to Steam with the installed SteamOS
+helper. Open **Library → Non-Steam → Apparat** in Gaming Mode. The
+[Steam Deck installation playbook](playbooks/how_to_install_apparat_on_steam_deck_and_add_it_to_steam.md)
+covers SSH setup, verified transfers, desktop registration, updates and rollback.
+The binary, launcher and node state remain beneath the user's home directory;
+the SteamOS system partition stays read-only.
+
+On Linux, open **Settings → Updates → Check for update**. Apparat checks the public
+GitHub development channel and downloads the qualified build for this architecture.
+Choose **Install update**, then **Restart Apparat**. The download must match the
+published SHA-256 and native ELF target before atomic replacement; the previous
+executable is retained at `<executable>.previous`. The executable directory must
+be writable. Steam keeps the same launcher and settings/projects remain in the
+node directory. Downloads cancel when Apparat closes. This development channel
+uses HTTPS and the existing verification report; release signatures, downgrade
+prevention and automatic database rollback remain Phase 17 work. Restore a
+previous binary only with compatible node state or a verified offline backup.
+
+In Steam Gaming Mode, Apparat opens fullscreen at the compositor's current display
+size rather than stretching a saved desktop rectangle. Desktop sessions retain
+normal resizing and saved placement. The embedded STMPCK gallery centers its
+settings gear immediately after discovery. PTT without an editable target is silent.
 
 Phase 8 runs one embedded node behind either GUI or headless presentation. Both default to `~/.local/share/apparat/node` on Linux (respecting `XDG_DATA_HOME`); `APPARAT_RUNTIME_DIR` or `--runtime-dir` selects an independent root. An OS lock rejects competing ownership before writable SQLite, probes or REST start. PID metadata is diagnostic; never delete the lock file to defeat an active owner.
 

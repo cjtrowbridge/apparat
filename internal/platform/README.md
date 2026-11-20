@@ -23,3 +23,6 @@ Phase 3 entrypoints use platform signals for graceful shutdown and runtime confi
 - `migrate.go`: Migrates one unambiguous legacy runtime root without merging data.
 
 - `lock_test.go`: Exercises real node ownership and non-destructive legacy-root migration.
+
+- `restart_linux.go`: Re-execs the updated executable only after GUI and node shutdown, retaining Steam tracking and launch environment.
+- `restart_other.go`: Rejects unsupported native restart outside desktop Linux.

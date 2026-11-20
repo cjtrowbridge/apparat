@@ -80,3 +80,26 @@ class DeliveryTest(unittest.TestCase):
         hook.unlink()
         self.assertEqual(self.run_pipeline(),0)
         self.assertEqual(self.builds,1)
+
+    def test_linux_delivery_preserves_ineligible_android(self):
+        apk = self.root/'releases/android/arm64/apparat/latest.apk'
+        apk.parent.mkdir(parents=True)
+        apk.write_bytes(b'previously qualified Android')
+        previous = dict(name='android/arm64/apparat', output=str(apk.relative_to(self.root)),
+                        state='passed', sha256=delivery.evidence.digest(apk), inputs='older Android inputs')
+        (self.root/delivery.REPORT).write_text(json.dumps(dict(targets=[previous])))
+        self.git('add', 'releases')
+        self.git('commit', '-m', 'Existing Android qualification')
+        self.git('push', 'origin', 'main')
+        unavailable = BuildPlan('android/arm64/apparat', 'android', 'arm64', 'apparat', apk,
+                                False, ('Canonical Pixel unavailable',))
+        publish = delivery.publish
+        with patch.object(delivery.evidence, 'locked_run', side_effect=self.qualify), patch.object(
+                delivery.evidence, 'fingerprint', return_value='inputs'), patch.object(
+                delivery, 'publish', side_effect=lambda root, rows: publish(root, rows, self.verify)):
+            result = delivery.deliver(self.root, [self.plan, unavailable], None, self.storage)
+        self.assertEqual(result, 0)
+        self.assertEqual(apk.read_bytes(), b'previously qualified Android')
+        report = json.loads((self.root/delivery.REPORT).read_text())
+        android = next(r for r in report['targets'] if r['name'] == previous['name'])
+        self.assertEqual(android, previous)

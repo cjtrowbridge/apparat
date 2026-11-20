@@ -5,6 +5,7 @@ Uses temporary directories and mocks; no device deployment is performed.
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts import check_code_file_lines
 
@@ -36,6 +37,14 @@ class CodeSizeTest(unittest.TestCase):
             root = Path(temp)
             (root / "tool.py").write_text("print('x')\n" * 4)
             self.assertEqual(check_code_file_lines.main(["--root", str(root), "--limit", "3"]), 1)
+
+    def test_prunes_ignored_and_private_mounts_before_descent(self):
+        def walk(root, onerror):
+            directories = ['.tmp', '.aws', '.codex', '.agents', 'internal']
+            yield str(root), directories, []
+            self.assertEqual(directories, ['internal'])
+        with patch.object(check_code_file_lines.os, 'walk', side_effect=walk):
+            self.assertEqual(check_code_file_lines.iter_code_files(Path('/repo')), [])
 
 
 if __name__ == "__main__":

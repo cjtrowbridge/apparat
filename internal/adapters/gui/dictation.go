@@ -73,16 +73,16 @@ func (g *Game) NativeVoice(action string) string {
 	return string(data)
 }
 func (g *Game) beginPTT(source string) {
-	g.shell.StartVoiceCapture(source)
 	v := &g.voice
 	if v.engine == nil || v.canvas != nil {
 		return
 	}
 	f, ok := g.ui.GetFocusedWidget().(*widget.TextInput)
 	if !ok {
-		v.preview = "Select a text field or open a document to dictate"
+		v.preview = ""
 		return
 	}
+	g.shell.StartVoiceCapture(source)
 	s, err := v.engine.Start(g.projects.ctx)
 	if err != nil {
 		v.preview = err.Error()

@@ -17,7 +17,10 @@ def prepare(ndk=None):
         raise ValueError('Whisper checkout must match its pinned revision')
     model = ROOT/'internal/adapters/speech/ggml-tiny.en-q5_1.bin'
     with model.open('rb') as f:
-        if hashlib.file_digest(f, 'sha256').hexdigest() != 'c77c5766f1cef09b6b7d47f21b546cbddd4157886b3b5d6d4f709e91e66c7c2b':
+        checksum = hashlib.sha256()
+        for block in iter(lambda: f.read(1024 * 1024), b''):
+            checksum.update(block)
+        if checksum.hexdigest() != 'c77c5766f1cef09b6b7d47f21b546cbddd4157886b3b5d6d4f709e91e66c7c2b':
             raise ValueError('Bundled Tiny digest mismatch')
     cmake = shutil.which('cmake') or ROOT/'.tools/cmake/cmake/data/bin/cmake'
     if not Path(cmake).is_file():

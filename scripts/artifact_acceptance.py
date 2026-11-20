@@ -11,6 +11,22 @@ import re
 import subprocess
 import sys
 import time
+import shutil
+
+
+def android_device_reason():
+    """An APK is eligible only when its mandatory qualification device is present."""
+    adb = shutil.which('adb')
+    if not adb:
+        return 'System ADB unavailable; canonical Pixel 4a qualification is not possible'
+    try:
+        listing = subprocess.check_output([adb, 'devices', '-l'], text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return 'Cannot inspect canonical Pixel 4a authorization through system ADB'
+    devices = re.findall(r'^(\S+)\s+device\s+.*\bmodel:Pixel_4a\b', listing, re.M)
+    if '08051JEC218861' not in devices:
+        return 'Canonical authorized Pixel 4a 08051JEC218861 unavailable for APK qualification'
+    return ''
 
 
 def run(*args, **kwargs):
@@ -210,7 +226,9 @@ def validate(plan, candidate, directory, digest):
         env.pop('DISPLAY', None)
         run(candidate, '--runtime-dir', directory/'runtime', '--smoke-test', env=env)
     elif plan.goos == 'linux':
-        run('xvfb-run', '-a', sys.executable, __file__, candidate, directory)
+        env = dict(os.environ)
+        env['EGL_PLATFORM'] = 'x11'
+        run('xvfb-run', '-a', sys.executable, __file__, candidate, directory, env=env)
     else:
         raise ValueError(f'Native GUI qualification unavailable for {plan.goos}; not promoted')
 
