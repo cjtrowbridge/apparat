@@ -1685,7 +1685,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 ## Phase 9B: Offline Push-to-Talk Dictation and Whisper Model Selection
 
-The [L2 PTT feedback change](plans/current/2026-11-20-08-49-00_left-trigger-ptt-feedback.md)
+The [L2 PTT feedback change](plans/past/2026-11-20-08-49-00_left-trigger-ptt-feedback.md)
 replaces the original R2 binding with L2 and makes the on-screen PTT control use
 the same pressed appearance for trigger, pointer and keyboard holds. Earlier
 completed prototype checklists retain R2 as historical evidence of the old binding.

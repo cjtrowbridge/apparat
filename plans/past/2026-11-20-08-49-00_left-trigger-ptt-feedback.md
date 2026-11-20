@@ -2,7 +2,7 @@
 plan_id: 2026-11-20-08-49-00_left-trigger-ptt-feedback
 title: Bind left trigger to PTT with matching button feedback
 summary: Replace R2 with L2 and show the same pressed PTT appearance for controller, pointer and keyboard holds.
-status: current
+status: past
 created_at: 2026-11-20-08-49-00
 ---
 
@@ -29,8 +29,8 @@ previous independent qualification while the user is away from the Pixel.
 ## Work and acceptance
 
 - [x] 1. Remap controller PTT to standard left trigger, update live binding labels/docs, and share pressed button appearance/visibility across held inputs.
-- [ ] 2. Verify matching pointer/trigger feedback, release/disconnect, binding contract and existing GUI regressions; run source/size/docs checks and canonical no-flag Linux build.
-- [ ] 3. Update the Deck through its existing Linux updater, preserve node/Steam identity, and record rendered evidence plus any physical controller validation limit. Archive the plan and append the journal.
+- [x] 2. Verify matching pointer/trigger feedback, release/disconnect, binding contract and existing GUI regressions; run source/size/docs checks and canonical no-flag Linux build.
+- [x] 3. Update the Deck through its existing Linux updater, preserve node/Steam identity, and record rendered evidence plus any physical controller validation limit. Archive the plan and append the journal.
 
 ## Evidence and stopping condition
 
@@ -64,3 +64,39 @@ bypass through an alternate build or delivery path. Ask for explicit build,
 publication and Deck installation approval; then run the same canonical pipeline
 and complete actual trigger/visual verification. Keep this plan current pending
 that approval, and preserve the original user TODO changes unstaged.
+
+### Approved delivery and rendered acceptance
+
+The user explicitly approved “Approve build, publish and install.” Ran the same
+canonical pipeline: `.tmp/build-runs/tmpkynxqv10/` passed Linux GUI/worker artifact
+qualification, committed/published `df0e233dfcf66a5a1348f0c418085598ac4de4ec` and
+verified authenticated GitHub read-back. Android was preserved as before.
+GUI/HUD race, source (198 files), physical-size, documentation, index and
+whitespace checks pass.
+
+Updated the Deck through its existing Settings Check / Install / Restart controls.
+Installed SHA-256 is
+`6c7ab52aff5ddca453003146a0050f4b887c7dcf913025083e980b3e8d320741`.
+Node data, original Steam launcher, PID 5466 and native 1280x800 placement remain.
+The new process reached ready with zero startup errors and no staged candidate.
+
+Tested the installed app using bounded synthetic events on its actual Steam
+virtual Xbox controller, `/dev/input/event9`, without a focused text field:
+
+- L2 axis 2 at 255 changed the PTT button to green, RGB `(31,151,112)` at
+  `(1222,666)` in the real rendered window.
+- Releasing L2 to 0 returned that pixel to blue, RGB `(39,92,159)`.
+- R2 axis 5 at 255 left the button blue; R2 no longer activates PTT.
+- A focused pointer hold produced exactly the same green pixel as L2. An initial
+  unfocused synthetic pointer press was ignored; explicitly restoring X11 focus
+  made the comparison pass. Both trigger values and pointer state were released
+  automatically in finally blocks and checked afterwards.
+- No untargeted microphone capture or explanatory dictation hint was started.
+  Synthetic controller events verify the actual installed input path; a human
+  squeezing the physical trigger and acoustic dictation were not claimed.
+
+Private evidence: `.tmp/left-trigger-ptt/` contains `l2-held.png`,
+`l2-released.png`, `r2-held.png`, `pointer-held.png` and updater captures.
+Documentation and current roadmap contracts use L2; older completed prototype
+checklists remain explicitly historical. All scoped outcomes pass; archive and
+stop, with no additional input or capture architecture needed.

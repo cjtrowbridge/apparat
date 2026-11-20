@@ -76,6 +76,20 @@ Private screenshots are under `.tmp/steam-deck-ui/` (`before.png`, `gallery.png`
 no-op states. Physical controller, microphone and suspend/resume qualification
 remain open; this checkpoint does not close the whole Phase 17 support matrix.
 
+### L2 PTT feedback — 2026-11-20
+
+The qualified L2 update was published in `df0e233` and installed through the Deck
+updater with SHA-256
+`6c7ab52aff5ddca453003146a0050f4b887c7dcf913025083e980b3e8d320741`.
+Bounded synthetic events on the Steam virtual controller consumed by Apparat
+verified L2 press changes the on-screen button to green, release returns it to
+blue, and R2 no longer activates it. A pointer hold produced the exact same green
+pixel. All input values were restored to idle. Native 1280x800 startup, the same
+Steam-tracked PID and node state were retained without startup errors. GUI/HUD
+race tests also verify release and cancellation on controller loss. Captures stay
+private under `.tmp/left-trigger-ptt/`. Human physical-trigger and acoustic trials
+remain separate from this synthetic-input and rendered-device evidence.
+
 ## Linux Headless
 
 Requires no Ebitengine initialization, CLI/API/service-manager control, health checks, graceful `SIGINT`/`SIGTERM`, durable storage paths, runtime-root `last_run.log`, and generated release artifact under `releases/linux/<arch>/apparatd/latest`.
