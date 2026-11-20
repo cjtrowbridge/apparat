@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-20-10-41-53 | plans/past/2026-11-20-11-00-00_one-click-linux-update.md | One-click Linux update | Update and restart from a single Settings action with bounded status text.
 2026-11-20-10-25-21 | plans/past/2026-11-20-10-30-00_compact-gallery-header.md | Compact embedded gallery header | Place STMPCK and its gallery controls together at the top of the available page.
 2026-11-20-10-19-30 | plans/past/2026-11-20-10-00-00_directional-navigation.md | Directional HUD navigation | Share arrow and D-pad focus across the tab strip, live controls and embedded gallery.
 2026-11-20-09-02-38 | plans/past/2026-11-20-09-00-00_add-pi-inference-submodule.md | Add Pi as an inference source submodule | Pin earendil-works/pi under third_party/inference and document its MIT license and source-reference role.

@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/speech"
+	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/ebitenui/ebitenui/event"
 )
 
 type updateTransport func(*http.Request) (*http.Response, error)
@@ -27,7 +29,7 @@ func (f updateTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return f(r)
 }
 
-func TestLinuxUpdateDownloadInstallAndRestartControls(t *testing.T) {
+func TestLinuxUpdateSingleActivation(t *testing.T) {
 	game := NewGame()
 	game.initDesktopUpdates(context.Background())
 	defer game.closeDesktopUpdates()
@@ -69,31 +71,48 @@ func TestLinuxUpdateDownloadInstallAndRestartControls(t *testing.T) {
 			t.Fatal("update operation did not finish")
 		}
 	}
-	game.onCheckForUpdate()
-	finish()
-	if game.UpdateStatus() != "Install update" {
-		t.Fatalf("download status: %s", game.UpdateStatus())
+	selectTabThroughStrip(t, game, hud.TabSettings)
+	game.Layout(320, 720)
+	game.rebuildUI(game.shell.Snapshot())
+	renderNavigation(game)
+	button := game.updateButton
+	button.Click()
+	event.ExecuteDeferred()
+	game.requestUpdateAction() // Duplicate input during the same operation.
+	game.applyUpdateStatus()
+	if button.Text().Label != "Update Apparat" || !button.GetWidget().Disabled {
+		t.Fatal("busy update button must keep its action label and reject duplicate input")
 	}
-	game.onCheckForUpdate()
 	finish()
-	if game.UpdateStatus() != "Restart Apparat" || !u.installed {
-		t.Fatalf("install status: %s", game.UpdateStatus())
+	if !game.pollDesktopUpdates() {
+		t.Fatal("one activation must install and request graceful restart")
 	}
 	previous, _ := os.ReadFile(target + ".previous")
 	if string(previous) != "old installed binary" {
 		t.Fatal("previous executable missing")
 	}
-	game.onCheckForUpdate()
-	if !game.pollDesktopUpdates() {
-		t.Fatal("restart control did not request graceful termination")
-	}
-	// A new checker observing those installed bytes reports a no-op without staging.
-	u.installed = false
 	u.restart = false
-	game.onCheckForUpdate()
+	game.requestUpdateAction()
 	finish()
-	if game.UpdateStatus() != "Up To Date!" || u.candidate != nil {
-		t.Fatalf("current build status: %s", game.UpdateStatus())
+	if game.UpdateStatusDetail() != "Apparat is up to date." || u.restart {
+		t.Fatalf("current build status: %s", game.UpdateStatusDetail())
+	}
+	u.client.HTTP.Transport = updateTransport(func(*http.Request) (*http.Response, error) {
+		return nil, io.ErrUnexpectedEOF
+	})
+	game.requestUpdateAction()
+	finish()
+	game.applyUpdateStatus()
+	if u.restart || button.GetWidget().Disabled || !strings.Contains(game.updateDetail.Label, "retry") {
+		t.Fatal("failed update must offer a retry in Settings without restarting")
+	}
+	renderNavigation(game)
+	br := button.GetWidget().Rect
+	dr := game.updateDetail.GetWidget().Rect
+	bw, _ := button.PreferredSize()
+	_, dh := game.updateDetail.PreferredSize()
+	if br.Dx() < bw || dr.Min.Y < br.Max.Y || dr.Dy() < dh || dr.Max.X > game.width {
+		t.Fatalf("narrow update card overflow: button=%v detail=%v", br, dr)
 	}
 }
 

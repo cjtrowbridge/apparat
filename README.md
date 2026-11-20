@@ -709,7 +709,7 @@ On Windows, `python -m scripts.build` is the directly usable no-flag invocation 
 
 The pipeline binds `cmd/apparatmobile` with Ebitengine's generated Android mobile view classes, compiles the tracked wrapper in `android/apparat`, and writes a signed APK to the canonical release path. The wrapper is the current Android render path: on-device evidence shows it opens to the Phase 4 HUD and accepts touch tab selection. It generates an ignored patched local `gomobile-apparat` helper under `.tools/bin` because the pinned Ebitengine `gomobile` package scanner checks for `github.com/ebitengine/gomobile/app` while its regular expression only recognizes `golang.org/x` package symbols. This patch broadens the scanner, supports local Apparat/Ebitengine module replacement for AAR binding, and preserves modern Android SDK metadata (`minSdkVersion=23`, `targetSdkVersion=35`) while compiling/package-building against Android platform 35. Mobile preparation exports the pinned engine into ignored `.tmp/mobile-engine` and guards invalid display metrics there, leaving the submodule untouched. The helper is rebuilt from its pinned source and current patches on each preparation. It also signs the APK with a retained certificate-pinned development keystore and keeps the Android build independent from the ignored `third_party/salvagecore` checkout.
 
-Android Settings checks the published version when opened, including when it is the startup tab. It reuses a recent check for one minute. A newer version enables **Download update**. Private Git delivery requires a host update when the release metadata is inaccessible. Linux Settings provides Check for update, Install update and Restart Apparat. Windows and macOS retain manual update instructions.
+Android Settings checks the published version when opened, including when it is the startup tab. It reuses a recent check for one minute. A newer version enables **Download update**. Private Git delivery requires a host update when the release metadata is inaccessible. Linux Settings provides a single **Update Apparat** action. Windows and macOS retain manual update instructions.
 
 The APK retains Android 6/API 23 as its minimum; targeting API 35 does not raise that minimum. Newer Android versions apply newer permission, background-execution and layout rules. The wrapper applies system-bar and camera-cutout insets on Android 15+ so HUD controls stay inside usable screen bounds. Reserved areas use the renderer's background color, with light navigation buttons; the current renderer has a fixed dark palette. Newer and older-device operation require separate validation; Pixel 4a Android 13 evidence alone cannot establish either. The current APK is arm64 only.
 
@@ -739,9 +739,10 @@ covers SSH setup, verified transfers, desktop registration, updates and rollback
 The binary, launcher and node state remain beneath the user's home directory;
 the SteamOS system partition stays read-only.
 
-On Linux, open **Settings → Updates → Check for update**. Apparat checks the public
-GitHub development channel and downloads the qualified build for this architecture.
-Choose **Install update**, then **Restart Apparat**. The download must match the
+On Linux, save your work and select **Settings → Updates → Update Apparat** once.
+Apparat checks the public GitHub development channel. When an update is available,
+it downloads, verifies, installs and restarts automatically. Progress and errors appear
+below the button. An already-current build stays open. The download must match the
 published SHA-256 and native ELF target before atomic replacement; the previous
 executable is retained at `<executable>.previous`. The executable directory must
 be writable. Steam keeps the same launcher and settings/projects remain in the

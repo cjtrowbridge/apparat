@@ -70,7 +70,7 @@ func updateDescription(platform string) string {
 	case "android":
 		return "Check for a new Android release. Android will ask before installing a verified update."
 	case "linux":
-		return "Check for a qualified Linux build, install the verified download, then restart Apparat."
+		return "Save your work first. If an update is available, Apparat installs it and restarts automatically."
 	case "windows":
 		return "To update on Windows, replace Apparat.exe with the latest Windows build."
 	case "darwin":

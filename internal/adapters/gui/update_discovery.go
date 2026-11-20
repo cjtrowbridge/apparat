@@ -117,7 +117,9 @@ func (g *Game) requestUpdateAction() {
 		g.discoverRelease()
 		return
 	}
-	g.SetUpdateStatus(UpdateStatusChecking)
+	if g.desktopUpdates == nil {
+		g.SetUpdateStatus(UpdateStatusChecking)
+	}
 	if g.onCheckForUpdate == nil || !g.onCheckForUpdate() {
 		g.SetUpdateStatus(UpdateStatusUnableBridge)
 	}

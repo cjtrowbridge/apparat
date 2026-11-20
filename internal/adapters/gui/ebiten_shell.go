@@ -236,13 +236,21 @@ func (game *Game) applyUpdateStatus() {
 		return
 	}
 	if game.updateButton != nil {
+		if game.desktopUpdates != nil {
+			game.updateButton.GetWidget().Disabled = game.desktopUpdates.busy
+		}
 		text := game.updateButton.Text()
 		if text == nil || text.Label != status {
 			game.updateButton.SetText(status)
+			game.ui.Container.RequestRelayout()
 		}
 	}
 	if game.updateDetail != nil {
-		game.updateDetail.Label = game.UpdateStatusDetail()
+		detail := game.UpdateStatusDetail()
+		if detail != game.updateDetail.Label {
+			game.updateDetail.Label = detail
+			game.ui.Container.RequestRelayout()
+		}
 	}
 }
 
