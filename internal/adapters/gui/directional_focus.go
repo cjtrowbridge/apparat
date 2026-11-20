@@ -82,7 +82,11 @@ func (g *Game) focusBody(targets []focusTarget, i int) {
 	if g.nav.memory == nil {
 		g.nav.memory = make(map[hud.TabID]focusBookmark)
 	}
-	g.nav.memory[g.nav.owner] = focusBookmark{i, focusLabel(targets[i].w)}
+	if g.actions.mode != "" {
+		g.actions.focusIndex = i
+	} else {
+		g.nav.memory[g.nav.owner] = focusBookmark{i, focusLabel(targets[i].w)}
+	}
 	t := targets[i]
 	if t.pane != nil {
 		r := t.w.GetWidget().Rect
@@ -91,6 +95,11 @@ func (g *Game) focusBody(targets []focusTarget, i int) {
 	}
 }
 func (g *Game) enterBody() {
+	if g.actions.mode != "" {
+		targets := g.bodyTargets()
+		g.focusBody(targets, min(g.actions.focusIndex, max(0, len(targets)-1)))
+		return
+	}
 	if g.nav.owner == "stmpck" {
 		g.nav.active = true
 		g.nav.gallery = true
@@ -112,6 +121,10 @@ func (g *Game) enterBody() {
 	g.focusBody(targets, i)
 }
 func (g *Game) focusStrip() {
+	if g.actions.mode != "" {
+		g.enterBody()
+		return
+	}
 	g.ui.ClearFocus()
 	g.nav.active = true
 	g.nav.strip = true
@@ -223,6 +236,10 @@ func (g *Game) stepFocus(step int) {
 	}
 	i += step
 	if i < 0 || i >= len(ts) {
+		if g.actions.mode != "" && len(ts) > 0 {
+			g.focusBody(ts, (i+len(ts))%len(ts))
+			return
+		}
 		g.focusStrip()
 		return
 	}

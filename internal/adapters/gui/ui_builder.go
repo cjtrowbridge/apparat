@@ -6,17 +6,20 @@ package gui
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/widget"
+	"strings"
 )
 
 // rebuildUI constructs the complete EbitenUI widget tree from the current HUD snapshot.
 // In the future, this should intelligently update existing widgets instead of rebuilding
 // from scratch, but for this initial migration, rebuilding ensures layout correctness.
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
+	if game.actions.mode != "" {
+		game.buildActionScreen()
+		return
+	}
 	game.projects.workspace.layout.begin()
 	if snapshot.ActiveTab().ID() != hud.TabSettings {
 		game.prefs.pane = nil
@@ -318,9 +321,13 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 			),
 		)
 
+		if game.prefs.reveal != "" && game.prefs.reveal == section.ActionID {
+			game.prefs.revealWidget = sectionContainer.GetWidget()
+		}
 		sectionContainer.AddChild(game.hudText(strings.ToUpper(section.Title)))
 
 		if section.Title == "HUD Configuration" {
+			game.actionSettings(sectionContainer)
 			game.preferenceControls(sectionContainer)
 			content.AddChild(sectionContainer)
 			continue
@@ -387,11 +394,4 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 	}
 
 	return content
-}
-
-func checkedState(checked bool) widget.WidgetState {
-	if checked {
-		return widget.WidgetChecked
-	}
-	return widget.WidgetUnchecked
 }

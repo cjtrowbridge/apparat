@@ -39,7 +39,7 @@ func (game *Game) receiveServices() {
 	}
 }
 func (game *Game) liveServicesSection() hud.Section {
-	section := hud.Section{Title: "Local services", Description: game.serviceProjection.State}
+	section := hud.Section{ActionID: "local-services", Title: "Local services", Description: game.serviceProjection.State}
 	for _, service := range game.serviceProjection.Services {
 		section.Rows = append(section.Rows, hud.Row{Label: service.Name, Detail: fmt.Sprintf("%s | %s | %s | revision %d", service.ID, service.Driver, service.Health, service.Revision)})
 	}

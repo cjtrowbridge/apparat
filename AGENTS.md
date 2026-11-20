@@ -121,3 +121,13 @@ Use `source-governance.yaml` for public first-party source policy, never private
 ADB is the canonical system PATH executable; never prefer project-local platform-tools for device operations. Pixel testing requires an authorized device from `adb devices -l`; installation/launch permission does not authorize clearing app data, uninstalling unrelated apps or publishing releases.
 
 The canonical Android development/test device is the Pixel 4a (serial `08051JEC218861`); confirm its authorized presence before device operations. Do not silently substitute the Pixel 10 Pro XL. The user maintains the Pixel 10 through the GitHub updater; direct installs there require a new explicit request.
+
+## Action catalog governance
+
+Every enabled tab registers its open action. Every feature that adds, renames, removes or changes an available user operation or named destination must update its action provider in the same change. Derive availability from the same state as the UI. Use stable operation, kind, owner and target identifiers for durable entities. Present readable paths with enough context to distinguish duplicate names. Resolve the address again at activation and use the feature's existing handler, eligibility and confirmation rules.
+
+Settings → Actions and PTT use one deterministic query engine. A single exact navigation match may open automatically. Ambiguous and suggested matches require a choice. A missing match preserves the current destination. Keep task execution distinct from navigation. Future automation callers must independently authorize an address before invocation.
+
+Capture the input role at PTT press. Focused text fields, including action search and native editors, accept dictation exclusively. Only a final command transcript may dispatch. Clarification supports voice, keyboard, D-pad and pointer. Preserve cancellation and local-only speech handling. Never log transcripts, choices containing private names or dictated text.
+
+Extend tab coverage, provider lifecycle and stale-selection tests with each feature. Verify exact, ambiguous, near and absent matches, editing protection, and the full-screen browser on a narrow and a wide surface. Follow the HUD tab playbook for rendered verification.

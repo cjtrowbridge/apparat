@@ -7,6 +7,7 @@ package gui
 import (
 	"context"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -126,6 +127,19 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	case "threads", "tasks", "runs":
 		w.choices = v.Choices
 	case "post":
+		for i, p := range g.projects.rows {
+			if p.ID == q.ProjectID {
+				thread := q.Thread
+				if thread == "" {
+					thread = "General"
+				}
+				item := domain.WorkspaceChoice{ID: thread, Label: thread}
+				if !slices.Contains(p.Threads, item) {
+					g.projects.rows[i].Threads = append(p.Threads, item)
+				}
+				break
+			}
+		}
 		w.argument = ""
 		w.message = ""
 		w.attachment = ""

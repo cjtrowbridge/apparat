@@ -31,7 +31,12 @@ func (n *Runtime) Projects(ctx context.Context) ([]domain.Project, error) {
 	if err != nil {
 		return nil, err
 	}
+	threads, err := n.database.RegisteredThreads(ctx)
+	if err != nil {
+		return nil, err
+	}
 	for i, p := range projects {
+		projects[i].Threads = threads[p.ID]
 		current, err := n.inspectProject(p.Location)
 		if err == nil {
 			projects[i].Actions = current.Actions

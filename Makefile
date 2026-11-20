@@ -61,6 +61,13 @@ tools:
 
 verify: fmt test test-race test-build check-code-size check-docs lint audit
 
+ifeq ($(HOST_GOOS),linux)
+.PHONY: test-hud-navigation
+verify: test-hud-navigation
+test-hud-navigation:
+	$(GO_ENV) python3 scripts/build_gate.py -- xvfb-run -a $(GO) test -race -tags gui ./internal/adapters/gui ./internal/hud
+endif
+
 # Fast local outputs are ignored; release orchestration remains scripts/build.py.
 .PHONY: build-fast test-fast
 build-fast: build

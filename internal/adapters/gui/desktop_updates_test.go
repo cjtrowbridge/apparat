@@ -122,14 +122,14 @@ func TestLinuxUpdateSingleActivation(t *testing.T) {
 	}
 }
 
-func TestUntargetedPTTIsSilent(t *testing.T) {
+func TestCommandPTTStartsWithoutTextFocus(t *testing.T) {
 	game := NewGame()
 	game.voice.engine = &speech.Engine{}
 	game.beginPTT("controller")
-	if game.voice.preview != "" || game.voice.canvas != nil {
-		t.Fatal("untargeted PTT must not create a session or floating hint")
+	if game.voice.field != nil || game.voice.canvas == nil {
+		t.Fatal("PTT outside an editor must capture a voice command")
 	}
-	game.endPTT()
+	game.cancelPTT()
 }
 
 func TestGamescopeDetectionAndNativeAspect(t *testing.T) {

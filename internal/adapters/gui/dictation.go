@@ -1,6 +1,6 @@
 //go:build gui
 
-// Connects PTT sessions to their originating editor and Settings to the local model catalog.
+// Routes final PTT transcripts to the original editor or the action catalog.
 // Native dialogs poll the same session protocol as the canvas without blocking the UI.
 package gui
 
@@ -77,20 +77,23 @@ func (g *Game) beginPTT(source string) {
 	if v.engine == nil || v.canvas != nil {
 		return
 	}
-	f, ok := g.ui.GetFocusedWidget().(*widget.TextInput)
-	if !ok {
-		v.preview = ""
+	f, _ := g.ui.GetFocusedWidget().(*widget.TextInput)
+	g.stopChoiceSpeech()
+	if g.runtimeInfo.MicrophoneReady != nil && !g.runtimeInfo.MicrophoneReady() {
+		v.preview = "Allow microphone access, then press again."
 		return
 	}
-	g.shell.StartVoiceCapture(source)
 	s, err := v.engine.Start(g.projects.ctx)
 	if err != nil {
 		v.preview = err.Error()
 		return
 	}
+	g.shell.StartVoiceCapture(source)
 	v.canvas = s
 	v.field = f
-	v.original = f.GetText()
+	if f != nil {
+		v.original = f.GetText()
+	}
 }
 func (g *Game) endPTT() {
 	g.shell.ReleaseVoiceCapture()
@@ -119,7 +122,7 @@ func caretMayHaveMoved(f *widget.TextInput) bool {
 func (g *Game) pollSpeech() {
 	v := &g.voice
 	if v.canvas != nil {
-		if g.ui.GetFocusedWidget() != v.field || v.field.GetText() != v.original || caretMayHaveMoved(v.field) {
+		if v.field != nil && (g.ui.GetFocusedWidget() != v.field || v.field.GetText() != v.original || g.gesture.Owner != gesturePTT && caretMayHaveMoved(v.field)) {
 			g.cancelPTT()
 			return
 		}
@@ -130,9 +133,8 @@ func (g *Game) pollSpeech() {
 		}
 		switch r.State {
 		case "final":
-			if r.Text != "" {
-				v.field.Insert(r.Text)
-			}
+			g.finishUtterance(v.field, r.Text)
+			v.field = nil
 			v.preview = ""
 			v.canvas = nil
 		case "error", "cancelled":
@@ -148,6 +150,17 @@ func (g *Game) pollSpeech() {
 		}
 	}
 }
+func (g *Game) finishUtterance(field *widget.TextInput, text string) {
+	if strings.TrimSpace(text) == "" {
+		return
+	}
+	if field != nil {
+		field.Insert(text)
+		return
+	}
+	g.voiceCommand(text)
+}
+
 func (g *Game) speechSettings(c *widget.Container) {
 	v := &g.voice
 	if v.engine == nil {

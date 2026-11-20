@@ -107,6 +107,42 @@ func TestBackupRestoreAndCorruption(t *testing.T) {
 		t.Fatal("corruption accepted")
 	}
 }
+func TestSpokenChoicesUpgrade(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(ctx, filepath.Join(t.TempDir(), "prefs.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = db.Close()
+	}()
+	err = db.ApplyMigrations(ctx, migrations[:7])
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.sql.ExecContext(ctx, "INSERT INTO preferences VALUES(1,'Dark',18,125,'settings',1,'bottom')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.Migrate(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := db.Preferences(ctx)
+	if err != nil || p.SpokenChoices || p.Font != 18 || p.Placement != "bottom" {
+		t.Fatal(p, err)
+	}
+	p.SpokenChoices = true
+	err = db.SavePreferences(ctx, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := db.Preferences(ctx)
+	if err != nil || saved != p {
+		t.Fatal(saved, err)
+	}
+}
+
 func TestMigrationRollbackAndReplayErrors(t *testing.T) {
 	db := serviceDB(t)
 	ctx := context.Background()

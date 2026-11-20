@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"strings"
 )
 
 const projectsSchema = `
@@ -73,4 +74,26 @@ func (db *DB) ProjectDefault(ctx context.Context) (string, error) {
 func (db *DB) SetProjectDefault(ctx context.Context, name string) error {
 	_, err := db.sql.ExecContext(ctx, "INSERT INTO local_runtime VALUES('project_account',?,0) ON CONFLICT(key) DO UPDATE SET value=excluded.value", name)
 	return err
+}
+
+// RegisteredThreads reads names for all registered projects without loading messages.
+func (db *DB) RegisteredThreads(ctx context.Context) (map[string][]domain.WorkspaceChoice, error) {
+	rows, err := db.sql.QueryContext(ctx, `SELECT DISTINCT project,kind FROM project_entries JOIN project_registry ON project_registry.id=project_entries.project WHERE kind LIKE 'chat:%' ORDER BY project,kind`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	threads := map[string][]domain.WorkspaceChoice{}
+	for rows.Next() {
+		var id, kind string
+		err = rows.Scan(&id, &kind)
+		if err != nil {
+			return nil, err
+		}
+		name := strings.TrimPrefix(kind, "chat:")
+		threads[id] = append(threads[id], domain.WorkspaceChoice{ID: name, Label: name})
+	}
+	return threads, rows.Err()
 }

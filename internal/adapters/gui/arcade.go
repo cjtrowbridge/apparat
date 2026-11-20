@@ -28,10 +28,7 @@ func (g *Game) arcadeUpdate() bool {
 		}
 		return false
 	}
-	if s == nil {
-		s = surface.New(filepath.Join(g.runtimeInfo.RuntimePath, "stmpck"))
-		a.session.Store(s)
-	}
+	s = g.gallerySession()
 	a.active = true
 	if a.back.Swap(false) {
 		s.RequestBack()
@@ -91,4 +88,13 @@ func (g *Game) ArcadeSuspend() {
 }
 func (g *Game) ArcadeBack() {
 	g.arcade.back.Store(true)
+}
+
+func (g *Game) gallerySession() *surface.Game {
+	s := g.arcade.session.Load()
+	if s == nil {
+		s = surface.New(filepath.Join(g.runtimeInfo.RuntimePath, "stmpck"))
+		g.arcade.session.Store(s)
+	}
+	return s
 }

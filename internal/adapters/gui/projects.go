@@ -51,7 +51,7 @@ type projectForm struct {
 	close                                                      context.CancelFunc
 	name, repo, account, defaultAccount, message, editID       string
 	cloneParent, initParent, importPath, editPath, editAccount string
-	active                                                     bool
+	active, catalogInitialized, catalogLoaded                  bool
 }
 
 func (g *Game) initProjects() {
@@ -109,7 +109,8 @@ func (g *Game) changeProjects(fn func(context.Context) error) {
 func (g *Game) pollProjects() {
 	f := &g.projects
 	active := g.shell.Snapshot().ActiveTab().ID() == hud.TabProjects
-	if active && !f.active && f.pending == nil {
+	if (!f.catalogInitialized || active && !f.active) && f.pending == nil {
+		f.catalogInitialized = true
 		g.changeProjects(func(context.Context) error {
 			return nil
 		})
@@ -126,6 +127,7 @@ func (g *Game) pollProjects() {
 			g.applyWorkspace(r.workspace)
 		}
 		if r.reload {
+			f.catalogLoaded = true
 			f.rows = r.rows
 			if f.account == f.defaultAccount {
 				f.account = r.defaultAccount

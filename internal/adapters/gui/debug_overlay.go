@@ -161,7 +161,7 @@ func (game *Game) updatePointerState() {
 }
 
 func (game *Game) updateDebugOverlayDrag(x int, y int) {
-	if !game.debugOverlayOpen {
+	if game.actions.mode != "" || !game.debugOverlayOpen {
 		game.releaseGesture(gestureDebug)
 		return
 	}
@@ -240,7 +240,7 @@ func (game *Game) clampDebugOverlay(x int, y int) {
 }
 
 func (game *Game) pointInDebugOverlay(x int, y int) bool {
-	if !game.debugOverlayOpen {
+	if game.actions.mode != "" || !game.debugOverlayOpen {
 		return false
 	}
 	width, height := game.debugOverlaySize()

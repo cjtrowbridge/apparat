@@ -1712,6 +1712,12 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
 - [x] In a fresh offline installation, hold PTT in a local text field, see a live preview, then release to insert editable text once. Cancelling preserves the original draft.
 - [x] In Settings, inspect a model's language support, download and activate it, then restart offline and dictate with the selected model. Switch back to bundled Tiny without downloading it again.
 
+### Local action discovery and voice navigation
+
+- Deliver deterministic final-transcript navigation and a searchable full-screen Settings Actions directory over the same feature-owned destinations.
+- Preserve exclusive dictation when PTT starts in a text field. Verify unique matches, confirmed suggestions, ambiguous choices, spoken feedback, cancellation and stale targets.
+- Keep catalog addresses independent of caller permission. Future task and launch configuration providers, webhooks and schedules can reference stable operations and target IDs. Execution requires its own eligibility and authorization checks.
+
 ## Phase 10: Cluster Creation, Discovery, And Trusted Membership
 
 **User outcome:** Create a cluster on Linux, discover and join it from the Pixel 4a, and recognize the same members after restart or an address change.

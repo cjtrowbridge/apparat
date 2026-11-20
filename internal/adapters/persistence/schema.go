@@ -25,14 +25,17 @@ CREATE TABLE service_observations (service_id TEXT PRIMARY KEY REFERENCES servic
 CREATE TABLE service_capabilities (service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE, id TEXT NOT NULL, workload TEXT NOT NULL, PRIMARY KEY(service_id,id));
 `
 
+var migrations = []Migration{
+	{Version: 1, Name: "phase3_core", SQL: phase3Schema},
+	{Version: 2, Name: "transitional_repositories", SQL: legacySchema},
+	{Version: 3, Name: "local_services", SQL: serviceSchema},
+	{Version: 4, Name: "local_preferences", SQL: preferencesSchema},
+	{Version: 5, Name: "tab_placement", SQL: "ALTER TABLE preferences ADD COLUMN placement TEXT NOT NULL DEFAULT 'top'"},
+	{Version: 6, Name: "local_project_registry", SQL: projectsSchema},
+	{Version: 7, Name: "local_workspaces", SQL: workspaceSchema},
+	{Version: 8, Name: "spoken_choices", SQL: "ALTER TABLE preferences ADD COLUMN spoken_choices INTEGER NOT NULL DEFAULT 0"},
+}
+
 func (db *DB) Migrate(ctx context.Context) error {
-	return db.ApplyMigrations(ctx, []Migration{
-		{Version: 1, Name: "phase3_core", SQL: phase3Schema},
-		{Version: 2, Name: "transitional_repositories", SQL: legacySchema},
-		{Version: 3, Name: "local_services", SQL: serviceSchema},
-		{Version: 4, Name: "local_preferences", SQL: preferencesSchema},
-		{Version: 5, Name: "tab_placement", SQL: "ALTER TABLE preferences ADD COLUMN placement TEXT NOT NULL DEFAULT 'top'"},
-		{Version: 6, Name: "local_project_registry", SQL: projectsSchema},
-		{Version: 7, Name: "local_workspaces", SQL: workspaceSchema},
-	})
+	return db.ApplyMigrations(ctx, migrations)
 }

@@ -96,4 +96,4 @@ Migration 5 adds tab placement to the existing preference record. Earlier rows r
 
 Migration 6 adds the local project registry and account references. Restore accepts schemas 3 through 6. Checkout files remain at their registered locations and require separate backup.
 
-Migration 7 adds project-scoped drafts and durable entries for pending messages and manual Task runs. Restore accepts schemas 3 through 7. Artifact bytes reside in the runtime artifact directory; a database snapshot contains their metadata.
+Migration 7 adds project-scoped drafts and durable entries for pending messages and manual Task runs. Migration 8 adds the node-local spoken action choices preference, initially off for existing and new installations. Restore accepts schemas 3 through 8. Artifact bytes reside in the runtime artifact directory; a database snapshot contains their metadata.

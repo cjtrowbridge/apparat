@@ -105,7 +105,7 @@ func RestoreBackup(ctx context.Context, source, destination string) error {
 	if err != nil {
 		return err
 	}
-	if metadata.App != "apparat-phase8" || (metadata.Schema < 3 || metadata.Schema > 7) {
+	if metadata.App != "apparat-phase8" || (metadata.Schema < 3 || metadata.Schema > migrations[len(migrations)-1].Version) {
 		return errors.New("unsupported backup app/schema")
 	}
 	data, err := os.ReadFile(source)

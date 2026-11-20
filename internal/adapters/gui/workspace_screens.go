@@ -84,6 +84,9 @@ func (g *Game) workspaceBack() {
 		g.workspaceGo("files", "list")
 	}
 }
+
+var workspaceDestinations = []struct{ label, mode, action string }{{"Files", "files", "list"}, {"Changes", "changes", "changes"}, {"Tasks", "tasks", "tasks"}, {"Chat", "chat", "threads"}}
+
 func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	btn := func(label string, fn func()) {
 		g.projectButton(c, label, func() {
@@ -113,7 +116,7 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	nav.AddChild(back)
 	roots := w.mode == "files" || w.mode == "changes" || w.mode == "tasks" || w.mode == "chat"
 	if roots {
-		for _, dest := range []struct{ label, mode, action string }{{"Files", "files", "list"}, {"Changes", "changes", "changes"}, {"Tasks", "tasks", "tasks"}, {"Chat", "chat", "threads"}} {
+		for _, dest := range workspaceDestinations {
 			g.workspaceNavButton(nav, dest.label, w.mode == dest.mode, func() {
 				g.workspaceGo(dest.mode, dest.action)
 			})
@@ -328,14 +331,12 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 	case "chat":
 		for _, item := range w.choices {
 			g.workspaceRow(c, item.Label, func() {
-				w.setThread(item.ID)
-				g.workspaceGo("conversation", "chat")
+				g.openConversation(item.ID)
 			})
 		}
 		if len(w.choices) == 0 {
 			g.projectButton(c, "General", func() {
-				w.setThread("General")
-				g.workspaceGo("conversation", "chat")
+				g.openConversation("General")
 			})
 		}
 		goTo("New conversation", "new-thread", "")

@@ -130,3 +130,11 @@ layouts or input boundaries. Run the GUI tests through
 `python3 scripts/build_gate.py -- xvfb-run -a go test -race -tags gui ./internal/adapters/gui ./internal/hud`.
 Record which layouts and input sources were exercised, including any physical
 device checks still pending.
+
+## Action discovery acceptance
+
+Register new destinations with the action catalog using the feature's existing source of truth. Verify the same destination opens from its UI, Settings → Actions and an exact spoken command. Cover duplicate names within and between kinds, provider updates after creation, rename and removal, and a result that disappears while the chooser is open. Every enabled tab, including optional editions, must remain discoverable.
+
+Exercise search with a command-shaped dictation, voice cancellation, spoken and directional clarification, and a retry after no match. Verify partial transcripts and approximate matches cannot activate an action. Changing a navigation verb to execute or mutate state requires a separately designed action and authorization boundary.
+
+On Linux, `make test-hud-navigation` runs the rendered navigation and catalog regressions and is included in `make verify`.

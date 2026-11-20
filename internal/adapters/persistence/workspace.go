@@ -112,7 +112,7 @@ func (db *DB) RecoverWorkspaceRuns(ctx context.Context) error {
 	return err
 }
 func (db *DB) ChatThreads(ctx context.Context, project string) ([]domain.WorkspaceChoice, error) {
-	rows, err := db.sql.QueryContext(ctx, "SELECT DISTINCT kind FROM project_entries WHERE project=? AND kind LIKE 'chat:%' ORDER BY kind LIMIT 100", project)
+	rows, err := db.sql.QueryContext(ctx, "SELECT DISTINCT kind FROM project_entries WHERE project=? AND kind LIKE 'chat:%' ORDER BY kind", project)
 	if err != nil {
 		return nil, err
 	}

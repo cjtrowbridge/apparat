@@ -428,6 +428,14 @@ generated text -> TTS queue -> spoken playback
 
 The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project document, place the caret or select text, then hold the PTT control and speak. Release to insert the final transcript. A live preview stays outside the document. Escape cancels, and saving a document or sending a message is a separate action. Android asks for microphone permission on first use. Audio stays in memory on the device, in bounded chunks while the control is held.
 
+### Voice commands and Actions
+
+Open **Settings → HUD Configuration → Actions** to browse navigation destinations or search by name or path. Select a result with a pointer, touch, keyboard or D-pad. Outside an editor, hold L2, right Ctrl or the on-screen **Voice command** control, speak, then release. “What can I say?” opens the directory. In a focused text field, including action search, the control shows **Dictate** and inserts the words you say. “Open Projects” in a chat draft stays in the draft.
+
+Try “switch to Settings,” “launch project Apparat,” “open Apparat project,” “show tasks for Apparat,” “open game Snake,” or “open chat Release planning.” “Open Apparat” opens a unique exact match. When names collide, the chooser shows numbered paths including the owning project for each thread. Answer “the project,” “the second one” or “cancel,” or select a row. A partial or near match always asks before opening. With no match you can retry or cancel in place.
+
+Whisper transcribes locally. Ordinary code interprets the final words using the same catalog as search. Registered checkouts and their conversations use local workspace data. **Enable spoken action choices** in HUD Configuration reads the clarification aloud where local speech output is supported (an offline Android voice or installed Linux `espeak-ng` / `espeak`). Text choices are always available. Opening Tasks shows its existing controls. Running a task still uses its separate execution flow.
+
 Open **Settings → HUD Configuration** to choose a dictation model. Tiny, Base, Small and Medium each offer English Only and Multilingual variants. Select a variant to inspect its size and languages. Confirm the displayed download size before installing an additional model. Settings shows whether the selected model is loaded in memory or will load on the next dictation. Apparat verifies each file in `<runtime-root>/data/whisper/` and saves the choice in SQLite after the decoder loads. Installed models work offline.
 
 Initial TTS should use an OS-native or lightweight service-backed adapter. Qwen3-TTS is a future routed service because its reference implementation is Python/PyTorch and model-heavy.
@@ -643,7 +651,7 @@ make verify
 make build
 ```
 
-`make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, build-pipeline tests, race tests, code-size checks, documentation-completeness checks, linting, and vulnerability scanning.
+`make tools` installs pinned developer tools into the ignored `.tools/bin` directory. `make verify` runs formatting, unit tests, build-pipeline tests, race tests, code-size checks, documentation-completeness checks, linting, and vulnerability scanning. On Linux it also runs the GUI navigation and action catalog regressions under Xvfb (`make test-hud-navigation`).
 
 ### Build Process
 
@@ -760,7 +768,7 @@ previous binary only with compatible node state or a verified offline backup.
 In Steam Gaming Mode, Apparat opens fullscreen at the compositor's current display
 size rather than stretching a saved desktop rectangle. Desktop sessions retain
 normal resizing and saved placement. The embedded STMPCK gallery centers its
-settings gear immediately after discovery. PTT without an editable target is silent.
+settings gear immediately after discovery. PTT outside an editable field accepts voice navigation commands.
 
 Phase 8 runs one embedded node behind either GUI or headless presentation. Both default to `~/.local/share/apparat/node` on Linux (respecting `XDG_DATA_HOME`); `APPARAT_RUNTIME_DIR` or `--runtime-dir` selects an independent root. An OS lock rejects competing ownership before writable SQLite, probes or REST start. PID metadata is diagnostic; never delete the lock file to defeat an active owner.
 

@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private EbitenView view;
     private ProjectDocuments documents;
     private DocumentEditor editor;
+    private ActionVoice voice;
     private File downloadedUpdate;
     private final AtomicBoolean checking = new AtomicBoolean();
     private volatile boolean destroyed;
@@ -93,6 +94,8 @@ public class MainActivity extends Activity {
             });
         }
         setContentView(content);
+        voice = new ActionVoice(this);
+        Apparatmobile.registerActionSpeech(voice);
         editor = new DocumentEditor(this);
         Apparatmobile.registerEditor(editor);
         documents = new ProjectDocuments(this);
@@ -128,7 +131,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if ("projects".equals(Apparatmobile.activeTab()) && Apparatmobile.workspaceBackAvailable()) {
+        if (Apparatmobile.workspaceBackAvailable()) {
             Apparatmobile.workspaceBack();
             return;
         }
@@ -163,6 +166,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         destroyed = true;
+        Apparatmobile.registerActionSpeech(null);
+        if (voice != null) voice.close();
         Apparatmobile.registerEditor(null);
         if (editor != null) editor.close();
         HttpURLConnection connection = activeConnection;

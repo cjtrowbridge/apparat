@@ -33,6 +33,7 @@ type Row struct {
 }
 
 type Section struct {
+	ActionID             string
 	ProjectID            string
 	SelectorSubtitle     string
 	Title                string

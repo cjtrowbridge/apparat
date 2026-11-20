@@ -96,3 +96,7 @@ Tab descriptors and rendered content normalize Settings to the final position wh
 Live Projects sections use the registration ID and retain the existing pipeline action colors and marker.
 
 Linux Updates copy describes the built-in verified check/install/restart flow; the GUI adapter supplies the platform callback. The host tab order remains Settings last.
+
+- `action_query.go`: Deterministic navigation grammar and exact or suggested destination matching.
+
+- `action_query_test.go`: Exercises exact, ambiguous, partial, near, absent and unsupported queries independently of speech recognition.

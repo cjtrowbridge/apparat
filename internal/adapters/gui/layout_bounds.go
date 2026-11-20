@@ -244,6 +244,9 @@ func (game *Game) contentWidth() int {
 }
 
 func (game *Game) pttCenter() (int, int) {
+	if game.actions.mode != "" {
+		return game.width - windowMargin - pttRadius, game.height - pttRadius - 4
+	}
 	x := game.width - pttMargin - pttRadius
 	if game.sideRail() == "right_rail" {
 		x -= railGutter

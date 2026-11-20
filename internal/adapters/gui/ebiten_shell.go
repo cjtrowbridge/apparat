@@ -43,6 +43,7 @@ const (
 )
 
 type Game struct {
+	actions                        actionScreen
 	nav                            navigation
 	voice                          voiceState
 	prefs                          preferenceState
@@ -166,9 +167,13 @@ func (game *Game) Update() error {
 	game.pollProjects()
 	game.pollUpdateDiscovery()
 	game.pollDirectoryStatus()
-	game.workspaceBackEnabled.Store(game.inWorkspace())
+	game.workspaceBackEnabled.Store(game.actions.mode != "" || game.inWorkspace())
 	if game.workspaceBackRequested.Swap(false) {
-		game.workspaceBack()
+		if game.actions.mode != "" {
+			game.backActionScreen()
+		} else {
+			game.workspaceBack()
+		}
 	}
 	game.trackWindow()
 	game.receiveServices()
@@ -176,11 +181,17 @@ func (game *Game) Update() error {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())
 	}
-	if game.arcadeUpdate() {
+	if game.actions.mode == "" && game.arcadeUpdate() {
+		game.keyboardPTT()
+		game.arcadeTriggerPTT()
+		game.pollSpeech()
 		return nil
 	}
 	game.updatePointerState()
 	game.ui.Update()
+	if game.gesture.Owner == gesturePTT && game.voice.canvas != nil && game.voice.field != nil {
+		game.ui.SetFocusedWidget(game.voice.field)
+	}
 	game.clampBodyScroll()
 	game.enforceBodyTabScrollLock()
 	game.advanceTabDragCancellation()
@@ -204,18 +215,7 @@ func (game *Game) Update() error {
 			game.selectTabWithReveal(index)
 		}
 	}
-	rightCtrl := ebiten.IsKeyPressed(ebiten.KeyControlRight)
-	if rightCtrl && !game.rightCtrlHeld {
-		game.beginPTT("right-ctrl")
-	}
-	if !rightCtrl && game.rightCtrlHeld {
-		game.endPTT()
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		game.cancelPTT()
-		game.setPTTHeld(false)
-	}
-	game.rightCtrlHeld = rightCtrl
+	game.keyboardPTT()
 	game.navigateInputs()
 	game.updateGamepad()
 	game.pollSpeech()
@@ -290,6 +290,9 @@ func (game *Game) updateGamepad() {
 }
 
 func (game *Game) applyTabAction(action hud.Action) {
+	if game.actions.mode != "" {
+		return
+	}
 	active := game.shell.Snapshot().ActiveIndex
 	{
 		err := game.shell.ApplyAction(action)
@@ -300,6 +303,9 @@ func (game *Game) applyTabAction(action hud.Action) {
 }
 
 func (game *Game) selectTabWithReveal(index int) {
+	if game.actions.mode != "" {
+		return
+	}
 	active := game.shell.Snapshot().ActiveIndex
 	{
 		err := game.shell.SelectTab(index)
@@ -313,12 +319,20 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(backgroundColor)
 	if game.ui != nil {
 		game.ui.Draw(screen)
+		game.revealSetting()
 	}
-	if game.arcadeDraw(screen) {
+	if game.actions.mode == "" && game.arcadeDraw(screen) {
 		game.drawArcadeFocus(screen)
+		if game.voice.canvas != nil || game.pttButtonHeld() {
+			game.drawPTTButton(screen)
+		}
 		return
 	}
 	game.drawFocus(screen)
+	if game.actions.mode != "" {
+		game.drawPTTButton(screen)
+		return
+	}
 	if game.pttButtonVisible() {
 		game.drawPTTButton(screen)
 	}

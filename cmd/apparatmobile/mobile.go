@@ -49,7 +49,8 @@ func init() {
 	binaryPath, _ := os.Executable()
 	workingDir, _ := os.Getwd()
 	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
-		ProjectPicker:  projectDocuments{},
+		ProjectPicker: projectDocuments{},
+		SpeakChoice:   sayChoice, MicrophoneReady: microphoneReady,
 		DocumentEditor: projectDocuments{},
 		PromptValue:    promptValue,
 		WorkingDir:     workingDir,
@@ -150,4 +151,32 @@ func WorkspaceBackAvailable() bool {
 // Voice forwards controls from the active Android text editor to the local decoder.
 func Voice(action string) string {
 	return game.NativeVoice(action)
+}
+
+type ActionSpeech interface {
+	Say(string)
+	Microphone() bool
+}
+
+var choiceSpeech ActionSpeech
+
+func RegisterActionSpeech(host ActionSpeech) {
+	bridgeMu.Lock()
+	defer bridgeMu.Unlock()
+	choiceSpeech = host
+}
+func actionSpeechHost() ActionSpeech {
+	bridgeMu.Lock()
+	defer bridgeMu.Unlock()
+	return choiceSpeech
+}
+func sayChoice(text string) {
+	host := actionSpeechHost()
+	if host != nil {
+		host.Say(text)
+	}
+}
+func microphoneReady() bool {
+	host := actionSpeechHost()
+	return host != nil && host.Microphone()
 }

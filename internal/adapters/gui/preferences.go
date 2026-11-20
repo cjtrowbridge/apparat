@@ -20,6 +20,8 @@ type preferenceStore interface {
 	SavePreferences(context.Context, domain.Preferences) error
 }
 type preferenceState struct {
+	reveal       string
+	revealWidget *widget.Widget
 	domain.Preferences
 	pane    *widget.ScrollContainer
 	store   preferenceStore
@@ -147,4 +149,25 @@ func (g *Game) preferenceControls(c *widget.Container) {
 	if g.prefs.message != "" {
 		c.AddChild(g.hudText(g.prefs.message))
 	}
+}
+
+func checkedState(checked bool) widget.WidgetState {
+	if checked {
+		return widget.WidgetChecked
+	}
+	return widget.WidgetUnchecked
+}
+
+func (g *Game) revealSetting() {
+	p := &g.prefs
+	if p.reveal == "" || p.pane == nil || p.revealWidget == nil {
+		return
+	}
+	rect := p.revealWidget.Rect
+	if rect.Empty() {
+		return
+	}
+	moveBodyScroll(p.pane, float64(p.pane.ViewRect().Min.Y-rect.Min.Y))
+	p.reveal = ""
+	p.revealWidget = nil
 }

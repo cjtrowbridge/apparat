@@ -125,11 +125,23 @@ func TestLocalWorkspaceOffline(t *testing.T) {
 	do("run")
 	q.ID, err = domain.NewID(time.Now(), nil)
 	requireSuccess(t, err)
+	q.Thread = "Release planning"
 	q.Argument = "pending message"
 	do("post")
 	requireSuccess(t, node.Close())
 	node = nodeFor(t, store, false)
 	requireSuccess(t, node.Initialize(ctx))
+	rows, err = node.Projects(ctx)
+	requireSuccess(t, err)
+	foundThread := false
+	for _, project := range rows {
+		if project.ID == q.ProjectID && len(project.Threads) == 1 && project.Threads[0].ID == q.Thread {
+			foundThread = true
+		}
+	}
+	if !foundThread {
+		t.Fatal("registered thread missing after restart")
+	}
 	if !strings.Contains(do("chat").Report, q.Argument) {
 		t.Fatal("message missing")
 	}

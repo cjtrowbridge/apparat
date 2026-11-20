@@ -70,7 +70,7 @@ func (g *Game) routeNavigation(delta image.Point, back, activate, keyActivate bo
 	if !back && !activate && !keyActivate && !tab && delta == (image.Point{}) {
 		return
 	}
-	if g.galleryInput(delta, back, activate || keyActivate, tab) {
+	if g.actions.mode == "" && g.galleryInput(delta, back, activate || keyActivate, tab) {
 		return
 	}
 	f := g.ui.GetFocusedWidget()
@@ -107,7 +107,9 @@ func (g *Game) routeNavigation(delta image.Point, back, activate, keyActivate bo
 		g.stepFocus(step)
 	} else if back {
 		id := g.shell.Snapshot().ActiveTab().ID()
-		if g.inWorkspace() {
+		if g.actions.mode != "" {
+			g.backActionScreen()
+		} else if g.inWorkspace() {
 			g.workspaceBack()
 		} else if g.collapsed() && g.detailOpen[id] {
 			g.showList(id)

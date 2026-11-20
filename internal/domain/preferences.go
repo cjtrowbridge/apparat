@@ -5,12 +5,13 @@ package domain
 import "slices"
 
 type Preferences struct {
-	Placement string
-	Theme     string
-	Font      int
-	Scale     int
-	Landing   string
-	Overlay   bool
+	Placement     string
+	Theme         string
+	Font          int
+	Scale         int
+	Landing       string
+	Overlay       bool
+	SpokenChoices bool
 }
 
 func DefaultPreferences() Preferences {

@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <queries><intent><action android:name="android.intent.action.TTS_SERVICE" /></intent></queries>
     <application android:enableOnBackInvokedCallback="true" android:label="Apparat" android:debuggable="true" android:icon="@drawable/app_icon" android:roundIcon="@drawable/app_icon">
         <activity
             android:name=".MainActivity"

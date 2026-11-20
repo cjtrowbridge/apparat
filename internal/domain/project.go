@@ -5,6 +5,7 @@ package domain
 type Project struct {
 	ID, Owner, Name, Location, Account string
 	Branch, Revision                   string
+	Threads                            []WorkspaceChoice
 	Entrypoints                        []string
 	Actions                            []string
 	Available                          bool

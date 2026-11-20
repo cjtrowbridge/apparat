@@ -245,16 +245,23 @@
  		"Merge U: undo. S: symbols.",
 --- /dev/null
 +++ b/surface/surface.go
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,16 @@
 +// Package surface exposes the shared STMPCK game to the private host.
 +// It retains the standalone game rules and save format.
 +package surface
 +
-+import "ebe-boilerplate/internal/app"
++import (
++    "ebe-boilerplate/internal/app"
++    "ebe-boilerplate/internal/menu"
++)
 +
 +type Game = app.Game
 +
 +func New(root string) *Game { return app.NewEmbedded(root) }
++
++func GameNames() [menu.Count]string {
++    return menu.Names
++}
 --- a/internal/menu/state.go
 +++ b/internal/menu/state.go
 @@ -43,6 +43,7 @@
