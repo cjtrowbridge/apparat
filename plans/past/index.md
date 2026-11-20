@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-20-10-53-35 | plans/past/2026-11-20-11-30-00_project-entry-forms.md | Separate Projects repository workflows | Provide dedicated clone, init and local import forms.
 2026-11-20-10-47-53 | plans/past/2026-11-20-11-10-00_linux-update-label.md | Show the Linux update check state | Distinguish the initial action and a confirmed current build in Settings.
 2026-11-20-10-41-53 | plans/past/2026-11-20-11-00-00_one-click-linux-update.md | One-click Linux update | Update and restart from a single Settings action with bounded status text.
 2026-11-20-10-25-21 | plans/past/2026-11-20-10-30-00_compact-gallery-header.md | Compact embedded gallery header | Place STMPCK and its gallery controls together at the top of the available page.

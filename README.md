@@ -92,7 +92,13 @@ The full Cluster view will show:
 
 Project Repos lists Git working trees the user explicitly registers on this device. It works offline before the device joins any cluster. SQLite remembers the registration and its stable project ID. The checkout supplies the current Git branch and labeled tasks from a JSON-format .vscode/tasks.json. Apparat displays the labels without running repository commands. A moved or inaccessible checkout can be reconnected, and removing a registration leaves its files intact.
 
-Choose **Add, create or clone repo** in Projects. To start offline, enter a **New project name** and select **Create project**. Apparat creates a folder under `<node-root>/data/repos/` or the parent you choose, initializes an empty Git working tree on `main`, and opens its Files workspace. Existing folders are preserved. Use **Open existing repo** for a checkout already on the device, or enter a GitHub owner/repo, preview the destination and choose **Clone** for a shallow checkout. Clones default to `<node-root>/data/repos/<owner>/<repo>` beside the SQLite database. Users can choose a different parent and review the full destination. The Linux folder button uses Zenity when installed, and the path field also accepts absolute paths. Linux uses the system GitHub CLI for private clones, with a default account and per-repo overrides. Android starts with local checkouts and public clones. Phase 11B adds Android GitHub sign-in and private clones. Local checkouts open offline regardless of sign-in state.
+Projects offers three ways to add a repository.
+
+- **Clone remote repo** downloads a shallow checkout from GitHub. Enter an owner/repo or URL, preview the destination and account, then select **Clone**. The default destination is `<node-root>/data/repos/<owner>/<repo>`.
+- **Init new repo** creates an empty Git working tree on `main`. Enter a name, optionally choose a parent folder, and select **Initialize repo** to open its Files workspace. The default parent is `<node-root>/data/repos/`.
+- **Import local repo** registers a Git working tree in place. Choose the existing repository folder and select **Import repo**.
+
+The Linux folder button uses Zenity when installed, and the path field also accepts absolute paths. Linux uses the system GitHub CLI for private clones, with a default account and per-repo overrides. Android starts with local checkouts and public clones. Phase 11B adds Android GitHub sign-in and private clones. Local checkouts open offline regardless of sign-in state.
 
 After trusted membership is available, the same list will include authorized summaries that other members choose to share. Each entry identifies its host and availability. Two devices with checkouts of the same Git remote own separate projects. The first shared catalog supports browsing. Later workspace operations go through the owning device’s authenticated API.
 

@@ -256,7 +256,7 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	for _, detail := range section.DetailSections {
 		sectionContainer.AddChild(game.buildSectionContainer(detail))
 	}
-	if section.ProjectID != "" || section.ContentKind == "project-form" {
+	if section.ProjectID != "" || section.ContentKind == cloneRepoForm || section.ContentKind == initRepoForm || section.ContentKind == importRepoForm {
 		game.projectControls(sectionContainer, section)
 		return sectionContainer
 	}

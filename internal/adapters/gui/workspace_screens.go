@@ -15,7 +15,7 @@ func (g *Game) inWorkspace() bool {
 	if g.shell.Snapshot().ActiveTab().ID() != hud.TabProjects {
 		return false
 	}
-	i := g.selectedSections[hud.TabProjects] - 2
+	i := g.selectedSections[hud.TabProjects] - len(projectEntrySections)
 	return i >= 0 && i < len(g.projects.rows) && g.projects.rows[i].ID == g.projects.workspace.id && (!g.collapsed() || g.detailOpen[hud.TabProjects])
 }
 func (g *Game) RequestWorkspaceBack() {

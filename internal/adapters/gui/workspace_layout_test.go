@@ -22,7 +22,7 @@ func TestWorkspaceResizePreservesPresentation(t *testing.T) {
 	w := &g.projects.workspace
 	*w = workspacePanel{id: "p", mode: "inline", path: "sample.txt", lines: []string{"draft text"}, report: "Conflict: file changed"}
 	g.detailOpen[hud.TabProjects] = true
-	g.selectSection(hud.TabProjects, 2)
+	g.selectSection(hud.TabProjects, len(projectEntrySections))
 	l := &w.layout
 	editor := l.editor
 	g.ui.SetFocusedWidget(editor)

@@ -153,7 +153,7 @@ func Clone(ctx context.Context, base, parent, input, account string) (domain.Pro
 	}
 	_, err = os.Lstat(dest)
 	if !errors.Is(err, os.ErrNotExist) {
-		return p, errors.New("destination unavailable or occupied; use Open existing repo for a checkout")
+		return p, errors.New("destination unavailable or occupied; use Import local repo for a checkout")
 	}
 	stage, err := os.MkdirTemp(filepath.Dir(dest), ".apparat-clone-")
 	if err != nil {

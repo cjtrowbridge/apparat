@@ -75,16 +75,8 @@ func (game *Game) selectSection(tabID hud.TabID, index int) {
 			return
 		}
 	}
-	if tabID == hud.TabProjects && index >= 2 && index-2 < len(game.projects.rows) {
-		if game.projects.pending != nil {
-			return
-		}
-		p := game.projects.rows[index-2]
-		if p.Available && game.projects.workspace.id != p.ID {
-			game.projects.workspace = workspacePanel{id: p.ID, dir: ".", mode: "files"}
-			game.detailOpen[tabID] = true
-			game.workspaceRequest("list")
-		}
+	if tabID == hud.TabProjects && !game.selectProjectEntry(index) {
+		return
 	}
 	game.selectedSections[tabID] = index
 	if game.collapsed() {

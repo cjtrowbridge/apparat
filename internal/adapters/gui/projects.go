@@ -6,17 +6,13 @@ package gui
 
 import (
 	"context"
-
 	"image/color"
 	"net/url"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 
-	"github.com/cjtrowbridge/apparat/internal/adapters/projectgit"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	uiimage "github.com/ebitenui/ebitenui/image"
@@ -33,28 +29,29 @@ type projectStore interface {
 	SetProjectDefault(context.Context, string) error
 }
 type projectResult struct {
-	applyField                      func()
-	workspace                       *workspaceReply
-	rows                            []domain.Project
-	folder, message, defaultAccount string
-	reload                          bool
+	applyField              func()
+	workspace               *workspaceReply
+	rows                    []domain.Project
+	message, defaultAccount string
+	reload                  bool
 }
 type projectForm struct {
-	directoryStatus                                chan workspaceReply
-	stopDirectoryStatus                            context.CancelFunc
-	bookmarks                                      map[[2]string][3]int
-	workspace                                      workspacePanel
-	dataRoot                                       string
-	removeID                                       string
-	workers                                        sync.WaitGroup
-	rows                                           []domain.Project
-	store                                          projectStore
-	pending                                        chan projectResult
-	cancel                                         context.CancelFunc
-	ctx                                            context.Context
-	close                                          context.CancelFunc
-	name, repo, location, account, message, editID string
-	active                                         bool
+	directoryStatus                                            chan workspaceReply
+	stopDirectoryStatus                                        context.CancelFunc
+	bookmarks                                                  map[[2]string][3]int
+	workspace                                                  workspacePanel
+	dataRoot                                                   string
+	removeID                                                   string
+	workers                                                    sync.WaitGroup
+	rows                                                       []domain.Project
+	store                                                      projectStore
+	pending                                                    chan projectResult
+	cancel                                                     context.CancelFunc
+	ctx                                                        context.Context
+	close                                                      context.CancelFunc
+	name, repo, account, defaultAccount, message, editID       string
+	cloneParent, initParent, importPath, editPath, editAccount string
+	active                                                     bool
 }
 
 func (g *Game) initProjects() {
@@ -130,12 +127,10 @@ func (g *Game) pollProjects() {
 		}
 		if r.reload {
 			f.rows = r.rows
-			if f.editID == "" {
+			if f.account == f.defaultAccount {
 				f.account = r.defaultAccount
 			}
-		}
-		if r.folder != "" {
-			f.location = r.folder
+			f.defaultAccount = r.defaultAccount
 		}
 		g.layoutDirty = true
 	default:
@@ -143,7 +138,7 @@ func (g *Game) pollProjects() {
 }
 func (g *Game) projectTab(t hud.Tab) hud.Tab {
 	t.Summary = ""
-	t.Sections = []hud.Section{{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device."}, {Title: "Add, create or clone repo", SelectorColor: "#36ad9c", ContentKind: "project-form"}}
+	t.Sections = projectEntrySections[:]
 	for _, p := range g.projects.rows {
 		kind := hud.ContentProject
 		tint := hud.SelectorPalette[0]
@@ -212,11 +207,15 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		}
 		for _, p := range f.rows {
 			if p.ID == s.ProjectID {
+				if f.editID == p.ID {
+					g.editProjectControls(c)
+					return
+				}
 				g.projectButton(c, "Edit registration", func() {
 					f.editID = p.ID
-					f.location = p.Location
-					f.account = p.Account
-					g.selectSection(hud.TabProjects, 1)
+					f.editPath = p.Location
+					f.editAccount = p.Account
+					g.layoutDirty = true
 				})
 				removeLabel := "Remove from list"
 				if f.removeID == p.ID {
@@ -239,93 +238,26 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		}
 		return
 	}
-	g.projectField(c, "Folder", &f.location)
-	if f.location != "" && f.editID == "" {
-		g.projectButton(c, "Use default repo location", func() {
-			f.location = ""
-			f.message = ""
-			g.layoutDirty = true
-		})
-	}
-	g.projectButton(c, "Choose folder…", func() {
-		g.projectWork(func(ctx context.Context) projectResult {
-			picker := g.runtimeInfo.ProjectPicker
-			if picker != nil {
-				return projectResult{folder: picker.ChooseFolder()}
-			}
-			cmd := exec.CommandContext(ctx, "zenity", "--file-selection", "--directory")
-			cmd.Env = append(os.Environ(), "GTK_USE_PORTAL=1")
-			out, err := cmd.Output()
-			if err != nil {
-				return projectResult{message: "Folder selection closed or unavailable. You can enter a path."}
-			}
-			return projectResult{folder: strings.TrimSpace(string(out))}
-		})
-	})
-	if runtime.GOOS != "android" {
-		g.projectField(c, "GitHub login (blank for public)", &f.account)
-		g.projectButton(c, "Use as device default", func() {
-			account := f.account
+	switch s.ContentKind {
+	case cloneRepoForm:
+		g.projectField(c, "GitHub owner/repo or URL", &f.repo)
+		g.projectFolder(c, "Destination parent folder (optional)", &f.cloneParent, true)
+		g.projectAccount(c, &f.account)
+		g.cloneProjectControls(c)
+	case initRepoForm:
+		g.createProjectControls(c)
+	case importRepoForm:
+		g.projectFolder(c, "Existing repo folder", &f.importPath, false)
+		g.projectButton(c, "Import repo", func() {
+			path := f.importPath
+			account := f.defaultAccount
 			g.changeProjects(func(ctx context.Context) error {
-				return store.SetProjectDefault(ctx, account)
+				return store.StoreProject(ctx, "", path, account)
 			})
 		})
 	}
-	save := "Open existing repo"
-	if f.editID != "" {
-		save = "Save registration"
-	}
-	g.projectButton(c, save, func() {
-		id, path, account := f.editID, f.location, f.account
-		g.changeProjects(func(ctx context.Context) error {
-			return store.StoreProject(ctx, id, path, account)
-		})
-	})
-	if f.editID != "" {
-		g.projectButton(c, "New registration", func() {
-			f.editID = ""
-			f.location = ""
-			f.message = ""
-			g.layoutDirty = true
-		})
-		return
-	}
-	g.createProjectControls(c)
-	g.projectField(c, "GitHub owner/repo or URL", &f.repo)
-	g.projectButton(c, "Preview clone", func() {
-		repo, err := projectgit.RepoName(f.repo)
-		if err != nil {
-			f.message = err.Error()
-			g.layoutDirty = true
-			return
-		}
-		dest, err := g.projectDestination(f.location, repo)
-		if err != nil {
-			f.message = err.Error()
-		} else {
-			f.message = clonePreview(dest, f.account)
-		}
-		g.layoutDirty = true
-	})
-	g.projectButton(c, "Clone", func() {
-		parent, repo, account := f.location, f.repo, f.account
-		normalized, err := projectgit.RepoName(repo)
-		if err != nil {
-			f.message = err.Error()
-			g.layoutDirty = true
-			return
-		}
-		dest, err := g.projectDestination(parent, normalized)
-		if err != nil || f.message != clonePreview(dest, account) {
-			f.message = "Preview the destination and account first."
-			g.layoutDirty = true
-			return
-		}
-		g.changeProjects(func(ctx context.Context) error {
-			return store.CloneProject(ctx, parent, normalized, account)
-		})
-	})
 }
+
 func (g *Game) projectText(value string) string {
 	return wrapSelectorLabel(value, *g.theme.ButtonTheme.TextFace, int(g.detailTextMaxWidth()))
 }
@@ -387,4 +319,25 @@ func projectCheckoutStatus(p domain.Project) string {
 		return branch + " · No commits yet"
 	}
 	return branch + " @ " + revision
+}
+
+func (g *Game) selectProjectEntry(index int) bool {
+	f := &g.projects
+	if f.pending != nil {
+		return false
+	}
+	if index != g.selectedSections[hud.TabProjects] {
+		f.editID = ""
+		f.message = ""
+	}
+	row := index - len(projectEntrySections)
+	if row >= 0 && row < len(f.rows) {
+		p := f.rows[row]
+		if p.Available && f.workspace.id != p.ID {
+			f.workspace = workspacePanel{id: p.ID, dir: ".", mode: "files"}
+			g.detailOpen[hud.TabProjects] = true
+			g.workspaceRequest("list")
+		}
+	}
+	return true
 }

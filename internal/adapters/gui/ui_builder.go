@@ -39,7 +39,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	title := snapshot.ActiveTab().Title()
 	bottomInset := diagnosticsHeight
 	if game.inWorkspace() {
-		i := game.selectedSections[hud.TabProjects] - 2
+		i := game.selectedSections[hud.TabProjects] - len(projectEntrySections)
 		p := game.projects.rows[i]
 		title = p.Name + " · " + p.Branch
 		if !game.debugOverlayOpen {

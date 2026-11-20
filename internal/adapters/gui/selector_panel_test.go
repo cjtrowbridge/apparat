@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 
@@ -109,7 +110,7 @@ func TestLocalProjectTabIncludesOnlyRegisteredCheckouts(t *testing.T) {
 	game := NewGameWithRuntimeInfo(RuntimeInfo{})
 	defer game.Close()
 	tab := game.projectTab(hud.Tab{})
-	if len(tab.Sections) != 2 || tab.Sections[1].Title != "Add, create or clone repo" {
+	if len(tab.Sections) != 4 || tab.Sections[1].Title != "Clone remote repo" || tab.Sections[2].Title != "Init new repo" || tab.Sections[3].Title != "Import local repo" {
 		t.Fatal("unexpected rows in empty registry")
 	}
 	game.projects.rows = []domain.Project{
@@ -117,7 +118,7 @@ func TestLocalProjectTabIncludesOnlyRegisteredCheckouts(t *testing.T) {
 		{ID: "b", Name: "plain", Available: true},
 	}
 	tab = game.projectTab(hud.Tab{})
-	if !tab.Sections[2].HasConfiguredActions || tab.Sections[2].ContentKind != hud.ContentProject || tab.Sections[3].ContentKind != hud.ContentProject || tab.Sections[2].SelectorColor == tab.Sections[3].SelectorColor {
+	if !tab.Sections[len(projectEntrySections)].HasConfiguredActions || tab.Sections[len(projectEntrySections)].ContentKind != hud.ContentProject || tab.Sections[len(projectEntrySections)+1].ContentKind != hud.ContentProject || tab.Sections[len(projectEntrySections)].SelectorColor == tab.Sections[len(projectEntrySections)+1].SelectorColor {
 		t.Fatal("action decoration does not follow real checkout state")
 	}
 }
@@ -134,8 +135,8 @@ func TestProjectSelectorShowsFullCheckoutLocation(t *testing.T) {
 		{"content://example/tree/1/document/42", "local://example/42/repo"},
 	} {
 		game.projects.rows = []domain.Project{{ID: "one", Name: "repo", Location: tc.location, Available: true, Branch: "main", Revision: "0123456789ab", Actions: []string{"Build"}}}
-		section := game.projectTab(tab).Sections[2]
-		button, subtitle := game.sectionButton(tab, section, 2)
+		section := game.projectTab(tab).Sections[len(projectEntrySections)]
+		button, subtitle := game.sectionButton(tab, section, len(projectEntrySections))
 		if subtitle == nil || strings.ReplaceAll(subtitle.Label, "\n", "") != tc.want+"main @ 0123456789ab" {
 			t.Fatal("missing checkout path", tc.want)
 		}
@@ -159,6 +160,48 @@ func TestProjectDataAliasMatchesDirectoryBoundary(t *testing.T) {
 		got := projectListLocation(domain.Project{Location: tc.path}, root)
 		if got != tc.want {
 			t.Errorf("projectListLocation(%q) = %q, want %q", tc.path, got, tc.want)
+		}
+	}
+}
+
+func TestProjectEntryFormsOnlyOfferTheirOwnActions(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	g.projects.store = layoutRegistry{}
+	actions := []string{"Preview clone", "Clone", "Initialize repo", "Import repo", "Save registration"}
+	selectTabThroughStrip(t, g, hud.TabProjects)
+	g.Layout(360, 720)
+	for i, section := range projectEntrySections[1:] {
+		g.selectSection(hud.TabProjects, i+1)
+		renderNavigation(g)
+		if !g.detailOpen[hud.TabProjects] || g.inWorkspace() {
+			t.Fatalf("%s did not open its detail pane", section.Title)
+		}
+		form := g.buildSectionContainer(section)
+		form.GetWidget().SetTheme(g.theme)
+		form.Validate()
+		for _, label := range actions {
+			want := section.ContentKind == cloneRepoForm && (label == "Preview clone" || label == "Clone") ||
+				section.ContentKind == initRepoForm && label == "Initialize repo" ||
+				section.ContentKind == importRepoForm && label == "Import repo"
+			found := findButtonByLabel(form, label) != nil
+			if found != want {
+				t.Errorf("%s shows %q = %t, want %t", section.Title, label, found, want)
+			}
+		}
+		fields := 0
+		for _, target := range form.GetFocusers() {
+			_, ok := target.(*widget.TextInput)
+			if ok {
+				fields++
+			}
+		}
+		expected := map[hud.ContentKind]int{cloneRepoForm: 3, initRepoForm: 2, importRepoForm: 1}
+		if runtime.GOOS == "android" {
+			expected[cloneRepoForm] = 2
+		}
+		if fields != expected[section.ContentKind] {
+			t.Errorf("%s has %d fields, want %d", section.Title, fields, expected[section.ContentKind])
 		}
 	}
 }

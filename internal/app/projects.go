@@ -83,7 +83,7 @@ func (n *Runtime) CreateProject(ctx context.Context, parent, name string) (strin
 	}
 	err = n.registerProject(ctx, p)
 	if err != nil {
-		return "", errors.New("repository created; choose Open existing repo to finish registration")
+		return "", errors.New("repository created; choose Import local repo to finish registration")
 	}
 	return p.Location, nil
 }

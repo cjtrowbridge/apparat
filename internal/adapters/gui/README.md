@@ -157,7 +157,7 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 Workspace Files publishes folder entries first. A cancellable background check decorates the current directory. Navigating discards obsolete results, and a failed check leaves filenames accessible with an error message.
 
 - `dictation.go`: Owns workspace PTT sessions, targeted text insertion and device-local model selection in Settings.
-- `project_creation.go`: Handles the named local project action, opens its Files workspace, and formats GitHub clone previews.
+- `project_creation.go`: Defines separate clone, init and local import entries, their folder and account controls, and registration editing. New local repositories open in Files. Each form owns its folder draft.
 - `update_discovery.go`: Checks the Android release manifest on Settings entry, coalesces checks and separates discovery from installation.
 
 - `desktop_updates.go`: Owns one cancellable Linux update worker, candidate cleanup, UI status and restart intent. No network I/O runs on the frame thread.
