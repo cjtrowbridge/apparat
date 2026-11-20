@@ -215,7 +215,7 @@ verify the application's actual mappings with physical controls.
 
 ## Update, rollback and removal
 
-Save your work and select **Settings → Updates → Update Apparat** once. A newer verified build installs and restarts automatically. An already-current build stays open. Older installations show **Check for update**, **Install update**, and **Restart Apparat** for the transition to the one-click updater. The existing Steam entry keeps its fixed executable path. The updater retains `<executable>.previous`; compatible node data or an offline backup is still required for schema rollback.
+Save your work and select **Settings → Updates → Check for update** once. A newer verified build installs and restarts automatically. An already-current build stays open and the button reads **Up to date**. Older installations show **Check for update**, **Install update**, and **Restart Apparat** for the transition to the one-click updater. The existing Steam entry keeps its fixed executable path. The updater retains `<executable>.previous`; compatible node data or an offline backup is still required for schema rollback.
 
 For manual recovery or initial delivery of an updater-capable build, stop Apparat and repeat the staged transfer, digest comparison,
 backup and atomic replacement. Keep the same path and Steam entry. Verify

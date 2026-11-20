@@ -173,7 +173,7 @@ session without an editing target. Releasing L2 returns to idle unless another
 source remains held. Losing the standard controller cancels its capture and
 clears its visual state. R2 is no longer a PTT binding.
 
-Linux updates use the existing Settings card. The **Update Apparat** button keeps its label while progress and errors wrap beneath it. One click downloads and verifies a newer artifact, atomically replaces the executable, keeps `.previous`, and closes GUI/core state before restarting. Steam continues tracking the same process and path. Failures keep installed bytes and show safe retry text. Closing cancels and joins the worker and deletes staged candidates.
+Linux updates use the existing Settings card. The **Check for update** button shows **Up to date** after a matching build is confirmed. It can be selected again to recheck. Progress and errors wrap beneath it. One click downloads and verifies a newer artifact, atomically replaces the executable, keeps `.previous`, and closes GUI/core state before restarting. Steam continues tracking the same process and path. Failures keep installed bytes and show safe retry text. Closing cancels and joins the worker and deletes staged candidates.
 
 The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star, friends, discovery and settings. Side and bottom tab placements release the full top edge to the gallery. Top tabs reserve only the navigation strip and gap. The renderer, pointer and directional focus use the same toolbar rectangles, and tile layout and scroll bounds use the compact header height. The host tab order is unchanged and the pinned standalone game source remains untouched.
 

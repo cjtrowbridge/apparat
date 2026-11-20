@@ -76,12 +76,16 @@ func TestLinuxUpdateSingleActivation(t *testing.T) {
 	game.rebuildUI(game.shell.Snapshot())
 	renderNavigation(game)
 	button := game.updateButton
+	if button.Text().Label != "Check for update" {
+		t.Fatalf("initial button label: %s", button.Text().Label)
+	}
 	button.Click()
 	event.ExecuteDeferred()
 	game.requestUpdateAction() // Duplicate input during the same operation.
 	game.applyUpdateStatus()
-	if button.Text().Label != "Update Apparat" || !button.GetWidget().Disabled {
-		t.Fatal("busy update button must keep its action label and reject duplicate input")
+	busyLabel := button.Text().Label
+	if (busyLabel != "Checking…" && busyLabel != "Updating…") || !button.GetWidget().Disabled {
+		t.Fatal("busy update button must show progress and reject duplicate input")
 	}
 	finish()
 	if !game.pollDesktopUpdates() {
@@ -94,16 +98,18 @@ func TestLinuxUpdateSingleActivation(t *testing.T) {
 	u.restart = false
 	game.requestUpdateAction()
 	finish()
-	if game.UpdateStatusDetail() != "Apparat is up to date." || u.restart {
+	game.applyUpdateStatus()
+	if button.Text().Label != "Up to date" || button.GetWidget().Disabled || u.restart {
 		t.Fatalf("current build status: %s", game.UpdateStatusDetail())
 	}
 	u.client.HTTP.Transport = updateTransport(func(*http.Request) (*http.Response, error) {
 		return nil, io.ErrUnexpectedEOF
 	})
-	game.requestUpdateAction()
+	button.Click()
+	event.ExecuteDeferred()
 	finish()
 	game.applyUpdateStatus()
-	if u.restart || button.GetWidget().Disabled || !strings.Contains(game.updateDetail.Label, "retry") {
+	if button.Text().Label != "Check for update" || u.restart || button.GetWidget().Disabled || !strings.Contains(game.updateDetail.Label, "retry") {
 		t.Fatal("failed update must offer a retry in Settings without restarting")
 	}
 	renderNavigation(game)
