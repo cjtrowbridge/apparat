@@ -78,7 +78,7 @@ def build_plans(go: str) -> list[BuildPlan]:
     if not android_reasons and toolchain is not None:
         device_reason = artifact_acceptance.android_device_reason()
         if device_reason:
-            android_reasons = (device_reason,)
+            warnings = [*warnings, "Device testing pending: " + device_reason]
     if go_missing:
         android_reasons = (*go_missing, *android_reasons)
     plans.append(BuildPlan(

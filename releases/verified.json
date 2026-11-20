@@ -1,8 +1,8 @@
 {
   "edition": "ordinary",
   "ref": "refs/heads/main",
-  "head": "153e9bfc9e6d4c018c9d04efb6d72f5cf63edb58",
-  "inputs": "45f85e23b9ca6f0352dbbee93b6e25c957e80be6cddcacd757cabbe1eddc7aa6",
+  "head": "06259edce1b5a2296a73405720292ed0baee1695",
+  "inputs": "89461dcc144f1c474f1f5ef00d0ac763c3f71389475a299bace12116a111d969",
   "go": "go version go1.26.11 linux/amd64",
   "targets": [
     {
@@ -10,16 +10,28 @@
       "output": "releases/linux/amd64/apparat/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "e0349c1e51c64de73ee42bc7192ed084681d6678949a2ca7b4600c37447185e1",
-      "inputs": "45f85e23b9ca6f0352dbbee93b6e25c957e80be6cddcacd757cabbe1eddc7aa6"
+      "sha256": "dcf92d159a6a233638c13f278923bcb4555bd37595534385a95e36f5ede7a217",
+      "inputs": "89461dcc144f1c474f1f5ef00d0ac763c3f71389475a299bace12116a111d969"
     },
     {
       "name": "linux/amd64/apparatd",
       "output": "releases/linux/amd64/apparatd/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "c34a7543a1beb9aeb9d719cbc75634f6b68a0613fe21c32e246f6b625f37faff",
-      "inputs": "45f85e23b9ca6f0352dbbee93b6e25c957e80be6cddcacd757cabbe1eddc7aa6"
+      "sha256": "7312660063a27f5e836246e102c92a974ce5782b878fda30d9b93e2e3c600fae",
+      "inputs": "89461dcc144f1c474f1f5ef00d0ac763c3f71389475a299bace12116a111d969"
+    },
+    {
+      "name": "android/arm64/apparat",
+      "output": "releases/android/arm64/apparat/latest.apk",
+      "state": "passed",
+      "reasons": [],
+      "sha256": "238f8bf23f53d01a749de316ee9a892fb5943665b5a9d008a1a2be0929f49b1e",
+      "device_test": {
+        "state": "pending",
+        "reason": "System ADB unavailable; canonical Pixel 4a qualification is not possible"
+      },
+      "inputs": "89461dcc144f1c474f1f5ef00d0ac763c3f71389475a299bace12116a111d969"
     },
     {
       "name": "android/arm64/apparatd",
@@ -28,14 +40,6 @@
       "reasons": [
         "Android Phase 5 builds only the GUI `apparat` APK; use Linux/Termux for headless `apparatd`."
       ]
-    },
-    {
-      "name": "android/arm64/apparat",
-      "output": "releases/android/arm64/apparat/latest.apk",
-      "state": "passed",
-      "reasons": [],
-      "sha256": "132510581ac64bd1f1a37be5185192d14788c0ac4a894ef450f4bae979a9ff87",
-      "inputs": "1a7fb21d45cc23b8f64ed067292e8e22f4e3c08e9de6b287b26082eceb09c7cb"
     }
   ],
   "accepted": true,

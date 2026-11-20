@@ -7,14 +7,16 @@ import hashlib
 import json
 import re
 import subprocess
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
 
 try:
-    from scripts import android_release, build, build_evidence as evidence
+    from scripts import android_release, artifact_acceptance, build, build_evidence as evidence
 except ImportError:
     import android_release
+    import artifact_acceptance
     import build
     import build_evidence as evidence
 
@@ -133,6 +135,12 @@ def deliver(root, plans, compile_target, storage):
             reusable = f'android:versionCode="{installed["version"]}"' in content
             if git(root,'hash-object',APK) != git(root,'rev-parse',remote+':'+APK):
                 reusable = reusable and installed['version'] > baseline['version']
+    if android and reusable:
+        row = next(r for r in rows if r['output'] == APK)
+        if row.get('device_test', {}).get('state') == 'pending' and not artifact_acceptance.android_device_reason():
+            directory = Path(tempfile.mkdtemp(dir=storage))
+            row['device_test'] = artifact_acceptance.android(root/APK, directory, row['sha256'])
+            evidence.write(report, prior)
     if not reusable:
         if android:
             allocate(root,remote,baseline)

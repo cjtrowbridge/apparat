@@ -133,7 +133,9 @@ def locked_run(root, plans, compile_target, storage):
             print(f'Exercising {plan.name}', flush=True)
             evidence = run/'tests'/plan.name
             evidence.mkdir(parents=True)
-            artifact_acceptance.validate(plan,candidate,evidence,row['sha256'])
+            device = artifact_acceptance.validate(plan,candidate,evidence,row['sha256'])
+            if plan.goos == 'android':
+                row['device_test'] = device
             if digest(candidate) != row['sha256']:
                 raise ValueError('candidate changed after test')
             row['state'] = 'passed'

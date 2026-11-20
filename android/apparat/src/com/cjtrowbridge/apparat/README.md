@@ -23,7 +23,7 @@ Regression verification: compile this helper with `tests/UpdateTransferTest.java
 
 - `VoiceInput.java`: Holds, cancels and finalizes local dictation in the original Android editor selection. Requests microphone permission on the first press.
 
-The document and input dialogs anchor the circular PTT control to the lower-right editing area above the keyboard. A listening indicator remains visible alongside partial text until release.
+The document and input dialogs anchor the circular PTT control to the lower-right editing area above the keyboard. A listening indicator remains visible alongside partial text until submission. A double tap on PTT or L2 locks dictation in the original selection. A subsequent tap finishes it.
 - `AndroidUpdater.java`: Reports the installed version and starts the user-requested signed APK download.
 
 - `ActionVoice.java`: Activity-owned local speech feedback and canvas microphone permission bridge.

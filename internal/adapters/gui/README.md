@@ -187,3 +187,5 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `action_catalog.go`: Enumerates current navigation targets and revalidates the stable address before activation.
 
 - `action_catalog_test.go`: Tests tab coverage, project and thread identity, stale choices, dictation ownership and responsive action browsing.
+
+- `ptt_lock.go`: Shared double-tap timing, capture ownership, lock and single submission for canvas and native dictation.

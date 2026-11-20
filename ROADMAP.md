@@ -2176,7 +2176,7 @@ Phase 16 builds on local dictation and model selection from Phase 9B. Remote spe
 
 ### Later voice controls
 
-- [ ] Support double-click to lock PTT recording and a single click to stop it. Flesh out gesture timing, cancellation and touch/controller equivalents later.
+- [x] Double-tap the PTT control or L2 to lock the current recording and tap once to finish. Quick taps use a 350 ms window. Escape cancels.
 - [ ] Add opt-in trigger-word listening, disabled by default. When enabled, default the word to `apparat` and let the user replace it with a word of their choice. Define listening lifecycle, activation feedback and false-trigger tests before implementation.
 
 ### Audio capture and presentation boundary

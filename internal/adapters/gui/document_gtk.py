@@ -105,8 +105,10 @@ def activate(application):
             cancel_voice()
             return False
         state, text = result["State"], result["Text"]
-        if state in ("recording", "finishing", "starting"):
+        if state in ("recording", "finishing", "starting", "locked"):
             label = "Finishing" if state == "finishing" else "Listening"
+            if state == "locked":
+                label = "Listening locked · tap PTT to finish"
             status.set_label(f"{label} · {text}" if text else label)
             status.set_visible(True)
             return True
@@ -120,28 +122,30 @@ def activate(application):
         status.set_visible(state == "error")
         return False
 
-    def begin_voice(*_):
+    def begin_voice(action="start"):
         nonlocal voice
         if voice is not None:
+            if action.startswith("press-"):
+                receive_voice(json.loads(request("voice-" + action)))
             return
         view.grab_focus()
         token = (selection(), object())
         voice = token
-        if receive_voice(json.loads(request("voice-start"))):
+        if receive_voice(json.loads(request("voice-" + action))):
             GLib.timeout_add(120, lambda: voice is token and receive_voice(json.loads(request("voice-poll"))))
 
-    def end_voice(*_):
+    def end_voice(action="stop"):
         if voice is not None:
-            receive_voice(json.loads(request("voice-stop")))
+            receive_voice(json.loads(request("voice-" + action)))
 
     def pointer_down(gesture, *_):
         gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-        begin_voice()
+        begin_voice("press-pointer")
 
     pointer = Gtk.GestureClick()
     pointer.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
     pointer.connect("pressed", pointer_down)
-    pointer.connect("released", end_voice)
+    pointer.connect("released", lambda *_: end_voice("release-pointer"))
     pointer.connect("cancel", cancel_voice)
     hold.add_controller(pointer)
     keys = Gtk.EventControllerKey()

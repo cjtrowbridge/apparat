@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/speech"
 	"github.com/cjtrowbridge/apparat/internal/hud"
@@ -21,6 +22,7 @@ import (
 )
 
 type voiceState struct {
+	tap, nativeTap                              pttLock
 	engine                                      *speech.Engine
 	nativeMu                                    sync.Mutex
 	native, canvas                              *speech.Session
@@ -39,6 +41,29 @@ func (g *Game) NativeVoice(action string) string {
 	v.nativeMu.Lock()
 	defer v.nativeMu.Unlock()
 	result := speech.Result{State: "idle"}
+	now := time.Now()
+	if v.nativeTap.expired(now) && v.native != nil {
+		v.native.Release()
+	}
+	if strings.HasPrefix(action, "press-") || strings.HasPrefix(action, "release-") {
+		edge, source, _ := strings.Cut(action, "-")
+		decision := tapWait
+		if edge == "press" {
+			if v.nativeTap.source != "" || v.native == nil {
+				decision = v.nativeTap.press(source, now)
+			}
+		} else {
+			decision = v.nativeTap.release(source, now)
+		}
+		switch decision {
+		case tapBegin:
+			action = "start"
+		case tapSubmit:
+			action = "stop"
+		default:
+			action = "poll"
+		}
+	}
 	switch action {
 	case "start":
 		if v.engine == nil {
@@ -58,6 +83,7 @@ func (g *Game) NativeVoice(action string) string {
 			v.native.Release()
 		}
 	case "cancel":
+		v.nativeTap = pttLock{}
 		if v.native != nil {
 			v.native.Cancel()
 			v.native = nil
@@ -67,7 +93,12 @@ func (g *Game) NativeVoice(action string) string {
 		result = v.native.Poll()
 		if result.State == "final" || result.State == "error" || result.State == "cancelled" {
 			v.native = nil
+			v.nativeTap = pttLock{}
+		} else if v.nativeTap.locked {
+			result.State = "locked"
 		}
+	} else {
+		v.nativeTap = pttLock{}
 	}
 	data, _ := json.Marshal(result)
 	return string(data)
@@ -102,6 +133,7 @@ func (g *Game) endPTT() {
 	}
 }
 func (g *Game) cancelPTT() {
+	g.voice.tap = pttLock{}
 	g.shell.CancelVoiceCapture()
 	if g.voice.canvas != nil {
 		g.voice.canvas.Cancel()
@@ -121,6 +153,9 @@ func caretMayHaveMoved(f *widget.TextInput) bool {
 }
 func (g *Game) pollSpeech() {
 	v := &g.voice
+	if v.tap.expired(time.Now()) {
+		g.endPTT()
+	}
 	if v.canvas != nil {
 		if v.field != nil && (g.ui.GetFocusedWidget() != v.field || v.field.GetText() != v.original || g.gesture.Owner != gesturePTT && caretMayHaveMoved(v.field)) {
 			g.cancelPTT()
@@ -137,7 +172,9 @@ func (g *Game) pollSpeech() {
 			v.field = nil
 			v.preview = ""
 			v.canvas = nil
+			v.tap = pttLock{}
 		case "error", "cancelled":
+			v.tap = pttLock{}
 			v.canvas = nil
 		}
 	}

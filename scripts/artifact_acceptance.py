@@ -15,7 +15,7 @@ import shutil
 
 
 def android_device_reason():
-    """An APK is eligible only when its mandatory qualification device is present."""
+    """Return the reason physical testing must wait, or an empty string when available."""
     adb = shutil.which('adb')
     if not adb:
         return 'System ADB unavailable; canonical Pixel 4a qualification is not possible'
@@ -204,11 +204,11 @@ def android(binary, directory, digest):
     metadata = android_release.apk_metadata(build.default_sdk_root()/'build-tools'/build.ANDROID_BUILD_TOOLS,binary)
     if metadata['package'] != android_release.PACKAGE or metadata['signers'] != [android_release.expected_signer()]:
         raise ValueError('Unexpected APK package or signer; refusing installation')
+    reason = android_device_reason()
+    if reason:
+        print('Android APK checks passed. Device testing pending: ' + reason, flush=True)
+        return {'state': 'pending', 'reason': reason}
     adb = which('adb')
-    listing = run(adb, 'devices', '-l', text=True)
-    devices = re.findall(r'^(\S+)\s+device\s+.*\bmodel:Pixel_4a\b', listing, re.M)
-    if '08051JEC218861' not in devices:
-        raise ValueError('Canonical authorized Pixel 4a required for device validation')
     def phone(*args, **kwargs):
         return run(adb, '-s', '08051JEC218861', *args, **kwargs)
     package = 'com.cjtrowbridge.apparat'
@@ -225,11 +225,12 @@ def android(binary, directory, digest):
     path = directory/'projects.png'
     path.write_bytes(phone('exec-out', 'screencap', '-p'))
     check_projects(path)
+    return {'state': 'passed', 'device': 'Pixel 4a'}
 
 
 def validate(plan, candidate, directory, digest):
     if plan.goos == 'android':
-        android(candidate, directory, digest)
+        return android(candidate, directory, digest)
     elif plan.target == 'apparatd':
         env = dict(os.environ)
         env.pop('DISPLAY', None)

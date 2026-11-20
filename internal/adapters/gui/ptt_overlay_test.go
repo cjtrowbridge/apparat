@@ -6,6 +6,7 @@ package gui
 
 import (
 	"testing"
+	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -54,5 +55,33 @@ func TestControllerLossCancelsPTTWithoutSubmission(t *testing.T) {
 	game.cancelTriggerPTT()
 	if game.l2Held || game.pttButtonFill() != idle || game.shell.Snapshot().VoiceState != hud.VoiceIdle {
 		t.Fatal("controller loss must clear feedback and cancel rather than submit")
+	}
+}
+
+func TestPTTLockTransitions(t *testing.T) {
+	start := time.Unix(1, 0)
+	for _, source := range []string{"floating-ptt", "gamepad-l2"} {
+		var lock pttLock
+		if lock.press(source, start) != tapBegin || lock.release(source, start.Add(60*time.Millisecond)) != tapWait {
+			t.Fatal("first tap submitted early")
+		}
+		if lock.press(source, start.Add(160*time.Millisecond)) != tapWait || !lock.locked {
+			t.Fatal("second press did not lock original session")
+		}
+		if lock.release(source, start.Add(200*time.Millisecond)) != tapWait || lock.expired(start.Add(time.Hour)) {
+			t.Fatal("lock lost after release")
+		}
+		if lock.press("floating-ptt", start.Add(time.Hour)) != tapSubmit || lock.locked || lock.release("floating-ptt", start.Add(time.Hour)) != tapWait {
+			t.Fatal("stop must submit exactly once")
+		}
+		lock.press(source, start)
+		if lock.release(source, start.Add(time.Second)) != tapSubmit {
+			t.Fatal("hold did not submit on release")
+		}
+		lock.press(source, start)
+		lock.release(source, start)
+		if lock.expired(start.Add(time.Millisecond)) || !lock.expired(start.Add(pttTapWindow)) || lock.expired(start.Add(time.Second)) {
+			t.Fatal("single tap timeout must submit once")
+		}
 	}
 }

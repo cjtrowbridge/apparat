@@ -25,6 +25,9 @@ func (game *Game) drawPTTButton(screen *ebiten.Image) {
 	if editing {
 		label = "Dictate"
 	}
+	if game.voice.tap.locked {
+		label = "Locked\nTap stop"
+	}
 	ebitenutil.DebugPrintAt(screen, label, x-21, y-10)
 	ebitenutil.DebugPrintAt(screen, game.voice.preview, windowMargin, y-24)
 }
@@ -43,17 +46,13 @@ func (game *Game) setPTTHeld(held bool) {
 		return
 	}
 	game.pttHeld = held
-	if held {
-		game.beginPTT("floating-ptt")
-		return
-	}
-	game.endPTT()
+	game.tapPTT("floating-ptt", held)
 }
 
 const pttTriggerButton = ebiten.StandardGamepadButtonFrontBottomLeft
 
 func (game *Game) pttButtonHeld() bool {
-	return game.pttHeld || game.l2Held || game.rightCtrlHeld
+	return game.voice.tap.locked || game.pttHeld || game.l2Held || game.rightCtrlHeld
 }
 
 func (game *Game) pttButtonVisible() bool {
@@ -72,15 +71,11 @@ func (game *Game) setTriggerPTT(held bool) {
 		return
 	}
 	game.l2Held = held
-	if held {
-		game.beginPTT("gamepad-l2")
-		return
-	}
-	game.endPTT()
+	game.tapPTT("gamepad-l2", held)
 }
 
 func (game *Game) cancelTriggerPTT() {
-	if game.l2Held {
+	if game.l2Held || game.voice.tap.source == "gamepad-l2" {
 		game.l2Held = false
 		game.cancelPTT()
 	}
@@ -91,7 +86,7 @@ func (game *Game) keyboardPTT() {
 	if rightCtrl && !game.rightCtrlHeld {
 		game.beginPTT("right-ctrl")
 	}
-	if !rightCtrl && game.rightCtrlHeld {
+	if !rightCtrl && game.rightCtrlHeld && game.voice.tap.source == "" {
 		game.endPTT()
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {

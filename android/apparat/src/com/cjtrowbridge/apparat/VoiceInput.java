@@ -63,7 +63,7 @@ final class VoiceInput {
         paint(false);
         this.preview = preview;
         button.setText("PTT");
-        button.setContentDescription("Hold to dictate");
+        button.setContentDescription("Hold to dictate or double tap to lock listening");
         button.setOnTouchListener(new View.OnTouchListener() {
             public boolean onTouch(View v, MotionEvent event) {
             switch (event.getActionMasked()) {
@@ -71,13 +71,13 @@ final class VoiceInput {
                     v.getParent().requestDisallowInterceptTouchEvent(true);
                     paint(true);
                     trace("touch_down");
-                    begin();
+                    begin("press-pointer");
                     break;
                 case MotionEvent.ACTION_UP:
                     paint(false);
                     v.getParent().requestDisallowInterceptTouchEvent(false);
                     trace("touch_up");
-                    stop();
+                    stop("release-pointer");
                     break;
                 case MotionEvent.ACTION_CANCEL:
                     v.getParent().requestDisallowInterceptTouchEvent(false);
@@ -90,9 +90,10 @@ final class VoiceInput {
         });
         dialog.setOnKeyListener(new android.content.DialogInterface.OnKeyListener() {
             public boolean onKey(android.content.DialogInterface d, int key, KeyEvent event) {
-            if (key==KeyEvent.KEYCODE_CTRL_RIGHT || key==KeyEvent.KEYCODE_BUTTON_R2) {
-                if (event.getAction()==KeyEvent.ACTION_UP) stop();
-                else if (event.getRepeatCount()==0) begin();
+            if (key==KeyEvent.KEYCODE_CTRL_RIGHT || key==KeyEvent.KEYCODE_BUTTON_L2) {
+                boolean trigger = key==KeyEvent.KEYCODE_BUTTON_L2;
+                if (event.getAction()==KeyEvent.ACTION_UP) stop(trigger ? "release-l2" : "stop");
+                else if (event.getRepeatCount()==0) begin(trigger ? "press-l2" : "start");
                 return true;
             }
             if (listening && (key==KeyEvent.KEYCODE_ESCAPE || key==KeyEvent.KEYCODE_BACK)) {
@@ -103,8 +104,11 @@ final class VoiceInput {
             }
         });
     }
-    private void begin() {
-        if (listening) return;
+    private void begin(String action) {
+        if (listening) {
+            if (action.startsWith("press-")) receive(Apparatmobile.voice(action));
+            return;
+        }
         if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
             activity.requestPermissions(new String[] {
                 Manifest.permission.RECORD_AUDIO
@@ -118,10 +122,10 @@ final class VoiceInput {
         if (start<0 || end<0) return;
         original=field.getText().toString();
         listening=true;
-        receive(Apparatmobile.voice("start"));
+        receive(Apparatmobile.voice(action));
     }
-    private void stop() {
-        if (listening) receive(Apparatmobile.voice("stop"));
+    private void stop(String action) {
+        if (listening) receive(Apparatmobile.voice(action));
     }
     void cancel() {
         paint(false);
@@ -155,8 +159,12 @@ final class VoiceInput {
                 trace(state);
                 lastState=state;
             }
-            if (state.equals("recording") || state.equals("starting") || state.equals("finishing")) {
+            if (state.equals("locked") || state.equals("recording") || state.equals("starting") || state.equals("finishing")) {
                 String label = state.equals("finishing") ? "Finishing" : "Listening";
+                if (state.equals("locked")) {
+                    label = "Listening locked · tap to finish";
+                    paint(true);
+                }
                 show(text.isEmpty() ? label : label+" · "+text);
                 handler.postDelayed(poll,120);
                 return;

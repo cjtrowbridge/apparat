@@ -154,8 +154,8 @@ class BuildPipelineTest(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertEqual(run.call_args.args[1], plans)
 
-    def test_android_eligibility_requires_qualification_device(self):
-        for reason, possible in [('Pixel unavailable', False), ('', True)]:
+    def test_android_eligibility_with_optional_device(self):
+        for reason in ['Pixel unavailable', '']:
             with mock.patch('scripts.build.resolve_android_toolchain', return_value=(object(), [], [])), mock.patch(
                 'scripts.artifact_acceptance.android_device_reason', return_value=reason
             ), mock.patch(
@@ -163,9 +163,9 @@ class BuildPipelineTest(unittest.TestCase):
             ):
                 plans = build_orchestrator.build_plans('go')
             android = next(p for p in plans if p.name == 'android/arm64/apparat')
-            self.assertEqual(android.possible, possible)
+            self.assertTrue(android.possible)
             if reason:
-                self.assertIn(reason, android.reasons)
+                self.assertIn("Device testing pending: " + reason, android.warnings)
 
     def test_android_env_reports_missing_prerequisites(self):
         with mock.patch("scripts.build.default_sdk_root", return_value=Path("/missing-sdk")), mock.patch(

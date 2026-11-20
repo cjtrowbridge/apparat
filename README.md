@@ -430,7 +430,7 @@ The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project doc
 
 ### Voice commands and Actions
 
-Open **Settings → HUD Configuration → Actions** to browse navigation destinations or search by name or path. Select a result with a pointer, touch, keyboard or D-pad. Outside an editor, hold L2, right Ctrl or the on-screen **Voice command** control, speak, then release. “What can I say?” opens the directory. In a focused text field, including action search, the control shows **Dictate** and inserts the words you say. “Open Projects” in a chat draft stays in the draft.
+Open **Settings → HUD Configuration → Actions** to browse navigation destinations or search by name or path. Select a result with a pointer, touch, keyboard or D-pad. Outside an editor, hold L2, right Ctrl or the on-screen **Voice command** control, speak, then release. Double-tap the PTT button or L2 to lock listening. The first tap must be brief and the second press must follow within 350 ms. Tap either control once to finish the same recording, or press Escape to discard it. “What can I say?” opens the directory. In a focused text field, including action search, the control shows **Dictate** and inserts the words you say. “Open Projects” in a chat draft stays in the draft.
 
 Try “switch to Settings,” “launch project Apparat,” “open Apparat project,” “show tasks for Apparat,” “open game Snake,” or “open chat Release planning.” “Open Apparat” opens a unique exact match. When names collide, the chooser shows numbered paths including the owning project for each thread. Answer “the project,” “the second one” or “cancel,” or select a row. A partial or near match always asks before opening. With no match you can retry or cancel in place.
 
@@ -660,7 +660,7 @@ make build
 Before first setup, explicitly register the designated Apparat main checkout with
 `python3 scripts/checkout_identity.py --register`. Build with `python3 scripts/build.py`.
 On Linux this now opens the compiled GUI in Xvfb, exercises the headless executable,
-and, when Android prerequisites and the canonical authorized Pixel 4a are available, installs the ordinary signed APK in place for qualification. Otherwise it reports Android unavailable and preserves the previously qualified APK while delivering eligible host targets.
+and publishes the signed Android APK after automated package, ABI, signer and version checks. When the authorized Pixel 4a is available, it also installs and launches the APK and verifies the installed bytes and Projects screen. Otherwise the Android entry in `releases/verified.json` records device testing as pending.
 Missing prerequisites or failed acceptance leave the verified outputs unchanged.
 See scripts/README.md for dependencies and recovery. Stage the source intended for release before building. The pipeline commits staged changes and qualified outputs together, pushes main, and verifies GitHub downloads using the authenticated GitHub CLI. Apparat is distributed through its public GitHub repository. The Android updater reads the published version and downloads an approved update without a GitHub login. Linux updates pin verification metadata and artifact bytes to one GitHub commit. An unchanged rerun verifies delivery without incrementing the version.
 

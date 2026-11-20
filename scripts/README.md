@@ -151,7 +151,7 @@ Host formatting is scoped to `cmd/` and `internal/`; `make fmt` must not format 
 
 - `android_release.py`: Verifies Android signing continuity and strictly newer APK publication candidates.
 
-- `build_delivery.py`: Publishes under the exclusive canonical build lock. Stage intended source changes, authenticate Git and the GitHub CLI for the private repository, and run `python3 scripts/build.py`. It fetches the published Android baseline, assigns the next version, validates with the retained signing key and Pixel 4a, commits the reviewed index plus qualified outputs, pushes main, then reads the artifact bytes back from GitHub using the authenticated contents API. Re-run the same command after interrupted publication. A non-fast-forward requires reconciling main. An unchanged input set with matching qualified artifacts reuses them and verifies the downloads. The build requires network access and fails if remote verification is incomplete. Other hosts' artifacts remain intact. See `python3 scripts/build.py --help`.
+- `build_delivery.py`: Publishes under the exclusive canonical build lock. Stage intended source changes, authenticate Git and the GitHub CLI for the private repository, and run `python3 scripts/build.py`. It fetches the published Android baseline, assigns the next version, validates the APK with the retained signing key and uses the Pixel 4a when available, commits the reviewed index plus qualified outputs, pushes main, then reads the artifact bytes back from GitHub using the authenticated contents API. Re-run the same command after interrupted publication. A non-fast-forward requires reconciling main. An unchanged input set with matching qualified artifacts reuses them and verifies the downloads. The build requires network access and fails if remote verification is incomplete. Other hosts' artifacts remain intact. See `python3 scripts/build.py --help`.
 
 - `checkout_identity.py`: Read-only main/root check. On first setup from the intended Apparat main only, run `python3 scripts/checkout_identity.py --register`. Registration lives in ~/.config/apparat-build/checkout.json and is never replaced automatically.
 - `artifact_acceptance.py`: Internal artifact tests locate the 24-pixel Projects divider in the rendered desktop frame before dragging it. Linux uses Xvfb, xwininfo, libXtst, ImageMagick and Pillow. Android uses system ADB and one unlocked, authorized Pixel 4a with existing Apparat signing continuity. Reinstalls the ordinary package in place and opens Projects. Captures stay private in the run directory. A failed test prevents promotion.
@@ -167,13 +167,7 @@ Projects artifact acceptance checks the selected hammer tab on the published GUI
 
 - `speech_build.py`: Called by the canonical GUI build to verify bundled Tiny and incrementally build static whisper.cpp for the host compiler or Android NDK under .tmp. Requires CMake, make and C/C++; bootstrap.py --install-cmake installs pinned CMake locally on Linux amd64. An unavailable compiler, dirty speech checkout or digest mismatch stops the build. Inspect helper usage with --help.
 
-Android GUI target eligibility includes its mandatory canonical Pixel 4a qualification
-precondition. If system ADB or that authorized device is unavailable, the no-flag
-pipeline reports Android unavailable, delivers the qualified Linux host matrix and
-preserves the existing APK and its original input/hash evidence. It does not mark
-an untested Android candidate passed. `artifact_acceptance.py` rechecks the device
-again before installation when Android is eligible. Regression tests cover the
-availability decision and preservation of prior Android publication.
+Android APK publication requires valid build inputs, package and ABI checks, the pinned signer, an advancing version, and GitHub download verification. Without system ADB or the authorized Pixel 4a, the build records `device_test.state=pending` and the reason. When available, the Pixel install, byte comparison, launch and screenshot checks must pass. Rerunning the canonical build with unchanged inputs and a newly available Pixel checks the previously published APK in place.
 
 Host Python 3.10 uses chunked SHA-256 reads in `build_evidence.py`,
 `build_delivery.py` and `speech_build.py`; no Python 3.11-only digest helper is

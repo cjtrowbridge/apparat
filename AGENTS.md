@@ -131,3 +131,5 @@ Settings → Actions and PTT use one deterministic query engine. A single exact 
 Capture the input role at PTT press. Focused text fields, including action search and native editors, accept dictation exclusively. Only a final command transcript may dispatch. Clarification supports voice, keyboard, D-pad and pointer. Preserve cancellation and local-only speech handling. Never log transcripts, choices containing private names or dictated text.
 
 Extend tab coverage, provider lifecycle and stale-selection tests with each feature. Verify exact, ambiguous, near and absent matches, editing protection, and the full-screen browser on a narrow and a wide surface. Follow the HUD tab playbook for rendered verification.
+
+Publish Android after automated APK, ABI, version and signer checks. If the authorized Pixel 4a is unavailable, record physical testing as pending in the release evidence. When available, its install, hash, launch and Projects checks must pass.
