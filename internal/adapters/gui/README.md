@@ -46,7 +46,7 @@ Settings renders each `internal/hud` section as a fieldset. The `Updates` sectio
 
 The Settings Diagnostics fieldset owns the Debug UI overlay toggle. The overlay is a development-only floating panel rendered by the Ebitengine game loop so it can report live screen size, FPS, UPS, runtime path, working directory, binary path, active tab, route, input, voice state, focus, and queue diagnostics. It is draggable by its title bar and must remain opt-in from Settings.
 
-The floating circular `PTT` button is a global Ebitengine overlay near the bottom-right of the app, above diagnostics. It holds the same HUD voice-capture state as right Ctrl and controller R2 while pressed and releases capture when the pointer/touch is released or Escape cancels voice capture.
+The floating circular `PTT` button is a global Ebitengine overlay near the bottom-right of the app, above diagnostics. It holds the same HUD voice-capture state as right Ctrl and controller L2 while pressed and releases capture when the pointer/touch is released or Escape cancels voice capture.
 
 Comrades, Projects, and Cluster render responsive selector/content-panel bodies. Expanded layouts show a selector panel, a visible draggable divider, and only the selected content panel. The selector panel may include non-selectable, non-focusable headings that group selectable items; a heading may have a small, muted, wrapped description beneath its title. Narrow layouts collapse to one panel: the selector panel appears first, a selected section/thread switches to the content panel, and the content panel starts with an EbitenUI `<- Back` button. Cluster's Routing and Tasks selectors render grouped nested detail sections in that content panel. Research uses the pattern that matches its current placeholder/review state. Its mock contribution fieldset renders `Your Contribution` separately from a two-column friend table; a shared grid aligns all cells, with an outer border and borders around each cell. Both 44 px headers are clickable and select/toggle the numeric view-model sort without parsing displayed units. Future scrolling, tab overflow behavior, narrow-screen collapse, and adjustable dividers must preserve the same minimum-width and no-overlap rules, and must be validated with screenshots before release.
 
@@ -164,6 +164,14 @@ Workspace Files publishes folder entries first. A cancellable background check d
 - `desktop_updates_test.go`: Tests check/install/restart and up-to-date states with a disposable executable, untargeted PTT and native-aspect layout.
 - `gamescope.go`: Uses the active monitor geometry and fullscreen under Gamescope while ordinary desktops retain saved placement.
 - `ptt_overlay.go`: Draws and captures the existing PTT overlay, split from the shell to preserve its 400-line limit. Pressing PTT without an editable target is silent.
+- `ptt_overlay_test.go`: Verifies matching pointer, L2 and keyboard pressed appearance, trigger release, the binding contract and cancellation on controller loss.
+
+The PTT button uses one pressed fill while pointer, L2 or right Ctrl is held.
+A held trigger also keeps the button visible inside a workspace even without a
+focused text input; this indicates the press and does not imply a microphone
+session without an editing target. Releasing L2 returns to idle unless another
+source remains held. Losing the standard controller cancels its capture and
+clears its visual state. R2 is no longer a PTT binding.
 
 Linux updates use the existing Settings card. Check downloads and verifies the current qualified artifact; Install update atomically replaces the executable and keeps `.previous`; Restart Apparat closes GUI/core state before exec. Steam continues tracking the same process and path. Failures keep installed bytes and show safe retry text. Closing cancels and joins the worker and deletes staged candidates.
 

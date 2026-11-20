@@ -34,7 +34,7 @@ The roadmap assumes these decisions:
   - Steam Deck is the first GUI target.
     - Controller-first interaction is a core acceptance requirement for the first visual shell.
     - `L1` and `R1` switch top-level tabs.
-    - `R2` is hold-to-talk; releasing it submits captured audio to ASR.
+    - `L2` is hold-to-talk; releasing it submits captured audio to ASR.
   - Debian/Linux GUI mode is a first-class desktop target.
     - `Ctrl+PageUp` and `Ctrl+PageDown` switch top-level tabs.
     - `Alt+1` through `Alt+5` open the five canonical tabs directly; Routing and Tasks are selected within Cluster.
@@ -501,7 +501,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
     - Layout must adapt to Steam Deck resolution, desktop resizing, touch targets, software keyboard use, and later mobile constraints.
   - **Shared controller and Debian GUI focus model**
     - `L1` and `R1` cycle through top-level tabs in canonical order.
-    - Holding `R2` starts push-to-talk capture; releasing `R2` stops capture and submits audio to speech-to-text.
+    - Holding `L2` starts push-to-talk capture; releasing `L2` stops capture and submits audio to speech-to-text.
     - Debian GUI uses `Ctrl+PageUp` and `Ctrl+PageDown` for tab cycling, `Alt+1` through `Alt+5` for the five canonical tabs, and right `Ctrl` for hold-to-talk.
     - Debian GUI uses standard keyboard focus, activation, cancellation, contextual-action, scrolling, text-editing, and mouse conventions without creating separate application behavior.
     - Directional controls move through an explicit focus graph, not pointer-coordinate emulation.
@@ -1685,6 +1685,11 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 ## Phase 9B: Offline Push-to-Talk Dictation and Whisper Model Selection
 
+The [L2 PTT feedback change](plans/current/2026-11-20-08-49-00_left-trigger-ptt-feedback.md)
+replaces the original R2 binding with L2 and makes the on-screen PTT control use
+the same pressed appearance for trigger, pointer and keyboard holds. Earlier
+completed prototype checklists retain R2 as historical evidence of the old binding.
+
 **User outcome:** Dictate editable text into the local workspace and choose which installed speech model handles the next utterance.
 
 **Dependencies:** Phase 9A local workspace, shared input actions, device-local settings and GUI packaging.
@@ -2169,7 +2174,7 @@ Phase 16 builds on local dictation and model selection from Phase 9B. Remote spe
 
 ### Audio capture and presentation boundary
 
-- [ ] Start capture while `R2` or configured Debian right `Ctrl` is held.
+- [ ] Start capture while `L2` or configured Debian right `Ctrl` is held.
 - [ ] Stop and submit on release.
 - [ ] Let `Escape` cancel a held right-`Ctrl` recording without submitting on later release.
 - [ ] Bound duration, memory, sample format, and temporary storage.
@@ -2206,7 +2211,7 @@ Phase 16 builds on local dictation and model selection from Phase 9B. Remote spe
 
 **Exit criteria**
 
-- [ ] `R2` and right `Ctrl` produce editable transcription through a selected local or remote route.
+- [ ] `L2` and right `Ctrl` produce editable transcription through a selected local or remote route.
 - [ ] Spoken output routes and controls independently.
 - [ ] Capture and focus remain presentation/platform state until explicit submission.
 - [ ] Voice behavior is visible, cancellable, bounded, privacy-preserving, and restart-honest.
@@ -2494,7 +2499,7 @@ The MVP is complete only when the applicable cross-cutting requirements and all 
   - [x] Research follows Cluster as a navigable future-facing tab.
   - [x] Settings is final.
   - [ ] Focus, activation, back, context, scrolling, text, pointer/touch, accessibility, and enabled actions behave honestly.
-  - [ ] `R2` PTT routes to ASR and can be cancelled.
+  - [ ] `L2` PTT routes to ASR and can be cancelled.
 - [ ] Shared runtime and secure connectivity
   - [ ] GUI and headless use the same core/node state without double ownership.
   - [ ] Headless Linux initializes no Ebitengine dependency.

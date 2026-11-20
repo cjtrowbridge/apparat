@@ -69,7 +69,7 @@ type Game struct {
 	pageUpWasHit                   bool
 	l1WasPressed                   bool
 	r1WasPressed                   bool
-	r2Held                         bool
+	l2Held                         bool
 	debugOverlayOpen               bool
 	debugOverlayX                  int
 	debugOverlayY                  int
@@ -262,24 +262,21 @@ func (game *Game) updateGamepad() {
 		game.projectPad(id)
 		l1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopLeft)
 		r1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopRight)
-		r2 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontBottomRight)
+		l2 := ebiten.IsStandardGamepadButtonPressed(id, pttTriggerButton)
 		if r1 && !game.r1WasPressed {
 			game.applyTabAction(hud.ActionNextTab)
 		}
 		if l1 && !game.l1WasPressed {
 			game.applyTabAction(hud.ActionPreviousTab)
 		}
-		if r2 && !game.r2Held {
-			game.beginPTT("gamepad-r2")
-		}
-		if !r2 && game.r2Held {
-			game.endPTT()
-		}
+		game.setTriggerPTT(l2)
 		game.l1WasPressed = l1
 		game.r1WasPressed = r1
-		game.r2Held = r2
-		break // Use only the first standard-layout gamepad.
+		return // Use only the first standard-layout gamepad.
 	}
+	game.cancelTriggerPTT()
+	game.l1WasPressed = false
+	game.r1WasPressed = false
 }
 
 func (game *Game) applyTabAction(action hud.Action) {
@@ -310,7 +307,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	if game.arcadeDraw(screen) {
 		return
 	}
-	if !game.inWorkspace() || game.ui.GetFocusedWidget() != nil || game.voice.canvas != nil {
+	if game.pttButtonVisible() {
 		game.drawPTTButton(screen)
 	}
 	if game.debugOverlayOpen {

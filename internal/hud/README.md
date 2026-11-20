@@ -43,7 +43,7 @@ Default bindings preserve the accepted controls:
 
 - `L1` / `R1` and `Ctrl+PageUp` / `Ctrl+PageDown` switch tabs.
 - `Alt+1` through `Alt+5` select canonical tabs directly.
-- `R2` and right `Ctrl` are push-to-talk.
+- `L2` and right `Ctrl` are push-to-talk.
 - `Escape` cancels held recording.
 - Pointer wheel, pointer drag, touch drag, right-stick scrolling, `PageUp`, and `PageDown` are tracked as scroll defaults.
 

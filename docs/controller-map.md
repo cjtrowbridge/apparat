@@ -16,8 +16,13 @@ The canonical top-level tab order is Comrades, Projects, Cluster, Research, Sett
 - `X`: contextual actions.
 - Menu: command palette.
 - Right stick: scroll long views.
-- `R2`: hold to talk; release submits.
+- `L2`: hold to talk; release submits.
 - `Steam+X`: system on-screen keyboard for text fields.
+
+Holding L2 highlights the on-screen PTT button exactly like pressing it with a
+pointer; release restores idle. Right Ctrl uses the same feedback. With no
+editing target, the press is visible but capture stays silent. Controller loss
+cancels a held capture rather than submitting it.
 
 ## Debian GUI
 

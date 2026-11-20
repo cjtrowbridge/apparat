@@ -51,7 +51,7 @@ func (game *Game) cancelPointer() {
 	game.finishTabStripDrag()
 	game.gesture = pointerGesture{}
 	game.rightCtrlHeld = false
-	game.r2Held = false
+	game.l2Held = false
 }
 
 // RequestInputCancellation crosses the Android UI thread without touching widgets.

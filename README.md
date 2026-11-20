@@ -193,9 +193,9 @@ The initial Steam Deck mapping is:
 - **`X`**: contextual actions.
 - Menu: command palette.
 - Right stick: scroll long views.
-- **`R2`**: hold to talk.
+- **`L2`**: hold to talk.
 
-Holding `R2` begins local audio capture. Releasing it ends capture and submits the buffered audio to the selected ASR route. The HUD must visibly distinguish recording, cancellation, upload or queueing, transcription, failure, and completion.
+Holding `L2` begins local audio capture. Releasing it ends capture and submits the buffered audio to the selected ASR route. The HUD must visibly distinguish recording, cancellation, upload or queueing, transcription, failure, and completion.
 
 Steam Deck text fields support the system `Steam+X` on-screen keyboard shortcut and expose a visible keyboard action beside text inputs.
 
@@ -414,7 +414,7 @@ Research work must be isolated from Apparat project data, identity secrets, pers
 ASR and TTS are separate service capabilities:
 
 ```text
-R2 or right-Ctrl audio capture -> ASR queue -> transcribed text -> command or prompt
+L2 or right-Ctrl audio capture -> ASR queue -> transcribed text -> command or prompt
 generated text -> TTS queue -> spoken playback
 ```
 
