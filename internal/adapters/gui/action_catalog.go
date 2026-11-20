@@ -51,9 +51,6 @@ func (g *Game) registerGameActions(add registerAction, index int, owner string) 
 		add("game", owner, strconv.Itoa(id), name, "STMPCK / "+name, func() {
 			g.selectTab(index, nil)
 			session := g.gallerySession()
-			if session.Selected == id && !session.Settings {
-				return
-			}
 			for session.Settings || session.Selected >= 0 {
 				session.Back()
 			}

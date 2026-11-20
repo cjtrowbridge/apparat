@@ -432,6 +432,8 @@ The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project doc
 
 Open **Settings → Voice Commands → Browse available commands** to browse navigation destinations or search by name or path. Select a result with a pointer, touch, keyboard or D-pad. Outside an editor, hold L2, right Ctrl or the on-screen **PTT** control, speak, then release. Double-tap the PTT button or L2 to lock listening. The first tap must be brief and the second press must follow within 350 ms. Tap either control once to finish the same recording, or press Escape to discard it. “What can I say?” opens the directory. In a focused text field, including action search, PTT inserts the words you say. “Open Projects” in a chat draft stays in the draft.
 
+Opening a game from the gallery or by voice shows its command title at the top. Choose a board, level, or speed where available, or select Start. A saved game offers Resume and New game. You can back out of new-game setup before starting to keep your save.
+
 Say “open Cluster” for the cluster management tab or “open Bubble Volley” for the bubble-matching game in STMPCK.
 
 Try “switch to Settings,” “launch project Apparat,” “open Apparat project,” “show tasks for Apparat,” “open game Snake,” or “open chat Release planning.” “Open Apparat” opens a unique exact match. When names collide, the chooser shows numbered paths including the owning project for each thread. The chooser occupies the middle two-thirds of the screen in each dimension. Tap the dimmed area to dismiss it and return to the same page. Answer “the project,” “the second one” or “cancel,” or select a row. A partial or near match always asks before opening. With no match you can retry or cancel in place.
