@@ -56,8 +56,8 @@ func emojiIcon(name string) *ebiten.Image {
 		source := ebiten.NewImageFromImage(decoded)
 		icon = ebiten.NewImage(tabIconSize, tabIconSize)
 		options := &ebiten.DrawImageOptions{Filter: ebiten.FilterLinear}
-		// The monochrome Back artwork is dark gray. Draw its ink in white on the dark navigation button.
-		if name == "1f519" {
+		// The monochrome navigation artwork is dark gray. Draw its ink in white on the dark navigation button.
+		if name == "1f519" || name == "2795" {
 			options.ColorScale.Scale(255.0/49, 255.0/55, 255.0/61, 1)
 		}
 		options.GeoM.Scale(float64(tabIconSize)/float64(source.Bounds().Dx()), float64(tabIconSize)/float64(source.Bounds().Dy()))

@@ -1,6 +1,6 @@
 # Tab emoji artwork
 
-Four unmodified Twemoji v16.0.1 72x72 PNGs, by Twitter, Inc. and other contributors, licensed under CC BY 4.0; see [LICENSE-GRAPHICS](LICENSE-GRAPHICS).
+Unmodified Twemoji v16.0.1 72x72 PNGs, by Twitter, Inc. and other contributors, licensed under CC BY 4.0; see [LICENSE-GRAPHICS](LICENSE-GRAPHICS).
 
 Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 
@@ -15,3 +15,5 @@ Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 - `1f489.png`: STMPCK syringe from the same attributed Twemoji release.
 
 - `1f519.png`: 🔙 workspace Back, from the pinned Twemoji release above. Its dark monochrome ink is tinted white when drawn on the dark navigation button.
+
+- `2795.png`: ➕ prefix for pinned repository actions, from the same Twemoji release. The renderer tints it white for contrast.

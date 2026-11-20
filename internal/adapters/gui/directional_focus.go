@@ -172,7 +172,11 @@ func (g *Game) moveFocus(d image.Point) {
 	best := math.Inf(1)
 	index := -1
 	for i, t := range targets {
-		score := directionScore(r, t.w.GetWidget().Rect, d)
+		bounds := t.w.GetWidget().Rect
+		if t.pane != nil && t.pane != g.nav.target.pane {
+			bounds = bounds.Intersect(t.pane.ViewRect())
+		}
+		score := directionScore(r, bounds, d)
 		if score < best {
 			best = score
 			index = i

@@ -45,61 +45,6 @@ func (game *Game) buildCollapsedDetail(tabData hud.Tab) widget.PreferredSizeLoca
 	return game.buildDetailScroll(tabData, true)
 }
 
-const selectorListInset = 8
-
-func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widget.PreferredSizeLocateableWidget {
-	listContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Spacing(4),
-			widget.RowLayoutOpts.Padding(&widget.Insets{Left: selectorListInset, Right: selectorListInset, Top: 8, Bottom: 8}),
-		)),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.MinSize(game.masterListWidth(), 0),
-			widget.WidgetOpts.LayoutData(layoutData),
-		),
-	)
-	for index, section := range tabData.Sections {
-		if section.IsSelectorHeading() {
-			listContainer.AddChild(game.selectorHeading(section))
-			continue
-		}
-		sectionIndex := index
-		btn, subtitle := game.sectionButton(tabData, section, sectionIndex)
-		if game.selectedSectionIndex(tabData) == index {
-			btn.SetState(widget.WidgetChecked)
-		}
-		hasIcon := tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline)
-		if subtitle != nil || hasIcon {
-			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
-				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
-			btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
-			row.AddChild(btn)
-			if subtitle != nil {
-				row.AddChild(subtitle)
-			}
-			if hasIcon {
-				row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("1f9e0")),
-					widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-						HorizontalPosition: widget.AnchorLayoutPositionEnd, VerticalPosition: widget.AnchorLayoutPositionCenter,
-						Padding: &widget.Insets{Right: 12},
-					}))))
-			}
-			listContainer.AddChild(row)
-		} else {
-			listContainer.AddChild(btn)
-		}
-	}
-	scroll := widget.NewScrollContainer(
-		widget.ScrollContainerOpts.Content(listContainer),
-		widget.ScrollContainerOpts.Image(createScrollContainerImage()),
-		widget.ScrollContainerOpts.StretchContentWidth(),
-		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(layoutData)),
-	)
-	game.registerVerticalScroll(scroll)
-	return boundPreferredWidth(scroll, game.masterPanePreferredWidth)
-}
-
 func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 	width := float64(game.masterPanePreferredWidth() - 24)
 	heading := widget.NewContainer(
@@ -131,6 +76,9 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 	padding := &widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}
 	if tabData.ID() == hud.TabProjects {
 		padding.Left = 12
+		if projectEntryAction(section.ContentKind) {
+			padding.Left += tabIconSize + 4
+		}
 	}
 	width := game.masterPanePreferredWidth() - 2*selectorListInset - padding.Left - padding.Right
 	face := game.theme.ButtonTheme.TextFace
@@ -256,7 +204,7 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	for _, detail := range section.DetailSections {
 		sectionContainer.AddChild(game.buildSectionContainer(detail))
 	}
-	if section.ProjectID != "" || section.ContentKind == cloneRepoForm || section.ContentKind == initRepoForm || section.ContentKind == importRepoForm {
+	if section.ProjectID != "" || projectEntryAction(section.ContentKind) {
 		game.projectControls(sectionContainer, section)
 		return sectionContainer
 	}

@@ -81,6 +81,7 @@ Android GUI APKs use the `cmd/apparatmobile` binding package plus the tracked `a
 - `ebiten_shell.go`: Updates and draws the Ebitengine HUD shell.
 - `ebiten_shell_test.go`: Verifies updates and draws the Ebitengine HUD shell.
 - `layout_bounds.go`: Computes bounded tab and content geometry.
+- `selector_list.go`: Keeps repository entry actions fixed above the scrollable checkout list in both selector layouts.
 - `master_detail.go`: Builds selector and content-panel widgets.
 - `research_contributions.go`: Builds and sorts local mock research contribution rows.
 - `research_contributions_test.go`: Verifies builds and sorts local mock research contribution rows.
