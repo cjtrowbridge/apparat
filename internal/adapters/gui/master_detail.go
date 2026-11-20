@@ -277,15 +277,17 @@ func (game *Game) chatComposer() *widget.Container {
 			widget.GridLayoutOpts.Spacing(6, 0),
 		)),
 	)
-	input := widget.NewTextInput(
-		widget.TextInputOpts.Face(game.theme.ButtonTheme.TextFace),
-		widget.TextInputOpts.Placeholder("Type a mock reply…"),
-		widget.TextInputOpts.SubmitOnEnter(false),
-		widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(panelColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}),
-		widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}),
-		widget.TextInputOpts.Padding(&widget.Insets{Left: 10, Right: 10, Top: 8, Bottom: 8}),
-		widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, tabHeight), widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight})),
-	)
+	input := game.editorForLayout("mock reply", func() *widget.TextInput {
+		return widget.NewTextInput(
+			widget.TextInputOpts.Face(game.theme.ButtonTheme.TextFace),
+			widget.TextInputOpts.Placeholder("Type a mock reply…"),
+			widget.TextInputOpts.SubmitOnEnter(false),
+			widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(panelColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}),
+			widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}),
+			widget.TextInputOpts.Padding(&widget.Insets{Left: 10, Right: 10, Top: 8, Bottom: 8}),
+			widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, tabHeight), widget.WidgetOpts.LayoutData(widget.GridLayoutData{MaxHeight: tabHeight})),
+		)
+	})
 	composer.AddChild(input)
 	composer.AddChild(widget.NewButton(
 		widget.ButtonOpts.Text("Send", game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),

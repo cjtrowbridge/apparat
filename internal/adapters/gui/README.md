@@ -143,7 +143,7 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 
 - `workspace.go`: Presents the local workspace through the Projects detail pane.
 
-- `workspace_controller.go`: In Projects, D-pad up/down traverses and reveals touch-sized controls, the south face button activates, and the east face button returns to the workspace menu or list. Text entry uses the platform keyboard.
+- `workspace_controller.go`: Routes arrow keys and the D-pad to the same directional actions across tabs. Owns key repeat, activation, back and text-edit input precedence.
 
 - `workspace_layout.go`: Keeps the active file's text input attached across layout rebuilds so its focus, caret and selection survive a window resize. The detail viewport retains its proportional scroll position within the same workspace view.
 - `workspace_layout_test.go`: Exercises the split and single-pane layouts with a selected draft and a conflict report, and checks that a different file starts with fresh presentation state.
@@ -175,4 +175,8 @@ clears its visual state. R2 is no longer a PTT binding.
 
 Linux updates use the existing Settings card. Check downloads and verifies the current qualified artifact; Install update atomically replaces the executable and keeps `.previous`; Restart Apparat closes GUI/core state before exec. Steam continues tracking the same process and path. Failures keep installed bytes and show safe retry text. Closing cancels and joins the worker and deletes staged candidates.
 
-The embedded gallery toolbar centers popularity, friends, discovery and settings in that order, including matching click targets. The host tab order is unchanged and the pinned standalone game source remains untouched.
+The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star, friends, discovery and settings. Side and bottom tab placements release the full top edge to the gallery. Top tabs reserve only the navigation strip and gap. The renderer, pointer and directional focus use the same toolbar rectangles, and tile layout and scroll bounds use the compact header height. The host tab order is unchanged and the pinned standalone game source remains untouched.
+
+- `directional_focus.go`: resolves live widget geometry, viewport reveal and per-tab focus restoration.
+- `arcade_focus.go`: maps the same cursor onto embedded gallery controls and settings.
+- `directional_focus_test.go`: exercises the rendered tabs, scroll reveal, edit ownership and gallery handoff.

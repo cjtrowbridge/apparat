@@ -31,3 +31,6 @@
 [submodule "third_party/stmpck"]
 	path = third_party/stmpck
 	url = https://github.com/cjtrowbridge/stmpck.git
+[submodule "third_party/inference/pi"]
+	path = third_party/inference/pi
+	url = https://github.com/earendil-works/pi.git

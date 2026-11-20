@@ -2,9 +2,9 @@
 
 All GUI targets dispatch the same application actions for tabs, focus, activation, cancellation, context, scrolling, text entry, and push-to-talk.
 
-This is the target input contract. The current five-tab mockup implements tab selection and portions of pointer/touch behavior; complete focus movement, activation, back/context semantics, command palette, scrolling equivalence, configurable bindings, accessibility, and real voice effects remain planned until their Roadmap evidence is complete.
+This is the target input contract. The live HUD implements directional navigation on all six tabs. Phase 17 tracks broader device and accessibility qualification.
 
-The canonical top-level tab order is Comrades, Projects, Cluster, Research, Settings. Routing and Tasks are details within Cluster, not top-level tabs.
+The canonical top-level tab order is Comrades, Projects, Cluster, Research, STMPCK, Settings. Routing and Tasks are details within Cluster, not top-level tabs.
 
 ## Steam Deck
 
@@ -27,7 +27,7 @@ cancels a held capture rather than submitting it.
 ## Debian GUI
 
 - `Ctrl+PageUp` / `Ctrl+PageDown`: previous/next top-level tab.
-- `Alt+1` through `Alt+5`: Comrades, Projects, Cluster, Research, Settings. Routing and Tasks are selected within Cluster.
+- `Alt+1` through `Alt+6`: Comrades, Projects, Cluster, Research, STMPCK, Settings. Routing and Tasks are selected within Cluster.
 - `Tab` / `Shift+Tab`: next/previous focusable control.
 - Arrows: list, tree, grid, menu, and spatial focus movement.
 - `Enter`: activate or submit.
@@ -62,3 +62,24 @@ Headless mode has no HUD focus map and must not initialize Ebitengine. Control s
 - Scrolling has deterministic entry, movement, boundary, and exit behavior.
 - Bindings are configurable; conflicts and platform-reserved shortcuts are surfaced in Settings.
 - Push-to-talk renders recording, cancellation, queued, transcribing, failure, and completion states.
+
+
+## Directional navigation
+
+Arrow keys and the D-pad move the gold focus outline. Along the tab strip they
+select the adjacent tab immediately, wrapping at the ends. Move toward the page
+to enter its last focused control. On a top strip that means Down, on a bottom
+strip Up, on a left rail Right, and on a right rail Left. At the page edge move
+back toward the strip to return. Escape or B leaves the current edit, detail or
+workspace scope first.
+
+Within a page, move toward an adjacent button, field or checkbox. The outline
+scrolls into view. Enter or A activates it, and Space activates buttons and
+toggles checkboxes. Tab and Shift+Tab step through HUD controls in layout order.
+Activate the pane divider to resize it with Left and Right. Enter, A, Escape or B finishes resizing. Activate a text field to edit. Its caret then owns the arrows. Escape or B
+leaves the field with its draft intact.
+
+In STMPCK the centered toolbar, intensity controls and three-column game grid
+share directional focus. Enter or A opens the focused game or activates the
+focused toolbar control. Embedded settings keep navigation inside the panel.
+Gameplay receives the game's own inputs. Back returns to the gallery.

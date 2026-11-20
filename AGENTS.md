@@ -73,6 +73,10 @@ Supporting ownership:
 - Do not add any file beneath `./third_party/salvagecore/` to the host repository.
 - Do not copy it wholesale. Reuse only behavior explicitly selected by `README.md`, `ROADMAP.md`, and an approved implementation plan.
 
+## HUD navigation governance
+
+Every new or changed HUD control must satisfy `docs/controller-map.md` and the navigation acceptance procedure in `playbooks/how_to_add_or_modify_hud_tab_contents.md`. Use the shared keyboard and D-pad route, including on custom-drawn surfaces. Preserve text-edit, modal and gameplay input ownership.
+
 ## Application Governance
 
 - Treat every new file or feature as undocumented until its purpose, operation, assumptions, failure modes, and verification path are recorded at the closest useful documentation layer.

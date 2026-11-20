@@ -38,13 +38,12 @@ func (g *Game) arcadeUpdate() bool {
 	}
 	top := 0
 	gallery := s.Selected < 0 && !s.Settings
-	if gallery {
-		top = 116
+	if gallery && g.sideRail() == "" && !g.bottomTabs() {
+		top = tabTop + tabHeight + bodyGap
 	}
 	width := g.width
 	s.OffsetX = 0
 	if gallery && g.sideRail() != "" {
-		top = 60
 		width = g.contentWidth() - windowMargin
 		if g.sideRail() == "left_rail" {
 			s.OffsetX = railGutter + windowMargin
@@ -52,7 +51,6 @@ func (g *Game) arcadeUpdate() bool {
 	}
 	bottom := 0
 	if gallery && g.bottomTabs() {
-		top = 60
 		bottom = diagnosticsHeight + tabHeight + bodyGap
 	}
 	w, h := s.Layout(width, max(1, g.height-top-bottom))
@@ -64,9 +62,13 @@ func (g *Game) arcadeUpdate() bool {
 		}
 		a.canvas = ebiten.NewImage(w, h)
 	}
+	wasSettings := s.Settings
 	_ = s.Update()
+	if wasSettings && s.Settings {
+		g.navigateInputs()
+	}
 	g.activeTabID.Store("stmpck")
-	return !gallery
+	return !gallery || s.Selected >= 0 || s.Settings
 }
 func (g *Game) arcadeDraw(dst *ebiten.Image) bool {
 	a := &g.arcade

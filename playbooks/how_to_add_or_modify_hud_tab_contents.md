@@ -112,3 +112,21 @@ If this occurs inside a git repo:
 * Review `git status` and relevant diffs.
 * Suggest a commit message that summarizes the completed tab-content checkpoint.
 * Commit after approved checkpoint completion.
+
+
+## Directional navigation acceptance
+
+Exercise each changed interactive control from the tab strip using arrows and
+again with the equivalent D-pad action. Check both a horizontal strip and a side
+rail. Verify the visible focus outline, offscreen reveal, entry and return,
+single activation, and focus recovery after resize or refresh. A disabled
+control or heading must be skipped. Include fixed controls outside scrolling
+panes. Give custom-rendered controls the same directional and activation path.
+
+For text inputs, check caret movement, draft preservation and leaving edit mode.
+For overlays and games, verify exclusive input and return to the launching
+scope. Extend the rendered-widget regression tests for new control types,
+layouts or input boundaries. Run the GUI tests through
+`python3 scripts/build_gate.py -- xvfb-run -a go test -race -tags gui ./internal/adapters/gui ./internal/hud`.
+Record which layouts and input sources were exercised, including any physical
+device checks still pending.

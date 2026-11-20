@@ -74,6 +74,14 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		}
 		contentLayout.Padding = inset
 	}
+	gallery := snapshot.ActiveTab().ID() == "stmpck"
+	if gallery {
+		titleRow := 0
+		if rail == "" && !bottom {
+			titleRow = 1
+		}
+		rows = append(rows[:titleRow], rows[titleRow+1:]...)
+	}
 	shell := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			widget.GridLayoutOpts.Columns(1),
@@ -93,10 +101,12 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		strip.GetWidget().LayoutData = anchor
 		root.AddChild(strip)
 	}
-	shell.AddChild(widget.NewText(
-		widget.TextOpts.Text(title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
-		widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth())),
-	))
+	if !gallery {
+		shell.AddChild(widget.NewText(
+			widget.TextOpts.Text(title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
+			widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth())),
+		))
+	}
 	body := game.buildActiveTabBody(snapshot)
 	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0, MaxWidth: game.hudPreferredWidth()}
 	shell.AddChild(body)
@@ -105,11 +115,27 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	}
 	root.AddChild(shell)
 
+	var old widget.Focuser
+	if game.ui != nil {
+		old = game.ui.GetFocusedWidget()
+	}
+	game.nav.body = body
+	changedTab := game.nav.owner != snapshot.ActiveTab().ID()
+	game.nav.owner = snapshot.ActiveTab().ID()
 	game.ui = &ebitenui.UI{
-		Container:    root,
-		PrimaryTheme: game.theme,
+		DisableDefaultFocus: true,
+		Container:           root,
+		PrimaryTheme:        game.theme,
 	}
 	game.finishWorkspaceLayout()
+	game.restoreEditing(old)
+	if game.nav.active && game.ui.GetFocusedWidget() == nil {
+		if changedTab || game.nav.strip {
+			game.focusStrip()
+		} else {
+			game.nav.target = focusTarget{} // Restore after the new tree has laid out.
+		}
+	}
 }
 
 func (game *Game) buildTabStrip(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {

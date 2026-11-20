@@ -669,6 +669,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
 - [x] Add inference and speech source references.
   - [x] Add `https://github.com/ggml-org/llama.cpp.git` at `third_party/inference/llama.cpp`.
   - [x] Mark llama.cpp as a future service adapter rather than an initial HUD binary dependency.
+  - [x] Add Pi at `third_party/inference/pi` as a pinned MIT-licensed multi-provider API and agent-toolkit source reference, without runtime integration. [Admission plan](plans/past/2026-11-20-09-00-00_add-pi-inference-submodule.md)
   - [x] Add `https://github.com/ggml-org/whisper.cpp.git` at `third_party/speech/whisper.cpp`.
   - [x] Mark whisper.cpp as the first portable local ASR reference.
 - [x] Define deferred source admission gates.
@@ -2218,6 +2219,8 @@ Phase 16 builds on local dictation and model selection from Phase 9B. Remote spe
 
 ## Phase 17: Packaging, Release Hardening, And Platform Support Evidence
 
+[Directional HUD navigation](plans/past/2026-11-20-10-00-00_directional-navigation.md) records local verification for arrow and D-pad routing across all six tabs. Physical-controller qualification remains open.
+
 **User outcome:** Users can install, run, diagnose, upgrade, and roll back honestly supported GUI/headless artifacts on each declared platform.
 
 **Dependencies:** Stable secure vertical slice, shared-core lifecycle, and continuous platform evidence from Phases 8–16.
@@ -2494,7 +2497,7 @@ Every focused implementation plan includes the applicable items below and its ph
 The MVP is complete only when the applicable cross-cutting requirements and all outcomes below have evidence.
 
 - [ ] Steam Deck HUD and input
-  - [ ] Controller navigation works across all five primary tabs.
+  - [ ] Controller navigation works across all six primary tabs, including the STMPCK gallery and Settings.
   - [x] Comrades is the first navigable future-facing tab.
   - [x] Research follows Cluster as a navigable future-facing tab.
   - [x] Settings is final.

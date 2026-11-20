@@ -43,6 +43,7 @@ const (
 )
 
 type Game struct {
+	nav                            navigation
 	voice                          voiceState
 	prefs                          preferenceState
 	projects                       projectForm
@@ -215,6 +216,7 @@ func (game *Game) Update() error {
 		game.setPTTHeld(false)
 	}
 	game.rightCtrlHeld = rightCtrl
+	game.navigateInputs()
 	game.updateGamepad()
 	game.pollSpeech()
 	{
@@ -259,7 +261,7 @@ func (game *Game) updateGamepad() {
 		if !ebiten.IsStandardGamepadLayoutAvailable(id) {
 			continue
 		}
-		game.projectPad(id)
+
 		l1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopLeft)
 		r1 := ebiten.IsStandardGamepadButtonPressed(id, ebiten.StandardGamepadButtonFrontTopRight)
 		l2 := ebiten.IsStandardGamepadButtonPressed(id, pttTriggerButton)
@@ -305,8 +307,10 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		game.ui.Draw(screen)
 	}
 	if game.arcadeDraw(screen) {
+		game.drawArcadeFocus(screen)
 		return
 	}
+	game.drawFocus(screen)
 	if game.pttButtonVisible() {
 		game.drawPTTButton(screen)
 	}

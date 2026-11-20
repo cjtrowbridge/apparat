@@ -11,7 +11,7 @@ A tracked source submodule is not automatically an Apparat build dependency. Go 
 | Game and HUD | [`game/README.md`](./game/README.md) | Cross-platform runtime, retained HUD controls, and developer diagnostics |
 | Database | [`database/README.md`](./database/README.md) | Cgo-free SQLite source and integration reference |
 | Networking | [`networking/README.md`](./networking/README.md) | WireGuard implementation, inspection, and configuration references |
-| Inference | [`inference/README.md`](./inference/README.md) | Local model-service references |
+| Inference | [`inference/README.md`](./inference/README.md) | Local model-service and agent-toolkit references |
 | Speech | [`speech/README.md`](./speech/README.md) | Local speech-service references |
 
 Each group inventory records the upstream URL, exact gitlink revision, license, purpose, and current relationship to the Apparat build.

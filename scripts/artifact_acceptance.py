@@ -167,6 +167,15 @@ def desktop_gui(binary, directory):
         x.XSync(display, 0)
         time.sleep(.7)
         run('import','-window',found[1],directory/'stmpck.png')
+        # Enter the gallery toolbar, then move down into the first game tile.
+        press(0xff0d)
+        press(0xff54)
+        run('import','-window',found[1],directory/'gallery-focus.png')
+        from PIL import Image
+        with Image.open(directory/'gallery-focus.png') as frame:
+            gold = frame.convert('RGB').getdata()
+            if sum(pixel == (255, 216, 96) for pixel in gold) < 100:
+                raise ValueError('Directional gallery focus outline missing')
         press(0xff0d)
         press(0xff0d)
         for direction in (0xff51, 0xff52, 0xff53, 0xff54):

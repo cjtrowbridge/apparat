@@ -61,13 +61,7 @@ func (g *Game) workspaceLineInput(c *widget.Container, w *workspacePanel, change
 		l.editor = g.newProjectInput(text, changed)
 		l.file, l.line, l.theme = w.path, w.line, g.theme
 	} else {
-		// AddChild installs these four parent forwarding handlers on every attachment.
-		// This input has no application subscriptions on those events.
-		v := l.editor.GetWidget()
-		v.FocusEvent = &event.Event{}
-		v.ContextMenuEvent = &event.Event{}
-		v.ToolTipEvent = &event.Event{}
-		v.DragAndDropEvent = &event.Event{}
+		reattachEditor(l.editor)
 	}
 	l.visible = true
 	c.AddChild(g.detailText("Edit line"), l.editor)
@@ -135,4 +129,14 @@ func (g *Game) workspaceNavButton(c *widget.Container, label string, active bool
 			click()
 		}
 	})))
+}
+
+func reattachEditor(editor *widget.TextInput) {
+	// AddChild installs these four parent forwarding handlers on every attachment.
+	// This input has no application subscriptions on those events.
+	v := editor.GetWidget()
+	v.FocusEvent = &event.Event{}
+	v.ContextMenuEvent = &event.Event{}
+	v.ToolTipEvent = &event.Event{}
+	v.DragAndDropEvent = &event.Event{}
 }

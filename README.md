@@ -47,7 +47,7 @@ The GUI includes the offline STMPCK gallery on Linux and Android. Its 💉 tab s
 
 The canonical order is Comrades, Projects, Cluster, Research, STMPCK, Settings.
 
-The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, 💉 STMPCK and ⚙️ Settings. All six fit at 320 logical pixels. Tab buttons have no popup tooltips. A prominent page heading below the icons names the active tab and remains visible while its content scrolls. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
+The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, 💉 STMPCK and ⚙️ Settings. All six fit at 320 logical pixels. Tab buttons have no popup tooltips. The active tab has a fixed page heading. STMPCK places its heading in the gallery toolbar, immediately before the star. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
 
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 
@@ -227,6 +227,8 @@ The default mouse mapping is:
 - Drag: resize approved panes, adjust sliders, select text, or perform an explicitly represented reorder operation.
 
 No essential operation may require pointer-only drag behavior. Complex drag operations must also expose keyboard and controller actions such as move up, move down, move before, move after, or resize by step. An additional mouse button may be configured for push-to-talk, but no mouse-specific push-to-talk binding is required by default.
+
+Arrows and the Steam Deck D-pad switch tabs immediately along the tab bar. Move toward the page to focus its controls. Enter or A activates the focused control or starts editing a field. Escape or B leaves editing with the draft intact. See [Input and Focus Contract](docs/controller-map.md).
 
 When a text editor or text field owns focus, ordinary Debian text-editing and clipboard behavior takes precedence over unmodified navigation keys. Global bindings use explicit modifiers so normal typing does not trigger application navigation.
 
@@ -602,6 +604,7 @@ The governance framework is not imported by the Apparat binary. Host build entry
 | `third_party/networking/wgctrl-go` | `https://github.com/WireGuard/wgctrl-go.git` | Go WireGuard control and inspection APIs |
 | `third_party/networking/wireguard-tools` | `https://git.zx2c4.com/wireguard-tools` | Linux and Steam Deck configuration reference |
 | `third_party/inference/llama.cpp` | `https://github.com/ggml-org/llama.cpp.git` | Future local LLM service adapter reference |
+| `third_party/inference/pi` | `https://github.com/earendil-works/pi.git` | Multi-provider LLM API and agent-toolkit source reference; no runtime integration |
 | `third_party/speech/whisper.cpp` | `https://github.com/ggml-org/whisper.cpp.git` | Portable local ASR reference |
 
 Ebitengine uses an exact, validated stable release; the current selected baseline is v2.10.6. Upgrade when concrete fixes or capabilities justify it and Linux/Android regression evidence is recorded. A development revision requires an unmet need plus explicit compatibility evidence; the initial 2.9.x baseline is not a permanent minor-version restriction.

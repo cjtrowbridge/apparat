@@ -2,6 +2,9 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-20-10-25-21 | plans/past/2026-11-20-10-30-00_compact-gallery-header.md | Compact embedded gallery header | Place STMPCK and its gallery controls together at the top of the available page.
+2026-11-20-10-19-30 | plans/past/2026-11-20-10-00-00_directional-navigation.md | Directional HUD navigation | Share arrow and D-pad focus across the tab strip, live controls and embedded gallery.
+2026-11-20-09-02-38 | plans/past/2026-11-20-09-00-00_add-pi-inference-submodule.md | Add Pi as an inference source submodule | Pin earendil-works/pi under third_party/inference and document its MIT license and source-reference role.
 2026-11-20-08-59-08 | plans/past/2026-11-20-08-49-00_left-trigger-ptt-feedback.md | Bind left trigger to PTT with matching button feedback | Replace R2 with L2 and show the same pressed PTT appearance for controller, pointer and keyboard holds.
 2026-11-20-08-46-39 | plans/past/2026-11-20-08-15-00_steam-deck-ui-and-linux-updates.md | Fix Steam Deck presentation and Linux updates | Move the embedded gallery gear, silence untargeted dictation, fill Gamescope and implement verified in-app Linux updates.
 2026-11-20-08-31-55 | plans/past/2026-11-20-00-20-00_steam-deck-local-install.md | Install Apparat persistently on Steam Deck | Install the qualified Linux GUI in the Deck home directory and register a native Gaming Mode launcher with a reusable deployment playbook.

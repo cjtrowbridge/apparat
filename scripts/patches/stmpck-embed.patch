@@ -1,8 +1,16 @@
 --- a/internal/app/game.go
 +++ b/internal/app/game.go
-@@ -19,6 +19,9 @@
+@@ -2,6 +2,7 @@
+ package app
+
+ import (
++	"image"
+ 	"image/color"
+ 	"math"
+ 	"math/rand/v2"
+@@ -19,6 +20,9 @@
  )
- 
+
  type Game struct {
 +	embedded                                            bool
 +	OffsetX, OffsetY                                    int
@@ -10,13 +18,18 @@
  	territoryDrafts                                     [3]play.Territory
  	territoryMaps                                       [3]uint64
  	territoryStarts                                     uint64
-@@ -58,9 +61,17 @@
+@@ -58,9 +62,22 @@
  	bloomChoice               int
  }
- 
+
 -func NewGame() *Game {
-+func NewGame() *Game                { return newGame("") }
-+func NewEmbedded(root string) *Game { g := newGame(root); g.embedded = true; return g }
++func NewGame() *Game { return newGame("") }
++func NewEmbedded(root string) *Game {
++	g := newGame(root)
++	g.embedded = true
++	g.CompactGallery = true
++	return g
++}
 +func (g *Game) local(x, y int) (int, int) {
 +	if g.InputScale == 0 {
 +		return x, y
@@ -29,8 +42,40 @@
 +	g.initGames(root)
  	return g
  }
- 
-@@ -205,16 +216,16 @@
+
+@@ -133,13 +150,16 @@
+ 			g.Settings = !g.Settings
+ 		}
+ 	}
++	if g.embedded && (g.Selected < 0 || g.Settings) {
++		up, down, left, right, enter, back = false, false, false, false, false, false
++	}
+ 	if back {
+ 		g.Back()
+ 	}
+ 	if inpututil.IsKeyJustPressed(ebiten.KeyH) || inpututil.IsKeyJustPressed(ebiten.KeyF1) {
+ 		g.Settings = !g.Settings
+ 	}
+-	if !g.Settings && g.Selected < 0 {
++	if !g.Settings && g.Selected < 0 && (!g.embedded || !ebiten.IsKeyPressed(ebiten.KeyAlt)) {
+ 		if inpututil.IsKeyJustPressed(ebiten.Key1) {
+ 			g.SetTab(menu.Personal)
+ 		}
+@@ -149,11 +169,11 @@
+ 		if inpututil.IsKeyJustPressed(ebiten.Key3) {
+ 			g.SetTab(menu.Discover)
+ 		}
+-		if inpututil.IsKeyJustPressed(ebiten.KeyTab) {
++		if !g.embedded && inpututil.IsKeyJustPressed(ebiten.KeyTab) {
+ 			g.SetTab((g.Tab + 1) % 3)
+ 		}
+ 		for _, id := range ebiten.AppendGamepadIDs(nil) {
+-			if ebiten.IsStandardGamepadLayoutAvailable(id) {
++			if !g.embedded && ebiten.IsStandardGamepadLayoutAvailable(id) {
+ 				if inpututil.IsStandardGamepadButtonJustPressed(id, ebiten.StandardGamepadButtonFrontTopRight) {
+ 					g.SetTab((g.Tab + 1) % 3)
+ 				}
+@@ -205,16 +225,16 @@
  		if len(ids) > 0 {
  			g.touch = true
  			g.touchID = ids[0]
@@ -50,7 +95,7 @@
  		held := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
  		if g.touch {
  			held = false
-@@ -224,7 +235,7 @@
+@@ -224,7 +244,7 @@
  				}
  			}
  			if held {
@@ -59,9 +104,27 @@
  			} else {
  				x, y = int(g.lx), int(g.ly)
  			}
-@@ -301,6 +312,9 @@
+@@ -234,7 +254,7 @@
+ 		if g.gesture == "" && g.travel >= 12 {
+ 			g.gesture = menu.Gesture(fx-g.sx, fy-g.sy)
+ 		}
+-		if held && g.gesture == "vertical" && g.Selected < 0 && !g.Settings && g.sy >= menu.Header {
++		if held && g.gesture == "vertical" && g.Selected < 0 && !g.Settings && g.sy >= float64(g.HeaderHeight()) {
+ 			g.Scroll -= fy - g.ly
+ 			g.Clamp(g.height)
+ 		}
+@@ -288,7 +308,7 @@
+ 						}
+ 					}
+ 				}
+-			} else if g.gesture == "horizontal" && math.Abs(fx-g.sx) > 48 && !g.Settings && g.sy >= menu.Header {
++			} else if g.gesture == "horizontal" && math.Abs(fx-g.sx) > 48 && !g.Settings && g.sy >= float64(g.HeaderHeight()) {
+ 				if fx < g.sx {
+ 					g.Cycle(1)
+ 				} else {
+@@ -301,6 +321,9 @@
  }
- 
+
  func (g *Game) begin(x, y float64) {
 +	if y < 0 || (g.embedded && (x < 0 || x >= float64(g.width) || y >= float64(g.height))) {
 +		return
@@ -69,12 +132,46 @@
  	g.pressed = true
  	g.sx = x
  	g.sy = y
+@@ -335,7 +358,25 @@
+ 		}
+ 		return
+ 	}
+-	if y < menu.Header {
++	if g.embedded && g.Selected < 0 && y < float64(g.HeaderHeight()) {
++		for i := 0; i < 6; i++ {
++			if image.Pt(int(x), int(y)).In(g.ToolbarRect(i)) {
++				switch i {
++				case 0:
++					g.Cycle(-1)
++				case 5:
++					g.Cycle(1)
++				case 4:
++					g.Settings = true
++				default:
++					g.SetTab(i - 1)
++				}
++				break
++			}
++		}
++		return
++	}
++	if y < float64(g.HeaderHeight()) {
+ 		if y < 44 {
+ 			switch {
+ 			case x >= float64(g.width-56):
+@@ -398,3 +439,6 @@
+ func label(dst *ebiten.Image, s string, x, y int, c color.Color) {
+ 	text.Draw(dst, s, basicfont.Face7x13, x, y, c)
+ }
++
++// ActivateMenu applies the same hit testing as a pointer release in the embedded menu.
++func (g *Game) ActivateMenu(x, y float64) { g.activate(x, y) }
 --- a/internal/app/play.go
 +++ b/internal/app/play.go
 @@ -12,9 +12,12 @@
  	"github.com/hajimehoshi/ebiten/v2/inpututil"
  )
- 
+
 -func (g *Game) initGames() {
 +func (g *Game) initGames(root string) {
  	g.games = play.NewCollection()
@@ -88,34 +185,64 @@
  	installLifecycle(g)
 --- a/internal/app/draw.go
 +++ b/internal/app/draw.go
-@@ -70,15 +70,23 @@
- 	} else {
- 		if g.Tab == menu.Worldwide && !g.HasGlobalRanking {
- 			label(screen, "Popularity estimate", 16, 31, p.muted)
--		} else {
-+		} else if !g.embedded {
- 			label(screen, "STMPCK", 20, 31, p.ink)
- 		}
+@@ -33,14 +33,15 @@
  	}
--	emoji(screen, "2699", float64(g.width-28), 26, 26)
-+	if !g.embedded || g.Selected >= 0 {
-+		emoji(screen, "2699", float64(g.width-28), 26, 26)
-+	}
- 	cx := float64(g.width) / 2
+ 	screen.Fill(p.background)
  	if g.Selected < 0 {
--		for i, name := range []string{"2b50", "1f465", "2728"} {
--			tx := cx + float64(i-1)*52
-+		names := []string{"2b50", "1f465", "2728"}
-+		spacing := 52.0
-+		if g.embedded {
-+			names = append(names, "2699")
-+			spacing = 44
-+		}
-+		for i, name := range names {
-+			tx := cx + (float64(i)-float64(len(names)-1)/2)*spacing
- 			emoji(screen, name, tx, 67, 28)
- 			if i == g.Tab {
- 				line(screen, tx-16, 87, tx+16, 87, 2, p.a)
+-		body := screen.SubImage(image.Rect(0, min(menu.Header, g.height), g.width, g.height)).(*ebiten.Image)
++		header := g.HeaderHeight()
++		body := screen.SubImage(image.Rect(0, min(header, g.height), g.width, g.height)).(*ebiten.Image)
+ 		order := g.galleryOrder
+ 		if len(order) == 0 {
+-			centered(body, "All games explored", float64(g.width)/2, menu.Header+60, p.ink)
++			centered(body, "All games explored", float64(g.width)/2, float64(header+60), p.ink)
+ 		}
+ 		for i, id := range order {
+ 			x, y, w, _ := g.TileRect(i, g.width)
+-			if y+float64(g.RowHeight) < menu.Header || y > float64(g.height) {
++			if y+float64(g.RowHeight) < float64(header) || y > float64(g.height) {
+ 				continue
+ 			}
+ 			rect(body, x, y, w, float64(g.RowHeight-14), p.panel)
+@@ -53,16 +54,21 @@
+ 			line(body, x+w-22, y+18, x+w-14, y+18, 1, p.muted)
+ 			line(body, x+w-14, y+18, x+w-14, y+26, 1, p.muted)
+ 		}
+-		if float64(g.Rows()*g.RowHeight+menu.Header+menu.Footer) > float64(g.height) {
+-			track := float64(g.height - menu.Header - menu.Footer)
++		if float64(g.Rows()*g.RowHeight+header+menu.Footer) > float64(g.height) {
++			track := float64(g.height - header - menu.Footer)
+ 			thumb := math.Max(20, track*track/float64(g.Rows()*g.RowHeight))
+-			y := menu.Header + g.Scroll/(float64(g.Rows()*g.RowHeight)-track)*(track-thumb)
++			y := float64(header) + g.Scroll/(float64(g.Rows()*g.RowHeight)-track)*(track-thumb)
+ 			rect(screen, float64(g.width)-6, y, 2, thumb, p.muted)
+ 		}
+ 	} else {
+ 		g.drawPlay(screen, p)
+ 	}
+
++	if g.embedded && g.Selected < 0 {
++		g.drawGalleryToolbar(screen, p)
++		g.drawSparkles(screen, p)
++		return
++	}
+ 	// Header is fixed while the gallery scrolls.
+ 	rect(screen, 0, 0, float64(g.width), menu.Header, p.background)
+ 	if g.Selected >= 0 {
+@@ -158,8 +164,12 @@
+ 		}
+ 		centered(dst, fmt.Sprint(i), x+(choiceWidth-4)/2, 386, p.ink)
+ 	}
++	menuHelp := "Menu arrows: intensity / browse."
++	if g.embedded {
++		menuHelp = "Arrows / D-pad: move focus. Enter / A: choose."
++	}
+ 	lines := []string{
+-		"Menu arrows: intensity / browse.",
++		menuHelp,
+ 		"Game arrows: move. Enter: confirm.",
+ 		"Space / pad Y: pause. R: new game.",
+ 		"Merge U: undo. S: symbols.",
 --- /dev/null
 +++ b/surface/surface.go
 @@ -0,0 +1,9 @@
@@ -128,46 +255,141 @@
 +type Game = app.Game
 +
 +func New(root string) *Game { return app.NewEmbedded(root) }
---- a/internal/app/game.go
-+++ b/internal/app/game.go
-@@ -338,20 +338,34 @@
- 	if y < menu.Header {
- 		if y < 44 {
- 			switch {
--			case x >= float64(g.width-56):
-+			case x >= float64(g.width-56) && (!g.embedded || g.Selected >= 0):
- 				g.Settings = true
- 			case x < 64 && g.Selected >= 0:
- 				g.Back()
- 			}
- 		} else if y < menu.Header {
--			if x >= 16 && x <= 84 {
-+			edge := 84.0
-+			if g.embedded && g.Selected < 0 {
-+				edge = 72
-+			}
-+			if x >= 16 && x <= edge {
- 				g.Cycle(-1)
--			} else if x >= float64(g.width-84) && x <= float64(g.width-16) {
-+			} else if x >= float64(g.width)-edge && x <= float64(g.width-16) {
- 				g.Cycle(1)
- 			} else if g.Selected < 0 {
--				for i := 0; i < 3; i++ {
--					if math.Abs(x-(float64(g.width)/2+float64(i-1)*52)) <= 22 {
--						g.SetTab(i)
-+				count := 3
-+				spacing := 52.0
-+				if g.embedded {
-+					count = 4
-+					spacing = 44
-+				}
-+				for i := 0; i < count; i++ {
-+					if math.Abs(x-(float64(g.width)/2+(float64(i)-float64(count-1)/2)*spacing)) <= 22 {
-+						if i == 3 {
-+							g.Settings = true
-+						} else {
-+							g.SetTab(i)
-+						}
- 					}
- 				}
- 			}
+--- a/internal/menu/state.go
++++ b/internal/menu/state.go
+@@ -43,6 +43,7 @@
+ var IntensityLabels = [...]string{"🙂", "🙂", "🙂", "🤩", "🤩", "🤩", "🤩", "🤩"}
+
+ type State struct {
++	CompactGallery   bool
+ 	RowHeight        int
+ 	Tab              int
+ 	Sound            bool
+@@ -123,8 +124,15 @@
+ 	s.Scroll = 0
+ }
+
++func (s *State) HeaderHeight() int {
++	if s.CompactGallery && s.Selected < 0 {
++		return 48
++	}
++	return Header
++}
++
+ func (s *State) Clamp(height int) {
+-	limit := math.Max(0, float64(s.Rows()*s.RowHeight+Header+Footer-height))
++	limit := math.Max(0, float64(s.Rows()*s.RowHeight+s.HeaderHeight()+Footer-height))
+ 	s.Scroll = math.Max(0, math.Min(limit, s.Scroll))
+ }
+
+@@ -135,8 +143,8 @@
+ 	if top < 0 {
+ 		s.Scroll += top
+ 	}
+-	if bottom > float64(height-Header-Footer) {
+-		s.Scroll += bottom - float64(height-Header-Footer)
++	if bottom > float64(height-s.HeaderHeight()-Footer) {
++		s.Scroll += bottom - float64(height-s.HeaderHeight()-Footer)
+ 	}
+ 	s.Clamp(height)
+ }
+@@ -176,11 +184,11 @@
+ 	w = TileWidth(width)
+ 	h = float64(s.RowHeight - 14)
+ 	x = 16 + float64(index%Columns)*(w+Gap)
+-	y = float64(Header+(index/Columns)*s.RowHeight) - s.Scroll
++	y = float64(s.HeaderHeight()+(index/Columns)*s.RowHeight) - s.Scroll
+ 	return
+ }
+ func (s *State) TileAt(x, y float64, width int) int {
+-	if y < Header {
++	if y < float64(s.HeaderHeight()) {
+ 		return -1
+ 	}
+ 	for i := range s.Order() {
+--- a/internal/app/preview.go
++++ b/internal/app/preview.go
+@@ -62,7 +62,7 @@
+ 	var visible [play.Count]bool
+ 	for i, id := range g.galleryOrder {
+ 		_, y, _, h := g.TileRect(i, g.width)
+-		visible[id] = y+h > menu.Header && y < float64(g.height)
++		visible[id] = y+h > float64(g.HeaderHeight()) && y < float64(g.height)
+ 	}
+ 	protected := func(key previewKey) bool { return key.style == style && visible[key.id] }
+ 	select {
+--- a/internal/app/effects.go
++++ b/internal/app/effects.go
+@@ -75,7 +75,7 @@
+ 		x := 8 + sparkleRandom(seed)*math.Max(0, float64(g.width)-16)
+ 		y := 8 + sparkleRandom(seed+1)*math.Max(0, float64(g.height)-16)
+ 		// Preserve the header controls' hit targets and legibility.
+-		if y < menu.Header && (y < 92 || x < 90 || x > float64(g.width-90)) {
++		if y < float64(g.HeaderHeight()) && (y < 92 || x < 90 || x > float64(g.width-90)) {
+ 			continue
+ 		}
+ 		envelope := math.Pow(math.Sin(math.Pi*age/life), 2)
+--- /dev/null
++++ b/internal/app/gallery_toolbar.go
+@@ -0,0 +1,61 @@
++// Geometry shared by embedded toolbar rendering, pointer activation and host focus.
++package app
++
++import (
++	"ebe-boilerplate/internal/menu"
++	"github.com/hajimehoshi/ebiten/v2"
++	"image"
++)
++
++// ToolbarRect returns the local target for intensity down, the four gallery
++// icons, or intensity up. The title occupies a non-interactive slot before star.
++func (g *Game) ToolbarRect(i int) image.Rectangle {
++	w := g.width
++	slot := min(44, max(1, (w-48)/6))
++	groupLeft := (w - 48 - 4*slot) / 2
++	x := groupLeft + 48 + (i-1)*slot
++	if i == 0 {
++		return image.Rect(0, 0, min(groupLeft, 76), 44)
++	}
++	if i == 5 {
++		return image.Rect(max(w-76, groupLeft+48+4*slot), 0, w, 44)
++	}
++	return image.Rect(x, 0, x+slot, 44)
++}
++
++func (g *Game) drawGalleryToolbar(dst *ebiten.Image, p palette) {
++	rect(dst, 0, 0, float64(g.width), float64(g.HeaderHeight()), p.background)
++	label(dst, "STMPCK", g.ToolbarRect(1).Min.X-46, 27, p.ink)
++	for i, name := range []string{"2b50", "1f465", "2728", "2699"} {
++		r := g.ToolbarRect(i + 1)
++		cx := float64(r.Min.X+r.Max.X) / 2
++		emoji(dst, name, cx, 22, float64(min(28, r.Dx())))
++		if i == g.Tab {
++			line(dst, cx-12, 40, cx+12, 40, 2, p.a)
++		}
++	}
++	for _, i := range []int{0, 5} {
++		r := g.ToolbarRect(i)
++		cx := float64(r.Min.X+r.Max.X) / 2
++		d := 1
++		name := "1f929"
++		if i == 0 {
++			d = -1
++			name = "1f642"
++		}
++		ink := p.ink
++		if g.Theme+d < 0 || g.Theme+d >= len(menu.IntensityLabels) {
++			ink = p.muted
++		}
++		if r.Dx() >= 56 {
++			emoji(dst, name, cx-float64(d)*13, 22, 24)
++			cx += float64(d) * 15
++		}
++		chevron(dst, cx, 22, float64(d), ink)
++	}
++	line(dst, 8, 46, float64(g.width-8), 46, 1, p.edge)
++	if g.Tab == menu.Worldwide && !g.HasGlobalRanking {
++		rect(dst, 0, float64(g.height-menu.Footer), float64(g.width), menu.Footer, p.background)
++		label(dst, "Popularity estimate", 16, g.height-7, p.muted)
++	}
++}

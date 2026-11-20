@@ -188,3 +188,5 @@ fail the gate. Xvfb qualification explicitly sets `EGL_PLATFORM=x11` for its chi
 process: an inherited Wayland EGL platform can crash before window creation.
 This affects host verification only, not the installed Steam Deck graphics driver
 or the parent desktop environment.
+
+Linux GUI artifact qualification enters the STMPCK toolbar with Enter, uses Down to focus the first tile, checks the rendered outline in `gallery-focus.png`, then opens Merge and verifies its saved move.
