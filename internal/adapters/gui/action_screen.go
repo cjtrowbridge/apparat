@@ -26,6 +26,7 @@ type actionScreen struct {
 	returnStrip         bool
 	pane                *widget.ScrollContainer
 	stopSpeech          context.CancelFunc
+	background          *ebitenui.UI
 }
 
 func (g *Game) stopChoiceSpeech() {
@@ -94,8 +95,9 @@ func (g *Game) backActionScreen() {
 	query := g.actions.query
 	g.closeActionScreen()
 	if browse {
-		g.openActionBrowser()
-		g.actions.query = query
+		g.actions = actionScreen{mode: "browse", query: query, returnStrip: g.nav.strip}
+		g.resetActionFocus()
+		return
 	}
 	g.rebuildUI(g.shell.Snapshot())
 }
@@ -103,6 +105,9 @@ func (g *Game) actionNotice(prompt string, choices []hud.Destination) {
 	a := &g.actions
 	if a.mode == "" {
 		a.returnStrip = g.nav.strip
+	}
+	if a.mode != "choose" {
+		a.background = g.ui
 	}
 	a.focusIndex = 0
 	a.returnToBrowser = a.returnToBrowser || a.mode == "browse"
@@ -175,7 +180,7 @@ func (g *Game) buildActionScreen() {
 	g.divider = nil
 	c := g.selectorRows()
 	if a.mode == "browse" {
-		c.AddChild(g.hudText("Actions"))
+		c.AddChild(g.hudText("Command directory"))
 		g.projectButton(c, "Back to Settings", g.backActionScreen)
 		c.AddChild(g.hudText("Try “open Projects” or “switch to Settings”."))
 		field := g.editorForLayout("Search actions", func() *widget.TextInput {
@@ -209,7 +214,7 @@ func (g *Game) buildActionScreen() {
 			g.actionRow(c, v.Path, v.Address)
 		}
 	} else {
-		c.AddChild(g.hudText(a.prompt))
+		c.AddChild(widget.NewText(widget.TextOpts.Text(a.prompt, g.theme.ButtonTheme.TextFace, g.theme.LabelTheme.Color.Idle), widget.TextOpts.MaxWidth(float64(g.choiceBounds().Dx()-32))))
 		for i, v := range a.choices {
 			g.actionRow(c, fmt.Sprintf("%d. %s · %s", i+1, v.Address.Kind, v.Path), v.Address)
 		}
@@ -222,7 +227,11 @@ func (g *Game) buildActionScreen() {
 	a.pane = scroll
 	g.verticalScrolls = []*widget.ScrollContainer{scroll}
 	root := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout(widget.AnchorLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 80}))))
-	root.AddChild(boundPreferredWidth(scroll, g.hudPreferredWidth))
+	if a.mode == "choose" {
+		root = g.choiceRoot(scroll)
+	} else {
+		root.AddChild(boundPreferredWidth(scroll, g.hudPreferredWidth))
+	}
 	old := g.ui.GetFocusedWidget()
 	g.ui = &ebitenui.UI{DisableDefaultFocus: true, Container: root, PrimaryTheme: g.theme}
 	g.nav.body = scroll
@@ -231,8 +240,19 @@ func (g *Game) buildActionScreen() {
 	g.restoreEditing(old)
 }
 
-func (g *Game) actionSettings(c *widget.Container) {
-	g.projectButton(c, "Actions", g.openActionBrowser)
+func (g *Game) settingsCardControls(c *widget.Container, id string) {
+	switch id {
+	case "hud-configuration", "navigation-layout":
+		g.preferenceControls(c, id)
+	case "speech-recognition":
+		g.speechSettings(c)
+	case "command-directory":
+		g.projectButton(c, "Browse available commands", g.openActionBrowser)
+		g.spokenChoiceSetting(c)
+	}
+}
+
+func (g *Game) spokenChoiceSetting(c *widget.Container) {
 	for _, name := range []string{"espeak-ng", "espeak"} {
 		_, err := exec.LookPath(name)
 		if err == nil || g.runtimeInfo.SpeakChoice != nil {
@@ -251,7 +271,11 @@ func (g *Game) actionSettings(c *widget.Container) {
 }
 
 func (g *Game) actionRow(c *widget.Container, label string, id hud.ActionAddress) {
-	g.projectButton(c, wrapSelectorLabel(label, *g.theme.ButtonTheme.TextFace, g.hudPreferredWidth()-60), func() {
+	width := g.hudPreferredWidth()
+	if g.actions.mode == "choose" {
+		width = g.choiceBounds().Dx()
+	}
+	g.projectButton(c, wrapSelectorLabel(label, *g.theme.ButtonTheme.TextFace, width-60), func() {
 		g.invokeAction(id)
 	})
 }

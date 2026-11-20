@@ -326,16 +326,10 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 		}
 		sectionContainer.AddChild(game.hudText(strings.ToUpper(section.Title)))
 
-		if section.Title == "HUD Configuration" {
-			game.actionSettings(sectionContainer)
-			game.preferenceControls(sectionContainer)
-			content.AddChild(sectionContainer)
-			continue
-		}
 		if section.Description != "" {
 			sectionContainer.AddChild(game.hudText(section.Description))
 		}
-
+		game.settingsCardControls(sectionContainer, section.ActionID)
 		for _, row := range section.Rows {
 			rowText := row.Label
 			if row.Detail != "" {

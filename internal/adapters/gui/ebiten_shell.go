@@ -317,6 +317,13 @@ func (game *Game) selectTabWithReveal(index int) {
 
 func (game *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(backgroundColor)
+	bg := game.actions.background
+	if bg != nil {
+		bg.Draw(screen)
+		if !game.actions.returnToBrowser {
+			game.arcadeDraw(screen)
+		}
+	}
 	if game.ui != nil {
 		game.ui.Draw(screen)
 		game.revealSetting()

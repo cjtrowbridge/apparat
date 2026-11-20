@@ -71,7 +71,7 @@ func (g *Game) registerSettingsActions(add registerAction, index int, tab hud.Ta
 			g.selectTab(index, nil)
 		})
 	}
-	add("screen", owner, "actions", "Actions", "Settings / Actions", g.openActionBrowser)
+	add("screen", owner, "actions", "Command directory", "Settings / Voice Commands / Command directory", g.openActionBrowser)
 }
 
 func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab) {

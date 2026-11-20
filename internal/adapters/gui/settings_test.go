@@ -25,10 +25,13 @@ func TestSettingsContentIncludesAllSections(t *testing.T) {
 	content := buildSettingsContentForTest(t, game)
 	labels := collectTextLabels(content)
 
-	for _, want := range []string{"UPDATES", "HUD CONFIGURATION", "BINDINGS", "DIAGNOSTICS"} {
+	for _, want := range []string{"UPDATES", "VOICE COMMANDS", "APPEARANCE", "NAVIGATION AND WINDOW", "SPEECH RECOGNITION", "BINDINGS", "DIAGNOSTICS"} {
 		if !containsLabel(labels, want) {
 			t.Fatalf("settings labels missing %q in %#v", want, labels)
 		}
+	}
+	if findButtonByLabel(content, "Browse available commands") == nil {
+		t.Fatal("missing command directory button")
 	}
 	if findButtonByLabel(content, "Check for update") != nil {
 		t.Fatal("desktop Settings unexpectedly offers an update check")

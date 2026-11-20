@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-20-12-29-18 | plans/past/2026-11-20-13-00-00_settings-command-dialog.md | Clarify Settings and voice choices | Restore the PTT label and present choices over the current page.
 2026-11-20-12-07-09 | plans/past/2026-11-20-12-30-00_ptt-lock.md | Lock PTT with a double tap | Retain a single capture across quick taps and verify target delivery.
 2026-11-20-12-00-36 | plans/past/2026-11-20-12-15-00_action-catalog.md | Searchable actions and offline voice navigation | Resolve navigation against current destinations and preserve exclusive dictation.
 2026-11-20-11-12-30 | plans/past/2026-11-20-11-45-00_pinned-project-actions.md | Pin Projects repository actions | Keep the three plus-prefixed entry actions visible above scrolling checkouts.

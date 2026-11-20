@@ -1714,7 +1714,7 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
 
 ### Local action discovery and voice navigation
 
-- Deliver deterministic final-transcript navigation and a searchable full-screen Settings Actions directory over the same feature-owned destinations.
+- Deliver deterministic final-transcript navigation and a searchable full-screen command directory in Settings → Voice Commands over the same feature-owned destinations.
 - Preserve exclusive dictation when PTT starts in a text field. Verify unique matches, confirmed suggestions, ambiguous choices, spoken feedback, cancellation and stale targets.
 - Keep catalog addresses independent of caller permission. Future task and launch configuration providers, webhooks and schedules can reference stable operations and target IDs. Execution requires its own eligibility and authorization checks.
 

@@ -244,6 +244,10 @@ func (game *Game) contentWidth() int {
 }
 
 func (game *Game) pttCenter() (int, int) {
+	if game.actions.mode == "choose" {
+		bounds := game.choiceBounds()
+		return bounds.Max.X - pttRadius - 8, bounds.Max.Y - pttRadius - 4
+	}
 	if game.actions.mode != "" {
 		return game.width - windowMargin - pttRadius, game.height - pttRadius - 4
 	}

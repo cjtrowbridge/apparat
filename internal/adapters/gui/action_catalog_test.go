@@ -11,6 +11,7 @@ import (
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/ebitenui/ebitenui/event"
 	"github.com/ebitenui/ebitenui/widget"
 )
 
@@ -86,6 +87,8 @@ func TestActionBrowserAndExclusiveDictation(t *testing.T) {
 		if f.GetText() != "open Projects" || g.actions.mode != "browse" {
 			t.Fatal("search dictation invoked a command")
 		}
+		f.ChangedEvent.Fire(&widget.TextInputChangedEventArgs{TextInput: f, InputText: f.GetText()})
+		event.ExecuteDeferred()
 		g.ui.ClearFocus()
 		g.voiceCommand("open project Solving Incompletenes")
 		if g.actions.mode != "choose" || len(g.actions.choices) != 1 {
@@ -93,12 +96,23 @@ func TestActionBrowserAndExclusiveDictation(t *testing.T) {
 		}
 		renderNavigation(g)
 		rect := g.bodyTargets()[0].w.GetWidget().Rect
-		if rect.Empty() || !rect.In(image.Rect(0, 0, width, 800)) {
+		bounds := image.Rect(width/6, 800/6, width-width/6, 800-800/6)
+		if bounds != g.choiceBounds() || rect.Empty() || !rect.In(bounds) {
 			t.Fatal("choice outside screen", rect)
 		}
-		g.voiceCommand("cancel")
-		if g.actions.mode != "browse" {
-			t.Fatal("cancel did not restore directory")
+		root := g.ui.Container.GetWidget()
+		tap := func(x, y int) {
+			root.MouseButtonPressedEvent.Fire(&widget.WidgetMouseButtonPressedEventArgs{Widget: root, OffsetX: x, OffsetY: y})
+			root.MouseButtonReleasedEvent.Fire(&widget.WidgetMouseButtonReleasedEventArgs{Widget: root, OffsetX: x, OffsetY: y, Inside: true})
+			event.ExecuteDeferred()
+		}
+		tap(width/2, 400)
+		if g.actions.mode != "choose" {
+			t.Fatal("inside tap dismissed clarification")
+		}
+		tap(2, 2)
+		if g.actions.mode != "browse" || g.actions.query != "open Projects" {
+			t.Fatalf("outside tap returned to mode %q, query %q", g.actions.mode, g.actions.query)
 		}
 		g.voiceCommand("open nonexistentxyz")
 		if !strings.Contains(g.actions.prompt, "nonexistentxyz") {
