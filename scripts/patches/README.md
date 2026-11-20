@@ -11,3 +11,5 @@ retain their original input handling. Exercise the gallery focus and Merge save
 checks whenever this patch or its pinned upstream changes.
 
 The STMPCK surface exposes its game-name table in stable game-ID order so the Actions catalog and gallery share the same destinations.
+
+The embedded title Bubble Volley identifies the bubble-matching game. The Cluster tab owns the spoken name “Cluster”. Keep the numeric game ID and storage key stable when changing display names. Verify bare “open” commands with `make test-hud-navigation`.

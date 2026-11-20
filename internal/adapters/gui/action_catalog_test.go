@@ -15,6 +15,29 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
+func TestGameAndTabSpokenNames(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	for _, item := range g.actionCatalog() {
+		if item.Address.Kind != "game" && item.Address.Kind != "tab" {
+			continue
+		}
+		match := g.queryActions("open "+item.Name, true)
+		if !match.Exact || len(match.Choices) != 1 || match.Choices[0].Address != item.Address {
+			t.Fatalf("open %s must resolve uniquely to %v, got %+v", item.Name, item.Address, match)
+		}
+	}
+	for phrase, want := range map[string]hud.ActionAddress{
+		"open cluster":       {Operation: "open", Kind: "tab", Target: "cluster"},
+		"open bubble volley": {Operation: "open", Kind: "game", Owner: "stmpck", Target: "14"},
+	} {
+		match := g.queryActions(phrase, true)
+		if !match.Exact || len(match.Choices) != 1 || match.Choices[0].Address != want {
+			t.Fatalf("%q resolved to %+v, want %v", phrase, match, want)
+		}
+	}
+}
+
 func TestCatalogFollowsRegistrations(t *testing.T) {
 	g := NewGame()
 	defer g.Close()

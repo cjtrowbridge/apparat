@@ -264,6 +264,15 @@
 +}
 --- a/internal/menu/state.go
 +++ b/internal/menu/state.go
+@@ -19,7 +19,7 @@
+ // Synthetic familiarity weights, not measured market share. See menu-tabs plan.
+ var PlaceholderPopularity = [Count]int{90, 100, 60, 70, 80, 55, 50, 65, 75, 85, 58, 78, 98, 92, 72, 82, 76, 68}
+
+-var Names = [Count]string{"Merge", "Snake", "Territory", "Linear", "Bounce", "Flow", "Caliban", "Bloom", "Echo", "Brick", "Planets", "Drift", "Stack", "Deduction", "Cluster", "Wave", "Crossing", "Shift"}
++var Names = [Count]string{"Merge", "Snake", "Territory", "Linear", "Bounce", "Flow", "Caliban", "Bloom", "Echo", "Brick", "Planets", "Drift", "Stack", "Deduction", "Bubble Volley", "Wave", "Crossing", "Shift"}
+
+ const (
+ 	Personal = iota
 @@ -43,6 +43,7 @@
  var IntensityLabels = [...]string{"🙂", "🙂", "🙂", "🤩", "🤩", "🤩", "🤩", "🤩"}
 
