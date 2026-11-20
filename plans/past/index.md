@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-20-08-46-39 | plans/past/2026-11-20-08-15-00_steam-deck-ui-and-linux-updates.md | Fix Steam Deck presentation and Linux updates | Move the embedded gallery gear, silence untargeted dictation, fill Gamescope and implement verified in-app Linux updates.
 2026-11-20-08-31-55 | plans/past/2026-11-20-00-20-00_steam-deck-local-install.md | Install Apparat persistently on Steam Deck | Install the qualified Linux GUI in the Deck home directory and register a native Gaming Mode launcher with a reusable deployment playbook.
 2026-11-20-08-31-54 | plans/past/2026-11-19-13-00-00_settings-navigation.md | Settings and navigation usability | Verify portrait and startup defaults, bounded scrolling, release discovery and speech model state.
 2026-11-19-12-05-46 | plans/past/2026-11-19-10-06-17_local-dictation.md | Offline workspace dictation | Bundle and exercise local Whisper PTT and persistent model selection.

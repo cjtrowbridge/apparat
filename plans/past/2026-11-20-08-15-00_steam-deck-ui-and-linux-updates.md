@@ -2,7 +2,7 @@
 plan_id: 2026-11-20-08-15-00_steam-deck-ui-and-linux-updates
 title: Fix Steam Deck presentation and Linux updates
 summary: Move the embedded gallery gear, silence untargeted dictation, fill Gamescope and implement verified in-app Linux updates.
-status: current
+status: past
 created_at: 2026-11-20-08-15-00
 ---
 
@@ -39,8 +39,8 @@ are not implied by this scoped checkpoint. Canonical builds use no-flag
 
 - [x] 1. Move the embedded gear and its hit target after discovery; remove untargeted dictation text; choose native display geometry/fullscreen in Gamescope while preserving desktop resizing and saved placement elsewhere.
 - [x] 2. Implement bounded Linux update check, staged verification, explicit installation and graceful restart with failure preservation and a previous binary. Exercise immutable revision, cancellation, corrupt/oversized/wrong-target rejection, no-op and atomic replacement in focused tests.
-- [ ] 3. Run governed verification and the canonical build; deploy the qualified GUI on the Deck and capture actual Gamescope presentation plus update behavior. Record any unavailable acceptance explicitly.
-- [ ] 4. Update closest READMEs, root README, roadmap/platform evidence, install playbook and append-only journal; refresh plan indexes and run documentation/source/whitespace checks.
+- [x] 3. Run governed verification and the canonical build; deploy the qualified GUI on the Deck and capture actual Gamescope presentation plus update behavior. Record any unavailable acceptance explicitly.
+- [x] 4. Update closest READMEs, root README, roadmap/platform evidence, install playbook and append-only journal; refresh plan indexes and run documentation/source/whitespace checks.
 
 ## Evidence and stopping condition
 
@@ -120,3 +120,38 @@ an ephemeral private `.aws` mount. The physical-line checker now prunes excluded
 and private mounts before descent and still raises included-directory errors;
 65 pipeline tests pass, including a regression for traversal pruning. This fix
 supports acceptance item 3 without weakening the 400-physical-line gate.
+
+### Delivery and actual Deck acceptance
+
+- Canonical run `.tmp/build-runs/tmpjmnk869a/` passed both Linux GUI and worker
+  qualification, published commit `aa37a83b9facf1167ea7a59bea84b1249a27b4ea` and
+  authenticated GitHub read-back verified exact artifact bytes. Android APK
+  remains the previously qualified `132510581ac64bd1f1a37be5185192d14788c0ac4a894ef450f4bae979a9ff87`.
+- Deck installed GUI hash is
+  `564a45c9e931b26396a2953f21c20e1e0caffff05674d11c1b4edf0e23e37f28`.
+  Before/after native windows: 640x480 versus 1280x800 at 0,0. Actual captures
+  under `.tmp/steam-deck-ui/` show full display layout, moved gear, its working
+  embedded settings hit target, no untargeted dictation hint and live updater.
+- Offline old binary and complete node backup:
+  `/home/deck/.local/share/apparat/deployment-backups/20261120T163917Z/`.
+  Retained qualified current copy there as `apparat-qualified` for trial recovery.
+- Live check first returned Up To Date. To exercise a real transfer, kept the
+  current updater process running while atomically putting the older qualified
+  backup at the install path. It downloaded the current GitHub artifact and
+  offered Install update; that action restored the published hash and retained
+  the old `7e2a9de...` binary as `.previous`. Restart closed GUI/core and re-execed
+  at the same Steam-tracked PID 5466. Ready at 16:45:34 UTC, zero startup errors,
+  native 1280x800 window, original node/preferences/launcher and no staging files.
+  This controlled disk-version trial does not imply an updater in the old build.
+- Remote X11 automation required restoring focus after capture/foreground changes;
+  held mouse presses were observed by the frame loop. User-facing controls were
+  exercised, not internal debug APIs. Physical gamepad/audio acceptance remains
+  outside this checkpoint.
+- Final pipeline suite: 66 tests pass. Full Go and GUI/updater race suites pass;
+  source/size/docs/whitespace gates pass. Private captures remain untracked.
+
+All four requested outcomes are implemented and observed on the Deck. Retain the
+native fullscreen behavior and existing callback/manifest update path. No new
+Steam launcher, background updater service, runtime dependency or system package
+was introduced. Stop and archive; Phase 17 release signatures, downgrade/schema
+rollback policy and broad platform qualification remain open.

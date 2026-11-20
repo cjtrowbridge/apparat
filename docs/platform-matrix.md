@@ -41,6 +41,41 @@ This proves installation and native launcher startup, not the broader controller
 Steam+X, microphone, workspace, update/migration, suspend or release-support gates.
 See the [deployment playbook](../playbooks/how_to_install_apparat_on_steam_deck_and_add_it_to_steam.md).
 
+### Deck UI and Linux update acceptance — 2026-11-20
+
+Canonical delivery `aa37a83b9facf1167ea7a59bea84b1249a27b4ea` qualified and
+published the Linux GUI and worker, then authenticated GitHub main read-back
+matched their bytes. The previous Android APK and its original input evidence
+were preserved because this travelling host lacked its Android prerequisites and
+canonical Pixel. No new Android qualification is claimed.
+
+The installed Deck GUI matches published SHA-256
+`564a45c9e931b26396a2953f21c20e1e0caffff05674d11c1b4edf0e23e37f28`.
+Gamescope now presents a native 1280x800 window at 0,0, compared with the prior
+640x480 window. Actual Deck captures show the gallery filling the available
+viewport and its centered gear immediately after discovery. Activating that gear
+opened embedded settings and Back returned to the gallery. An untargeted PTT
+press did not show the removed dictation hint.
+
+The actual Settings updater reported Up To Date against public GitHub. A
+controlled trial kept the new updater process running while atomically selecting
+the older, previously qualified disk binary from the deployment backup. Check
+then downloaded and verified the published binary, Install replaced it atomically
+and retained the old `.previous` hash, and Restart re-executed the new binary.
+PID 5466 was retained for Steam tracking; fresh runtime ready was recorded at
+16:45:34 UTC, with zero startup errors and no staging files left. The same node
+root, saved preferences and original Steam entry were retained. This verifies the
+real transfer/install/restart path; it is not a claim that the older binary had
+an updater. Offline binary/node backup:
+`/home/deck/.local/share/apparat/deployment-backups/20261120T163917Z/`.
+
+Private screenshots are under `.tmp/steam-deck-ui/` (`before.png`, `gallery.png`,
+`gallery-settings.png`, `update-current.png`, `update-ready.png`,
+`update-installed.png`, `restarted.png`). Canonical Linux GUI evidence is in
+`.tmp/build-runs/tmpjmnk869a/`. Package/race tests separately cover failures and
+no-op states. Physical controller, microphone and suspend/resume qualification
+remain open; this checkpoint does not close the whole Phase 17 support matrix.
+
 ## Linux Headless
 
 Requires no Ebitengine initialization, CLI/API/service-manager control, health checks, graceful `SIGINT`/`SIGTERM`, durable storage paths, runtime-root `last_run.log`, and generated release artifact under `releases/linux/<arch>/apparatd/latest`.

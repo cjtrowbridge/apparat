@@ -2,7 +2,6 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-11-20-08-31-55 | plans/current/2026-11-20-08-15-00_steam-deck-ui-and-linux-updates.md | Fix Steam Deck presentation and Linux updates | Move the embedded gallery gear, silence untargeted dictation, fill Gamescope and implement verified in-app Linux updates.
 2026-11-19-12-05-46 | plans/current/2026-11-17-11-08-46_embed-stmpck.md | Bring STMPCK into Apparat while preserving standalone play | Prove private embedding with three representative games, validate all eighteen in both hosts, and qualify a reproducible release.
 2026-11-19-12-05-46 | plans/current/2026-11-17-12-43-19_recover-canonical-builds.md | Recover Apparat main and verify every app build target | Reconcile the private prototype, restore Apparat artifacts, and enforce Apparat checkout and per-target validation locally.
 2026-11-19-12-05-46 | plans/current/2026-11-17-14-00-00_settings-last.md | Keep Settings last in all tab layouts | Enforce the final Settings position and document placement of future tabs.
