@@ -31,9 +31,13 @@ type lanView struct {
 func (g *Game) discoveryContent(c *widget.Container) {
 	if g.lan.selected != "" {
 		c.AddChild(widget.NewText(widget.TextOpts.Text(wrapSelectorLabel(g.lan.selected, *g.pageTitleFace, max(1, g.detailPanePreferredWidth()-24)), g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(g.detailPanePreferredWidth()-24))))
-		claim := widget.NewButton(widget.ButtonOpts.Text("Claim this host for your cluster", g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.Image(g.theme.ButtonTheme.Image), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)))
-		claim.GetWidget().Disabled = true
-		c.AddChild(claim, g.detailText("Unpaired. Claiming requires authenticated cluster enrollment, which is not yet available."))
+		if g.runtimeInfo.ClaimHost != nil {
+			host := g.lan.selected
+			g.projectButton(c, "Claim this host for your cluster", func() {
+				g.beginClaim(host)
+			})
+			c.AddChild(g.detailText("Choose a private invitation from this worker to claim it."))
+		}
 		g.projectButton(c, "Back to discovery", g.leavePeer)
 		return
 	}
@@ -200,5 +204,11 @@ func (g *Game) configureAPI() {
 		go func() {
 			_ = cmd.Run()
 		}()
+	}
+}
+
+func (g *Game) beginClaim(host string) {
+	if g.runtimeInfo.ClaimHost != nil && slices.Contains(g.lan.names, host) {
+		go g.runtimeInfo.ClaimHost(host)
 	}
 }

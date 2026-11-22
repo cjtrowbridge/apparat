@@ -46,6 +46,7 @@ func selectorHeading(title, description, selectorColor string) Section {
 
 func settingsTab(config HUDConfig) Tab {
 	return tab(config, TabSettings, "Display, input, and diagnostics for this device.", []Section{{ActionID: "updates", Title: "Updates", Description: updateDescription(runtime.GOOS)},
+		{ActionID: "personal-identity", Title: "Personal identity", Description: "Manage the screen name associated with your user key."},
 		{ActionID: "api-configuration", Title: "API configuration", Description: "Hosting requires an explicit network and interface grant."},
 		{ActionID: "command-directory", Title: "Voice Commands", Description: "Find the words to open a tab, project, conversation, or game. You can also open a destination directly from the directory."},
 		{ActionID: "hud-configuration", Title: "Appearance"},

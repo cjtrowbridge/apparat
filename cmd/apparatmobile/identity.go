@@ -4,13 +4,17 @@
 // The node runtime owns the unlocked session and clears it when the Activity backgrounds.
 package apparatmobile
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 type KeyDialogs interface {
 	Ask(request string) string
 }
 
 var identitySetup sync.Mutex
+var currentDialogs KeyDialogs
 
 func SetupKeys(dialogs KeyDialogs) {
 	if node == nil || dialogs == nil {
@@ -18,11 +22,30 @@ func SetupKeys(dialogs KeyDialogs) {
 	}
 	identitySetup.Lock()
 	defer identitySetup.Unlock()
+	currentDialogs = dialogs
 	node.SetupIdentities(dialogs.Ask)
 }
 
 func LockKeys() {
 	if node != nil {
 		node.LockIdentities()
+	}
+}
+
+func claimHost(host string) {
+	identitySetup.Lock()
+	dialogs := currentDialogs
+	identitySetup.Unlock()
+	if dialogs != nil {
+		node.ClaimWithDialog(context.Background(), host, dialogs.Ask)
+	}
+}
+
+func editScreenName() {
+	identitySetup.Lock()
+	dialogs := currentDialogs
+	identitySetup.Unlock()
+	if dialogs != nil {
+		node.EditScreenName(context.Background(), dialogs.Ask)
 	}
 }

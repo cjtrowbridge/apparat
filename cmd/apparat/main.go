@@ -99,12 +99,17 @@ func run() (code int) {
 	}
 	fmt.Fprintf(os.Stderr, "apparat ready root=%s\n", cfg.RootDir)
 	if node.Mode() == app.ModeGUI {
-		node.SetupIdentities(func(request string) string {
+		dialog := func(request string) string {
 			return keydialog.Run(ctx, request)
-		})
+		}
+		node.SetupIdentities(dialog)
 		wd, _ := os.Getwd()
 		executable, _ := os.Executable()
-		err = gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{WorkingDir: wd, RuntimePath: cfg.RootDir, BinaryPath: executable, Queries: node})
+		err = gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{EditName: func() {
+			node.EditScreenName(ctx, dialog)
+		}, ClaimHost: func(host string) {
+			node.ClaimWithDialog(ctx, host, dialog)
+		}, WorkingDir: wd, RuntimePath: cfg.RootDir, BinaryPath: executable, Queries: node})
 	} else {
 		err = node.Start(ctx)
 	}

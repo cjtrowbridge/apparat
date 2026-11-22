@@ -83,3 +83,5 @@ In STMPCK the centered toolbar, intensity controls and three-column game grid
 share directional focus. Enter or A opens the focused game or activates the
 focused toolbar control. Embedded settings keep navigation inside the panel.
 Gameplay receives the game's own inputs. Back returns to the gallery.
+
+Opening a discovered worker exposes **Claim this host for your cluster**. Keyboard and D-pad activation open the same local file chooser and identity confirmation as a tap. Cancel leaves membership unchanged. Settings → Personal identity → Edit screen name opens local text input. The action catalog opens each dialog through the same handler.

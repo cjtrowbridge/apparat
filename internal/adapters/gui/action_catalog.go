@@ -69,6 +69,9 @@ func (g *Game) registerSettingsActions(add registerAction, index int, tab hud.Ta
 			g.selectTab(index, nil)
 		})
 	}
+	if g.runtimeInfo.EditName != nil {
+		add("screen", owner, "edit-name", "Edit screen name", "Settings / Personal identity / Edit screen name", g.editName)
+	}
 	if runtime.GOOS == "linux" {
 		add("screen", owner, "api-hosting", "Configure API hosting", "Settings / API configuration / Configure API hosting", g.configureAPI)
 	}
@@ -101,6 +104,11 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 		path := tab.Title() + " / " + s.Title
 		if s.ActionID == "add-new-device" {
 			for _, name := range g.lan.names {
+				if g.runtimeInfo.ClaimHost != nil {
+					add("claim-dialog", owner, g.lan.device+"/"+name, "Claim "+name, path+" / "+name+" / Claim host", func() {
+						g.beginClaim(name)
+					})
+				}
 				add("discovered-host", owner, g.lan.device+"/"+name, name, path+" / "+name, func() {
 					g.selectTab(index, nil)
 					g.selectSection(tab.ID(), i)

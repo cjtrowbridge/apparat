@@ -247,6 +247,10 @@ func (g *Game) settingsCardControls(c *widget.Container, id string) {
 		g.preferenceControls(c, id)
 	case "speech-recognition":
 		g.speechSettings(c)
+	case "personal-identity":
+		if g.runtimeInfo.EditName != nil {
+			g.projectButton(c, "Edit screen name", g.editName)
+		}
 	case "api-configuration":
 		if runtime.GOOS == "linux" {
 			g.projectButton(c, "Configure API hosting", g.configureAPI)
@@ -285,4 +289,10 @@ func (g *Game) actionRow(c *widget.Container, label string, id hud.ActionAddress
 	g.projectButton(c, wrapSelectorLabel(label, *g.theme.ButtonTheme.TextFace, width-60), func() {
 		g.invokeAction(id)
 	})
+}
+
+func (g *Game) editName() {
+	if g.runtimeInfo.EditName != nil {
+		go g.runtimeInfo.EditName()
+	}
 }

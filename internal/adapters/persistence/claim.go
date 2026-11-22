@@ -82,6 +82,9 @@ func (db *DB) ClaimWorker(ctx context.Context, c identity.Claim, workerPublic []
 		return errors.New("invitation is invalid, expired or already used")
 	}
 	err = establishOwner(ctx, tx, c)
+	if err == nil {
+		_, err = tx.ExecContext(ctx, "INSERT INTO claim_receipts(worker,digest) VALUES(?,?)", c.Worker, claimReceipt(c))
+	}
 	if err != nil {
 		return err
 	}

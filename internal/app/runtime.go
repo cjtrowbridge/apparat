@@ -35,6 +35,7 @@ type Runtime struct {
 	discoveryWorkers sync.WaitGroup
 	Keys             *identity.Session
 	Personal         *identity.Personal
+	claimMu          sync.Mutex
 	workspaceMu      sync.Mutex
 	documents        ProjectDocuments
 	mu               sync.Mutex
@@ -47,6 +48,7 @@ type Runtime struct {
 	logger           logging.Logger
 	serviceManager   *Services
 	drivers          map[string]Probe
+	claimServer      *httpapi.Server
 	server           *httpapi.Server
 	state            string
 	cancel           context.CancelFunc
@@ -211,6 +213,12 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	if result != nil {
 		return result
 	}
+	if runtime.GOOS == "linux" && node.WorkerEvents != nil && node.Keys.State() == "unlocked" {
+		node.claimServer, result = httpapi.ListenWorkerClaims(filepath.Join(filepath.Dir(node.config.DatabasePath), "worker-claims.sock"), node.database, node.Keys)
+		if result != nil {
+			return result
+		}
+	}
 	workCtx, cancel := context.WithCancel(ctx)
 	node.cancel = cancel
 	if runtime.GOOS == "linux" && !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
@@ -297,6 +305,10 @@ func (node *Runtime) closeLocked() error {
 		result = errors.Join(result, server.Close())
 		node.mu.Lock()
 		result = errors.Join(result, node.stage("listener_stopped"))
+	}
+	if node.claimServer != nil {
+		result = errors.Join(result, node.claimServer.Close())
+		node.claimServer = nil
 	}
 	node.serviceManager = nil
 	if node.database != nil {

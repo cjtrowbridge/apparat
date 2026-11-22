@@ -47,3 +47,4 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `claim_test.go`: Verifies target substitution fails and competing first claims produce one approved admin.
 - `policy.go`: Migration 11 and signed administrative policy transactions. Replicas verify the authority, actor, revision and previous hash before applying changes. The last administrator cannot be removed.
 - `policy_sync.go`: Rebuilds committed policy heads from SQLite on startup, checks admin visibility on every request and pages at most 64 events. An up-to-date authorized caller avoids reading the event table.
+- `claimed_workers.go`: Migration 12 stores acknowledged workers and target-side claim receipt hashes. Exact retries can recover a lost response.

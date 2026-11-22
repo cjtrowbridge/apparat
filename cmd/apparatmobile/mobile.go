@@ -49,6 +49,8 @@ func init() {
 	binaryPath, _ := os.Executable()
 	workingDir, _ := os.Getwd()
 	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
+		ClaimHost: claimHost,
+		EditName:  editScreenName,
 		BrowseLAN: func(open bool) string {
 			bridgeMu.Lock()
 			current := updater

@@ -44,3 +44,4 @@ workspace.go resolves every command by registered project ID and coordinates dra
 - `workspace_test.go`: Verifies editable working trees, selection isolation and durable workspace records.
 
 - `workspace_save.go`: Records file transaction identity, base, outcome and rejection before allowing a replay.
+- `claim.go`: Confirms the selected hostname and invited worker fingerprint in local dialogs, signs with both unlocked identities and records the acknowledged worker.

@@ -37,6 +37,7 @@ var migrations = []Migration{
 	{Version: 9, Name: "personal_device_bindings", SQL: personalSchema},
 	{Version: 10, Name: "worker_claims", SQL: claimSchema},
 	{Version: 11, Name: "cluster_policy", SQL: policySchema},
+	{Version: 12, Name: "claim_receipts", SQL: claimReceiptSchema},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {
