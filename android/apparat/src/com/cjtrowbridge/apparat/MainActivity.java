@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
     private ProjectDocuments documents;
     private DocumentEditor editor;
     private ActionVoice voice;
+    LanBrowser lanBrowser;
     private File downloadedUpdate;
     private final AtomicBoolean checking = new AtomicBoolean();
     private volatile boolean destroyed;
@@ -118,6 +119,7 @@ public class MainActivity extends Activity {
                     }
                 });
         }
+        lanBrowser = new LanBrowser(this);
         Apparatmobile.registerUpdater(new AndroidUpdater(this));
         Log.i(TAG, "Updater bridge registered");
         // Downloads and installer handoff require an explicit Update action.
@@ -145,6 +147,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (lanBrowser != null) lanBrowser.foreground(true);
         if (view != null) {
             view.resumeGame();
         }
@@ -154,6 +157,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (lanBrowser != null) lanBrowser.foreground(false);
         Apparatmobile.suspendInput();
 
         if (view != null) {

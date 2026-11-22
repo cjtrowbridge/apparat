@@ -49,6 +49,15 @@ func init() {
 	binaryPath, _ := os.Executable()
 	workingDir, _ := os.Getwd()
 	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
+		BrowseLAN: func(open bool) string {
+			bridgeMu.Lock()
+			current := updater
+			bridgeMu.Unlock()
+			if current == nil {
+				return "Discovery unavailable"
+			}
+			return current.BrowseLAN(open)
+		},
 		ProjectPicker: projectDocuments{},
 		SpeakChoice:   sayChoice, MicrophoneReady: microphoneReady,
 		DocumentEditor: projectDocuments{},
@@ -110,6 +119,7 @@ func ReportUpdateStatus(code string) {
 }
 
 type Updater interface {
+	BrowseLAN(bool) string
 	InstalledRelease() string
 	CheckForUpdate()
 }

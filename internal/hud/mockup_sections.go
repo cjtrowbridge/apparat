@@ -35,10 +35,10 @@ func projectsMockSections() []Section {
 
 func clusterMockSections() []Section {
 	return []Section{
-		selectorHeading("Cluster Devices", "Known mock devices and a future enrollment entry point.", SelectorPalette[0]),
+		selectorHeading("Cluster Devices", "Browse nearby Apparat hosts and known devices.", SelectorPalette[0]),
+		mockSection("add-new-device", "Add New Device", "Local network discovery", ContentStandard, SelectorPalette[0]),
 		mockSection("pixel-2-ai-server", "Pixel 2 AI Server (4gb ram)", "Mock local text and speech worker.", ContentStandard, SelectorPalette[0], "Role|AI server", "Memory|4gb mock capacity", "Status|mock online"),
 		mockSection("trash-can-mac-pro", "Trash Can Mac Pro (256gb ram)", "Mock high-memory workstation.", ContentStandard, SelectorPalette[0], "Role|workstation", "Memory|256gb mock capacity", "Status|mock online"),
-		mockSection("add-new-device", "(Add New Device)", "Enrollment is not implemented yet.", ContentStandard, SelectorPalette[0], "Enrollment|disabled mock control", "Safety|no device will be added"),
 		selectorHeading("Routing", "How your cluster prioritizes different kinds of tasks.", SelectorPalette[1]),
 		mockSection("chat-pool", "Chat Pool (High priority)", "Mock owner conversation routing policy.", ContentStandard, SelectorPalette[1], "Priority|high", "Destinations|mock text-capable devices"),
 		mockSection("project-pool", "Project Pool (Medium Priority)", "Mock project workload routing policy.", ContentStandard, SelectorPalette[1], "Priority|medium", "Destinations|mock compatible workers"),

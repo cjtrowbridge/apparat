@@ -69,7 +69,7 @@ func Load(options Options) (Config, error) {
 	flags := flag.NewFlagSet("apparat", flag.ContinueOnError)
 	flags.Var((*stringMode)(&mode), "mode", "runtime mode: gui, headless, or auto")
 	flags.StringVar(&root, "runtime-dir", root, "runtime data directory")
-	listen := "127.0.0.1:0"
+	listen := ""
 	demo := false
 	inspect := false
 	backup := ""

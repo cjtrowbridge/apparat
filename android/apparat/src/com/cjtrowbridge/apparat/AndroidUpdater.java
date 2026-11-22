@@ -12,6 +12,9 @@ final class AndroidUpdater implements Updater {
     AndroidUpdater(MainActivity activity) {
         this.activity = activity;
     }
+    public String browseLAN(boolean open) {
+        return activity.lanBrowser.browse(open);
+    }
     public String installedRelease() {
         try {
             PackageInfo info = activity.getPackageManager().getPackageInfo(activity.getPackageName(),0);

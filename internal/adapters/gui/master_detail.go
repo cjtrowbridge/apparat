@@ -136,7 +136,11 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		detailContainer.AddChild(game.detailText(tabData.Summary))
 	}
 	for _, section := range game.detailSections(tabData) {
-		detailContainer.AddChild(game.buildSectionContainer(section))
+		if section.ActionID == "add-new-device" {
+			game.discoveryContent(detailContainer)
+		} else {
+			detailContainer.AddChild(game.buildSectionContainer(section))
+		}
 	}
 	scroll := widget.NewScrollContainer(
 		widget.ScrollContainerOpts.Content(detailContainer),

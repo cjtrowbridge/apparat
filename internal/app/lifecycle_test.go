@@ -19,6 +19,7 @@ func nodeFor(t *testing.T, root string, demo bool) *app.Runtime {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cfg.Listen = "127.0.0.1:0"
 	cfg.Demo = demo
 	node, err := app.NewRuntimeWithConfig(cfg)
 	if err != nil {

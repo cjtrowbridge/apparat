@@ -13,8 +13,9 @@ import urllib.parse
 import urllib.request
 
 try:
-    from scripts import android_release, artifact_acceptance, build, build_evidence as evidence
+    from scripts import trashcan_acceptance, android_release, artifact_acceptance, build, build_evidence as evidence
 except ImportError:
+    import trashcan_acceptance
     import android_release
     import artifact_acceptance
     import build
@@ -158,6 +159,15 @@ def deliver(root, plans, compile_target, storage):
         kept = {r['name'] for r in preserved}
         result['targets'] = [r for r in result['targets'] if r['name'] not in kept] + preserved
         evidence.write(report,result)
+    for row in rows:
+        if row['name'] == 'linux/amd64/apparatd':
+            print('Checking trashcan0 worker installation', flush=True)
+            device = trashcan_acceptance.qualify(root/row['output'], row['sha256'])
+            current_report = json.loads(report.read_text())
+            for entry in current_report['targets']:
+                if entry['name'] == row['name']:
+                    entry['device_test'] = device
+            evidence.write(report, current_report)
     if any(r['inputs'] != evidence.fingerprint(root) for r in rows):
         raise ValueError('Build inputs changed before publication')
     ensure_inputs_staged(root)

@@ -17,6 +17,7 @@ type DocumentSession interface {
 	Apply(action, text string) string
 }
 type RuntimeInfo struct {
+	BrowseLAN       func(bool) string
 	SpeakChoice     func(string)
 	MicrophoneReady func() bool
 	PromptValue     func(string, string) (string, bool)

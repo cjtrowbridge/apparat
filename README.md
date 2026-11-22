@@ -71,6 +71,8 @@ The Comrades tab is first in the HUD so the long-term product shape remains visi
 
 ### Cluster
 
+The planned first Cluster workflow is discovery only. **➕ Add New Device** is the first row under **Cluster Devices**. It opens **Local network discovery** in the right detail pane, or a full-width detail screen on narrow devices. A client can browse while its own server is off. A host appears only when its bootstrap API and advertisement are active on an explicitly approved network/interface pair. Results are temporary, unverified candidates.
+
 The first membership workflow will let a user create a cluster, discover it from another device or use an explicit invite, verify and approve enrollment, reconnect, leave, and revoke access. Discovery supplies candidate addresses. Membership requires confirmation and authentication.
 
 The full Cluster view will show:
@@ -461,6 +463,8 @@ LAN discovery may suggest endpoints but never grants trust.
 
 ### Identity And Enrollment
 
+The planned Phase 10 setup creates one durable Ed25519 node identity per runtime root. New GUI nodes default to passphrase encryption and can opt out. New headless nodes default to owner-only unencrypted storage for unattended startup and can opt into encryption. Existing nodes keep their key and protection mode across GUI and daemon launches. Optional OS unlock lets a user unlock an encrypted node with a fingerprint on supported Android devices. Anyone who obtains an unencrypted private key can impersonate the node. See [node identity and platform unlock](docs/node-identity.md).
+
 App identity remains separate from WireGuard identity.
 
 The MVP uses one cluster-local X.509 root CA whose certificate fingerprint is part of the verified cluster identity. The currently authorized enrollment authority controls issuance under that root for the MVP; adding multiple concurrent issuers requires a later explicit hierarchy and conflict-resolution design.
@@ -481,7 +485,9 @@ The connection layer uses TLS 1.3 mutual device authentication. Mutating request
 
 ### REST Resources
 
-The API is introduced in two steps. The first backend slice exposes a loopback-only, read-only subset for health, readiness, safe local device state, services, and capabilities. Identity and signing then admit configured LAN/WireGuard access and authenticated mutations. The complete target surface below includes both steps; its write resources are not part of the pre-identity listener.
+**Planned hosting default.** A fresh GUI installation, including Windows and Android, can connect to other nodes as a client with its own API server off. To host, open **Settings → API configuration**, select at least one specific network and interface pair, and explicitly enable the server. Every pair starts unchecked, including loopback. Linux headless service installations configure the same permissions locally through the CLI without a modal. Starting the service alone opens zero API listeners. For example, approving Tailscale on its tunnel permits hosting there; approving home Wi-Fi requires a separate rule. Moving the same Wi-Fi adapter to another network closes its listener. These rules cover the public key, diagnostics and future authenticated services such as LLM inference. See [API hosting policy](docs/node-identity.md#api-hosting-policy).
+
+Today's loopback diagnostic API exposes safe read-only queries. Phase 10 first adds local authentication. Anonymous callers receive a JSON authentication message and can read the node public key. An owner-issued local token grants access to protected queries. Later, enrolled LAN and WireGuard peers use mutual TLS and scoped device authorization. See the [route and error contract](docs/api.md#planned-phase-10-local-authentication-contract).
 
 The initial API surface is:
 
@@ -788,7 +794,7 @@ releases/linux/amd64/apparatd/latest --runtime-dir /tmp/apparat-demo --listen 12
 
 `--demo-services` atomically seeds an empty store with two mock text instances and one mock image instance. Android seeds this demonstration on the first empty-store startup. Existing services are preserved, including deliberate removals. The Cluster tab's **Local services** detail shows live IDs, revisions and health; other HUD content remains mock. Probes run sequentially every five seconds, with one outstanding probe and a one-second cooperative deadline. A 15-second-old observation is stale. No real provider, remote advertisement, routing or Task execution is enabled.
 
-The default REST address is `127.0.0.1:0`; startup prints the selected root and actual address. Only six GET resources are implemented: health, device, services, service detail, all capabilities and service capabilities. `--listen` accepts numeric loopback addresses only. See [API operations](docs/api.md). GUI queries call the core directly, never this listener.
+The default opens no REST listener. Linux Settings → API configuration lets the owner select LAN hosting grants. After first startup, Linux headless operators use `apparatd api-list`, `apparatd api-grant RULE` and `apparatd api-disable` against the same node root. The selected LAN serves a JSON 401 on GET /v1 and advertises its ephemeral port through DNS-SD. Cluster → Add New Device browses on the selected Linux interface or the active Android 13+ Wi-Fi network. The legacy diagnostic API requires an explicit loopback listen argument. Only six GET resources are implemented: health, device, services, service detail, all capabilities and service capabilities. `--listen` accepts numeric loopback addresses only. See [API operations](docs/api.md). GUI queries call the core directly, never this listener.
 
 `--services` prints safe JSON and exits; `--smoke-test` adds a diagnostic line with root/last-run paths. `--doctor` checks SQLite integrity and local identity status. `--backup /new/path.db` creates a consistent SQLite snapshot plus metadata. `--restore-backup /path.db --runtime-dir /new/root` verifies and restores into a previously absent database and exits. Neither operation overwrites existing backup/destination files. Identity keys and other runtime files are separate: preserve them in an offline root backup when planning full-node recovery. See [recovery procedures](docs/database.md).
 

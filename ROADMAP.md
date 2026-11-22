@@ -1726,6 +1726,20 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
 
 - [ ] In Cluster, create the cluster root and initial enrollment authority. Present discover, request to join, confirm, approve, leave and revoke actions with visible pending, trusted, offline and revoked states. Keep transient selections and forms in GUI state.
 
+### First deliverable — browse nearby Apparat hosts
+
+- [ ] Put ➕ Add New Device first under Cluster Devices and open the discovery detail screen. Browse with hosting off and show transient candidates. Defer adding devices.
+- [ ] Implement Settings and headless grants, the isolated anonymous GET /v1 JSON responder, and per-interface DNS-SD advertisement and browsing. Demonstrate Linux-to-Pixel discovery on an approved network and silence on an unapproved second interface, including after revocation or roaming.
+
+### Local identity and authenticated loopback REST
+
+- [ ] Replace Phase 8 automatic loopback startup with client-only GUI defaults, a Settings API configuration modal and equivalent Linux headless CLI. Require explicit activation and a saved network/interface pair on every target, including for loopback. Verify outbound client use with zero inbound listeners.
+- [ ] Qualify binding, roaming, VPN loss, revocation and active-stream shutdown with allowed and denied ingress paths on IPv4 and IPv6. Apply the same restriction to discovery advertisements, public-key lookup and future inference serving. The first discovery milestone permits only the explicitly scoped anonymous bootstrap responder and advertisement. Protected non-loopback routes require the Phase 10 network authorization gates.
+- [ ] Before network enrollment, complete the [local node identity and REST plan](plans/current/2026-11-22-12-00-00_node-identity-and-rest.md). Demonstrate first-run setup, reuse, recovery and reversible protection changes across GUI and headless ownership.
+- [ ] On Linux and Pixel 4a, read the public key while locked, receive an anonymous JSON 401, then issue a local credential and successfully query the protected API. Verify restart preserves the fingerprint and invalidates the token.
+- [ ] Qualify Android biometric unlock and passphrase fallback. Track desktop native protection separately on Linux, Steam Deck, Windows and macOS using the [platform contract](docs/node-identity.md).
+- [ ] Extend the same public identity projection to cluster bootstrap and enrolled peers once the network authorization gates below pass.
+
 ### Network configuration and trusted directory
 
 - [ ] Support externally managed WireGuard and trusted LAN through the same HTTPS API.

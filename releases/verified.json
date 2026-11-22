@@ -1,8 +1,8 @@
 {
   "edition": "ordinary",
   "ref": "refs/heads/main",
-  "head": "47501d723795ce4794d1688c3b0b82301847f2e4",
-  "inputs": "fa8c8e91bebc17c1390ec0ece3ba3b073387bb3d8892c646af60ff0fa4b47240",
+  "head": "ac46b7fa325d74ddd449aa5b441b2d8db9df464c",
+  "inputs": "a771a86022b1af925772b5a60c8bfe2ec20063aa0e91c2b62a046388cca5a849",
   "go": "go version go1.26.11 linux/amd64",
   "targets": [
     {
@@ -10,28 +10,32 @@
       "output": "releases/linux/amd64/apparat/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "18df3940d622354255e35de89657b000b10b4a64be6c4ce9b04a5ee430c4cbd6",
-      "inputs": "fa8c8e91bebc17c1390ec0ece3ba3b073387bb3d8892c646af60ff0fa4b47240"
+      "sha256": "2d8c01133f3cb7e8f172f50ced3db6168c59e489e361dbd13c38eb655562ceb6",
+      "inputs": "a771a86022b1af925772b5a60c8bfe2ec20063aa0e91c2b62a046388cca5a849"
     },
     {
       "name": "linux/amd64/apparatd",
       "output": "releases/linux/amd64/apparatd/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "fcef536bf6dff011624838c561ef0b5aa3c3168705a2f024e22b83036355dc96",
-      "inputs": "fa8c8e91bebc17c1390ec0ece3ba3b073387bb3d8892c646af60ff0fa4b47240"
+      "sha256": "205659ff01c6ee66134e8eac10625c39b1c769f04834688759ebd0123d394d52",
+      "inputs": "a771a86022b1af925772b5a60c8bfe2ec20063aa0e91c2b62a046388cca5a849",
+      "device_test": {
+        "state": "passed",
+        "device": "trashcan0"
+      }
     },
     {
       "name": "android/arm64/apparat",
       "output": "releases/android/arm64/apparat/latest.apk",
       "state": "passed",
       "reasons": [],
-      "sha256": "c5f5c3dbefc3fd30d620e4bc1ff0674eca93d89c718517909dc9f4f7e8a65e16",
+      "sha256": "c6ea0d9bdfc0acb943c325569b6c6a5022a389a46297fd4979a2fe27bef67fa4",
       "device_test": {
-        "state": "pending",
-        "reason": "System ADB unavailable; canonical Pixel 4a qualification is not possible"
+        "state": "passed",
+        "device": "Pixel 4a"
       },
-      "inputs": "fa8c8e91bebc17c1390ec0ece3ba3b073387bb3d8892c646af60ff0fa4b47240"
+      "inputs": "a771a86022b1af925772b5a60c8bfe2ec20063aa0e91c2b62a046388cca5a849"
     },
     {
       "name": "android/arm64/apparatd",

@@ -42,8 +42,8 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			btn.SetState(widget.WidgetChecked)
 		}
 		hasIcon := tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline)
-		if tabData.ID() == hud.TabProjects && projectEntryAction(section.ContentKind) {
-			if actions == nil {
+		if section.ActionID == "add-new-device" || tabData.ID() == hud.TabProjects && projectEntryAction(section.ContentKind) {
+			if actions == nil && section.ActionID != "add-new-device" {
 				actions = game.selectorRows()
 			}
 			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
@@ -53,7 +53,11 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 				widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
 					VerticalPosition: widget.AnchorLayoutPositionCenter, Padding: &widget.Insets{Left: 12},
 				}))))
-			actions.AddChild(row)
+			if section.ActionID == "add-new-device" {
+				listContainer.AddChild(row)
+			} else {
+				actions.AddChild(row)
+			}
 			continue
 		}
 		if subtitle != nil || hasIcon {

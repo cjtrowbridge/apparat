@@ -54,6 +54,7 @@ func TestShutdownOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cfg.Listen = "127.0.0.1:0"
 	node, err := NewRuntimeWithConfig(cfg)
 	if err != nil {
 		t.Fatal(err)

@@ -37,7 +37,7 @@ func researchTab() Tab {
 }
 
 func clusterTab() Tab {
-	return tab(DefaultConfigManager{}.Config(), TabCluster, "Mock devices, pool policy, schedules, and inference capabilities; no Cluster operation is live.", clusterMockSections())
+	return tab(DefaultConfigManager{}.Config(), TabCluster, "Discover local Apparat hosts and browse example cluster configuration.", clusterMockSections())
 }
 
 func selectorHeading(title, description, selectorColor string) Section {
@@ -46,6 +46,7 @@ func selectorHeading(title, description, selectorColor string) Section {
 
 func settingsTab(config HUDConfig) Tab {
 	return tab(config, TabSettings, "Display, input, and diagnostics for this device.", []Section{{ActionID: "updates", Title: "Updates", Description: updateDescription(runtime.GOOS)},
+		{ActionID: "api-configuration", Title: "API configuration", Description: "Hosting requires an explicit network and interface grant."},
 		{ActionID: "command-directory", Title: "Voice Commands", Description: "Find the words to open a tab, project, conversation, or game. You can also open a destination directly from the directory."},
 		{ActionID: "hud-configuration", Title: "Appearance"},
 		{ActionID: "navigation-layout", Title: "Navigation and Window"},

@@ -27,3 +27,5 @@ The document and input dialogs anchor the circular PTT control to the lower-righ
 - `AndroidUpdater.java`: Reports the installed version and starts the user-requested signed APK download.
 
 - `ActionVoice.java`: Activity-owned local speech feedback and canvas microphone permission bridge.
+
+- `LanBrowser.java`: browses Apparat service names on the active Wi-Fi network via Android 13+ scoped NSD. Leaving the detail or pausing the Activity releases discovery.

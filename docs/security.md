@@ -17,6 +17,10 @@ It does not treat WireGuard reachability as authorization. HTTPS authentication 
 
 Phase 3 implements local Ed25519 user/device key generation, signatures, public manifests, startup consistency classification, archived reset, and encrypted private-key files using Argon2id-derived XChaCha20-Poly1305 keys.
 
+The [Phase 10 node identity design](node-identity.md) defines setup defaults, optional unencrypted device keys, native unlock, legacy migration and local credential issuance.
+
+The planned inbound permission is the intersection of server activation, the approved network and the approved interface. All three are checked before serving even public resources. An owner-only local control channel configures headless hosting with an empty initial allowlist. Authentication and scopes then authorize requests on an eligible connection. See [API hosting policy](node-identity.md#api-hosting-policy).
+
 ## X.509 And TLS
 
 The MVP uses one cluster-local X.509 root CA whose certificate fingerprint is included in the out-of-band verified cluster identity. One currently authorized enrollment authority controls issuance under that root during the MVP. Multiple concurrent issuers, delegated intermediates, or threshold issuance require a later explicit hierarchy and conflict-resolution design.

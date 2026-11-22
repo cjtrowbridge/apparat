@@ -9,6 +9,7 @@ import (
 	"ebe-boilerplate/surface"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"runtime"
 	"slices"
 	"strconv"
 )
@@ -67,6 +68,9 @@ func (g *Game) registerSettingsActions(add registerAction, index int, tab hud.Ta
 			g.prefs.reveal = section.ActionID
 			g.selectTab(index, nil)
 		})
+	}
+	if runtime.GOOS == "linux" {
+		add("screen", owner, "api-hosting", "Configure API hosting", "Settings / API configuration / Configure API hosting", g.configureAPI)
 	}
 	add("screen", owner, "actions", "Command directory", "Settings / Voice Commands / Command directory", g.openActionBrowser)
 }

@@ -6,11 +6,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cjtrowbridge/apparat/internal/adapters/discovery"
 	"github.com/cjtrowbridge/apparat/internal/adapters/mockprovider"
 	"github.com/cjtrowbridge/apparat/internal/app"
 	"github.com/cjtrowbridge/apparat/internal/config"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -18,6 +20,26 @@ func main() {
 	os.Exit(run())
 }
 func run() (code int) {
+	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "api-") {
+		mode := strings.TrimPrefix(os.Args[1], "api-")
+		if mode != "list" && mode != "grant" && mode != "disable" {
+			return 2
+		}
+		if (mode == "grant" && len(os.Args) != 3) || (mode != "grant" && len(os.Args) != 2) {
+			return 2
+		}
+		cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})
+		if err != nil {
+			return 1
+		}
+		cmd := discovery.Command(context.Background(), append([]string{strings.TrimPrefix(os.Args[1], "api-"), cfg.DatabasePath}, os.Args[2:]...)...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if cmd.Run() != nil {
+			return 1
+		}
+		return 0
+	}
 	cfg, err := config.Load(config.Options{Args: os.Args[1:], DefaultMode: config.ModeHeadless, BinaryName: "apparatd"})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

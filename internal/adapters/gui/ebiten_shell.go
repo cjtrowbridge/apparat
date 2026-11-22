@@ -107,6 +107,7 @@ type Game struct {
 	researchContributionSort       hud.ContributionSort
 	researchContributionDescending bool
 	pttHeld                        bool
+	lan                            lanView
 	runtimeInfo                    RuntimeInfo
 	activeTabID                    atomic.Value
 	updateStatus                   atomic.Value
@@ -166,6 +167,7 @@ func (game *Game) Update() error {
 	game.receivePreferences()
 	game.pollProjects()
 	game.pollUpdateDiscovery()
+	game.pollLAN()
 	game.pollDirectoryStatus()
 	game.workspaceBackEnabled.Store(game.actions.mode != "" || game.inWorkspace())
 	if game.workspaceBackRequested.Swap(false) {

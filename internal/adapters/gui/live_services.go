@@ -10,6 +10,7 @@ import (
 )
 
 func (game *Game) Close() {
+	game.stopLAN()
 	game.closeDesktopUpdates()
 	if game.projects.close != nil {
 		game.projects.close()
@@ -54,7 +55,7 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 		return game.projectTab(tab)
 	}
 	if tab.ID() == hud.TabCluster && game.runtimeInfo.Queries != nil {
-		tab.Summary = "Local services are live mock drivers. Devices, routing pools and tasks remain demonstrations."
+		tab.Summary = "Discover nearby Apparat hosts. Listed example devices, routing pools and tasks are demonstrations."
 		tab.Sections = append([]hud.Section{game.liveServicesSection()}, tab.Sections...)
 	}
 	return tab

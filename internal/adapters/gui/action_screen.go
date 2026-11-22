@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -246,6 +247,12 @@ func (g *Game) settingsCardControls(c *widget.Container, id string) {
 		g.preferenceControls(c, id)
 	case "speech-recognition":
 		g.speechSettings(c)
+	case "api-configuration":
+		if runtime.GOOS == "linux" {
+			g.projectButton(c, "Configure API hosting", g.configureAPI)
+		} else {
+			c.AddChild(g.detailText("Client only · scoped hosting unavailable on this platform"))
+		}
 	case "command-directory":
 		g.projectButton(c, "Browse available commands", g.openActionBrowser)
 		g.spokenChoiceSetting(c)

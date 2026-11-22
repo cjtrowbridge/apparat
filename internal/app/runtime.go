@@ -5,6 +5,7 @@ package app
 import (
 	"context"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/adapters/discovery"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/config"
@@ -14,6 +15,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/platform"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -187,6 +189,12 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	}
 	workCtx, cancel := context.WithCancel(ctx)
 	node.cancel = cancel
+	if runtime.GOOS == "linux" && !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
+		cmd := discovery.Command(workCtx, "supervise", node.config.DatabasePath)
+		go func() {
+			_ = cmd.Run()
+		}()
+	}
 	node.stopped = make(chan struct{})
 	go node.supervise(workCtx, node.serviceManager, node.stopped)
 	result = node.stage("supervision")

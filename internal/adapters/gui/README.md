@@ -192,3 +192,5 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `ptt_lock.go`: Shared double-tap timing, capture ownership, lock and single submission for canvas and native dictation.
 
 - `action_dialog.go`: Centers the scrollable voice chooser, reserves its PTT space, and dismisses an outside click or tap on the dimmed page.
+
+- `lan.go`: connects Cluster's Add New Device detail to interface-scoped discovery. Linux users select an adapter and Android uses the active Wi-Fi network. Candidates expire with the browse session.
