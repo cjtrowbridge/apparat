@@ -35,53 +35,51 @@ func TestOnlyOneOwner(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	invite, err := db.IssueWorkerInvitation(ctx, worker.Public)
+	second := identity.NewPersonal(t.TempDir())
+	err = second.Create("Other", []byte("another password"))
 	if err != nil {
 		t.Fatal(err)
-	}
-	claim, err := personal.SignClaim(device, identity.ClaimDigest("fixture cluster"), identity.Fingerprint(worker.Public), invite)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = db.RememberDevice(ctx, claim.Profile, claim.Device)
-	if err != nil {
-		t.Fatal(err)
-	}
-	bad := claim
-	bad.Cluster = identity.ClaimDigest("other cluster")
-	if db.ClaimWorker(ctx, bad, worker.Public) == nil {
-		t.Fatal("accepted changed cluster")
 	}
 	var wg sync.WaitGroup
-	outcomes := make(chan error, 2)
-	for range 2 {
+	results := make(chan Access, 2)
+	for _, p := range []*identity.Personal{personal, second} {
+		proof, err := p.SignLogin(device, identity.Fingerprint(worker.Public), identity.ClaimDigest("test"))
+		if err != nil {
+			t.Fatal(err)
+		}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			outcomes <- db.ClaimWorker(ctx, claim, worker.Public)
+			a, err := db.Login(ctx, proof)
+			if err != nil {
+				t.Error(err)
+			}
+			results <- a
 		}()
 	}
 	wg.Wait()
-	close(outcomes)
-	count := 0
-	for err := range outcomes {
-		if err == nil {
-			count++
+	close(results)
+	admins := 0
+	for a := range results {
+		if a.Admin {
+			admins++
+			profile, _, err := personal.Credentials(device.Public())
+			if err != nil {
+				t.Fatal(err)
+			}
+			p := personal
+			if a.User != identity.Fingerprint(profile.Profile.Public) {
+				p = second
+			}
+			verifyPolicy(ctx, t, db, p, device, a.Cluster)
+		} else if a.Admission != "pending" {
+			t.Fatal("expected pending")
 		}
 	}
-	if count != 1 {
-		t.Fatalf("successful claims: %d", count)
+	if admins != 1 {
+		t.Fatal("expected exactly one first admin", admins)
 	}
-	_, err = db.IssueWorkerInvitation(ctx, worker.Public)
-	if err == nil {
-		t.Fatal("issued a new invitation on an owned worker")
-	}
-	var owner string
-	err = db.sql.QueryRowContext(ctx, "SELECT user_id FROM cluster_users WHERE admission='approved' AND admin=1").Scan(&owner)
-	if err != nil || owner != identity.Fingerprint(claim.Profile.Profile.Public) {
-		t.Fatal("missing approved owner", err)
-	}
-	verifyPolicy(ctx, t, db, personal, device, claim.Cluster)
+
 }
 
 func verifyPolicy(ctx context.Context, t *testing.T, db *DB, p *identity.Personal, d *identity.Session, cluster string) {

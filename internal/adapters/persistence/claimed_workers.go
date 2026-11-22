@@ -4,9 +4,9 @@ package persistence
 
 import (
 	"context"
-	"encoding/json"
+	"database/sql"
 
-	"github.com/cjtrowbridge/apparat/internal/identity"
+	"errors"
 )
 
 const claimReceiptSchema = `
@@ -14,22 +14,15 @@ CREATE TABLE claimed_workers(worker TEXT PRIMARY KEY,cluster TEXT NOT NULL,owner
 CREATE TABLE claim_receipts(worker TEXT PRIMARY KEY,digest TEXT NOT NULL);
 `
 
-func claimReceipt(c identity.Claim) string {
-	data, _ := json.Marshal(c)
-	return identity.ClaimDigest(string(data))
-}
-
-func (db *DB) ConfirmedClaim(ctx context.Context, c identity.Claim) bool {
-	if !c.Valid() {
-		return false
+func (db *DB) WorkerPin(ctx context.Context, host string) (string, error) {
+	var pin string
+	err := db.sql.QueryRowContext(ctx, "SELECT worker FROM claimed_workers WHERE host=? COLLATE NOCASE", host).Scan(&pin)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
 	}
-	var exists int
-	err := db.sql.QueryRowContext(ctx, "SELECT 1 FROM claim_receipts WHERE worker=? AND digest=?", c.Worker, claimReceipt(c)).Scan(&exists)
-	return err == nil
+	return pin, err
 }
-
-func (db *DB) RememberClaim(ctx context.Context, c identity.Claim, host, address string) error {
-	_, err := db.sql.ExecContext(ctx, `INSERT INTO claimed_workers(worker,cluster,owner,host,address) VALUES(?,?,?,?,?)
-	ON CONFLICT(worker) DO UPDATE SET host=excluded.host,address=excluded.address WHERE owner=excluded.owner AND cluster=excluded.cluster`, c.Worker, c.Cluster, identity.Fingerprint(c.Device.Binding.User), host, address)
+func (db *DB) SaveWorkerAccess(ctx context.Context, host, address, worker string, a Access) error {
+	_, err := db.sql.ExecContext(ctx, `INSERT INTO claimed_workers VALUES(?,?,?,?,?) ON CONFLICT(worker) DO UPDATE SET address=excluded.address,host=excluded.host`, worker, a.Cluster, a.User, host, address)
 	return err
 }

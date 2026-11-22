@@ -214,7 +214,7 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 		return result
 	}
 	if runtime.GOOS == "linux" && node.WorkerEvents != nil && node.Keys.State() == "unlocked" {
-		node.claimServer, result = httpapi.ListenWorkerClaims(filepath.Join(filepath.Dir(node.config.DatabasePath), "worker-claims.sock"), node.database, node.Keys)
+		node.claimServer, result = httpapi.ListenWorkerClaims(filepath.Join(filepath.Dir(node.config.DatabasePath), "worker-claims.sock"), filepath.Join(node.config.ArtifactsDir, "pool"), node.database, node.Keys)
 		if result != nil {
 			return result
 		}

@@ -2586,3 +2586,5 @@ The MVP is complete only when the applicable cross-cutting requirements and all 
   - [ ] Other platforms are claimed only to their evidenced level.
 
 Phase 17 local delivery criterion: the ordinary build on main qualifies all host-eligible artifacts, publishes their exact bytes together and verifies remote delivery. Android delivery additionally requires signing continuity and a monotonically increasing package version.
+
+Worker claiming uses the existing unlocked credentials directly from discovery. The first verified login establishes ownership. Two-way OTP belongs to personal app pairing.

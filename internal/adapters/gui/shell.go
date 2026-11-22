@@ -18,7 +18,7 @@ type DocumentSession interface {
 }
 type RuntimeInfo struct {
 	BrowseLAN       func(bool) string
-	ClaimHost       func(string)
+	ClaimHost       func(string, string)
 	EditName        func()
 	SpeakChoice     func(string)
 	MicrophoneReady func() bool

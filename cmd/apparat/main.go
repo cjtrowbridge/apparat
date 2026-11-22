@@ -107,8 +107,8 @@ func run() (code int) {
 		executable, _ := os.Executable()
 		err = gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{EditName: func() {
 			node.EditScreenName(ctx, dialog)
-		}, ClaimHost: func(host string) {
-			node.ClaimWithDialog(ctx, host, dialog)
+		}, ClaimHost: func(network, host string) {
+			node.ClaimWithDialog(ctx, network, host, dialog)
 		}, WorkingDir: wd, RuntimePath: cfg.RootDir, BinaryPath: executable, Queries: node})
 	} else {
 		err = node.Start(ctx)

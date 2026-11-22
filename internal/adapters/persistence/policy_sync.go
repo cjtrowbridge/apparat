@@ -49,7 +49,7 @@ func (db *DB) AdminPolicyPage(ctx context.Context, user, device, cluster string,
 	defer db.policyMu.RUnlock()
 	var allowed int
 	err := db.sql.QueryRowContext(ctx, `SELECT 1 FROM cluster_users u JOIN cluster_devices_authorized d USING(cluster,user_id)
-	WHERE u.cluster=? AND u.user_id=? AND d.device_id=? AND u.admin=1 AND u.admission='approved'`, cluster, user, device).Scan(&allowed)
+	WHERE u.cluster=? AND u.user_id=? AND d.device_id=? AND u.admin=1 AND u.admission='approved' AND NOT EXISTS(SELECT 1 FROM revoked_devices WHERE cluster=u.cluster AND device=d.device_id)`, cluster, user, device).Scan(&allowed)
 	if err != nil {
 		return PolicyPage{}, errors.New("administrator authorization required")
 	}

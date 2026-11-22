@@ -207,7 +207,7 @@ func TestPersonalClusterDialogsFollowAvailability(t *testing.T) {
 	g := NewGame()
 	defer g.Close()
 	g.runtimeInfo.EditName = func() {}
-	g.runtimeInfo.ClaimHost = func(string) {}
+	g.runtimeInfo.ClaimHost = func(string, string) {}
 	g.receiveLAN(lanNames([]string{"fixture"}))
 	if len(g.queryActions("open claim fixture", true).Choices) != 1 || len(g.queryActions("open edit screen name", true).Choices) != 1 {
 		t.Fatal("missing identity or claim action")

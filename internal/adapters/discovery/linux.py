@@ -110,6 +110,9 @@ def put(db, name, data):
 
 
 def worker_idle(db):
+    if db.execute("SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='pool_tasks')").fetchone()[0]:
+        if db.execute("SELECT EXISTS(SELECT 1 FROM pool_tasks WHERE state IN ('queued','running'))").fetchone()[0]:
+            return False
     return not db.execute("""SELECT EXISTS(SELECT 1 FROM project_entries WHERE kind='run'
         AND json_extract(body,'$.State') IN ('pending','queued','running','assigned'))""").fetchone()[0]
 

@@ -32,12 +32,12 @@ func LockKeys() {
 	}
 }
 
-func claimHost(host string) {
+func claimHost(network, host string) {
 	identitySetup.Lock()
 	dialogs := currentDialogs
 	identitySetup.Unlock()
 	if dialogs != nil {
-		node.ClaimWithDialog(context.Background(), host, dialogs.Ask)
+		node.ClaimWithDialog(context.Background(), network, host, dialogs.Ask)
 	}
 }
 

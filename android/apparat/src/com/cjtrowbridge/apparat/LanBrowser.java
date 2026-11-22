@@ -86,6 +86,13 @@ final class LanBrowser {
                 status = "Network discovery unavailable";
             }
         }
-        return names.isEmpty() ? status : new org.json.JSONArray(names).toString();
+        if (names.isEmpty()) return status;
+        android.net.LinkProperties link = connectivity.getLinkProperties(current);
+        if (link == null || link.getInterfaceName() == null) return "Wi-Fi interface unavailable";
+        try {
+            return new org.json.JSONObject().put("network",link.getInterfaceName()).put("hosts",new org.json.JSONArray(names)).toString();
+        } catch (org.json.JSONException e) {
+            return "Network discovery unavailable";
+        }
     }
 }

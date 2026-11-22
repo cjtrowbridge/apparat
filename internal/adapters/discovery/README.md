@@ -6,3 +6,4 @@ Linux API hosting uses the embedded linux.py helper invoked by linux_helper.go. 
 - `browse.go`: Interface-selected IPv4 DNS-SD queries with expiring results for Windows and macOS browsers.
 
 Headless responders notify the owner after a flushed API response wins the SQLite schedule claim. The existing supervisor forwards explicit local check requests. Only the daemon receives update events.
+- `resolve.go`: Resolves the selected worker's DNS-SD port on the interface used for browsing before authentication.

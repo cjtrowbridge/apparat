@@ -68,3 +68,5 @@ Bound to [Phase 10 user claims and node administration](../../ROADMAP.md#user-cl
 For implementation checkpoints, run checkout identity before edits, package and race tests through the build gate, documentation and navigation checks, then the canonical no-flag build. Record eligible artifacts and GitHub readback. Record physical Pixel validation as pending if unavailable. Promote local functionality independently of later cluster work. Close the full plan when each claimed platform and network behavior has acceptance evidence or an explicitly recorded deferral.
 
 The [personal cluster execution plan](2026-11-22-15-00-00_personal-cluster.md) governs portable user pairing, user-owned claims, SQLite policy and the initial queue slice.
+
+Worker claiming uses the existing unlocked credentials directly from discovery. The first verified login establishes ownership. Two-way OTP belongs to personal app pairing.

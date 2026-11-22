@@ -25,5 +25,6 @@ Identity code must redact private keys, passphrases, tokens, raw prompts, raw vo
 - `personal_setup.go`: prompts for creation, restore, recovery export and unlock after native device setup. Cancel keeps the local console usable. The headless runtime has no personal session.
 - `personal_test.go`: exercises restore, signed profile changes, incorrect passwords and rejection of a bare node backup.
 - `device_binding.go`: Issues and verifies a domain-separated signed authorization for a distinct device public key and reads the corresponding signed user profile.
-- `claim.go`: Proves possession of both keys for a specific worker, invitation and cluster. Changing the target invalidates the signatures.
+- `claim.go`: Computes stable SHA-256 identifiers used by cluster signatures and personal cluster IDs.
 - `policy.go`: Signs proposed administrative edits with both identities, binding the command ID, cluster and base revision.
+- `auth.go`: Creates and verifies domain-separated worker login proofs that require both unlocked keys.

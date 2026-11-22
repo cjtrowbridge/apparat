@@ -4,16 +4,15 @@ package app
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"strings"
+	"github.com/cjtrowbridge/apparat/internal/adapters/discovery"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
-func (node *Runtime) ClaimWithDialog(ctx context.Context, host string, dialog identity.Dialog) {
+func (node *Runtime) ClaimWithDialog(ctx context.Context, network, host string, dialog identity.Dialog) {
 	if !node.claimMu.TryLock() {
 		return
 	}
@@ -22,48 +21,48 @@ func (node *Runtime) ClaimWithDialog(ctx context.Context, host string, dialog id
 	if node.Personal == nil {
 		return
 	}
-	raw, ok := nativeQuestion(dialog, "file", "Select worker invitation", "Choose the invitation issued locally on "+host+".")
-	if !ok {
-		return
-	}
-	data, err := base64.StdEncoding.DecodeString(raw)
-	var invite httpapi.Invitation
-	if err != nil || len(data) > 4096 || json.Unmarshal(data, &invite) != nil || !strings.EqualFold(invite.Host, host) {
-		nativeQuestion(dialog, "notice", "Claim worker", "The invitation does not identify the selected worker.")
-		return
-	}
-	choice, ok := nativeQuestion(dialog, "choose", "Claim "+host, "Use your personal identity to become administrator of "+host+" with fingerprint "+invite.Fingerprint+"?", "Claim host")
-	if !ok || choice != "Claim host" {
-		return
-	}
-	err = node.claim(ctx, invite)
+	status, err := node.authenticateWorker(ctx, network, host)
 	if err != nil {
 		nativeQuestion(dialog, "notice", "Claim worker", err.Error())
 		return
 	}
-	nativeQuestion(dialog, "notice", "Worker claimed", host+" has approved your personal identity as its first administrator.")
+	nativeQuestion(dialog, "notice", host, status)
 }
 
-func (node *Runtime) claim(ctx context.Context, invite httpapi.Invitation) error {
-	profile, _, err := node.Personal.Credentials(node.Keys.Public())
+func (node *Runtime) authenticateWorker(ctx context.Context, network, host string) (string, error) {
+	_, _, err := node.Personal.Credentials(node.Keys.Public())
 	if err != nil {
-		return errors.New("unlock your personal and device identities first")
+		return "", errors.New("Unlock your saved Apparat identity to connect.")
 	}
-	cluster := identity.ClaimDigest("apparat/personal-cluster/v1/" + identity.Fingerprint(profile.Profile.Public))
-	c, err := node.Personal.SignClaim(node.Keys, cluster, invite.Fingerprint, invite.Code)
+	address, err := discovery.ResolveWorker(ctx, network, host)
 	if err != nil {
-		return err
-	}
-	err = httpapi.PostClaim(ctx, invite, c)
-	if err != nil {
-		return err
+		return "", err
 	}
 	node.mu.Lock()
-	defer node.mu.Unlock()
-	if node.database == nil {
-		return errors.New("worker claimed; reopen and retry the invitation to record it locally")
+	db := node.database
+	node.mu.Unlock()
+	if db == nil {
+		return "", errors.New("local database unavailable")
 	}
-	return node.database.RememberClaim(ctx, c, invite.Host, invite.Address)
+	pin, err := db.WorkerPin(ctx, host)
+	if err != nil {
+		return "", err
+	}
+	client, err := httpapi.OpenWorker(ctx, address, pin, node.Personal, node.Keys)
+	if err != nil {
+		return "", err
+	}
+	err = db.SaveWorkerAccess(ctx, host, address, client.Worker, client.Access)
+	if err != nil {
+		return "", err
+	}
+	if client.Access.Admin {
+		return "Connected as a cluster administrator.", nil
+	}
+	if client.Access.Admission == "approved" {
+		return "Connected with your approved user identity.", nil
+	}
+	return "Your user identity is awaiting administrator approval.", nil
 }
 
 func nativeQuestion(dialog identity.Dialog, op, title, message string, options ...string) (string, bool) {

@@ -44,7 +44,7 @@ func (e PolicyEvent) Hash() string {
 func authorizeEdit(ctx context.Context, tx *sql.Tx, p identity.Proposal) error {
 	var admin int
 	err := tx.QueryRowContext(ctx, `SELECT u.admin FROM cluster_users u JOIN cluster_devices_authorized d USING(cluster,user_id)
-	WHERE u.cluster=? AND u.user_id=? AND u.admission='approved' AND d.device_id=?`, p.Edit.Cluster,
+	WHERE u.cluster=? AND u.user_id=? AND u.admission='approved' AND d.device_id=? AND NOT EXISTS(SELECT 1 FROM revoked_devices WHERE cluster=u.cluster AND device=d.device_id)`, p.Edit.Cluster,
 		identity.Fingerprint(p.Device.Binding.User), identity.Fingerprint(p.Device.Binding.Device)).Scan(&admin)
 	if err != nil || admin != 1 {
 		return errors.New("current cluster administrator required")
@@ -81,6 +81,11 @@ func applyEdit(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
 		}
 		result, err = tx.ExecContext(ctx, `UPDATE cluster_users SET admission=?,admin=? WHERE cluster=? AND user_id=?
 		 AND (admin=0 OR ? OR (SELECT count(*) FROM cluster_users WHERE cluster=? AND admin=1)>1)`, admission, admin, e.Cluster, e.Target, admin, e.Cluster)
+	case "order_on_worker":
+		result, err = tx.ExecContext(ctx, `UPDATE worker_cluster SET authority_device=worker WHERE cluster=? AND worker=? AND authority_device=? AND owner_user=?`, e.Cluster, e.Target, e.Service, e.Value)
+	case "revoke_device":
+		result, err = tx.ExecContext(ctx, `INSERT INTO revoked_devices(cluster,device) SELECT cluster,device_id FROM cluster_devices_authorized
+			WHERE cluster=? AND device_id=? AND device_id!=(SELECT authority_device FROM worker_cluster WHERE cluster=?) LIMIT 1`, e.Cluster, e.Target, e.Cluster)
 	case "add_pool":
 		if e.Pool == "" {
 			return errors.New("pool required")
@@ -180,6 +185,9 @@ func (db *DB) recordPolicy(ctx context.Context, event PolicyEvent, signer *ident
 			return empty, errors.New("authority signing failed")
 		}
 	}
+	if p.Edit.Kind == "order_on_worker" && (p.Edit.Value != identity.Fingerprint(p.Device.Binding.User) || p.Edit.Service != authority) {
+		return empty, errors.New("owner and current authority required for handoff")
+	}
 	err = applyEdit(ctx, tx, p.Edit)
 	if err != nil {
 		return empty, err
@@ -195,4 +203,14 @@ func (db *DB) recordPolicy(ctx context.Context, event PolicyEvent, signer *ident
 	}
 	db.policyHeads[p.Edit.Cluster] = PolicyCursor{revision + 1, event.Hash()}
 	return event, nil
+}
+
+func SignHandoff(proposal identity.Proposal, previous string, authority *identity.Session) (PolicyEvent, error) {
+	event := PolicyEvent{Proposal: proposal, Previous: previous}
+	if !proposal.Valid() || proposal.Edit.Kind != "order_on_worker" || proposal.Edit.Service != identity.Fingerprint(authority.Public()) {
+		return PolicyEvent{}, errors.New("invalid authority handoff")
+	}
+	signature, err := authority.Sign(event.message())
+	event.Signature = signature
+	return event, err
 }

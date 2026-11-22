@@ -36,7 +36,7 @@ func (g *Game) discoveryContent(c *widget.Container) {
 			g.projectButton(c, "Claim this host for your cluster", func() {
 				g.beginClaim(host)
 			})
-			c.AddChild(g.detailText("Choose a private invitation from this worker to claim it."))
+			c.AddChild(g.detailText("Connect using your saved Apparat identity."))
 		}
 		g.projectButton(c, "Back to discovery", g.leavePeer)
 		return
@@ -189,6 +189,14 @@ func (g *Game) pollLAN() {
 		g.lan.active = true
 		g.lan.next = time.Now().Add(time.Second)
 		msg := g.runtimeInfo.BrowseLAN(true)
+		var result struct {
+			Network string
+			Hosts   []string
+		}
+		if json.Unmarshal([]byte(msg), &result) == nil && result.Network != "" {
+			g.lan.device = result.Network
+			msg = lanNames(result.Hosts)
+		}
 		g.receiveLAN(msg)
 	}
 	select {
@@ -209,6 +217,6 @@ func (g *Game) configureAPI() {
 
 func (g *Game) beginClaim(host string) {
 	if g.runtimeInfo.ClaimHost != nil && slices.Contains(g.lan.names, host) {
-		go g.runtimeInfo.ClaimHost(host)
+		go g.runtimeInfo.ClaimHost(g.lan.device, host)
 	}
 }

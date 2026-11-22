@@ -43,8 +43,12 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `workspace.go`: Stores owner-local drafts, pending chat messages and manual run outcomes.
 
 - `user_devices.go`: Migration 9 records signed public profiles by user fingerprint and device authorizations by user and device fingerprint. Profile revisions never regress; equal conflicting revisions fail. SQLite receives public records only.
-- `claim.go`: Migration 10 and the first-owner transaction. A local ten-minute invitation is stored as a digest. Its consumption, owner admission, device binding and initial policy defaults commit together.
+- `claim.go`: Preserves migration 10 for existing databases. First authentication now creates ownership in the login transaction.
 - `claim_test.go`: Verifies target substitution fails and competing first claims produce one approved admin.
 - `policy.go`: Migration 11 and signed administrative policy transactions. Replicas verify the authority, actor, revision and previous hash before applying changes. The last administrator cannot be removed.
 - `policy_sync.go`: Rebuilds committed policy heads from SQLite on startup, checks admin visibility on every request and pages at most 64 events. An up-to-date authorized caller avoids reading the event table.
-- `claimed_workers.go`: Migration 12 stores acknowledged workers and target-side claim receipt hashes. Exact retries can recover a lost response.
+- `claimed_workers.go`: Preserves migration 12 and stores the authenticated worker fingerprint and address for reconnection.
+- `admission.go`: Migration 13 and dual-key user registration. Unknown users start pending on open nodes. Blocked users and revoked device keys cannot obtain service access.
+- `pool_tasks.go`: Migration 14 creates one task table across pools, an attempt history, artifact references and ordered per-pool revisions. Hash-text admission checks membership, dispatch rechecks current grants, and stale or cancelled leases cannot commit results.
+- `pool_task_views.go`: Checks current admission and device authorization before returning a creator's task revisions or artifact reference.
+- `pool_tasks_test.go`: Covers denied pool access, duplicate submissions, expired leases, stale completion, result integrity and cross-user visibility.
