@@ -34,8 +34,10 @@ Linux and Pixel 4a each displayed the deployed worker in the real Cluster view. 
 
 ## Startup key setup and recovery
 
-- [ ] On startup inspect the current node identity. Give returning users a recovery warning, a private-key file chooser and explicit confirmation before generating a replacement. Stage and verify the selected pair, preserve legacy files and keep the same fingerprint on import.
-- [ ] Support masked password setup and unlock, capability-gated system credential protection, unattended fresh Linux workers, and local recovery. Verify actual startup, cancellation, restart, bad-password and mismatched-key paths.
+- [x] On startup inspect the current node identity. Give returning users a recovery warning, a private-key file chooser and explicit confirmation before generating a replacement. Stage and verify the selected pair, preserve legacy files and keep the same fingerprint on import.
+- [x] Support masked password setup and unlock, capability-gated system credential protection, unattended fresh Linux workers, and local recovery. Verify actual startup, cancellation, restart, bad-password and mismatched-key paths.
+
+Release 0.1.45 passed canonical delivery. The Linux GUI created and unlocked a password-protected identity after restart. An encrypted recovery copy retained its fingerprint on import to another node. A new headless worker retained its owner-only identity after restart. A disposable Secret Service keyring passed store, lookup and removal. On the Pixel 4a, the initial warning, system document picker, new-identity confirmation, password and Android protection choices were exercised. The real system authentication sheet opened and cancellation returned to setup. Successful owner authentication on the Pixel, Windows sign-in/ACL on native Windows, and native macOS Keychain enrollment remain unqualified. The Windows Go path was cross-compiled. Claiming remains disabled.
 
 ## Subsequent identity and enrollment work
 
