@@ -100,7 +100,6 @@ def browse(dev):
 
 
 def serve(db, rule):
-    import dbus
     dev, addr = profiles()[rule]
     index = socket.if_nametoindex(dev)
     def permitted():
@@ -146,6 +145,7 @@ def serve(db, rule):
         listener.timeout = 1
         Handler.timeout = 2
         if dev not in ("lo", "tailscale0"):
+            import dbus
             bus, server = avahi()
             group = dbus.Interface(bus.get_object("org.freedesktop.Avahi", server.EntryGroupNew()), "org.freedesktop.Avahi.EntryGroup")
             group.AddService(index, 0, 0, socket.gethostname().split(".")[0], TYPE, "local", "", listener.server_port, dbus.Array([], signature="ay"))
@@ -231,4 +231,5 @@ def main():
             save(db, [key for key in saved(db) if key != args[0]], enabled(db))
         else:
             raise ValueError("Select an available network rule from api-list")
-main()
+if __name__ == "__main__":
+    main()

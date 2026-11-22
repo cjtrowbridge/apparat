@@ -38,7 +38,9 @@ func Browse(ctx context.Context, device string, update func([]string)) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	packet := ipv4.NewPacketConn(conn)
 	err = packet.SetMulticastInterface(iface)
 	if err != nil {
@@ -75,7 +77,7 @@ func Browse(ctx context.Context, device string, update func([]string)) error {
 		}
 		n, from, err := conn.ReadFromUDP(buf)
 		var timeout net.Error
-		if err != nil && !(errors.As(err, &timeout) && timeout.Timeout()) {
+		if err != nil && (!errors.As(err, &timeout) || !timeout.Timeout()) {
 			return err
 		}
 		var response dnsmessage.Message

@@ -14,7 +14,7 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 
 ## Deliver discovery first
 
-- [ ] Qualify and atomically install the Linux amd64 worker on trashcan0 through trusted key-only SSH whenever available. Verify its digest, remote smoke run and discovery on the Pixel and local Linux GUI.
+- [x] Qualify and atomically install the Linux amd64 worker on trashcan0 through trusted key-only SSH whenever available. Verify its digest, remote smoke run and discovery on the Pixel and local Linux GUI.
 
 Execute the hosting-default and activation-control tasks below first, limited to the isolated anonymous responder. Use an owner-local administration path for headless configuration. Exercise installation upgrades as well as fresh roots. The first deliverable ends at browsing and a JSON authentication-required response.
 
@@ -22,6 +22,8 @@ Execute the hosting-default and activation-control tasks below first, limited to
 - [ ] Add a bounded, per-interface DNS-SD browser and publisher. Publish only after successful listener activation. Test cancellation, goodbye/expiry, duplicates, malformed records, link loss, app suspension and blocked multicast. Display candidates without storing trusted devices or enabling an add/join action.
 - [ ] Implement the bootstrap HTTP contract independently of the current Phase 8 router. Verify the exact JSON 401 and absence of health, projects and service data on that listener. Probe that no socket or advertisement is reachable on a denied interface before and after grant changes.
 - [ ] Exercise Linux GUI and headless hosting, Pixel foreground browsing with hosting off, and reversed roles wherever network scoping is enforceable. Verify layout on a narrow Pixel and desktop/Deck split pane. On Windows validate adapter/profile and firewall behavior, on macOS Bonjour interface scope and permission denial, and on Android validate network-specific NSD and callbacks across Wi-Fi/VPN changes at supported API levels. Report unavailable target checks explicitly. Never use an all-interface fallback.
+
+Linux and Pixel 4a each displayed the deployed worker in the real Cluster view. The wired HTTP check returned the specified JSON 401 and an unknown resource returned JSON 404. The ungranted Docker address refused the connection. Disabling the grant withdrew DNS-SD and closed its old port. Restoring the wired grant republished the service. Roaming, physical controller and additional OS checks remain open.
 
 ## Subsequent identity and enrollment work
 

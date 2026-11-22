@@ -2,7 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-11-22-12-47-04 | plans/current/2026-11-22-12-00-00_node-identity-and-rest.md | Node setup, key protection and authenticated REST | Deliver persistent node identities, optional OS unlock and an authenticated local API before cluster enrollment.
+2026-11-22-12-58-28 | plans/current/2026-11-22-12-00-00_node-identity-and-rest.md | Node setup, key protection and authenticated REST | Deliver persistent node identities, optional OS unlock and an authenticated local API before cluster enrollment.
 2026-11-21-16-15-01 | plans/current/2026-11-17-11-08-46_embed-stmpck.md | Bring STMPCK into Apparat while preserving standalone play | Prove private embedding with three representative games, validate all eighteen in both hosts, and qualify a reproducible release.
 2026-11-19-12-02-26 | plans/current/2026-11-17-20-34-03_local-project-repos.md | Open local checkouts and clone GitHub repos on this device | Open local checkouts and clone to a chosen location on Linux and Android, with private GitHub access on Linux.
 2026-11-18-13-00-43 | plans/current/2026-11-18-10-27-42_local-project-workspaces.md | Use a local project offline | Edit a real checkout, review and commit changes, and run a supported local task through Projects.

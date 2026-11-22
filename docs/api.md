@@ -79,7 +79,7 @@ Workers may return bounded inline results or artifact references. A queue owner 
 
 ## Current loopback operations
 
-Phase 8 exposed the following local diagnostic projections. The discovery release removes the legacy --listen switch and isolates bootstrap requests from these handlers. Default startup opens no listener. Numeric IPv4/IPv6 loopback only; wildcard, hostname and non-loopback addresses fail startup. There is no authentication claim for this local diagnostic server: other processes with host loopback access can read its safe projections. Phase 10 must add mTLS/authorization before any wider listener.
+Phase 8 exposed the following local diagnostic projections. The discovery release removes the legacy --listen switch and isolates bootstrap requests from these handlers. Default startup opens no listener. The diagnostic router remains available to package tests. Product listeners use the isolated bootstrap handler described below.
 
 GET `/v1/health` returns version, lifecycle state and readiness; `/v1/device` returns OS, architecture and **local bootstrap-file** identity status. `/v1/services` and `/v1/services/{service_id}` return ID, name, mock driver, desired enablement/revision, health, observation time, safe error and capabilities. `/v1/capabilities` and `/v1/services/{service_id}/capabilities` expose service-scoped capability IDs and workload classes. Canonical ULIDs are required in paths. No provider address, filesystem path, credential reference, raw error, fail-injection switch or key is serialized.
 
