@@ -25,12 +25,12 @@ Execute the hosting-default and activation-control tasks below first, limited to
 
 Linux and Pixel 4a each displayed the deployed worker in the real Cluster view. The wired HTTP check returned the specified JSON 401 and an unknown resource returned JSON 404. The ungranted Docker address refused the connection. Disabling the grant withdrew DNS-SD and closed its old port. Restoring the wired grant republished the service. Roaming, physical controller and additional OS checks remain open.
 
+- [x] Present live candidates as plus-and-hostname buttons, open an unpaired node detail view, and show claim eligibility. Resolve transient destinations at activation and verify narrow and wide layouts. Trusted enrollment depends on identity setup.
+
 ## Standalone Linux worker updates
 
 - [x] Reuse the Linux release validator for the worker artifact, with persisted headless defaults and request-driven scheduling including anonymous responses. Exercise success, failure, suppression, manual override, promotion and restart. Preserve desktop update behavior.
 - [x] Document the owner commands, quiet-node semantics and subsequent pool queue, drain and rejoin gates in the roadmap.
-
-- [ ] Present live candidates as plus-and-hostname buttons, open an unpaired node detail view, and show claim eligibility. Resolve transient destinations at activation and verify narrow and wide layouts. Trusted enrollment depends on identity setup.
 
 ## Subsequent identity and enrollment work
 
