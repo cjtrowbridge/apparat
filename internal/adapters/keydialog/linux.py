@@ -60,10 +60,11 @@ def prompt(req):
     label.set_max_width_chars(48)
     box.add(label)
     dialog.add_button("Close" if op=="notice" else "Cancel", Gtk.ResponseType.CANCEL)
-    if op=="password":
+    if op in ("password","text"):
         entry = Gtk.Entry()
-        entry.set_visibility(False)
-        entry.set_input_purpose(Gtk.InputPurpose.PASSWORD)
+        entry.set_visibility(op == "text")
+        if op == "password":
+            entry.set_input_purpose(Gtk.InputPurpose.PASSWORD)
         entry.set_activates_default(True)
         box.add(entry)
         dialog.add_button("Continue",1)
@@ -75,7 +76,7 @@ def prompt(req):
     result = dialog.run()
     if result<1:
         return None
-    return entry.get_text() if op=="password" else req["Options"][result-1]
+    return entry.get_text() if op in ("password","text") else req["Options"][result-1]
 
 try:
     print(json.dumps(prompt(json.load(sys.stdin))))

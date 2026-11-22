@@ -34,8 +34,15 @@ var migrations = []Migration{
 	{Version: 6, Name: "local_project_registry", SQL: projectsSchema},
 	{Version: 7, Name: "local_workspaces", SQL: workspaceSchema},
 	{Version: 8, Name: "spoken_choices", SQL: "ALTER TABLE preferences ADD COLUMN spoken_choices INTEGER NOT NULL DEFAULT 0"},
+	{Version: 9, Name: "personal_device_bindings", SQL: personalSchema},
+	{Version: 10, Name: "worker_claims", SQL: claimSchema},
+	{Version: 11, Name: "cluster_policy", SQL: policySchema},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {
-	return db.ApplyMigrations(ctx, migrations)
+	err := db.ApplyMigrations(ctx, migrations)
+	if err != nil {
+		return err
+	}
+	return db.loadPolicyHeads(ctx)
 }

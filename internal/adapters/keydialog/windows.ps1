@@ -58,9 +58,9 @@ function Prompt {
     $label.Text=$r.Message
     $panel.Controls.Add($label)
     $choices=@($r.Options)
-    if ($r.Op -eq 'password') {
+    if ($r.Op -in 'password','text') {
         $entry=New-Object Windows.Forms.TextBox
-        $entry.UseSystemPasswordChar=$true
+        $entry.UseSystemPasswordChar=($r.Op -eq 'password')
         $entry.Width=300
         $panel.Controls.Add($entry)
         $choices=@('Continue')
@@ -87,7 +87,7 @@ function Prompt {
     if ($form.ShowDialog() -ne 'OK') {
         return
     }
-    if ($r.Op -eq 'password') {
+    if ($r.Op -in 'password','text') {
         return $entry.Text
     }
     return $form.Tag

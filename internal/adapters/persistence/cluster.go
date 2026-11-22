@@ -51,12 +51,20 @@ func (dir Directory) PutDevice(ctx context.Context, profile DeviceProfile) error
 		return err
 	}
 	now := time.Now().UTC().UnixMilli()
-	_, err = dir.db.ExecContext(ctx, `INSERT INTO cluster_devices(id, profile_json, signature, updated_at_ms) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET profile_json=excluded.profile_json, signature=excluded.signature, updated_at_ms=excluded.updated_at_ms`, profile.ID, string(data), profile.Signature, now)
+	tx, err := dir.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	_, err = dir.db.ExecContext(ctx, `INSERT INTO cluster_changes(device_id, kind, created_at_ms) VALUES (?, ?, ?)`, profile.ID, "device_profile", now)
-	return err
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, `INSERT INTO cluster_devices(id, profile_json, signature, updated_at_ms) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET profile_json=excluded.profile_json, signature=excluded.signature, updated_at_ms=excluded.updated_at_ms`, profile.ID, string(data), profile.Signature, now)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO cluster_changes(device_id, kind, created_at_ms) VALUES (?, ?, ?)`, profile.ID, "device_profile", now)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (dir Directory) GetDevice(ctx context.Context, id string) (DeviceProfile, error) {

@@ -4,6 +4,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 )
 
@@ -42,5 +43,31 @@ func TestDirectoryPersistsProfilesAndChanges(t *testing.T) {
 	}
 	if len(changes) != 1 || changes[0].DeviceID != "device-1" {
 		t.Fatalf("changes = %+v", changes)
+	}
+}
+
+func TestProfileAndChangeRollbackTogether(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(ctx, t.TempDir()+"/node.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	directory := NewDirectory(db.sql)
+	err = directory.Init(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.sql.ExecContext(ctx, "CREATE TRIGGER reject_change BEFORE INSERT ON cluster_changes BEGIN SELECT RAISE(ABORT,'full'); END")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = directory.PutDevice(ctx, DeviceProfile{ID: "one"})
+	if err == nil {
+		t.Fatal("expected failure recording change")
+	}
+	_, err = directory.GetDevice(ctx, "one")
+	if err != sql.ErrNoRows {
+		t.Fatalf("unexpected device after rollback: %v", err)
 	}
 }

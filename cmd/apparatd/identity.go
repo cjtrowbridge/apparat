@@ -43,6 +43,10 @@ except (EOFError,OSError,KeyboardInterrupt):print('null')
 `
 
 func setupIdentity(args []string) int {
+	generate := len(args) > 0 && args[0] == "--generate-if-missing"
+	if generate {
+		args = args[1:]
+	}
 	cfg, err := config.Load(config.Options{Args: args, DefaultMode: config.ModeHeadless, BinaryName: "apparatd"})
 	if err != nil {
 		return 2
@@ -57,6 +61,19 @@ func setupIdentity(args []string) int {
 	}()
 	session := identity.NewSession(cfg.IdentityDir)
 	defer session.Lock()
+	if generate {
+		if session.State() != "missing" {
+			fmt.Fprintln(os.Stderr, "A device identity already exists or needs recovery.")
+			return 1
+		}
+		err = session.Install(nil, "", "plain", "", "", true)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Could not create device identity.")
+			return 1
+		}
+		fmt.Println("Created worker identity", identity.Fingerprint(session.Public()))
+		return 0
+	}
 	session.Setup(func(packet string) string {
 		cmd := exec.CommandContext(context.Background(), "/usr/bin/python3", "-I", "-c", terminalDialog)
 		cmd.Stdin = strings.NewReader(packet)

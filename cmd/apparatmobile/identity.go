@@ -18,11 +18,11 @@ func SetupKeys(dialogs KeyDialogs) {
 	}
 	identitySetup.Lock()
 	defer identitySetup.Unlock()
-	node.Keys.Setup(dialogs.Ask)
+	node.SetupIdentities(dialogs.Ask)
 }
 
 func LockKeys() {
 	if node != nil {
-		node.Keys.Lock()
+		node.LockIdentities()
 	}
 }

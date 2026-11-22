@@ -34,6 +34,7 @@ type Runtime struct {
 	WorkerEvents     io.Writer
 	discoveryWorkers sync.WaitGroup
 	Keys             *identity.Session
+	Personal         *identity.Personal
 	workspaceMu      sync.Mutex
 	documents        ProjectDocuments
 	mu               sync.Mutex
@@ -71,7 +72,11 @@ func NewRuntimeWithConfig(cfg config.Config) (*Runtime, error) {
 		}
 		cfg = loaded
 	}
-	return &Runtime{Keys: identity.NewSession(cfg.IdentityDir), mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
+	var personal *identity.Personal
+	if mode == ModeGUI {
+		personal = identity.NewPersonal(filepath.Join(cfg.RootDir, "user-identity"))
+	}
+	return &Runtime{Personal: personal, Keys: identity.NewSession(cfg.IdentityDir), mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
 }
 func (node *Runtime) SetDrivers(drivers map[string]Probe) {
 	node.mu.Lock()
@@ -277,7 +282,7 @@ func (node *Runtime) Close() error {
 }
 func (node *Runtime) closeLocked() error {
 	var result error
-	node.Keys.Lock()
+	node.LockIdentities()
 	if node.cancel != nil {
 		node.cancel()
 		<-node.stopped
@@ -318,4 +323,30 @@ func (node *Runtime) RecordLastRun(level, component, event, message string, fiel
 }
 func MillisNow() int64 {
 	return time.Now().UTC().UnixMilli()
+}
+
+func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
+	node.Keys.Setup(dialog)
+	if node.Personal != nil && node.Keys.State() == "unlocked" {
+		node.Personal.Setup(dialog)
+		pub, binding, err := node.Personal.Credentials(node.Keys.Public())
+		if err == nil {
+			node.mu.Lock()
+			if node.database != nil {
+				err = node.database.RememberDevice(context.Background(), pub, binding)
+			}
+			node.mu.Unlock()
+			if err != nil {
+				node.Personal.Lock()
+				identity.NotifyIdentityUnavailable(dialog)
+			}
+		}
+	}
+}
+
+func (node *Runtime) LockIdentities() {
+	node.Keys.Lock()
+	if node.Personal != nil {
+		node.Personal.Lock()
+	}
 }

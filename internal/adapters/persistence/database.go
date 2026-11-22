@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
@@ -17,7 +18,11 @@ import (
 	"net/url"
 )
 
-type DB struct{ sql *sql.DB }
+type DB struct {
+	sql         *sql.DB
+	policyMu    sync.RWMutex
+	policyHeads map[string]PolicyCursor
+}
 
 type Migration struct {
 	Version int

@@ -1759,6 +1759,29 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
 
 Startup identity setup supports recovering the prior signing key, explicitly confirming a new identity and selecting local protection. Qualify device-backed unlock on each OS before claiming native support there. Authenticated cluster claiming remains a separate milestone.
 
+### User claims and node administration
+
+- [ ] Add a set-up-if-missing screen-name prompt after identity setup and make the name editable in Settings. Bind it to the separate user identity. Reuse it in the node’s authenticated-user list and future chat. For STMPCK leaderboards require a separate opt-in popup and an editable Settings preference before sharing names or scores.
+- [ ] Enable Claim from discovery through a JSON public-key registration with signed proof of possession, hostname, screen name and verified target/cluster context. Preserve scoped ingress, server verification and authenticated device enrollment. Resolve how the intended owner authorizes the first remote claim on an exposed LAN.
+- [ ] Atomically make the first verified user on an unclaimed node its approved admin with full access to that node’s services. Default every later user to pending. Persist approval, blocking, admin grants and revocation by user fingerprint. Enforce decisions at protected services across restart.
+- [ ] In Cluster, let admins review authenticated users, approve/block access, grant/revoke admin, and close/reopen new registrations. Existing users retain their access state. Test independent public provider endpoints separately from Apparat-mediated service calls.
+- [ ] Later, let setup designate the intended initial admin by verified user fingerprint before opening remote registration. Test that another user arriving first cannot take its place.
+
+See the [implementation sequence and two-client acceptance tests](plans/current/2026-11-22-12-00-00_node-identity-and-rest.md#claim-a-node-and-admit-users-planned).
+
+### Personal cluster governance and queue sync
+
+Implementation and acceptance are tracked in the [personal cluster execution plan](plans/current/2026-11-22-15-00-00_personal-cluster.md). Preserve the shipped device identity. The screen name and cluster belong to a distinct portable user signing identity. Only explicitly paired personal apps receive the password-encrypted user private key. A worker holds its own device key and public user/device credentials. Pairing two personal apps and claiming a worker are distinct workflows.
+
+- [ ] Add set-up-if-missing user profile creation, password-protected backup/restore, optional OS unlock, local pairing and user-signed device authorizations. Support screen-name edits without grant changes. Explain device revocation versus rotation after extraction of the shared user key.
+- [ ] Verify the intended first owner using a single-use local claim code and pinned server identity on a granted network/interface. Subsequent authenticated users await approval. Preserve distinction between user, device, transport, node admin and cluster admin.
+- [ ] Make SQLite authoritative for owners, users, devices, grants, blocks, roles, groups, pool/service memberships, quotas, registration policy and reconciliation interval. A public grant names permissible operations. A block overrides group/public grants. Public service access through an independent provider endpoint requires separate provider enforcement.
+- [ ] Let any authenticated cluster admin propose a change. Designate a policy-ordering device available independently of the first personal app. Check current grants when committing each command. Provide idempotent receipts, stale-edit handling, last-admin protection and explicit authority handoff/recovery. Preserve the original ownership record.
+- [ ] Replicate one policy stream per cluster and one queue stream per pool. Use owner-assigned revisions, signed history and bounded, authorization-filtered deltas. Use verified snapshots after compaction or permission changes. Persist projection, head and cursor atomically; rebuild in-memory heads on startup. Batch checks, return cheap empty JSON responses, enforce access before reading cached heads, and distinguish committed, installed and enforced changes.
+- [ ] Default background reconciliation to five minutes, editable by policy within safe limits. Coalesce refreshes and stagger/back off per peer. Trigger on pairing, local change, tab entry, resume and reconnect. Workers also synchronize on service changes and before dispatch. Sensitive pools deny new work if policy freshness cannot be established.
+- [ ] Bring forward the first Phase 13 queue slice: one shared local task table, stable requester/idempotency identity, owner-created time, immutable optional prompt and input hashes, mutable state and terminal time, distinct attempts, leases, fencing and verified output hashes. Keep artifact bytes out of feeds. Support cancellation and a harmless operation with authorized result retrieval. Reconcile queues independently of assignment latency; workers use bounded waits. Drain new claims across pools and finish active attempts before updating a worker.
+- [ ] Prove the real Steam Machine/Pixel/trashcan0 workflow, offline catch-up and protected admin operation. Verify competing claims/admin edits, replay, stale leases, duplicate completion, viewer isolation and bounded unchanged responses with no event reads. Keep remote projects, real inference and third-party relays deferred.
+
 ### Worker updates and future pool coordination
 
 - [x] Standalone Linux workers enable automatic updates by default. Check on the first completed API response when due, including an anonymous 401. Target daily checks with traffic, allow hourly failure retries, and support an owner-requested immediate check. Quiet nodes retain their due state across restarts. Install the verified worker and resume service.
@@ -1991,7 +2014,7 @@ Startup identity setup supports recovering the prior signing key, explicitly con
 
 **User outcome:** Typed jobs can be submitted to their queue owner, leased by an eligible worker, completed with verified results/artifacts, and recovered without duplicate authoritative completion.
 
-**Dependencies:** Phase 10 trusted REST, Phase 9A local artifacts, Phase 11C authenticated artifact transfers, and Phase 12 capabilities.
+**Dependencies:** Phase 10 brings forward the harmless queue and authorized artifact proof. Production jobs additionally depend on Phase 9A local artifacts, Phase 11C authenticated artifact transfers, and Phase 12 capabilities.
 
 **Deferred:** Pool choice, route profiles, and fallback policy to Phase 14.
 

@@ -22,3 +22,5 @@ Phase 8 adds `--demo-services`, `--services`, `--backup`, and `--restore-backup`
 
 - `updates.go`: Coalesces request and owner signals, verifies the Linux worker release and initiates graceful restart.
 - `identity.go`: Provides offline owner setup with `apparatd identity-setup [--runtime-dir DIR]`, a controlling terminal and hidden password entry. Stop the node before using it. A fresh standalone Linux service creates its owner-only unattended identity. An existing database without a key requires an explicit recovery or creation choice.
+
+A returning headless installation with an existing database and missing key waits for operator recovery. After explicitly deciding to generate a new worker key, stop the service, run `apparatd identity-setup --generate-if-missing` as the service account with its normal node root and restart the service. The command holds the node lock, refuses an existing or inconsistent identity and prints the new public fingerprint. The owner-only unencrypted worker key permits unattended startup.

@@ -99,7 +99,7 @@ func run() (code int) {
 	}
 	fmt.Fprintf(os.Stderr, "apparat ready root=%s\n", cfg.RootDir)
 	if node.Mode() == app.ModeGUI {
-		node.Keys.Setup(func(request string) string {
+		node.SetupIdentities(func(request string) string {
 			return keydialog.Run(ctx, request)
 		})
 		wd, _ := os.Getwd()

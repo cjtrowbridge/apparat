@@ -25,9 +25,9 @@ function run() {
             const data = $.NSData.alloc.initWithBase64EncodedStringOptions(req.Value,0)
             if (!data.writeToFileOptionsError(path,$.NSDataWritingWithoutOverwriting,null)) return 'null'
             value = ''
-        } else if (req.Op === 'password') {
+        } else if (req.Op === 'password' || req.Op === 'text') {
             value = app.displayDialog(req.Message,{
-                withTitle:req.Title, defaultAnswer:'', hiddenAnswer:true, buttons:['Cancel','Continue'],defaultButton:'Continue',cancelButton:'Cancel'
+                withTitle:req.Title, defaultAnswer:'', hiddenAnswer:req.Op === 'password', buttons:['Cancel','Continue'],defaultButton:'Continue',cancelButton:'Cancel'
             }).textReturned
         } else if (req.Op === 'choose') {
             const selection = app.chooseFromList(req.Options,{

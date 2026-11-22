@@ -41,3 +41,9 @@ Persistence code must expose application-level repositories and must not leak ra
 workspace.go owns migration 7 and stores project-scoped drafts, local pending messages and run outcomes. Unregistering a project cascades to its workspace records.
 
 - `workspace.go`: Stores owner-local drafts, pending chat messages and manual run outcomes.
+
+- `user_devices.go`: Migration 9 records signed public profiles by user fingerprint and device authorizations by user and device fingerprint. Profile revisions never regress; equal conflicting revisions fail. SQLite receives public records only.
+- `claim.go`: Migration 10 and the first-owner transaction. A local ten-minute invitation is stored as a digest. Its consumption, owner admission, device binding and initial policy defaults commit together.
+- `claim_test.go`: Verifies target substitution fails and competing first claims produce one approved admin.
+- `policy.go`: Migration 11 and signed administrative policy transactions. Replicas verify the authority, actor, revision and previous hash before applying changes. The last administrator cannot be removed.
+- `policy_sync.go`: Rebuilds committed policy heads from SQLite on startup, checks admin visibility on every request and pages at most 64 events. An up-to-date authorized caller avoids reading the event table.

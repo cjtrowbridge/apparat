@@ -132,10 +132,10 @@ final class NodeKeys implements KeyDialogs {
                     answer.offer("null");
                 }
             });
-        if (op.equals("password")) {
+        if (op.equals("password") || op.equals("text")) {
             EditText input = new EditText(activity);
             input.setSingleLine(true);
-            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD |
+            input.setInputType(InputType.TYPE_CLASS_TEXT | (op.equals("password") ? InputType.TYPE_TEXT_VARIATION_PASSWORD : 0) |
                 InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
             if (android.os.Build.VERSION.SDK_INT >= 26) input.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO);
             builder.setView(input).setPositiveButton("Continue",new DialogInterface.OnClickListener(){
