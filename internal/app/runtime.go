@@ -33,6 +33,7 @@ type Runtime struct {
 	// WorkerEvents is set by the standalone daemon before initialization.
 	WorkerEvents     io.Writer
 	discoveryWorkers sync.WaitGroup
+	Keys             *identity.Session
 	workspaceMu      sync.Mutex
 	documents        ProjectDocuments
 	mu               sync.Mutex
@@ -70,7 +71,7 @@ func NewRuntimeWithConfig(cfg config.Config) (*Runtime, error) {
 		}
 		cfg = loaded
 	}
-	return &Runtime{mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
+	return &Runtime{Keys: identity.NewSession(cfg.IdentityDir), mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
 }
 func (node *Runtime) SetDrivers(drivers map[string]Probe) {
 	node.mu.Lock()
@@ -138,6 +139,7 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 			return result
 		}
 	}
+	_, priorDB := os.Lstat(node.config.DatabasePath)
 	node.database, result = persistence.Open(ctx, node.config.DatabasePath)
 	if result != nil {
 		return result
@@ -158,8 +160,21 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	if result != nil {
 		return result
 	}
-	if identity.Classify(node.config.IdentityDir) == identity.StatusInconsistent {
+	if node.mode != ModeGUI && identity.Classify(node.config.IdentityDir) == identity.StatusInconsistent {
 		return errors.New("identity files inconsistent; use explicit repair/recovery before startup")
+	}
+	if node.mode == ModeHeadless && node.WorkerEvents != nil {
+		switch node.Keys.State() {
+		case "missing":
+			if os.IsNotExist(priorDB) {
+				result = node.Keys.Install(nil, "", "plain", "", "", true)
+			}
+		case "plain":
+			result = node.Keys.Unlock("")
+		}
+		if result != nil {
+			return result
+		}
 	}
 	result = node.stage("identity")
 	if result != nil {
@@ -262,6 +277,7 @@ func (node *Runtime) Close() error {
 }
 func (node *Runtime) closeLocked() error {
 	var result error
+	node.Keys.Lock()
 	if node.cancel != nil {
 		node.cancel()
 		<-node.stopped

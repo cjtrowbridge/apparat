@@ -1757,6 +1757,8 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
   - [ ] Explicit revoked, expired, stale, unavailable, and key-changed states.
   - [ ] No authority from a cached record after revocation/expiry.
 
+Startup identity setup supports recovering the prior signing key, explicitly confirming a new identity and selecting local protection. Qualify device-backed unlock on each OS before claiming native support there. Authenticated cluster claiming remains a separate milestone.
+
 ### Worker updates and future pool coordination
 
 - [x] Standalone Linux workers enable automatic updates by default. Check on the first completed API response when due, including an anonymous 401. Target daily checks with traffic, allow hourly failure retries, and support an owner-requested immediate check. Quiet nodes retain their due state across restarts. Install the verified worker and resume service.

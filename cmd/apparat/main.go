@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/adapters/gui"
+	"github.com/cjtrowbridge/apparat/internal/adapters/keydialog"
 	"github.com/cjtrowbridge/apparat/internal/adapters/mockprovider"
 	"github.com/cjtrowbridge/apparat/internal/app"
 	"github.com/cjtrowbridge/apparat/internal/config"
@@ -98,6 +99,9 @@ func run() (code int) {
 	}
 	fmt.Fprintf(os.Stderr, "apparat ready root=%s\n", cfg.RootDir)
 	if node.Mode() == app.ModeGUI {
+		node.Keys.Setup(func(request string) string {
+			return keydialog.Run(ctx, request)
+		})
 		wd, _ := os.Getwd()
 		executable, _ := os.Executable()
 		err = gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{WorkingDir: wd, RuntimePath: cfg.RootDir, BinaryPath: executable, Queries: node})

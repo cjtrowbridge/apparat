@@ -69,6 +69,10 @@ The default shared capability is inference-only. A comrade queue does not grant 
 
 The Comrades tab is first in the HUD so the long-term product shape remains visible, but chat and resource sharing are explicitly outside the active MVP.
 
+### Node keys
+
+At GUI startup, restore your original Apparat private key if you have used this device before. Cluster peers recognize its signing identity. Generating a different key requires pairing again. Choose **Find existing keys** or confirm **Generate new keys**, then create a password or use the system credential option when available. Save a password-protected recovery copy somewhere private. Cancel keeps signing locked and lets you work offline. Node keys alone do not enroll a peer. See [node identity and recovery](docs/node-identity.md).
+
 ### Cluster
 
 Open Cluster to discover nearby Apparat hosts. **➕ Add New Device** is the first row under **Cluster Devices**. It opens **Local network discovery** in the right detail pane, or a full-width detail screen on narrow devices. A client can browse while its own server is off. A host appears only when its bootstrap API and advertisement are active on an explicitly approved network/interface pair. Select a ➕ hostname to open its node details. Results are temporary, unverified candidates. The claim control explains that authenticated pairing is required. Linux can host the bootstrap API on an approved IPv4 interface. Pixel devices running Android 13 or later can browse on Wi-Fi. On Linux, select the interface to browse. Windows and macOS have an IPv4 browser and still need on-device qualification.

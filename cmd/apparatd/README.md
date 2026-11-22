@@ -21,3 +21,4 @@ Use this binary for display-free devices, service-manager integration, and headl
 Phase 8 adds `--demo-services`, `--services`, `--backup`, and `--restore-backup`. GUI/headless are alternative owners of the same locked node root; see root README for migration and recovery. API hosting requires an explicit grant. Linux headless configuration uses api-list, api-grant RULE, api-revoke RULE and api-disable.
 
 - `updates.go`: Coalesces request and owner signals, verifies the Linux worker release and initiates graceful restart.
+- `identity.go`: Provides offline owner setup with `apparatd identity-setup [--runtime-dir DIR]`, a controlling terminal and hidden password entry. Stop the node before using it. A fresh standalone Linux service creates its owner-only unattended identity. An existing database without a key requires an explicit recovery or creation choice.

@@ -18,3 +18,4 @@ Android safe-area color comes from the GUI renderer through `BackgroundARGB` in 
 - `workspace_fs.go`: Adapts Android document operations and seekable file descriptors to go-git's filesystem interface. Provider errors propagate to the selected project.
 
 - `document.go`: Binds the Android document editor to the selected file and draft session.
+- `identity.go`: Bridges the local node identity workflow to private Android prompts and locks the signing session on background.

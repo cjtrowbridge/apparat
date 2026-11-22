@@ -1,6 +1,10 @@
 # Node identity and API access
 
-Startup inspects the local device manifest and private key file. A missing pair permits startup. An inconsistent pair stops startup for recovery. The identity package supports Ed25519 generation, public manifests and passphrase-encrypted private files. First-run creation or import, loading signing keys into the running node and OS-backed unlock are planned Phase 10 work. The current opt-in bootstrap listener returns a JSON authentication challenge. Discovered hosts remain unpaired until authenticated enrollment is available.
+The GUI inspects the active signing identity on startup. If keys are missing, the modal explains that a returning user must restore the original private key to retain their cluster connections. Choose **Find existing keys** to open a legacy encrypted device key or a portable recovery copy. **Generate new keys** requires confirmation of the identity change. Cancel leaves signing locked and permits offline work. Existing encrypted keys require local unlock. Cluster claiming remains disabled pending authenticated enrollment.
+
+Apparat verifies a new pair before switching a private `identity/active.json` pointer to its generation. The previously active files remain available for recovery. A surviving valid manifest constrains which key can be restored. The current implementation protects the private key with the existing Argon2id/XChaCha20-Poly1305 format. System enrollment uses a randomly generated secret protected by the selected OS facility. Save a password-protected portable recovery copy when offered, especially with device-bound protection. Moving the active directory alone may not transfer access to its system credential.
+
+The following sections describe the wider Phase 10 design, including additional protection management, authenticated HTTP and enrollment.
 
 ## One signing identity per node root
 

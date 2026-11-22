@@ -52,46 +52,44 @@ func Fingerprint(pub ed25519.PublicKey) string {
 }
 
 func SaveEncrypted(path string, priv ed25519.PrivateKey, passphrase []byte) error {
+	data, err := encryptKey(priv, passphrase)
+	if err != nil {
+		return err
+	}
+	return atomicWrite(path, data, 0600)
+}
+
+func encryptKey(priv ed25519.PrivateKey, passphrase []byte) ([]byte, error) {
 	if len(priv) != ed25519.PrivateKeySize {
-		return errors.New("invalid private key length")
+		return nil, errors.New("invalid private key length")
 	}
 	if !priv.Equal(ed25519.NewKeyFromSeed(priv.Seed())) {
-		return errors.New("private key public component mismatch")
+		return nil, errors.New("private key public component mismatch")
 	}
 	if len(passphrase) == 0 {
-		return errors.New("passphrase required")
+		return nil, errors.New("passphrase required")
 	}
 	var salt [16]byte
 	var nonce [chacha20poly1305.NonceSizeX]byte
 	{
 		_, err := rand.Read(salt[:])
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	{
 		_, err := rand.Read(nonce[:])
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	key := argon2.IDKey(passphrase, salt[:], 1, 64*1024, 4, chacha20poly1305.KeySize)
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	payload := map[string]string{"algorithm": "argon2id-xchacha20poly1305", "public_key": base64.StdEncoding.EncodeToString(priv.Public().(ed25519.PublicKey)), "salt": base64.StdEncoding.EncodeToString(salt[:]), "nonce": base64.StdEncoding.EncodeToString(nonce[:]), "ciphertext": base64.StdEncoding.EncodeToString(aead.Seal(nil, nonce[:], priv, nil))}
-	data, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
-		return err
-	}
-	{
-		err := os.MkdirAll(filepath.Dir(path), 0o700)
-		if err != nil {
-			return err
-		}
-	}
-	return atomicWrite(path, data, 0o600)
+	return json.MarshalIndent(payload, "", "  ")
 }
 
 func LoadEncrypted(path string, passphrase []byte) (ed25519.PrivateKey, error) {
@@ -99,6 +97,10 @@ func LoadEncrypted(path string, passphrase []byte) (ed25519.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
+	return decryptKey(data, passphrase)
+}
+
+func decryptKey(data, passphrase []byte) (ed25519.PrivateKey, error) {
 	payload, salt, nonce, ciphertext, err := decodePayload(data)
 	if err != nil {
 		return nil, err
@@ -190,8 +192,21 @@ func RevokeManifest(path string) error {
 }
 
 func Classify(dir string) Status {
-	_, privErr := os.Stat(filepath.Join(dir, "device.key.json"))
-	_, manifestErr := os.Stat(filepath.Join(dir, "device.manifest.json"))
+	gen, selected, err := current(dir)
+	if err != nil {
+		return StatusInconsistent
+	}
+	dir = selected
+	if gen.Mode == "plain" {
+		key, err := loadPair(dir, "plain", nil)
+		clear(key)
+		if err != nil {
+			return StatusInconsistent
+		}
+		return StatusReady
+	}
+	_, privErr := os.Lstat(filepath.Join(dir, "device.key.json"))
+	_, manifestErr := os.Lstat(filepath.Join(dir, "device.manifest.json"))
 	if privErr == nil && manifestErr == nil {
 		data, err := readPrivate(filepath.Join(dir, "device.key.json"))
 		if err != nil {
@@ -202,7 +217,7 @@ func Classify(dir string) Status {
 			return StatusInconsistent
 		}
 		manifest, err := readManifest(filepath.Join(dir, "device.manifest.json"))
-		if err != nil || manifest.RevokedAt != "" {
+		if err != nil || manifest.RevokedAt != "" || manifest.Kind != "device" {
 			return StatusInconsistent
 		}
 		if payload.PublicKey != "" && payload.PublicKey != manifest.PublicKey {
@@ -210,7 +225,7 @@ func Classify(dir string) Status {
 		}
 		return StatusReady
 	}
-	if os.IsNotExist(privErr) && os.IsNotExist(manifestErr) {
+	if gen.Directory == "" && os.IsNotExist(privErr) && os.IsNotExist(manifestErr) {
 		return StatusMissing
 	}
 	return StatusInconsistent

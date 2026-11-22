@@ -47,6 +47,7 @@ public class MainActivity extends Activity {
     private DocumentEditor editor;
     private ActionVoice voice;
     LanBrowser lanBrowser;
+    private NodeKeys nodeKeys;
     private File downloadedUpdate;
     private final AtomicBoolean checking = new AtomicBoolean();
     private volatile boolean destroyed;
@@ -95,6 +96,7 @@ public class MainActivity extends Activity {
             });
         }
         setContentView(content);
+        nodeKeys = new NodeKeys(this);
         voice = new ActionVoice(this);
         Apparatmobile.registerActionSpeech(voice);
         editor = new DocumentEditor(this);
@@ -128,6 +130,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request,result,data);
+        if ((request==NodeKeys.OPEN || request==NodeKeys.SAVE) && nodeKeys!=null) nodeKeys.documentResult(request,result==RESULT_OK && data!=null ? data.getData() : null);
         if (request == ProjectDocuments.REQUEST && documents != null) documents.result(result == RESULT_OK ? data : null);
     }
 
@@ -147,11 +150,18 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (nodeKeys!=null) nodeKeys.start();
         if (lanBrowser != null) lanBrowser.foreground(true);
         if (view != null) {
             view.resumeGame();
         }
 
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Apparatmobile.lockKeys();
     }
 
     @Override
@@ -169,6 +179,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (nodeKeys!=null) nodeKeys.close();
         destroyed = true;
         Apparatmobile.registerActionSpeech(null);
         if (voice != null) voice.close();

@@ -29,3 +29,5 @@ The document and input dialogs anchor the circular PTT control to the lower-righ
 - `ActionVoice.java`: Activity-owned local speech feedback and canvas microphone permission bridge.
 
 - `LanBrowser.java`: browses Apparat service names on the active Wi-Fi network via Android 13+ scoped NSD. Leaving the detail or pausing the Activity releases discovery.
+- `NodeKeys.java`: Presents startup key recovery, creation, protected entry and Android document pickers.
+- `AndroidKeyProtection.java`: Uses authenticated AES-GCM operations in Android Keystore on eligible Android 11+ devices.

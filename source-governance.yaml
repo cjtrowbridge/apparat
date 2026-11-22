@@ -11,6 +11,9 @@ code:
     .cpp:
       adapter: cstyle
       comment_pattern: '(?://[^\n]*|(?s:/\*.*?\*/))'
+    .js:
+      adapter: cstyle
+      comment_pattern: '(?://[^\n]*|(?s:/\*.*?\*/))'
     .java:
       adapter: cstyle
       comment_pattern: '(?://[^\n]*|(?s:/\*.*?\*/))'
