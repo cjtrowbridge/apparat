@@ -24,3 +24,5 @@ rejection, cancellation, atomic promotion and preservation of installed bytes.
 
 - `client_test.go`: Tests pinned metadata, native bytes, corrupt/cancelled downloads, changed files, backups and atomic promotion.
 - `limits_test.go`: Rejects oversized transfers without payload allocation and verifies installed-byte preservation and staging cleanup.
+
+The headless client pins the apparatd manifest row and download path. A differing digest also requires a published commit ahead of the running build base. Desktop clients continue to select apparat.

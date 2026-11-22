@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
+
 	"io"
 	"net/http"
 	"os"
@@ -32,6 +32,7 @@ var ErrInstall = errors.New("update installation failed")
 type Client struct {
 	HTTP           *http.Client
 	API, Raw, Arch string
+	worker         bool
 }
 
 func NewClient() *Client {
@@ -111,7 +112,7 @@ func (c *Client) Latest(ctx context.Context) (Release, error) {
 	if !m.Accepted || m.Edition != "ordinary" || m.Ref != "refs/heads/main" || m.Schema != 1 {
 		return Release{}, ErrMetadata
 	}
-	name := "linux/" + c.Arch + "/apparat"
+	name := "linux/" + c.Arch + "/" + c.program()
 	path := "releases/" + name + "/latest"
 	var found []Release
 	for _, target := range m.Targets {
@@ -142,7 +143,31 @@ func Digest(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func (r Release) Valid(arch string) bool {
-	return hexRevision.MatchString(r.Revision) && hexDigest.MatchString(r.SHA256) &&
-		r.Path == fmt.Sprintf("releases/linux/%s/apparat/latest", arch)
+func NewWorkerClient() *Client {
+	client := NewClient()
+	client.worker = true
+	return client
+}
+
+func (c *Client) program() string {
+	if c.worker {
+		return "apparatd"
+	}
+	return "apparat"
+}
+
+// Delivery builds from a main revision before publishing artifacts in a later commit.
+func (c *Client) CheckSuccessor(ctx context.Context, base, published string) error {
+	if !hexRevision.MatchString(base) || !hexRevision.MatchString(published) || published == base {
+		return ErrMetadata
+	}
+	var comparison struct{ Status string }
+	err := c.readJSON(ctx, c.API+"/compare/"+base+"..."+published+"?per_page=1", &comparison)
+	if err != nil {
+		return err
+	}
+	if comparison.Status != "ahead" {
+		return ErrMetadata
+	}
+	return nil
 }

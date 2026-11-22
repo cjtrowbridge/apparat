@@ -1757,6 +1757,11 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
   - [ ] Explicit revoked, expired, stale, unavailable, and key-changed states.
   - [ ] No authority from a cached record after revocation/expiry.
 
+### Worker updates and future pool coordination
+
+- [x] Standalone Linux workers enable automatic updates by default. Check on the first completed API response when due, including an anonymous 401. Target daily checks with traffic, allow hourly failure retries, and support an owner-requested immediate check. Quiet nodes retain their due state across restarts. Install the verified worker and resume service.
+- [ ] Once a worker belongs to a pool, suspend independent installation. Show each pool’s devices and flag workers with an update pending. Automatically drain and update when the pool queue is empty and assigned tasks have finished. When work is queued, let an authorized owner order a worker to stop accepting new assignments, finish outstanding work, update, verify readiness, rejoin and resume taking tasks. Coordinate claims and drains atomically and test restart, failure, concurrent assignment and safe rejoin.
+
 ### Endpoint discovery and presence
 
 - [ ] Add endpoint discovery alongside explicit endpoint configuration.

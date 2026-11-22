@@ -15,7 +15,7 @@ type Candidate struct {
 }
 
 func (c *Client) Download(ctx context.Context, r Release, target string) (*Candidate, error) {
-	if !r.Valid(c.Arch) {
+	if !hexRevision.MatchString(r.Revision) || !hexDigest.MatchString(r.SHA256) || r.Path != "releases/linux/"+c.Arch+"/"+c.program()+"/latest" {
 		return nil, ErrMetadata
 	}
 	target, err := filepath.EvalSymlinks(target)

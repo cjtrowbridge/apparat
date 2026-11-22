@@ -13,6 +13,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/identity"
 	"github.com/cjtrowbridge/apparat/internal/logging"
 	"github.com/cjtrowbridge/apparat/internal/platform"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -29,23 +30,26 @@ const (
 )
 
 type Runtime struct {
-	workspaceMu    sync.Mutex
-	documents      ProjectDocuments
-	mu             sync.Mutex
-	lifecycle      sync.Mutex
-	mode           Mode
-	config         config.Config
-	database       *persistence.DB
-	lock           *platform.Lock
-	lastRun        logging.LastRun
-	logger         logging.Logger
-	serviceManager *Services
-	drivers        map[string]Probe
-	server         *httpapi.Server
-	state          string
-	cancel         context.CancelFunc
-	stopped        chan struct{}
-	hook           func(string) error
+	// WorkerEvents is set by the standalone daemon before initialization.
+	WorkerEvents     io.Writer
+	discoveryWorkers sync.WaitGroup
+	workspaceMu      sync.Mutex
+	documents        ProjectDocuments
+	mu               sync.Mutex
+	lifecycle        sync.Mutex
+	mode             Mode
+	config           config.Config
+	database         *persistence.DB
+	lock             *platform.Lock
+	lastRun          logging.LastRun
+	logger           logging.Logger
+	serviceManager   *Services
+	drivers          map[string]Probe
+	server           *httpapi.Server
+	state            string
+	cancel           context.CancelFunc
+	stopped          chan struct{}
+	hook             func(string) error
 }
 
 func NewRuntime(mode Mode) (*Runtime, error) {
@@ -190,8 +194,16 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	workCtx, cancel := context.WithCancel(ctx)
 	node.cancel = cancel
 	if runtime.GOOS == "linux" && !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
-		cmd := discovery.Command(workCtx, "supervise", node.config.DatabasePath)
+		args := []string{"supervise", node.config.DatabasePath}
+		if node.WorkerEvents != nil {
+			args = append(args, "headless")
+		}
+		cmd := discovery.Command(workCtx, args...)
+		cmd.Stdout = node.WorkerEvents
+		cmd.WaitDelay = 3 * time.Second
+		node.discoveryWorkers.Add(1)
 		go func() {
+			defer node.discoveryWorkers.Done()
 			_ = cmd.Run()
 		}()
 	}
@@ -253,6 +265,7 @@ func (node *Runtime) closeLocked() error {
 	if node.cancel != nil {
 		node.cancel()
 		<-node.stopped
+		node.discoveryWorkers.Wait()
 		node.cancel = nil
 		result = errors.Join(result, node.stage("supervision_stopped"))
 	}

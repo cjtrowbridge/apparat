@@ -215,3 +215,20 @@ func TestInstallRejectsChangedFiles(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkerRejectsDesktopRelease(t *testing.T) {
+	client, target := fixture(t, []byte("desktop"), nil)
+	release, err := client.Latest(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.worker = true
+	_, err = client.Latest(context.Background())
+	if err != ErrMetadata {
+		t.Fatal("worker selected desktop manifest entry", err)
+	}
+	_, err = client.Download(context.Background(), release, target)
+	if err != ErrMetadata {
+		t.Fatal("worker accepted desktop download path", err)
+	}
+}

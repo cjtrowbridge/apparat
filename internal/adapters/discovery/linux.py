@@ -99,7 +99,64 @@ def browse(dev):
     GLib.MainLoop().run()
 
 
-def serve(db, rule):
+def value(db, name, default):
+    row = db.execute("SELECT value FROM local_runtime WHERE key=?", ("worker_update_"+name,)).fetchone()
+    return row[0] if row else default
+
+
+def put(db, name, data):
+    db.execute("INSERT OR REPLACE INTO local_runtime VALUES(?,?,0)", ("worker_update_"+name, str(data)))
+
+
+def worker_idle(db):
+    return not db.execute("""SELECT EXISTS(SELECT 1 FROM project_entries WHERE kind='run'
+        AND json_extract(body,'$.State') IN ('pending','queued','running','assigned'))""").fetchone()[0]
+
+
+def claim_update(db, manual=False, now=None):
+    now = int(time.time()) if now is None else now
+    def due():
+        if manual:
+            return value(db, "manual", "0") == "1"
+        return value(db, "enabled", "1") == "1" and now >= int(value(db, "due", "0"))
+    if not due():
+        return False
+    with db:
+        db.execute("BEGIN IMMEDIATE")
+        if not due() or not worker_idle(db):
+            return False
+        put(db, "last", now)
+        put(db, "due", now + 3600)
+        put(db, "result", "checking")
+        if manual:
+            put(db, "manual", "0")
+    return True
+
+
+def update_command(db, action, args):
+    with db:
+        if action == "status":
+            print(json.dumps({"enabled": value(db, "enabled", "1") == "1",
+                              "last_attempt_unix": int(value(db, "last", "0")),
+                              "next_due_unix": int(value(db, "due", "0")),
+                              "manual_requested": value(db, "manual", "0") == "1",
+                              "result": value(db, "result", "never checked")}))
+        elif action in ("enable", "disable"):
+            put(db, "enabled", int(action == "enable"))
+        elif action == "check":
+            put(db, "manual", "1")
+        elif action == "eligible":
+            if not worker_idle(db) or (args != ["manual"] and value(db, "enabled", "1") != "1"):
+                sys.exit(1)
+        elif action == "result":
+            put(db, "result", args[0])
+            if args[0] in ("current", "installed"):
+                put(db, "due", int(value(db, "last", "0")) + 86400)
+        else:
+            raise ValueError("Unknown update operation")
+
+
+def serve(db, rule, headless=False):
     dev, addr = profiles()[rule]
     index = socket.if_nametoindex(dev)
     def permitted():
@@ -126,6 +183,9 @@ def serve(db, rule):
             self.end_headers()
             if self.command != "HEAD":
                 self.wfile.write(body)
+            self.wfile.flush()
+            if headless and claim_update(db):
+                print("A", end="", flush=True)
 
         def send_error(self, code, message=None, explain=None):
             self.reply(405 if code == 501 else code, "request_rejected", "Request rejected.")
@@ -154,10 +214,12 @@ def serve(db, rule):
             listener.handle_request()
 
 
-def supervise(db, path):
+def supervise(db, path, *options):
     workers = {}
     try:
         while True:
+            if options and value(db, "manual", "0") == "1" and claim_update(db, manual=True):
+                print("M", end="", flush=True)
             rules = set(grants(db))
             try:
                 available = profiles() if rules else {}
@@ -167,7 +229,7 @@ def supervise(db, path):
                 if workers[rule].poll() is not None or rule not in rules or rule not in available:
                     workers.pop(rule).terminate()
             for rule in rules.intersection(available).difference(workers):
-                workers[rule] = subprocess.Popen([sys.executable,"-c","import sys;SOURCE=sys.argv.pop(1);exec(SOURCE)",SOURCE,"serve",path,rule])
+                workers[rule] = subprocess.Popen([sys.executable,"-c","import sys;SOURCE=sys.argv.pop(1);exec(SOURCE)",SOURCE,"serve",path,rule,*options])
             time.sleep(2)
     finally:
         for worker in workers.values():
@@ -210,7 +272,9 @@ def main():
         browse(path)
         return
     with contextlib.closing(sqlite3.connect(path)) as db:
-        if mode == "configure":
+        if mode.startswith("updates-"):
+            update_command(db, mode[8:], args)
+        elif mode == "configure":
             configure(db)
         elif mode == "serve":
             # Exit if the supervisor dies, including abrupt app shutdown.
@@ -218,9 +282,9 @@ def main():
             parent = os.getppid()
             ctypes.CDLL(None).prctl(1, 15, 0, 0, 0)
             if parent != 1 and parent == os.getppid():
-                serve(db, args[0])
+                serve(db, args[0], args[1:] == ["headless"])
         elif mode == "supervise":
-            supervise(db, path)
+            supervise(db, path, *args)
         elif mode == "list":
             print(json.dumps({"available":list(profiles()), "granted":saved(db), "enabled":grants(db)}))
         elif mode == "grant" and args[0] in profiles():

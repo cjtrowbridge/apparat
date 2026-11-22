@@ -10,16 +10,46 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/adapters/mockprovider"
 	"github.com/cjtrowbridge/apparat/internal/app"
 	"github.com/cjtrowbridge/apparat/internal/config"
+	"github.com/cjtrowbridge/apparat/internal/platform"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 )
 
 func main() {
-	os.Exit(run())
+	code := run()
+	if code == 75 {
+		if platform.RestartProcess() != nil {
+			fmt.Fprintln(os.Stderr, "Updated worker requires restart")
+			code = 1
+		}
+	}
+	os.Exit(code)
 }
 func run() (code int) {
+	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "updates-") {
+		if len(os.Args) != 2 {
+			return 2
+		}
+		switch os.Args[1] {
+		case "updates-status", "updates-enable", "updates-disable", "updates-check":
+		default:
+			return 2
+		}
+		cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})
+		if err != nil || runtime.GOOS != "linux" {
+			return 1
+		}
+		cmd := discovery.Command(context.Background(), os.Args[1], cfg.DatabasePath)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if cmd.Run() != nil {
+			return 1
+		}
+		return 0
+	}
 	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "api-") {
 		mode := strings.TrimPrefix(os.Args[1], "api-")
 		if mode != "list" && mode != "grant" && mode != "disable" && mode != "revoke" {
@@ -67,6 +97,10 @@ func run() (code int) {
 	}()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	events := &updateEvents{auto: make(chan struct{}, 1), manual: make(chan struct{}, 1)}
+	if runtime.GOOS == "linux" && !cfg.SmokeTest && !cfg.Inspect && !cfg.Doctor && cfg.Backup == "" && cfg.Restore == "" {
+		node.WorkerEvents = events
+	}
 	err = node.Initialize(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "startup failed:", err)
@@ -109,6 +143,9 @@ func run() (code int) {
 		return 0
 	}
 	fmt.Fprintf(os.Stderr, "apparatd ready root=%s\n", cfg.RootDir)
+	if node.WorkerEvents != nil {
+		return events.run(ctx, node)
+	}
 	err = node.Start(ctx)
 	if err != nil && ctx.Err() == nil {
 		fmt.Fprintln(os.Stderr, "run failed:", err)

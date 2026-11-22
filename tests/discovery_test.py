@@ -1,6 +1,8 @@
 """Exercise the embedded Linux responder on a disposable loopback-only grant.
 Verify the response status, media type and withdrawal without using a LAN.
 """
+import contextlib
+import io
 import http.client
 import importlib.util
 import json
@@ -26,6 +28,7 @@ class BootstrapTest(unittest.TestCase):
         db = sqlite3.connect(":memory:", check_same_thread=False)
         self.addCleanup(db.close)
         db.execute("create table local_runtime(key text primary key, value text, rev integer)")
+        db.execute("create table project_entries(kind text, body text)")
         self.assertEqual(discovery.grants(db), [])
         discovery.save(db, [rule])
         base = discovery.http.server.HTTPServer
@@ -36,8 +39,8 @@ class BootstrapTest(unittest.TestCase):
                 ready.put(self.server_port)
 
         with patch.object(discovery, "profiles", return_value={rule: ("lo", "127.0.0.1")}), \
-             patch.object(discovery.http.server, "HTTPServer", ObservedServer):
-            worker = threading.Thread(target=discovery.serve, args=(db, rule), daemon=True)
+             patch.object(discovery.http.server, "HTTPServer", ObservedServer), contextlib.redirect_stdout(io.StringIO()) as signals:
+            worker = threading.Thread(target=discovery.serve, args=(db, rule, True), daemon=True)
             worker.start()
             try:
                 port = ready.get(timeout=4)
@@ -55,6 +58,33 @@ class BootstrapTest(unittest.TestCase):
             finally:
                 discovery.save(db, [rule], False)
                 worker.join(4)
+            self.assertEqual(signals.getvalue(), "A")
             self.assertFalse(worker.is_alive())
             with self.assertRaises(ConnectionRefusedError):
                 socket.create_connection(("127.0.0.1", port), timeout=2)
+
+
+class ScheduleTest(unittest.TestCase):
+    def test_request_cadence_and_owner_controls(self):
+        db = sqlite3.connect(":memory:")
+        self.addCleanup(db.close)
+        db.execute("create table local_runtime(key text primary key,value text,rev integer)")
+        db.execute("create table project_entries(kind text, body text)")
+        self.assertTrue(discovery.claim_update(db, now=100))
+        self.assertFalse(discovery.claim_update(db, now=3699))
+        self.assertTrue(discovery.claim_update(db, now=3700))
+        discovery.update_command(db, "result", ["current"])
+        self.assertFalse(discovery.claim_update(db, now=90099))
+        self.assertTrue(discovery.claim_update(db, now=90100))
+        discovery.update_command(db, "disable", [])
+        self.assertFalse(discovery.claim_update(db, now=200000))
+        discovery.update_command(db, "check", [])
+        with db:
+            db.execute("""insert into project_entries values('run','{"State":"running"}')""")
+        self.assertFalse(discovery.claim_update(db, manual=True, now=90101))
+        with db:
+            db.execute("delete from project_entries")
+        self.assertTrue(discovery.claim_update(db, manual=True, now=90102))
+        self.assertFalse(discovery.claim_update(db, manual=True, now=90103))
+        discovery.update_command(db, "enable", [])
+        self.assertFalse(discovery.claim_update(db, now=90104))
