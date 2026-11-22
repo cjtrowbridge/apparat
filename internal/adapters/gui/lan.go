@@ -13,20 +13,30 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 	"net"
 	"path/filepath"
+	"regexp"
 	"runtime"
-	"strings"
+	"slices"
 	"time"
 )
 
 type lanView struct {
-	device, message string
-	cancel          context.CancelFunc
-	updates         chan string
-	next            time.Time
-	active          bool
+	device, message, selected string
+	names                     []string
+	cancel                    context.CancelFunc
+	updates                   chan string
+	next                      time.Time
+	active                    bool
 }
 
 func (g *Game) discoveryContent(c *widget.Container) {
+	if g.lan.selected != "" {
+		c.AddChild(widget.NewText(widget.TextOpts.Text(wrapSelectorLabel(g.lan.selected, *g.pageTitleFace, max(1, g.detailPanePreferredWidth()-24)), g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(g.detailPanePreferredWidth()-24))))
+		claim := widget.NewButton(widget.ButtonOpts.Text("Claim this host for your cluster", g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.Image(g.theme.ButtonTheme.Image), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)))
+		claim.GetWidget().Disabled = true
+		c.AddChild(claim, g.detailText("Unpaired. Claiming requires authenticated cluster enrollment, which is not yet available."))
+		g.projectButton(c, "Back to discovery", g.leavePeer)
+		return
+	}
 	c.AddChild(g.detailText("Local network discovery"))
 	if runtime.GOOS != "android" {
 		devices, _ := net.Interfaces()
@@ -44,6 +54,18 @@ func (g *Game) discoveryContent(c *widget.Container) {
 		msg = "Select a network to browse."
 	}
 	c.AddChild(g.detailText(msg))
+	for _, name := range g.lan.names {
+		width := max(1, g.detailPanePreferredWidth()-tabIconSize-48)
+		label := wrapSelectorLabel(name, *g.theme.ButtonTheme.TextFace, width)
+		btn := widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter), widget.ButtonOpts.TextPadding(&widget.Insets{Left: 12 + tabIconSize + 8, Right: 12, Top: 8, Bottom: 8}),
+			widget.ButtonOpts.Image(g.theme.ButtonTheme.Image), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
+			widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
+				if !g.bodySelectionSuppressed() {
+					g.openPeer(name)
+				}
+			}))
+		c.AddChild(plusRow(btn))
+	}
 }
 
 func (g *Game) startLAN(device string) {
@@ -93,7 +115,48 @@ func lanNames(names []string) string {
 	if len(names) == 0 {
 		return "Searching · no nearby hosts"
 	}
-	return "Nearby hosts\n" + strings.Join(names, "\n")
+	encoded, _ := json.Marshal(names)
+	return string(encoded)
+}
+
+var hostLabel = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
+
+func (g *Game) receiveLAN(msg string) {
+	var names []string
+	if json.Unmarshal([]byte(msg), &names) == nil {
+		valid := names[:0]
+		for _, name := range names {
+			if hostLabel.MatchString(name) {
+				valid = append(valid, name)
+			}
+		}
+		names = valid
+		msg = "Searching · no nearby hosts"
+		if len(names) > 0 {
+			msg = "Nearby hosts"
+		}
+	}
+	if msg == g.lan.message && slices.Equal(names, g.lan.names) {
+		return
+	}
+	g.lan.message = msg
+	g.lan.names = names
+	if !slices.Contains(names, g.lan.selected) {
+		g.lan.selected = ""
+	}
+	g.layoutDirty = true
+}
+
+func (g *Game) openPeer(name string) {
+	if slices.Contains(g.lan.names, name) {
+		g.lan.selected = name
+		g.layoutDirty = true
+	}
+}
+
+func (g *Game) leavePeer() {
+	g.lan.selected = ""
+	g.layoutDirty = true
 }
 
 func (g *Game) stopLAN() {
@@ -112,7 +175,7 @@ func (g *Game) pollLAN() {
 		tab = g.presentedTab(tab)
 	}
 	i := g.selectedSectionIndex(tab)
-	if tab.ID() != hud.TabCluster || i < 0 || i >= len(tab.Sections) || tab.Sections[i].ActionID != "add-new-device" {
+	if tab.ID() != hud.TabCluster || g.collapsed() && !g.detailOpen[hud.TabCluster] || i < 0 || i >= len(tab.Sections) || tab.Sections[i].ActionID != "add-new-device" {
 		if g.lan.active {
 			g.stopLAN()
 		}
@@ -122,15 +185,11 @@ func (g *Game) pollLAN() {
 		g.lan.active = true
 		g.lan.next = time.Now().Add(time.Second)
 		msg := g.runtimeInfo.BrowseLAN(true)
-		if msg != g.lan.message {
-			g.lan.message = msg
-			g.layoutDirty = true
-		}
+		g.receiveLAN(msg)
 	}
 	select {
 	case msg := <-g.lan.updates:
-		g.lan.message = msg
-		g.layoutDirty = true
+		g.receiveLAN(msg)
 	default:
 	}
 }

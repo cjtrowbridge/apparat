@@ -169,10 +169,13 @@ func (game *Game) Update() error {
 	game.pollUpdateDiscovery()
 	game.pollLAN()
 	game.pollDirectoryStatus()
-	game.workspaceBackEnabled.Store(game.actions.mode != "" || game.inWorkspace())
+	peerOpen := game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster && game.lan.selected != ""
+	game.workspaceBackEnabled.Store(game.actions.mode != "" || game.inWorkspace() || peerOpen)
 	if game.workspaceBackRequested.Swap(false) {
 		if game.actions.mode != "" {
 			game.backActionScreen()
+		} else if peerOpen {
+			game.leavePeer()
 		} else {
 			game.workspaceBack()
 		}

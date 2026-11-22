@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"github.com/cjtrowbridge/apparat/internal/hud"
 	"image"
 
 	"github.com/ebitenui/ebitenui/widget"
@@ -109,6 +110,8 @@ func (g *Game) routeNavigation(delta image.Point, back, activate, keyActivate bo
 		id := g.shell.Snapshot().ActiveTab().ID()
 		if g.actions.mode != "" {
 			g.backActionScreen()
+		} else if id == hud.TabCluster && g.lan.selected != "" {
+			g.leavePeer()
 		} else if g.inWorkspace() {
 			g.workspaceBack()
 		} else if g.collapsed() && g.detailOpen[id] {

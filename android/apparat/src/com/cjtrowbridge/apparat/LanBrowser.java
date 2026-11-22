@@ -86,6 +86,6 @@ final class LanBrowser {
                 status = "Network discovery unavailable";
             }
         }
-        return names.isEmpty() ? status : "Nearby hosts\n" + android.text.TextUtils.join("\n", names);
+        return names.isEmpty() ? status : new org.json.JSONArray(names).toString();
     }
 }

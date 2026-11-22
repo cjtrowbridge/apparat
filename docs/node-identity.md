@@ -1,6 +1,6 @@
 # Node identity and API access
 
-This is the Phase 10 design. Today the read-only diagnostic listener accepts local requests without credentials. The identity package already generates Ed25519 keys, writes a public manifest, and reads passphrase-encrypted private files. The first deliverable connects those facilities to first-run setup and a usable authenticated loopback API.
+Startup inspects the local device manifest and private key file. A missing pair permits startup. An inconsistent pair stops startup for recovery. The identity package supports Ed25519 generation, public manifests and passphrase-encrypted private files. First-run creation or import, loading signing keys into the running node and OS-backed unlock are planned Phase 10 work. The current opt-in bootstrap listener returns a JSON authentication challenge. Discovered hosts remain unpaired until authenticated enrollment is available.
 
 ## One signing identity per node root
 

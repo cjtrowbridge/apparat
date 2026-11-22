@@ -132,10 +132,11 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		)),
 	)
 	selected := game.selectedSectionIndex(tabData)
-	if withBack && selected >= 0 && !(tabData.ID() == hud.TabProjects && game.projects.workspace.id != "" && tabData.Sections[selected].ProjectID == game.projects.workspace.id && game.projects.workspace.mode != "registration") {
+	peer := tabData.ID() == hud.TabCluster && game.lan.selected != ""
+	if withBack && !peer && selected >= 0 && !(tabData.ID() == hud.TabProjects && game.projects.workspace.id != "" && tabData.Sections[selected].ProjectID == game.projects.workspace.id && game.projects.workspace.mode != "registration") {
 		detailContainer.AddChild(game.backButton(tabData.ID()))
 	}
-	if selected >= 0 && tabData.Summary != "" {
+	if selected >= 0 && tabData.Summary != "" && !peer {
 		detailContainer.AddChild(game.detailText(tabData.Summary))
 	}
 	for _, section := range game.detailSections(tabData) {

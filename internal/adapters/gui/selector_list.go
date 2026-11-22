@@ -46,13 +46,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			if actions == nil && section.ActionID != "add-new-device" {
 				actions = game.selectorRows()
 			}
-			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
-				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
-			btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
-			row.AddChild(btn, widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("2795")),
-				widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-					VerticalPosition: widget.AnchorLayoutPositionCenter, Padding: &widget.Insets{Left: 12},
-				}))))
+			row := plusRow(btn)
 			if section.ActionID == "add-new-device" {
 				listContainer.AddChild(row)
 			} else {
@@ -96,4 +90,15 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 	scroll.GetWidget().LayoutData = widget.GridLayoutData{}
 	box.AddChild(actions, scroll)
 	return boundPreferredWidth(box, game.masterPanePreferredWidth)
+}
+
+func plusRow(btn *widget.Button) *widget.Container {
+	row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
+	btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
+	row.AddChild(btn, widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("2795")),
+		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+			VerticalPosition: widget.AnchorLayoutPositionCenter, Padding: &widget.Insets{Left: 12},
+		}))))
+	return row
 }

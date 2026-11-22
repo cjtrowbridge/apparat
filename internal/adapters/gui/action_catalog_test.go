@@ -180,3 +180,25 @@ func TestVoiceChoiceKeepsProjectContext(t *testing.T) {
 		t.Fatal("cancel did not dismiss and stop feedback")
 	}
 }
+
+func TestDiscoveredHostNavigationExpires(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	g.receiveLAN(lanNames([]string{"trashcan0", "bad\nname"}))
+	match := g.queryActions("open trashcan0", true)
+	if !match.Exact || len(match.Choices) != 1 || len(g.lan.names) != 1 {
+		t.Fatal(match, g.lan.names)
+	}
+	id := match.Choices[0].Address
+	g.invokeAction(id)
+	if g.lan.selected != "trashcan0" || g.shell.Snapshot().ActiveTab().ID() != hud.TabCluster {
+		t.Fatal("host detail did not open")
+	}
+	g.leavePeer()
+	g.openPeer("trashcan0")
+	g.receiveLAN(lanNames(nil))
+	g.invokeAction(id)
+	if g.lan.selected != "" || len(g.queryActions("open trashcan0", true).Choices) != 0 {
+		t.Fatal("departed peer remained available")
+	}
+}

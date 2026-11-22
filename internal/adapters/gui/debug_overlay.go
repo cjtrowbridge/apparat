@@ -78,6 +78,9 @@ func (game *Game) selectSection(tabID hud.TabID, index int) {
 	if tabID == hud.TabProjects && !game.selectProjectEntry(index) {
 		return
 	}
+	if tabID == hud.TabCluster {
+		game.leavePeer()
+	}
 	game.selectedSections[tabID] = index
 	if game.collapsed() {
 		game.detailOpen[tabID] = true

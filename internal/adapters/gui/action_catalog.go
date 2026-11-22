@@ -99,6 +99,15 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			kind = "project"
 		}
 		path := tab.Title() + " / " + s.Title
+		if s.ActionID == "add-new-device" {
+			for _, name := range g.lan.names {
+				add("discovered-host", owner, g.lan.device+"/"+name, name, path+" / "+name, func() {
+					g.selectTab(index, nil)
+					g.selectSection(tab.ID(), i)
+					g.openPeer(name)
+				})
+			}
+		}
 		if s.ProjectID != "" {
 			p := g.projects.rows[i-len(projectEntrySections)]
 			if counts[hud.CommandWords(p.Name)] > 1 {

@@ -30,6 +30,8 @@ Linux and Pixel 4a each displayed the deployed worker in the real Cluster view. 
 - [x] Reuse the Linux release validator for the worker artifact, with persisted headless defaults and request-driven scheduling including anonymous responses. Exercise success, failure, suppression, manual override, promotion and restart. Preserve desktop update behavior.
 - [x] Document the owner commands, quiet-node semantics and subsequent pool queue, drain and rejoin gates in the roadmap.
 
+- [ ] Present live candidates as plus-and-hostname buttons, open an unpaired node detail view, and show claim eligibility. Resolve transient destinations at activation and verify narrow and wide layouts. Trusted enrollment depends on identity setup.
+
 ## Subsequent identity and enrollment work
 
 - [ ] **Persist and recover a node identity.** Inventory all startup paths and legacy files. Add explicit storage format/version and distinguish missing, locked, usable and inconsistent states. Perform initial writes under the existing node lock. Test absent, partial, mismatched, revoked, invalid-permissions and legacy fixtures, concurrent startup, injected write failure and interrupted migration. Verify fingerprint and a signing challenge before and after each protection change. Keep recovery operator-driven.
