@@ -96,7 +96,7 @@ func run() (code int) {
 		}
 		return 0
 	}
-	fmt.Fprintf(os.Stderr, "apparat ready root=%s REST=http://%s\n", cfg.RootDir, node.Address())
+	fmt.Fprintf(os.Stderr, "apparat ready root=%s\n", cfg.RootDir)
 	if node.Mode() == app.ModeGUI {
 		wd, _ := os.Getwd()
 		executable, _ := os.Executable()

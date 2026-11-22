@@ -28,7 +28,7 @@ type lanView struct {
 
 func (g *Game) discoveryContent(c *widget.Container) {
 	c.AddChild(g.detailText("Local network discovery"))
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS != "android" {
 		devices, _ := net.Interfaces()
 		for _, dev := range devices {
 			if dev.Flags&net.FlagUp == 0 || dev.Flags&net.FlagMulticast == 0 {
@@ -58,6 +58,15 @@ func (g *Game) startLAN(device string) {
 			case updates <- msg:
 			case <-ctx.Done():
 			}
+		}
+		if runtime.GOOS != "linux" {
+			err := discovery.Browse(ctx, device, func(names []string) {
+				send(lanNames(names))
+			})
+			if err != nil && ctx.Err() == nil {
+				send("Discovery unavailable on " + device)
+			}
+			return
 		}
 		cmd := discovery.Command(ctx, "browse", device)
 		pipe, err := cmd.StdoutPipe()

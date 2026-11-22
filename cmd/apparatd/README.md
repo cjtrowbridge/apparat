@@ -18,4 +18,4 @@ Use this binary for display-free devices, service-manager integration, and headl
 
 - `main.go`: Parses command options and runs the headless worker.
 
-Phase 8 adds `--demo-services`, `--services`, `--listen`, `--backup`, and `--restore-backup`. GUI/headless are alternative owners of the same locked node root; see root README for migration and recovery. Startup reports the actual loopback REST address.
+Phase 8 adds `--demo-services`, `--services`, `--backup`, and `--restore-backup`. GUI/headless are alternative owners of the same locked node root; see root README for migration and recovery. API hosting requires an explicit grant. Linux headless configuration uses api-list, api-grant RULE, api-revoke RULE and api-disable.

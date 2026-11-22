@@ -5,6 +5,7 @@ import contextlib
 import http.server
 import json
 import os
+import shutil
 import socket
 import sqlite3
 import subprocess
@@ -20,7 +21,17 @@ def command(*args):
 
 
 def profiles():
-    result = {}
+    result = {"lo/loopback/local/127.0.0.1": ("lo", "127.0.0.1")}
+    if shutil.which("tailscale") and os.path.isdir("/sys/class/net/tailscale0"):
+        try:
+            status = json.loads(command("tailscale", "status", "--json"))
+            tailnet = status["CurrentTailnet"]["MagicDNSSuffix"]
+            address = next(a for a in status["Self"]["TailscaleIPs"] if ":" not in a)
+            if tailnet and status["BackendState"] == "Running":
+                key = "/".join(("tailscale0", tailnet, status["Self"]["ID"], address))
+                result[key] = ("tailscale0", address)
+        except (KeyError, TypeError, StopIteration, OSError, ValueError, subprocess.SubprocessError):
+            pass
     routes = json.loads(command("ip", "-j", "-4", "route", "show", "default"))
     for route in routes:
         dev = route["dev"]
@@ -41,14 +52,24 @@ def profiles():
     return result
 
 
-def grants(db):
+def saved(db):
     row = db.execute("select value from local_runtime where key=?", (KEY,)).fetchone()
     return json.loads(row[0]) if row else []
 
 
-def save(db, rules):
+def enabled(db):
+    row = db.execute("select value from local_runtime where key='bootstrap_enabled'").fetchone()
+    return row[0] == "1" if row else bool(saved(db))
+
+
+def grants(db):
+    return saved(db) if enabled(db) else []
+
+
+def save(db, rules, on=True):
     with db:
         db.execute("insert or replace into local_runtime values(?,?,0)", (KEY, json.dumps(rules)))
+        db.execute("insert or replace into local_runtime values(?,?,0)", ("bootstrap_enabled", "1" if on and rules else "0"))
 
 
 def avahi():
@@ -118,18 +139,19 @@ def serve(db, rule):
             else:
                 self.reply(404, "not_found", "Resource not found.")
 
-    with http.server.HTTPServer((addr, 0), Handler, bind_and_activate=False) as http:
-        http.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, dev.encode()+b"\0")
-        http.server_bind()
-        http.server_activate()
-        http.timeout = 1
+    with http.server.HTTPServer((addr, 0), Handler, bind_and_activate=False) as listener:
+        listener.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, dev.encode()+b"\0")
+        listener.server_bind()
+        listener.server_activate()
+        listener.timeout = 1
         Handler.timeout = 2
-        bus, server = avahi()
-        group = dbus.Interface(bus.get_object("org.freedesktop.Avahi", server.EntryGroupNew()), "org.freedesktop.Avahi.EntryGroup")
-        group.AddService(index, 0, 0, socket.gethostname().split(".")[0], TYPE, "local", "", http.server_port, dbus.Array([], signature="ay"))
-        group.Commit()
+        if dev not in ("lo", "tailscale0"):
+            bus, server = avahi()
+            group = dbus.Interface(bus.get_object("org.freedesktop.Avahi", server.EntryGroupNew()), "org.freedesktop.Avahi.EntryGroup")
+            group.AddService(index, 0, 0, socket.gethostname().split(".")[0], TYPE, "local", "", listener.server_port, dbus.Array([], signature="ay"))
+            group.Commit()
         while permitted():
-            http.handle_request()
+            listener.handle_request()
 
 
 def supervise(db, path):
@@ -162,17 +184,23 @@ def configure(db):
     dialog.add_button("Save", Gtk.ResponseType.OK)
     box = dialog.get_content_area()
     box.add(Gtk.Label(label="Allow API hosting on these networks and interfaces"))
-    previous = grants(db)
+    switch = Gtk.CheckButton(label="Enable API server")
+    switch.set_active(enabled(db))
+    box.add(switch)
+    previous = saved(db)
     active = profiles()
     checks = {}
     for rule in sorted(set(previous).union(active)):
-        label = rule if rule in active else rule+" (unavailable)"
+        dev, uuid, gateway, address = rule.split("/")
+        label = f"{dev} · {address} · gateway {gateway}"
+        if rule not in active:
+            label += " (unavailable)"
         checks[rule] = Gtk.CheckButton(label=label)
         checks[rule].set_active(rule in previous)
         box.add(checks[rule])
     dialog.show_all()
     if dialog.run() == Gtk.ResponseType.OK:
-        save(db, [key for key, check in checks.items() if check.get_active()])
+        save(db, [key for key, check in checks.items() if check.get_active()], switch.get_active())
     dialog.destroy()
 
 
@@ -194,11 +222,13 @@ def main():
         elif mode == "supervise":
             supervise(db, path)
         elif mode == "list":
-            print(json.dumps({"available":list(profiles()), "enabled":grants(db)}))
+            print(json.dumps({"available":list(profiles()), "granted":saved(db), "enabled":grants(db)}))
         elif mode == "grant" and args[0] in profiles():
-            save(db, sorted(set(grants(db)).union(args)))
+            save(db, sorted(set(saved(db)).union(args)))
         elif mode == "disable":
-            save(db, [])
+            save(db, saved(db), False)
+        elif mode == "revoke":
+            save(db, [key for key in saved(db) if key != args[0]], enabled(db))
         else:
             raise ValueError("Select an available network rule from api-list")
 main()

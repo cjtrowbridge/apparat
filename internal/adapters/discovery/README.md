@@ -2,3 +2,5 @@ Linux API hosting uses the embedded linux.py helper invoked by linux_helper.go. 
 
 - `linux.py`: Linux network grants, scoped HTTP and Avahi discovery.
 - `linux_helper.go`: Embeds the Linux helper and creates cancellable commands.
+
+- `browse.go`: Interface-selected IPv4 DNS-SD queries with expiring results for Windows and macOS browsers.

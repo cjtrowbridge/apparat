@@ -22,10 +22,11 @@ func main() {
 func run() (code int) {
 	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "api-") {
 		mode := strings.TrimPrefix(os.Args[1], "api-")
-		if mode != "list" && mode != "grant" && mode != "disable" {
+		if mode != "list" && mode != "grant" && mode != "disable" && mode != "revoke" {
 			return 2
 		}
-		if (mode == "grant" && len(os.Args) != 3) || (mode != "grant" && len(os.Args) != 2) {
+		needsRule := mode == "grant" || mode == "revoke"
+		if (needsRule && len(os.Args) != 3) || (!needsRule && len(os.Args) != 2) {
 			return 2
 		}
 		cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})
@@ -107,7 +108,7 @@ func run() (code int) {
 		}
 		return 0
 	}
-	fmt.Fprintf(os.Stderr, "apparatd ready root=%s REST=http://%s\n", cfg.RootDir, node.Address())
+	fmt.Fprintf(os.Stderr, "apparatd ready root=%s\n", cfg.RootDir)
 	err = node.Start(ctx)
 	if err != nil && ctx.Err() == nil {
 		fmt.Fprintln(os.Stderr, "run failed:", err)

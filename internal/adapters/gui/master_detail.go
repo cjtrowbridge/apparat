@@ -74,6 +74,9 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 		rightPadding += tabIconSize
 	}
 	padding := &widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}
+	if section.ActionID == "add-new-device" {
+		padding.Left = 12 + tabIconSize + 8
+	}
 	if tabData.ID() == hud.TabProjects {
 		padding.Left = 12
 		if projectEntryAction(section.ContentKind) {

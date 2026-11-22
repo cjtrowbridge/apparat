@@ -69,7 +69,7 @@ func Load(options Options) (Config, error) {
 	flags := flag.NewFlagSet("apparat", flag.ContinueOnError)
 	flags.Var((*stringMode)(&mode), "mode", "runtime mode: gui, headless, or auto")
 	flags.StringVar(&root, "runtime-dir", root, "runtime data directory")
-	listen := ""
+
 	demo := false
 	inspect := false
 	backup := ""
@@ -77,7 +77,7 @@ func Load(options Options) (Config, error) {
 	flags.StringVar(&restore, "restore-backup", "", "restore verified SQLite backup to a new runtime directory and exit")
 	flags.BoolVar(&inspect, "services", false, "print local services as JSON and exit")
 	flags.StringVar(&backup, "backup", "", "write a verified SQLite backup to a new path and exit")
-	flags.StringVar(&listen, "listen", listen, "read-only REST loopback IP:port (0 chooses a free port)")
+
 	flags.BoolVar(&demo, "demo-services", false, "create the three mock services if absent")
 	doctor := false
 	smoke := false
@@ -115,11 +115,11 @@ func Load(options Options) (Config, error) {
 		RecoveryDir:  filepath.Join(root, "recovery"),
 		Doctor:       doctor,
 		SmokeTest:    smoke,
-		Listen:       listen,
-		Demo:         demo,
-		Inspect:      inspect,
-		Backup:       backup,
-		Restore:      restore,
+
+		Demo:    demo,
+		Inspect: inspect,
+		Backup:  backup,
+		Restore: restore,
 	}
 	if implicit {
 		cfg.LegacyRoots = []string{filepath.Join(base, "apparat"), filepath.Join(base, "apparatd")}
