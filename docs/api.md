@@ -2,7 +2,7 @@
 
 The MVP API is authenticated HTTPS REST over externally configured WireGuard or trusted LAN. Authentication and authorization are mandatory on every non-public endpoint.
 
-Phase 8 implements six read-only loopback resources. The remaining authenticated operations below are future contracts. OpenAPI operations marked `x-phase: 8` have executable response-conformance coverage; all other paths are explicitly future and return 404 locally.
+Phase 8 implements six read-only loopback resources. OpenAPI operations marked `x-phase: 8` have executable loopback response-conformance coverage. The scoped worker listener serves signed login, synchronization, administration and the Git provider operations documented below. The worker also serves the scoped workspace protocol. The general catalog and resource-specific project URLs remain future contracts.
 
 All cross-device project access, Task invocation, queue submission, worker leasing, progress/heartbeat, and result delivery use this API. No device accesses another device's project filesystem or SQLite database directly.
 
@@ -11,6 +11,12 @@ REST is an external adapter, not the GUI-to-core boundary. The GUI invokes the t
 The first implementation step is a loopback-only, read-only REST subset for health, readiness, safe local device state, services, and capabilities. Before cluster identity, authentication, authorization, signing, replay protection, and audit are active, the server rejects non-loopback binding and exposes no command or setter. The secure REST phase preserves those query semantics, admits configured LAN/WireGuard access, and maps authenticated mutations onto the same internal commands already used by the GUI.
 
 OpenAPI source: [`openapi/apparat-v1.yaml`](./openapi/apparat-v1.yaml).
+
+## Worker workspace transport
+
+`POST /v1/workspace` accepts a single JSON command with a registered ProjectID, Action and checkout-relative Path. Authentication uses the existing pinned TLS listener and device-bound worker session. A write includes Text, the last-read Base digest and a stable operation ID. Success returns a WorkspaceView, including entries, choices, a revision or a continuation cursor as appropriate. A stale base returns 412. An absent grant returns 403. Detailed failure text and project contents stay out of transport telemetry.
+
+`GET /v1/workspace/live` upgrades the same authenticated TLS connection to WebSocket. Its first frame selects up to sixteen authorized project directory or terminal watches. The server returns a reset on subscription, then sequenced invalidations or screens. A client reconnects by requesting a fresh snapshot. [Workspace operation and diagnostics guide](workspaces.md)
 
 ## Endpoints
 
@@ -89,7 +95,7 @@ OpenAPI uses JSON-compatible YAML so Go's standard JSON decoder can parse the sa
 
 ## First discovery milestone
 
-A dedicated bootstrap handler serves only the anonymous GET /v1 response from the contract below (401 with JSON explaining that authentication is required). It cannot dispatch protected or diagnostic handlers. Unknown paths receive JSON 404 and unsupported methods JSON 405. Public-key lookup, credential issuance and authenticated success arrive in subsequent milestones. Start the discovery listener only through the [hosting policy](node-identity.md#api-hosting-policy).
+The initial anonymous milestone used a dedicated bootstrap handler serving the anonymous GET /v1 response from the contract below (401 with JSON explaining that authentication is required). It cannot dispatch protected or diagnostic handlers. Unknown paths receive JSON 404 and unsupported methods JSON 405. The installed worker’s current public-key, login and protected routes are described under First-owner enrollment and Pinned worker API below. Start the discovery listener only through the [hosting policy](node-identity.md#api-hosting-policy).
 
 ## Planned Phase 10 local authentication contract
 
@@ -119,7 +125,7 @@ On a granted interface, the headless worker also accepts a TLS 1.3 session authe
 
 ### Host GitHub account directory
 
-`GET /v1/admin/git/accounts` returns a JSON object with a `usernames` array for github.com. Requests require TLS 1.3, the enrolled device certificate, a live bearer session bound to that device, current SQLite administrator approval, and a host-local confirmation of the owner. The response uses no-store. Tokens, Git credential helpers and other providers are outside this endpoint. Register accounts on the host. Existing workers keep their cluster access and must run `apparatd trust-host OWNER_FINGERPRINT` before sharing this directory.
+`GET /v1/admin/git/accounts` returns a JSON object with a `usernames` array for github.com. Requests require TLS 1.3, the enrolled device certificate, a live bearer session bound to that device, current SQLite administrator approval, and a host-local confirmation of the owner. The response uses no-store. Tokens, Git credential helpers and other providers are outside this endpoint. The provider operation below can enroll accounts on eligible workers. Local CLI login is also available. Existing workers keep their cluster access and must run `apparatd trust-host OWNER_FINGERPRINT` before sharing this directory.
 
 Apparat pins the long-lived worker signing key. Reissued leaves must verify against that key. Invalid certificate chains abort the handshake. A valid change displays the old and presented fingerprints and defaults to keeping the host disconnected. Approval applies to this installation. The replacement must subsequently confirm administrator access for the same user and cluster before the saved registration moves. Restoring the original worker key preserves historical signing continuity.
 
@@ -130,3 +136,22 @@ The confirmed worker’s TLS admin route `GET /v1/admin/git/providers` reports t
 `POST /v1/admin/git/operation` accepts a provider ID, a client-generated ULID, and install, enroll, clone, status, or cancel. A clone also takes a GitHub owner/repo and optional account. The worker selects executable, arguments, source hostname and destination. Status is bound to the initiating admin user and device. Active work periodically rechecks authorization. One worker operation runs at a time. Completed status expires after fifteen minutes. Repeating a clone uses its checkout receipt and registration to recover across worker restarts. Enrollment codes are ephemeral and only the initiating device sees them. Linux enrollment stages CLI files in a private tmpfs directory and requires an unlocked default Secret Service collection. Confirm on the GitHub verification page; the host saves its account through the system CLI. An interrupted machine can leave temporary files in its private tmpfs directory until reboot.
 
 `GET /v1/admin/git/projects` lists remote-created checkout summaries from this worker. The app presents the worker hostname and revision in Projects. Remote registrations point to the authoritative worker; the client offers read-only metadata. Later work includes remote editing and additional explicitly configured destination roots.
+
+#### Client operation sequence
+
+Use the pinned worker listener on an explicitly enabled interface. All four Git routes require the same TLS 1.3 device certificate, live device-bound bearer, current SQLite admin grant and host-local owner confirmation. The GitHub account authorizes a transfer at GitHub. It cannot authenticate the caller to Apparat.
+
+| Step | JSON contract |
+| --- | --- |
+| Discover | `GET /v1/admin/git/providers` returns an array with `ID`, `Name`, `Tool`, `Installed`, `Accounts`, `CanInstall`, `CanEnroll` and `Reason`. Interpret capability flags independently. |
+| Start | POST to `/v1/admin/git/operation` with `{"Provider":"github","Operation":"clone","ID":"01ARZ3NDEKTSV4RRFFQ69G5FAV","Repo":"example/project","Account":""}`. Omit or empty the account for anonymous GitHub access. Use `install` or `enroll` with their own new IDs. |
+| Follow | POST the same provider and ID with `Operation` set to `status` or `cancel`. The GUI polls pending jobs every two seconds. HTTP 200 carries a `State` of `pending`, `completed` or `failed`. Read `Message` for progress or failure, `Code` during device approval, `Username` after enrollment and `Project` after a clone. |
+| Recover | A different initiating device cannot poll or cancel the job. Reuse the original ID and identical inputs to retry a clone. An unrelated request for an occupied checkout fails. After restart or status expiry, refresh the worker listing to find a completed registration. |
+
+Jobs have a 16-minute deadline. The worker rechecks active authorization every second. It retains up to 128 jobs, including terminal results until expiry. Invalid inputs or provider return 400 at request validation, missing status returns 404, and a busy worker or conflicting reuse of an ID returns 409. Some input and transfer failures arrive in a terminal job status. Missing or device-mismatched bearer credentials receive 401 and insufficient current access or absent owner confirmation receives 403. TLS verification can end the connection before HTTP.
+
+#### Host prerequisites
+
+The installer uses fixed local package commands. Linux supports apt, dnf and zypper under root or an authorized noninteractive sudo rule. Platform adapters also recognize Homebrew on macOS, WinGet on Windows and pkg inside Termux. A standalone mobile app can act as a client. Release 0.1.72 qualified the Linux worker and Linux/Android GUI clients. An installer adapter alone does not qualify another OS as a network worker.
+
+Remote enrollment currently requires a Linux worker with multi-account GitHub CLI, tmpfs at `/dev/shm` and an unlocked default Secret Service collection accessible through Python GI in the service account’s session. The client directs approval to `https://github.com/login/device`. Only the worker handles the token. It verifies the enrolled username, checks protected storage and preserves the previous active CLI account when publishing the configuration. If the chooser reports enrollment unavailable, use the worker account’s local CLI login and refresh. If provider discovery itself fails, verify the API network grant, saved worker fingerprint, owner confirmation and current admin access before retrying.

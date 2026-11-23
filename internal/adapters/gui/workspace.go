@@ -24,6 +24,7 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
+	cursor                                       string
 	virtualDirs                                  map[string]bool
 	outputDetails                                string
 	layout                                       workspaceLayout
@@ -59,6 +60,7 @@ func (g *Game) workspaceRequest(action string) {
 	}
 	switch action {
 	case "list":
+		q.Argument = ""
 		q.Path = w.dir
 	case "create", "mkdir":
 		q.Path = path.Join(w.dir, w.argument)
@@ -72,6 +74,14 @@ func (g *Game) workspaceRequest(action string) {
 		if q.ID == "" {
 			q.ID = w.runID
 		}
+	}
+	if action == "next-directory" {
+		q.Action = "list"
+		q.Argument = w.cursor
+		q.Path = w.dir
+	}
+	if strings.HasPrefix(action, "terminal-") {
+		q.ID = w.runID
 	}
 	virtual := action == "list" && w.virtualDirs[q.Path]
 	w.confirmation = ""
@@ -113,6 +123,15 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.mode = "file"
 	}
 	switch q.Action {
+	case "terminal-list":
+		w.choices = v.Choices
+		w.cursor = v.Cursor
+	case "terminal-history":
+		w.cursor = v.Cursor
+	case "terminal-start", "terminal-stop", "terminal-take", "terminal-input", "terminal-screen", "terminal-resize":
+		w.mode = "terminal-session"
+		w.selected.State = v.Detail
+		w.message = ""
 	case "changes":
 		w.changes = v.Changes
 	case "review":
@@ -125,6 +144,7 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	case "stage", "stage-deletion", "unstage", "commit", "switch", "resolve", "delete":
 		g.workspaceGo("changes", "changes")
 	case "threads", "tasks", "runs":
+		w.cursor = v.Cursor
 		w.choices = v.Choices
 	case "post":
 		for i, p := range g.projects.rows {
@@ -153,9 +173,16 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.dir = path.Dir(q.Path)
 		g.workspaceGo("files", "list")
 	case "list":
-		w.changes = nil
-		g.startDirectoryStatus(q)
-		w.entries = v.Entries
+		if q.Argument == "" {
+			w.changes = nil
+			w.entries = v.Entries
+			w.page = 0
+			g.startDirectoryStatus(q)
+		} else {
+			w.entries = v.Entries
+			w.page = 0
+		}
+		w.cursor = v.Cursor
 		w.mode = "files"
 		w.path = ""
 		w.lines = nil
@@ -184,7 +211,7 @@ func (g *Game) workspaceActions(c *widget.Container, labels ...string) {
 		label, action := labels[i], labels[i+1]
 		confirm := false
 		switch action {
-		case "delete-artifact", "delete", "move", "switch", "commit", "discard", "rebase", "resolve", "run", "save":
+		case "terminal-stop", "terminal-take", "delete-artifact", "delete", "move", "switch", "commit", "discard", "rebase", "resolve", "run", "save":
 			confirm = true
 		}
 		if confirm && w.confirmation == action {

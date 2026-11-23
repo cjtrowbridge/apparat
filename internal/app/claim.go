@@ -188,7 +188,7 @@ func (node *Runtime) resolvePeer(ctx context.Context, network, host string) (str
 }
 
 func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevice) (*httpapi.WorkerClient, error) {
-	client, err := httpapi.OpenWorker(ctx, worker.Address, worker.Fingerprint, n.Personal, n.Keys)
+	client, err := httpapi.OpenWorker(ctx, worker.Address, worker.Fingerprint, n.Personal, n.Keys, &n.observations)
 	if err == nil {
 		if client.Access.Cluster != worker.Cluster || client.Access.User != n.Personal.Fingerprint() {
 			return nil, errors.New("unexpected worker cluster or user")
@@ -207,7 +207,7 @@ func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevi
 	if err != nil {
 		return nil, err
 	}
-	client, err = httpapi.OpenWorker(ctx, address, worker.Fingerprint, n.Personal, n.Keys)
+	client, err = httpapi.OpenWorker(ctx, address, worker.Fingerprint, n.Personal, n.Keys, &n.observations)
 	if err != nil {
 		return nil, err
 	}

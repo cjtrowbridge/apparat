@@ -68,6 +68,10 @@ func (g *Game) workspaceBack() {
 		g.workspaceGo("branches", "branches")
 	case "commit-detail":
 		g.workspaceGo("history", "history")
+	case "terminal-history":
+		g.workspaceGo("terminal-session", "terminal-screen")
+	case "terminal-session":
+		g.workspaceGo("terminal", "terminal-list")
 	case "task", "runs":
 		g.workspaceGo("tasks", "tasks")
 	case "result":
@@ -85,7 +89,20 @@ func (g *Game) workspaceBack() {
 	}
 }
 
-var workspaceDestinations = []struct{ label, mode, action string }{{"Files", "files", "list"}, {"Changes", "changes", "changes"}, {"Tasks", "tasks", "tasks"}, {"Chat", "chat", "threads"}}
+var workspaceDestinations = []struct{ label, mode, action, icon string }{
+	{"Chat", "chat", "threads", "1f4ac"}, {"Files", "files", "list", "1f4c1"}, {"Editor", "editor", "", "270f"}, {"Terminal", "terminal", "terminal-list", "1f4bb"}, {"Tasks", "tasks", "tasks", "2611"},
+}
+
+func (g *Game) openWorkspaceTab(mode, action string) {
+	w := &g.projects.workspace
+	if mode == "editor" && w.path != "" && w.base != "" {
+		mode = "file"
+	}
+	if mode == "chat" && strings.HasPrefix(w.id, "worker-") {
+		action = ""
+	}
+	g.workspaceGo(mode, action)
+}
 
 func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	btn := func(label string, fn func()) {
@@ -114,11 +131,12 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	)
 	back.GetWidget().SetTheme(&widget.Theme{})
 	nav.AddChild(back)
-	roots := w.mode == "files" || w.mode == "changes" || w.mode == "tasks" || w.mode == "chat"
+	remote := strings.HasPrefix(w.id, "worker-")
+	roots := w.mode != "registration"
 	if roots {
 		for _, dest := range workspaceDestinations {
-			g.workspaceNavButton(nav, dest.label, w.mode == dest.mode, func() {
-				g.workspaceGo(dest.mode, dest.action)
+			g.workspaceNavButton(nav, dest.icon, w.mode == dest.mode || dest.mode == "editor" && w.mode == "file", func() {
+				g.openWorkspaceTab(dest.mode, dest.action)
 			})
 		}
 	}
@@ -127,9 +145,17 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 		c.AddChild(g.detailText("Loading " + w.mode + "…"))
 	}
 	switch w.mode {
+	case "terminal", "terminal-session", "terminal-history":
+		g.terminalScreen(c, w)
+		return
+	case "editor":
+		c.AddChild(g.detailText("Select a file in Files to open it in the editor."))
 	case "files":
 		g.workspaceBrowser(c, w)
-		goTo("Folder options", "folder-options", "")
+		if !remote {
+			goTo("Changes", "changes", "changes")
+			goTo("Folder options", "folder-options", "")
+		}
 	case "folder-options":
 		goTo("New file", "create", "")
 		goTo("New folder", "mkdir", "")
@@ -149,8 +175,10 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	case "file":
 		c.AddChild(g.detailText(w.path))
 		btn("Edit document", g.editDocument)
-		goTo("Changes", "changes", "changes")
-		goTo("File options", "file-options", "")
+		if !remote {
+			goTo("Changes", "changes", "changes")
+			goTo("File options", "file-options", "")
+		}
 		c.AddChild(g.detailText(strings.Join(w.lines, "\n")))
 	case "file-options":
 		goTo("Rename or move", "move", "")
@@ -162,6 +190,10 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 		g.changesScreen(c, w)
 		return
 	default:
+		if remote && w.mode == "chat" {
+			c.AddChild(g.detailText("Shared project chat is planned."))
+			return
+		}
 		g.taskChatScreen(c, w)
 		return
 	}
@@ -271,100 +303,4 @@ func (g *Game) workspaceBranch() string {
 		}
 	}
 	return ""
-}
-func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
-	goTo := func(label, mode, action string) {
-		g.projectButton(c, label, func() {
-			g.workspaceGo(mode, action)
-		})
-	}
-	switch w.mode {
-	case "tasks", "runs", "attachments":
-		for _, item := range w.choices {
-			g.workspaceRow(c, item.Label, func() {
-				if g.projects.pending != nil {
-					return
-				}
-				switch w.mode {
-				case "attachments":
-					w.attachment = item.ID
-					w.attachmentLabel = item.Label
-					g.workspaceGo("conversation", "chat")
-				case "tasks":
-					w.selected = item
-					g.workspaceGo("task", "")
-				case "runs":
-					w.selected = item
-					w.runID = item.ID
-					g.workspaceGo("result", "")
-				}
-			})
-		}
-		if w.mode == "tasks" {
-			goTo("Run history", "runs", "runs")
-		}
-	case "task":
-		c.AddChild(g.detailText(w.selected.Label))
-		c.AddChild(g.detailText(w.selected.Detail))
-		g.projectButton(c, "Run", func() {
-			w.argument = w.selected.ID
-			g.workspaceRequest("run")
-		})
-	case "result":
-		c.AddChild(g.detailText(w.selected.Label))
-		if w.selected.Detail != "" {
-			c.AddChild(g.detailText(w.selected.Detail))
-		}
-		if w.selected.State == "completed" || w.selected.State == "" {
-			g.projectButton(c, "Open output", func() {
-				w.argument = w.runID
-				g.workspaceRequest("artifact")
-			})
-		}
-	case "output":
-		c.AddChild(g.detailText(w.report))
-		goTo("Output details", "output-options", "")
-		return
-	case "output-options":
-		c.AddChild(g.detailText(w.outputDetails))
-		g.workspaceActions(c, "Delete output", "delete-artifact")
-	case "chat":
-		for _, item := range w.choices {
-			g.workspaceRow(c, item.Label, func() {
-				g.openConversation(item.ID)
-			})
-		}
-		if len(w.choices) == 0 {
-			g.projectButton(c, "General", func() {
-				g.openConversation("General")
-			})
-		}
-		goTo("New conversation", "new-thread", "")
-	case "new-thread":
-		g.projectField(c, "Conversation name", &w.argument)
-		g.projectButton(c, "Open", func() {
-			name := strings.TrimSpace(w.argument)
-			if name != "" {
-				w.setThread(name)
-				g.workspaceGo("conversation", "chat")
-			}
-		})
-	case "conversation":
-		c.AddChild(g.detailText(w.thread))
-		c.AddChild(g.detailText(w.report))
-
-		return
-	}
-	if w.report != "" {
-		c.AddChild(g.detailText(w.report))
-	}
-}
-
-func (w *workspacePanel) setThread(name string) {
-	if w.thread != name {
-		w.message = ""
-		w.attachment = ""
-		w.attachmentLabel = ""
-	}
-	w.thread = name
 }

@@ -29,6 +29,16 @@ func (n *Runtime) workspaceFile(ctx context.Context, location string, q domain.W
 	return projectgit.Files(location, q)
 }
 func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
+	start := time.Now()
+	if q.Correlation == "" {
+		q.Correlation, _ = domain.NewID(start, nil)
+	}
+	defer func() {
+		n.observeWorkspace(start, q, v, err)
+	}()
+	if strings.HasPrefix(q.ProjectID, "worker-") {
+		return n.remoteWorkspace(ctx, q)
+	}
 	// Directory decoration is a read-only observation and must not hold up navigation or edits.
 	if q.Action != "directory-status" {
 		n.workspaceMu.Lock()
@@ -41,21 +51,18 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 	if !domain.ValidID(q.ProjectID) || !projectgit.WorkspacePath(q.Path) || !projectgit.ValidText(q.Text) || len(q.Argument) > 4096 {
 		return v, errors.New("invalid workspace request")
 	}
-	projects, err := n.database.Projects(ctx)
+	location, err := n.database.ProjectLocation(ctx, q.ProjectID)
 	if err != nil {
-		return v, err
-	}
-	var location string
-	for _, p := range projects {
-		if p.ID == q.ProjectID {
-			location = p.Location
-		}
-	}
-	if location == "" {
 		return v, errors.New("project registration unavailable")
+	}
+	if terminalScope(q.Action) != "" {
+		return n.localTerminal(ctx, location, q)
 	}
 	switch q.Action {
 	case "read", "create", "list", "mkdir":
+		if q.Action == "list" && !strings.HasPrefix(location, "content://") {
+			return n.pages.Page("local/"+q.ProjectID, location, q.Path, q.Argument)
+		}
 		v, err = n.workspaceFile(ctx, location, q)
 		if err != nil || !v.Editing {
 			return v, err
@@ -123,17 +130,7 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 		}
 		return v, err
 	case "review", "changes", "directory-status":
-		var raw string
-		if strings.HasPrefix(location, "content://") {
-			file, e := n.workspaceFile(ctx, location, q)
-			raw, err = file.Report, e
-		} else {
-			raw, err = projectgit.GitActionContext(ctx, location, q)
-		}
-		if err == nil {
-			err = json.Unmarshal([]byte(raw), &v)
-		}
-		return v, err
+		return n.directoryView(ctx, location, q)
 	case "transactions":
 		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, "save")
 		return v, err
@@ -171,7 +168,7 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 				return v, err
 			}
 		}
-		messages, readErr := n.database.RecentEntries(ctx, q.ProjectID, kind)
+		messages, _, readErr := n.database.EntryPage(ctx, q.ProjectID, kind, "")
 		err = readErr
 		for i := len(messages) - 1; i >= 0; i-- {
 			v.Report += messages[i].Label + "\n"
@@ -180,7 +177,9 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 			v.Report = "No pending project messages"
 		}
 		return v, err
-	case "tasks", "run", "runs", "artifact", "delete-artifact":
+	case "tasks":
+		return n.workspaceCatalog(ctx, location, q)
+	case "run", "runs", "artifact", "delete-artifact":
 		return n.projectTask(ctx, location, q)
 	default:
 		if strings.HasPrefix(location, "content://") {
@@ -195,4 +194,18 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 		}
 		return v, err
 	}
+}
+
+func (n *Runtime) directoryView(ctx context.Context, location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
+	var raw string
+	if strings.HasPrefix(location, "content://") {
+		file, e := n.workspaceFile(ctx, location, q)
+		raw, err = file.Report, e
+	} else {
+		raw, err = projectgit.GitActionContext(ctx, location, q)
+	}
+	if err == nil {
+		err = json.Unmarshal([]byte(raw), &v)
+	}
+	return v, err
 }

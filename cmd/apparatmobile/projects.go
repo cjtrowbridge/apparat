@@ -17,6 +17,7 @@ import (
 
 type Documents interface {
 	GitHubLogin(string)
+	ExportCapture(string) bool
 	ChooseFolder() string
 	Inspect(string) string
 	Access(string, string, string, string) string
@@ -107,3 +108,11 @@ func (d projectDocuments) exportTree(ctx context.Context, parent string, prepare
 }
 
 var nodeCache string
+
+func (projectDocuments) ExportCapture(path string) error {
+	h := currentDocuments()
+	if h == nil || !h.ExportCapture(path) {
+		return errors.New("capture export cancelled or unavailable")
+	}
+	return nil
+}

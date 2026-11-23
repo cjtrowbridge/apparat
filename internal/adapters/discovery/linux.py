@@ -14,6 +14,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import threading
 
 TYPE = "_apparat._tcp"
 KEY = "bootstrap_grants_v1"
@@ -174,8 +175,14 @@ def update_command(db, action, args):
 def serve(db, rule, headless=False):
     dev, addr = profiles()[rule]
     index = socket.if_nametoindex(dev)
+    database_path = db.execute("pragma database_list").fetchone()[2]
+    connections = threading.local()
+
+    def local_db():
+        return getattr(connections, "db", db)
+
     def permitted():
-        return rule in grants(db) and rule in profiles() and socket.if_nametoindex(dev) == index
+        return rule in grants(local_db()) and rule in profiles() and socket.if_nametoindex(dev) == index
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def handle(self):
@@ -186,7 +193,7 @@ def serve(db, rule, headless=False):
                 return
             # TLS terminates in the Go worker. Revalidate grants before forwarding
             # each bounded chunk, including after the TLS handshake completes.
-            path = db.execute("pragma database_list").fetchone()[2]
+            path = database_path
             with socket.socket(socket.AF_UNIX) as backend:
                 backend.settimeout(3)
                 name = "worker-claims.sock" if headless else "pair-" + hashlib.sha256(rule.encode()).hexdigest()[:16] + ".sock"
@@ -195,8 +202,8 @@ def serve(db, rule, headless=False):
                 except OSError:
                     return
                 sockets = [self.connection, backend]
-                deadline = time.monotonic() + (8 if headless else 90)
-                remaining = (2 << 20) if headless else 400000
+                deadline = time.monotonic() + (300 if headless else 90)
+                remaining = (64 << 20) if headless else 400000
                 while remaining > 0 and time.monotonic() < deadline:
                     ready, _, _ = select.select(sockets, [], [], 0.5)
                     for src in ready:
@@ -228,7 +235,7 @@ def serve(db, rule, headless=False):
             if self.command != "HEAD":
                 self.wfile.write(body)
             self.wfile.flush()
-            if headless and claim_update(db):
+            if headless and claim_update(local_db()):
                 print("A", end="", flush=True)
 
         def send_error(self, code, message=None, explain=None):
@@ -242,7 +249,23 @@ def serve(db, rule, headless=False):
             else:
                 self.reply(404, "not_found", "Resource not found.")
 
-    with http.server.HTTPServer((addr, 0), Handler, bind_and_activate=False) as listener:
+    class ScopedServer(http.server.ThreadingHTTPServer):
+        slots = threading.BoundedSemaphore(16)
+        def process_request(self, request, client_address):
+            if self.slots.acquire(blocking=False):
+                super().process_request(request, client_address)
+            else:
+                self.shutdown_request(request)
+
+        def process_request_thread(self, request, client_address):
+            try:
+                with contextlib.closing(sqlite3.connect(database_path)) as connection:
+                    connections.db = connection
+                    super().process_request_thread(request, client_address)
+            finally:
+                self.slots.release()
+
+    with ScopedServer((addr, 0), Handler, bind_and_activate=False) as listener:
         listener.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, dev.encode()+b"\0")
         listener.server_bind()
         listener.server_activate()

@@ -91,6 +91,11 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 		if f != nil {
 			g.poolActions(add, index, f)
 			for _, o := range f.page.Options {
+				if o.Run != nil && f.route.Page == "performance" {
+					add("performance-command", owner, o.Label, o.Label, "Cluster / Performance / "+o.Label, func() {
+						g.clusterSelect(o)
+					})
+				}
 				if o.Run != nil && o.Route.Page == "pool-add-user" {
 					add("pool-grant-confirm", o.Route.Worker, o.Route.Pool+"/"+o.Route.Target, o.Label, "Cluster / "+o.Route.Pool+" / Add authorized user / "+o.Label, func() {
 						g.selectTab(index, nil)
@@ -158,6 +163,9 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 		for _, opt := range g.deviceManagementLinks(s.ActionID) {
 			key, _ := json.Marshal(opt.Route)
 			kind := "device-pools"
+			if opt.Route.Page == "performance" {
+				kind = "performance"
+			}
 			if opt.Route.Page == "rename" || opt.Route.Page == "rename-local" {
 				kind = "rename-device"
 			}
@@ -210,16 +218,18 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 				})
 			}
 		}
+		name := s.Title
 		if s.ProjectID != "" {
 			p := g.projects.rows[i-len(projectEntrySections)]
+			name = p.Name
 			if counts[hud.CommandWords(p.Name)] > 1 {
 				path += " (" + p.Location + ")"
 			}
-			if p.Available && p.RemoteHost == "" {
+			if p.Available {
 				g.registerWorkspaceActions(add, index, i, p, path)
 			}
 		}
-		add(kind, owner, key, s.Title, path, func() {
+		add(kind, owner, key, name, path, func() {
 			g.selectTab(index, nil)
 			g.selectSection(tab.ID(), i)
 		})
@@ -237,9 +247,16 @@ func (g *Game) registerWorkspaceActions(add registerAction, index, i int, p doma
 	for _, dest := range workspaceDestinations {
 		add("workspace", p.ID, dest.mode, dest.label+" for "+p.Name, path+" / "+dest.label, func() {
 			selectWorkspace()
-			g.workspaceGo(dest.mode, dest.action)
+			g.openWorkspaceTab(dest.mode, dest.action)
 		})
 	}
+	if p.RemoteHost != "" {
+		return
+	}
+	add("workspace", p.ID, "changes", "Changes for "+p.Name, path+" / Changes", func() {
+		selectWorkspace()
+		g.workspaceGo("changes", "changes")
+	})
 	threads := p.Threads
 	if len(threads) == 0 {
 		threads = []domain.WorkspaceChoice{{ID: "General", Label: "General"}}

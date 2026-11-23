@@ -107,6 +107,11 @@ func (g *Game) directoryListing(c *widget.Container, w *workspacePanel) {
 			}
 		})
 	}
+	if w.cursor != "" && w.page+24 >= len(rows) {
+		g.projectButton(c, "Next directory page", func() {
+			g.workspaceRequest("next-directory")
+		})
+	}
 	if w.page+24 < len(rows) {
 		g.projectButton(c, "More files", func() {
 			w.page += 24

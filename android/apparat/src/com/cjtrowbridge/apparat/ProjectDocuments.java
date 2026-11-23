@@ -17,6 +17,49 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.json.JSONObject;
 final class ProjectDocuments implements Documents {
     static final int REQUEST = 7261;
+    static final int CAPTURE_REQUEST = 7262;
+    private final ArrayBlockingQueue<String> captureTarget = new ArrayBlockingQueue<>(1);
+    public synchronized boolean exportCapture(String path) {
+        final File source = new File(path);
+        if (!source.getName().endsWith(".ndjson") || !source.isFile()) return false;
+        captureTarget.clear();
+        activity.runOnUiThread(new Runnable() {
+            @Override public void run() {
+                try {
+                    Intent picker = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    picker.setType("application/x-ndjson");
+                    picker.addCategory(Intent.CATEGORY_OPENABLE);
+                    picker.putExtra(Intent.EXTRA_TITLE, source.getName());
+                    activity.startActivityForResult(picker, CAPTURE_REQUEST);
+                } catch (RuntimeException failure) {
+                    captureTarget.offer("");
+                }
+            }
+        });
+        try {
+            String target = captureTarget.take();
+            if (target.isEmpty()) return false;
+            try (InputStream input = new FileInputStream(source);
+                 OutputStream output = resolver.openOutputStream(Uri.parse(target), "wt")) {
+                if (output == null) return false;
+                byte[] buf = new byte[8192];
+                int n = input.read(buf);
+                while (n != -1) {
+                    output.write(buf, 0, n);
+                    n = input.read(buf);
+                }
+                return true;
+            }
+        } catch (InterruptedException failure) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (IOException | RuntimeException failure) {
+            return false;
+        }
+    }
+    void captureResult(Intent data) {
+        captureTarget.offer(data == null || data.getData() == null ? "" : data.getData().toString());
+    }
     private final Activity activity;
     private final ContentResolver resolver;
     private final ArrayBlockingQueue<String> selection = new ArrayBlockingQueue<>(1);
@@ -68,6 +111,7 @@ final class ProjectDocuments implements Documents {
         }
     }
     void closePicker() {
+        captureTarget.offer("");
         selection.offer("");
     }
     void result(Intent data) {

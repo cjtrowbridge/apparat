@@ -15,12 +15,23 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
-func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string, contexts ...context.Context) http.Handler {
+func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string, ctx context.Context, handlers ...WorkerSurface) http.Handler {
 	auth := newWorkerAuth(db, artifacts)
-	if len(contexts) > 0 {
-		auth.gitContext = contexts[0]
+	auth.gitContext = ctx
+	if len(handlers) > 0 {
+		auth.workspace = handlers[0].Workspace
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(handlers) > 0 && handlers[0].Metrics != nil && r.URL.Path != "/v1/workspace/live" {
+			start := time.Now()
+			body := &countedBody{ReadCloser: r.Body}
+			r.Body = body
+			out := &countedResponse{ResponseWriter: w, status: 200}
+			w = out
+			defer func() {
+				traffic(handlers[0].Metrics, start, r.URL.Path, r.Header.Get("Apparat-Operation-ID"), body.bytes, out.bytes, out.status >= 400)
+			}()
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		pub := keys.Public()
@@ -39,7 +50,7 @@ func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string, 
 	})
 }
 
-func ListenWorkerClaims(path, artifacts string, db *persistence.DB, keys *identity.Session) (*Server, error) {
+func ListenWorkerClaims(path, artifacts string, db *persistence.DB, keys *identity.Session, handlers ...WorkerSurface) (*Server, error) {
 	info, err := os.Lstat(path)
 	if err == nil && info.Mode()&os.ModeSocket != 0 {
 		err = os.Remove(path)
@@ -60,12 +71,12 @@ func ListenWorkerClaims(path, artifacts string, db *persistence.DB, keys *identi
 		cert, err := workerCertificate(keys)
 		return &cert, err
 	}}
-	return serveWorkerClaims(l, config, db, keys, artifacts), nil
+	return serveWorkerClaims(l, config, db, keys, artifacts, handlers...), nil
 }
 
-func serveWorkerClaims(l net.Listener, config *tls.Config, db *persistence.DB, keys *identity.Session, artifacts string) *Server {
+func serveWorkerClaims(l net.Listener, config *tls.Config, db *persistence.DB, keys *identity.Session, artifacts string, handlers ...WorkerSurface) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
-	server := &http.Server{Handler: workerClaims(db, keys, artifacts, ctx), ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, MaxHeaderBytes: 8192}
+	server := &http.Server{Handler: workerClaims(db, keys, artifacts, ctx, handlers...), ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, MaxHeaderBytes: 8192}
 	server.RegisterOnShutdown(cancel)
 	server.SetKeepAlivesEnabled(false)
 	s := &Server{server: server, listener: l, done: make(chan error, 1)}

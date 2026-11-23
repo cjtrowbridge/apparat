@@ -76,6 +76,9 @@ func (g *Game) deviceManagementLinks(action string) []domain.ClusterOption {
 	if len(options) == 0 && local.ID != "" && action == "gui-"+local.ID {
 		options = append(options, domain.ClusterOption{Label: "Rename " + local.DisplayName(""), Route: domain.ClusterRoute{Page: "rename-local", Target: local.ID}})
 	}
+	if local.ID != "" && action == "gui-"+local.ID {
+		options = append(options, domain.ClusterOption{Label: "Performance", Route: domain.ClusterRoute{Page: "performance"}})
+	}
 	return options
 }
 

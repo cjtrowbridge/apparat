@@ -125,3 +125,26 @@ func trustHost(args []string) int {
 	fmt.Println("Confirmed owner fingerprint:", args[0])
 	return 0
 }
+
+func workspaceAccess(args []string) int {
+	if len(args) != 4 || (args[0] != "grant" && args[0] != "revoke") {
+		fmt.Fprintln(os.Stderr, "Usage: apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT read|write|tasks|terminal-view|terminal-control")
+		return 2
+	}
+	cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})
+	if err != nil {
+		return 1
+	}
+	ctx := context.Background()
+	db, err := persistence.Open(ctx, cfg.DatabasePath)
+	if err == nil {
+		defer db.Close()
+		err = db.WorkspaceGrant(ctx, args[1], args[2], args[3], args[0] == "grant")
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	fmt.Println("Workspace access updated")
+	return 0
+}

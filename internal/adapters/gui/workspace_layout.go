@@ -124,7 +124,7 @@ func (g *Game) workspaceNavButton(c *widget.Container, label string, active bool
 	if active {
 		images.Idle = images.Pressed
 	}
-	c.AddChild(widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.Image(&images), widget.ButtonOpts.TextPadding(&widget.Insets{Left: 8, Right: 8}), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
+	c.AddChild(widget.NewButton(widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon(label)}), widget.ButtonOpts.Image(&images), widget.ButtonOpts.TextPadding(&widget.Insets{Left: 8, Right: 8}), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 		if !g.bodySelectionSuppressed() && g.projects.pending == nil {
 			click()
 		}

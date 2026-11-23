@@ -125,6 +125,7 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request,result,data);
         if ((request==NodeKeys.OPEN || request==NodeKeys.SAVE) && nodeKeys!=null) nodeKeys.documentResult(request,result==RESULT_OK && data!=null ? data.getData() : null);
+        if (request == ProjectDocuments.CAPTURE_REQUEST && documents != null) documents.captureResult(result == RESULT_OK ? data : null);
         if (request == ProjectDocuments.REQUEST && documents != null) documents.result(result == RESULT_OK ? data : null);
     }
 

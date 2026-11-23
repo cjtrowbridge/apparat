@@ -39,3 +39,7 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 
 - `install_unsupported.go`: Rejects clone publication on unsupported targets.
 - `enroll_test.go`: Validates code relay, active account preservation, cleanup, revoked enrollment and plaintext fallback rejection with a CLI fixture.
+
+- `pages.go`: Streams one directory through short-lived, caller-bound page cursors.
+
+- `pages_test.go`: Checks that a large directory streams in bounded pages tied to the caller.

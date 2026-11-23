@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cjtrowbridge/apparat/internal/adapters/telemetry"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"io"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 var ErrDenied = errors.New("worker denied current access")
 
 type WorkerClient struct {
+	metrics   *telemetry.Ring
 	http      *http.Client
 	directory bool
 	base      string
@@ -32,7 +34,7 @@ type WorkerClient struct {
 	Access    persistence.Access
 }
 
-func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal, device *identity.Session) (*WorkerClient, error) {
+func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal, device *identity.Session, observers ...*telemetry.Ring) (*WorkerClient, error) {
 	address, err := netip.ParseAddrPort(addr)
 	if err != nil || address.Port() == 0 {
 		return nil, errors.New("invalid worker address")
@@ -49,6 +51,9 @@ func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal
 	client := &WorkerClient{base: "https://" + address.String(), http: &http.Client{Timeout: 8 * time.Second, Transport: &http.Transport{TLSClientConfig: config, DisableKeepAlives: true}, CheckRedirect: func(*http.Request, []*http.Request) error {
 		return http.ErrUseLastResponse
 	}}}
+	if len(observers) > 0 {
+		client.metrics = observers[0]
+	}
 	var challenge struct{ Worker, Challenge, Directory string }
 	err = client.call(ctx, "GET", "/v1/auth/challenge", nil, &challenge)
 	if err != nil {
@@ -83,9 +88,18 @@ func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal
 	return client, nil
 }
 
-func (c *WorkerClient) call(ctx context.Context, method, path string, input, output any) error {
+func (c *WorkerClient) call(ctx context.Context, method, path string, input, output any) (err error) {
 	var data []byte
-	var err error
+	start := time.Now()
+	bytesIn := 0
+	id := ""
+	q, ok := input.(domain.WorkspaceRequest)
+	if ok {
+		id = q.Correlation
+	}
+	defer func() {
+		traffic(c.metrics, start, path, id, bytesIn, len(data), err != nil)
+	}()
 	if input != nil {
 		data, err = json.Marshal(input)
 		if err != nil {
@@ -97,6 +111,9 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 		return err
 	}
 	req.Header.Set("Apparat-Device-Directory", "1")
+	if id != "" {
+		req.Header.Set("Apparat-Operation-ID", id)
+	}
 	if input != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -115,7 +132,11 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
 		return ErrDenied
 	}
+	if resp.StatusCode == http.StatusPreconditionFailed {
+		return ErrWorkspaceConflict
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20+1))
+	bytesIn = len(body)
 	if err != nil || len(body) > 1<<20 || resp.StatusCode != 200 {
 		return errors.New("worker denied the operation or returned an invalid response")
 	}

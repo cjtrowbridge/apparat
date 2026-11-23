@@ -201,10 +201,16 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 
 - `pool_tabs.go`: renders Tasks, Devices and Authorized users below the pool heading. It keeps filters and sort direction on the navigation frame. Task and device details use the existing detail stack and authorization paths. Discovery compares advertised hostnames with the saved worker and personal-device directory before offering navigation, pairing or claiming.
 
-- `new_project.go`: Builds the host-first New Project form and runs local checkout setup with progress, registration refresh and workspace selection. Remote hosts and the unpublished template have preview-only controls.
+- `new_project.go`: Builds the host-first New Project form and runs local checkout setup with progress, registration refresh and workspace selection. Confirmed workers can clone from GitHub. Other remote setup methods and the unpublished starter remain previews.
 
 - `form_labels.go`: Project form headings and field labels use the bold face. Descriptions use the italic face. Inline inputs and native prompts share a wrapping, right-aligned label column with a four-unit gap before the field. Device search uses a single-line editor sized to the selected font.
 
 - `new_project_test.go`: Checks search entry focus, one-match selection, source and template traversal, and the native search control on the shared HUD navigation path.
 
 - `provider_jobs.go`: Polls host setup jobs, presents device codes, and selects registered remote checkouts.
+
+- `workspace_terminal.go`: Routes terminal lifecycle, controller handoff and bounded input via workspace operations.
+
+- `workspace_tasks.go`: Presents project tasks, artifacts and local chat in the workspace detail pane.
+
+- `workspace_live.go`: Releases directory watches when the Projects view loses focus or changes owner.

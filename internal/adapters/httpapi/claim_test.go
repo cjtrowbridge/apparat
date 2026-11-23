@@ -129,6 +129,7 @@ func TestPinnedWorkerClaim(t *testing.T) {
 		t.Fatal("pending user could enumerate accounts")
 	}
 	exerciseWorkerGit(t, session, other, unapproved)
+	exerciseWorkspaceWatch(t, session, db)
 	unapproved.token = session.token
 	_, err = unapproved.GitAccounts(ctx)
 	if !errors.Is(err, ErrDenied) {

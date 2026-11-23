@@ -8,6 +8,7 @@ import (
 	"context"
 	"image/color"
 	"net/url"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -35,6 +36,7 @@ type projectResult struct {
 	reload                  bool
 }
 type projectForm struct {
+	live                                                       liveDirectory
 	wizard                                                     newProjectState
 	directoryStatus                                            chan workspaceReply
 	stopDirectoryStatus                                        context.CancelFunc
@@ -116,6 +118,7 @@ func (g *Game) pollProjects() {
 		})
 	}
 	f.active = active
+	g.pollWorkspaceLive()
 	g.receiveProjectProgress()
 	select {
 	case status := <-f.wizard.jobUpdates:
@@ -161,7 +164,17 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 			tint = hud.SelectorPalette[1]
 		}
 		status := projectCheckoutStatus(p)
-		section := hud.Section{Title: p.Name, SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, HasConfiguredActions: configured, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		host := p.RemoteHost
+		if host == "" {
+			host = g.serviceProjection.LocalDevice.DisplayName("")
+			if g.serviceProjection.LocalDevice.ID == "" {
+				host, _ = os.Hostname()
+				if !domain.ValidDeviceName(host) {
+					host = "local"
+				}
+			}
+		}
+		section := hud.Section{Title: host + "://" + p.Name, SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, HasConfiguredActions: configured, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
 		for _, task := range p.Entrypoints {
 			section.Rows = append(section.Rows, hud.Row{Label: "Manual Task", Detail: task})
 		}
@@ -207,9 +220,7 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 	if f.message != "" {
 		c.AddChild(g.detailText(g.projectText(f.message)))
 	}
-	if strings.HasPrefix(s.ProjectID, "worker-") {
-		return
-	}
+
 	if f.pending != nil && f.wizard.jobUpdates != nil {
 		g.hostJobControls(c)
 		return
@@ -357,7 +368,7 @@ func (g *Game) selectProjectEntry(index int) bool {
 	row := index - len(projectEntrySections)
 	if row >= 0 && row < len(f.rows) {
 		p := f.rows[row]
-		if p.RemoteHost == "" && p.Available && f.workspace.id != p.ID {
+		if p.Available && f.workspace.id != p.ID {
 			f.workspace = workspacePanel{id: p.ID, dir: ".", mode: "files"}
 			g.detailOpen[hud.TabProjects] = true
 			g.workspaceRequest("list")

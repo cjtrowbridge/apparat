@@ -57,3 +57,19 @@ workspace.go resolves every command by registered project ID and coordinates dra
 - `worker_trust_test.go`: Verifies explicit consent and default rejection for the fingerprint comparison dialog.
 
 - `project_hosts.go`: Resolves provider requests on their owning worker and retrieves remote checkout metadata.
+
+- `owner_workspace.go`: Routes remote project operations to their registered owner and keeps drafts on the editing device.
+
+- `performance.go`: Runs private workspace captures away from the UI and the SQLite write path.
+
+- `runtime_identity.go`: Handles identity setup and locks for a running node.
+
+- `workspace_catalog.go`: Reads bounded VS Code JSONC catalogs on the checkout owner without running their commands.
+
+- `workspace_terminal.go`: Maps terminal viewing and control to separate explicit grants on the project owner.
+
+- `workspace_cache.go`: Keeps a bounded client cache of recently verified owner reads.
+
+- `workspace_live.go`: Subscribes only while a foreground client is using an owner-backed directory.
+
+- `owner_workspace_test.go`: Verifies scoped remote operations on an actual SQLite registration and working file.

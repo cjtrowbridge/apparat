@@ -3,10 +3,17 @@
   "info": {
     "title": "Apparat API",
     "version": "0.1.0",
-    "description": "Phase 8 implements only the six read-only loopback operations marked x-phase: 8. Phase 9 adds authenticated networking; other operations remain future contracts."
+    "description": "Phase 8 implements only the six read-only loopback operations marked x-phase: 8. Worker Git operations use a separate granted TLS listener, pinned worker identity and device-bound administrator session. Operations marked future are planned."
   },
   "servers": [{"url": "http://127.0.0.1:{port}", "variables": {"port": {"default": "8080", "description": "Use the actual runtime-reported ephemeral port."}}}],
   "paths": {
+    "/v1/workspace": {"servers": [{"url": "https://{authority}", "variables": {"authority": {"default": "worker.example.invalid", "description": "Use the approved interface address and port of the pinned worker."}}}], "post": {"x-phase": "worker", "summary": "Operate the authenticated project workspace", "security": [{"mutualTLS": [], "workerBearer": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["Action", "Path"], "properties": {"Action": {"type": "string"}, "Path": {"type": "string"}, "ProjectID": {"type": "string"}}}}}}, "responses": {"200": {"description": "Workspace view"}, "403": {"description": "Access denied"}, "412": {"description": "Checkout base changed"}, "409": {"description": "Operation failed"}}}},
+    "/v1/workspace/live": {"servers": [{"url": "https://{authority}", "variables": {"authority": {"default": "worker.example.invalid", "description": "Use the approved interface address and port of the pinned worker."}}}], "get": {"x-phase": "worker", "summary": "Subscribe to authorized directory and terminal updates", "security": [{"mutualTLS": [], "workerBearer": []}], "responses": {"101": {"description": "WebSocket upgrade"}, "403": {"description": "Access denied"}}}},
+
+    "/v1/admin/git/accounts": {"servers": [{"url": "https://{authority}", "variables": {"authority": {"default": "worker.example.invalid", "description": "Use the approved interface address and port of the pinned worker."}}}], "get": {"x-phase": "worker", "summary": "List saved GitHub usernames", "security": [{"mutualTLS": [], "workerBearer": []}], "responses": {"200": {"description": "List saved GitHub usernames", "content": {"application/json": {"schema": {"type": "object", "properties": {"usernames": {"type": ["array", "null"], "items": {"type": "string"}}}, "required": ["usernames"]}}}}, "default": {"description": "Worker rejected the request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GitWorkerError"}}}}}}},
+    "/v1/admin/git/providers": {"servers": [{"url": "https://{authority}", "variables": {"authority": {"default": "worker.example.invalid", "description": "Use the approved interface address and port of the pinned worker."}}}], "get": {"x-phase": "worker", "summary": "Inspect available provider actions", "security": [{"mutualTLS": [], "workerBearer": []}], "responses": {"200": {"description": "Inspect available provider actions", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/GitProvider"}}}}}, "default": {"description": "Worker rejected the request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GitWorkerError"}}}}}}},
+    "/v1/admin/git/projects": {"servers": [{"url": "https://{authority}", "variables": {"authority": {"default": "worker.example.invalid", "description": "Use the approved interface address and port of the pinned worker."}}}], "get": {"x-phase": "worker", "summary": "List checkouts registered through this worker clone API", "security": [{"mutualTLS": [], "workerBearer": []}], "responses": {"200": {"description": "List checkouts registered through this worker clone API", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/GitWorkerProject"}}}}}, "default": {"description": "Worker rejected the request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GitWorkerError"}}}}}}},
+    "/v1/admin/git/operation": {"servers": [{"url": "https://{authority}", "variables": {"authority": {"default": "worker.example.invalid", "description": "Use the approved interface address and port of the pinned worker."}}}], "post": {"x-phase": "worker", "summary": "Start, poll or cancel an administrator-owned worker job", "security": [{"mutualTLS": [], "workerBearer": []}], "responses": {"200": {"description": "Start, poll or cancel an administrator-owned worker job", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GitWorkerStatus"}}}}, "default": {"description": "Worker rejected the request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GitWorkerError"}}}}}, "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GitWorkerRequest"}}}}}},
     "/v1/health": {
       "get": {
         "summary": "Inspect local health",
@@ -262,7 +269,7 @@
     }
   },
   "components": {
-    "securitySchemes": {"mutualTLS": {"type": "mutualTLS"}},
+    "securitySchemes": {"mutualTLS": {"type": "mutualTLS"}, "workerBearer": {"type": "http", "scheme": "bearer", "description": "Short-lived session bound to the verified client device."}},
     "parameters": {
       "ID": {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
       "ProjectID": {"name": "project_id", "in": "path", "required": true, "schema": {"type": "string"}},
@@ -274,6 +281,11 @@
       "IdempotencyKey": {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string"}}
     },
     "schemas": {
+      "GitWorkerError": {"type": "object", "properties": {"error": {"type": "string"}}, "required": ["error"]},
+      "GitWorkerProject": {"type": "object", "properties": {"ID": {"type": "string"}, "Name": {"type": "string"}, "Location": {"type": "string"}, "Branch": {"type": "string"}, "Revision": {"type": "string"}, "Available": {"type": "boolean"}}, "required": ["ID", "Name", "Location", "Branch", "Revision", "Available"]},
+      "GitProvider": {"type": "object", "properties": {"ID": {"type": "string"}, "Name": {"type": "string"}, "Tool": {"type": "string"}, "Reason": {"type": "string"}, "Installed": {"type": "boolean"}, "CanInstall": {"type": "boolean"}, "CanEnroll": {"type": "boolean"}, "Accounts": {"type": ["array", "null"], "items": {"type": "string"}}}, "required": ["ID", "Name", "Tool", "Installed", "CanInstall", "CanEnroll", "Accounts", "Reason"]},
+      "GitWorkerRequest": {"type": "object", "properties": {"ID": {"type": "string", "description": "Client-generated canonical ULID, reused for status, cancel and retries."}, "Operation": {"enum": ["install", "enroll", "clone", "status", "cancel"]}, "Provider": {"enum": ["github"]}, "Repo": {"type": "string"}, "Account": {"type": "string"}}, "required": ["ID", "Operation", "Provider"]},
+      "GitWorkerStatus": {"type": "object", "properties": {"State": {"enum": ["pending", "completed", "failed"]}, "Message": {"type": "string"}, "Code": {"type": "string"}, "Username": {"type": "string"}, "Project": {"anyOf": [{"$ref": "#/components/schemas/GitWorkerProject"}, {"type": "null"}]}}, "required": ["State", "Message", "Code", "Username", "Project"]},
       "WorkloadClass": {"type": "string", "enum": ["text_generation", "image_generation", "video_generation", "speech_to_text", "text_to_speech", "research_boinc"]},
       "DriverKind": {
         "type": "string",

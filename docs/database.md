@@ -97,3 +97,8 @@ Migration 5 adds tab placement to the existing preference record. Earlier rows r
 Migration 6 adds the local project registry and account references. Restore accepts schemas 3 through 6. Checkout files remain at their registered locations and require separate backup.
 
 Migration 7 adds project-scoped drafts and durable entries for pending messages and manual Task runs. Migration 8 adds the node-local spoken action choices preference, initially off for existing and new installations. Restore accepts schemas 3 through 8. Artifact bytes reside in the runtime artifact directory; a database snapshot contains their metadata.
+
+
+### Owner workspace storage
+
+Schema 20 adds per-project and per-user workspace grants, client-side remote drafts and owner-side save receipts. A save receipt binds the operation ID, path, base and result digest. Run-history traversal uses the project, kind and sortable entry ID. Physical terminal history and diagnostic captures live in separate private directories under the node root. Telemetry never opens a database transaction.

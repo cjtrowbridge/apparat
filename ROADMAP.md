@@ -1595,6 +1595,13 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Offer import, init and clone through one host-first New Project form. Confirmed workers support GitHub clones into their default repo directory. Remote init and import remain previews. The Agentic Pipelines starter awaits publication of its template. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
 - [x] Use the system GitHub CLI on Linux, with a device default account and per-repo overrides. Keep account credentials outside project metadata.
 
+**Worker clone delivery (0.1.72)**
+
+- [x] Discover the selected host’s provider, usernames and available actions. Start anonymous and let an admin select a saved worker account. Offer a fixed package install or explain missing prerequisites. GitHub is the first provider.
+- [x] Implement device-code enrollment with status and cancellation on eligible Linux workers. Exercise the CLI exchange, account verification and storage failure paths with fixtures.
+- [x] Clone a private repository from the Linux GUI using the installed worker’s saved account. Select the resulting summary and compare its revision and SQLite registration on the owner. The release pipeline qualified Linux GUI, Linux worker and Android GUI, including trashcan0 and Pixel 4a.
+- [?] Qualify first-time device-code enrollment against live GitHub on a worker with an unlocked Secret Service collection. The live private clone used a previously saved account. Additional host OS qualification and Android-local private cloning have separate acceptance gates.
+
 **Exit criteria**
 
 - [x] On Linux and Pixel 4a, add a real local repo offline, restart, and reopen it with the same ID. Change its action configuration and verify the list reflects it.
@@ -1762,10 +1769,10 @@ Startup identity setup supports recovering the prior signing key, explicitly con
 ### User claims and node administration
 
 - [ ] Add a set-up-if-missing screen-name prompt after identity setup and make the name editable in Settings. Bind it to the separate user identity. Reuse it in the node’s authenticated-user list and future chat. For STMPCK leaderboards require a separate opt-in popup and an editable Settings preference before sharing names or scores.
-- [ ] Enable Claim from discovery through a JSON public-key registration with signed proof of possession, hostname, screen name and verified target/cluster context. Preserve scoped ingress, server verification and authenticated device enrollment. Confirm the intended owner locally with apparatd trust-host and verify the worker fingerprint during enrollment.
-- [ ] Atomically make the first verified user on an unclaimed node its approved admin with full access to that node’s services. Default every later user to pending. Persist approval, blocking, admin grants and revocation by user fingerprint. Enforce decisions at protected services across restart.
+- [x] Enable Claim from discovery through a JSON public-key registration with signed proof of possession, hostname, screen name and verified target/cluster context. Preserve scoped ingress, server verification and authenticated device enrollment. Confirm the intended owner locally with apparatd trust-host and verify the worker fingerprint during enrollment.
+- [ ] Verify the full admission and revocation lifecycle. Only the locally confirmed owner can establish the first approved admin on an unclaimed worker. Default every later user to pending. Persist approval, blocking, admin grants and revocation by user fingerprint. Enforce decisions at protected services across restart.
 - [ ] In Cluster, let admins review authenticated users, approve/block access, grant/revoke admin, and close/reopen new registrations. Existing users retain their access state. Test independent public provider endpoints separately from Apparat-mediated service calls.
-- [ ] Later, let setup designate the intended initial admin by verified user fingerprint before opening remote registration. Test that another user arriving first cannot take its place.
+- [ ] Integrate the shipped host-local owner confirmation into additional setup interfaces. Test that another user arriving first cannot take its place.
 
 See the [implementation sequence and two-client acceptance tests](plans/current/2026-11-22-12-00-00_node-identity-and-rest.md#claim-a-node-and-admit-users-planned).
 
@@ -1780,12 +1787,12 @@ Implementation and acceptance are tracked in the [personal cluster execution pla
 - [ ] Replicate one policy stream per cluster and one queue stream per pool. Use owner-assigned revisions, signed history and bounded, authorization-filtered deltas. Use verified snapshots after compaction or permission changes. Persist projection, head and cursor atomically; rebuild in-memory heads on startup. Batch checks, return cheap empty JSON responses, enforce access before reading cached heads, and distinguish committed, installed and enforced changes.
 - [ ] Default background reconciliation to five minutes, editable by policy within safe limits. Coalesce refreshes and stagger/back off per peer. Trigger on pairing, local change, tab entry, resume and reconnect. Workers also synchronize on service changes and before dispatch. Sensitive pools deny new work if policy freshness cannot be established.
 - [ ] Bring forward the first Phase 13 queue slice: one shared local task table, stable requester/idempotency identity, owner-created time, immutable optional prompt and input hashes, mutable state and terminal time, distinct attempts, leases, fencing and verified output hashes. Keep artifact bytes out of feeds. Support cancellation and a harmless operation with authorized result retrieval. Reconcile queues independently of assignment latency; workers use bounded waits. Drain new claims across pools and finish active attempts before updating a worker.
-- [ ] Prove the real Steam Machine/Pixel/trashcan0 workflow, offline catch-up and protected admin operation. Verify competing claims/admin edits, replay, stale leases, duplicate completion, viewer isolation and bounded unchanged responses with no event reads. Keep remote projects, real inference and third-party relays deferred.
+- [ ] Prove the real Steam Machine/Pixel/trashcan0 workflow, offline catch-up and protected admin operation. Verify competing claims/admin edits, replay, stale leases, duplicate completion, viewer isolation and bounded unchanged responses with no event reads. Keep the general remote catalog, remote editing, real inference and third-party relays in their respective phases.
 
 The real primary Pixel and Steam Machine have authenticated as the same owner on trashcan0. The installed worker now orders policy changes, and the desktop verified the signed handoff receipt. With the Steam Machine offline, the Pixel created a pool, enabled its service and verified a signed task result. On return, the Steam Machine caught up through policy revision 3 and queue revision 3.
 
 - [x] Open Cluster settings from the heading gear, browse people, groups, pool policy and synchronization in detail pages, and keep everyday task access direct. Initialize the four routing pools at first claim and verify the installed cluster.
-- [x] Display the synchronized GUI roster above workers, identify reported mobile and desktop platforms, list pool members and let admins stage each headless worker’s pool choices, save one atomic replicated policy edit or cancel. Offer setup or a local Cluster rename for missing device hostnames, synchronize administrator renames and mark the current device by fingerprint. GUI task execution and remote projects remain later deliverables.
+- [x] Display the synchronized GUI roster above workers, identify reported mobile and desktop platforms, list pool members and let admins stage each headless worker’s pool choices, save one atomic replicated policy edit or cancel. Offer setup or a local Cluster rename for missing device hostnames, synchronize administrator renames and mark the current device by fingerprint. GUI task execution and the general shared project catalog remain later deliverables.
 
 ### Worker updates and future pool coordination
 
@@ -1847,6 +1854,8 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 **Dependencies:** Phase 9 local registry and Phase 10 trusted membership and authenticated REST. This milestone provides read-only catalog browsing. Phase 11A repeats the local workspace tests with the shared catalog. Phase 11C adds remote workspace operations.
 
+**Available today.** Administrators see live summaries of checkouts created through a confirmed worker’s clone API alongside local projects. Remote row identity includes the worker fingerprint and its project ID. The worker remains authoritative. The current refresh skips unreachable or unauthorized workers. The checklists below cover the wider signed catalog, per-project visibility, offline retention and reconciliation.
+
 ### Owner-published summaries
 
 - [ ] Produce signed authorization-filtered Project summaries.
@@ -1905,6 +1914,16 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 - [ ] Cancel sign-in and revoke one account. Verify the other session remains usable, the affected account can reconnect, and both checkouts reopen after an offline restart.
 
 ## Phase 11C: Operate A Workspace On Its Owning Device
+
+[Execution plan](plans/current/2026-11-23-14-00-00_owner-workspaces.md) · [Operator guide](docs/workspaces.md)
+
+- [x] Use owner-qualified project labels and expose Chat, Files, Editor, Terminal and Tasks destinations. Keep remote Chat reserved.
+- [x] Gate worker directory, file, conditional save, built-in task and isolated terminal operations on device-bound sessions and project-specific grants.
+- [x] Bound directory pages, text reads, run-history pages and retained terminal output. Keep editable drafts on the client and save receipts on the owner.
+- [x] Coalesce foreground filesystem changes on an authenticated WebSocket. Refresh from a snapshot after reconnect.
+- [x] Capture workspace and transport measurements in bounded memory and export private NDJSON on demand. Support capped background recording, historical inspection and paired captures.
+- [ ] Validate the complete cross-device workflow under load. Measure catalog lookup, large Git status, missed-event recovery, and terminal fan-out before setting larger deployment targets.
+- [ ] Use collected measurements to evaluate bandwidth and latency over time. Automatic tuning and cluster-wide telemetry analysis belong to a later phase.
 
 **User outcome:** From a second device, an authorized user can edit and commit a file or run a manual Task on the owning device and retrieve its verified result.
 
@@ -2597,5 +2616,3 @@ Worker claiming uses the existing unlocked credentials directly from discovery. 
 Personal pairing now has a Linux sender and a recipient path for Android or Linux. Hardware acceptance requires the owner's real identity in the primary Pixel profile and a protected operation on the already-claimed trashcan0.
 
 Phase 10 worker trust includes host-confirmed owner enrollment, manual approval of signing-key changes, and administrator-only retrieval of GitHub usernames for the Phase 9 picker. Cluster-wide signed key succession and ordering-authority recovery remain separate from local certificate approval.
-
-Phase 9/11 bridge: New Project can provision a named credential provider and register a GitHub clone on a confirmed worker. Remote file editing, arbitrary filesystem browsing, and task execution remain later Phase 11 work.

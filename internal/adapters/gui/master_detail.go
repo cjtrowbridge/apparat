@@ -208,10 +208,11 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 	)
 	if section.ProjectID != "" && game.projects.workspace.id == section.ProjectID && game.projects.workspace.mode != "registration" {
+		sectionContainer.AddChild(widget.NewText(widget.TextOpts.Text(section.Title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(game.detailTextMaxWidth())))
 		game.projectControls(sectionContainer, section)
 		return sectionContainer
 	}
-	if projectEntryAction(section.ContentKind) {
+	if section.ProjectID != "" || projectEntryAction(section.ContentKind) {
 		sectionContainer.AddChild(widget.NewText(widget.TextOpts.Text(section.Title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle)))
 	} else {
 		sectionContainer.AddChild(game.detailText(strings.ToUpper(section.Title)))

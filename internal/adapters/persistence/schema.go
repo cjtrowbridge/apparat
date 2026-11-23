@@ -45,6 +45,7 @@ var migrations = []Migration{
 	{Version: 17, Name: "pool_device_directory", SQL: directorySchema},
 	{Version: 18, Name: "cluster_device_names", SQL: "CREATE TABLE cluster_device_names(cluster TEXT NOT NULL REFERENCES worker_cluster(cluster),device TEXT NOT NULL,name TEXT NOT NULL,PRIMARY KEY(cluster,device))"},
 	{Version: 19, Name: "worker_only_pool_directory", SQL: "UPDATE view_revision SET revision=revision+1"},
+	{Version: 20, Name: "remote_workspace_access", SQL: remoteWorkspaceSchema},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {

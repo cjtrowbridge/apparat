@@ -50,7 +50,7 @@ func TestDeviceDirectoryPoolNavigation(t *testing.T) {
 		t.Fatal(rows)
 	}
 	opts := g.deviceManagementLinks(rows[0].ActionID)
-	if len(opts) != 1 || opts[0].Label != "Rename Phone" || opts[0].Route.Page != "rename-local" || opts[0].Route.Target != "d" || opts[0].Route.Worker != "w" {
+	if len(opts) != 2 || opts[1].Route.Page != "performance" || opts[0].Label != "Rename Phone" || opts[0].Route.Page != "rename-local" || opts[0].Route.Target != "d" || opts[0].Route.Worker != "w" {
 		t.Fatal(opts)
 	}
 	section := g.routingMembers(hud.Section{ActionID: "chat-pool"})
@@ -59,7 +59,7 @@ func TestDeviceDirectoryPoolNavigation(t *testing.T) {
 	}
 	g.serviceProjection.Devices[0].Admin = false
 	opts = g.deviceManagementLinks("gui-d")
-	if len(opts) != 1 || opts[0].Route.Worker != "" || opts[0].Route.Page != "rename-local" || len(g.deviceManagementLinks("worker-w")) != 0 {
+	if len(opts) != 2 || opts[1].Route.Page != "performance" || opts[0].Route.Worker != "" || opts[0].Route.Page != "rename-local" || len(g.deviceManagementLinks("worker-w")) != 0 {
 		t.Fatal("nonadmin pool editor")
 	}
 }

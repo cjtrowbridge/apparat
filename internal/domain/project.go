@@ -19,7 +19,9 @@ type LocalProjectSetup struct {
 
 // WorkspaceRequest addresses one registration and repository-relative path.
 type WorkspaceRequest struct {
+	Known                                                                 string
 	ProjectID, Action, Path, Base, Text, Argument, ID, Thread, RelatedRun string
+	Correlation                                                           string
 	Approved                                                              bool
 }
 type WorkspaceEntry struct {
@@ -34,10 +36,12 @@ type WorkspaceChange struct {
 	Directory                  bool `json:",omitempty"`
 }
 type WorkspaceView struct {
+	Unchanged                                bool
 	Changes                                  []WorkspaceChange
 	Choices                                  []WorkspaceChoice
 	Entries                                  []WorkspaceEntry
 	Text, Base, Report, ComparedBase, Detail string
+	Cursor                                   string
 	Editing                                  bool
 }
 

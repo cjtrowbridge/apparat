@@ -27,7 +27,8 @@ type artifactRun struct {
 
 func (n *Runtime) projectTask(ctx context.Context, location string, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
 	if q.Action == "runs" {
-		rows, err := n.database.RecentEntries(ctx, q.ProjectID, "run")
+		rows, next, err := n.database.EntryPage(ctx, q.ProjectID, "run", q.Argument)
+		v.Cursor = next
 		v.Report = "No local Task runs"
 		if len(rows) > 0 {
 			v.Report = ""

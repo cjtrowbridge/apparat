@@ -23,3 +23,11 @@ Worker clients probe TLS without client credentials and require an approved devi
 
 - `git_jobs.go`: Executes and tracks device-bound administrator provider and clone operations.
 - `git_jobs_test.go`: Runs private HTTP Git clones against a local fixture through the real worker admin API, including anonymous and wrong-account failures.
+
+- `owner_workspace.go`: Adapts the scoped owner workspace command to a bounded authenticated JSON route.
+
+- `live_workspace.go`: Multiplexes project invalidations on one pinned authenticated WebSocket per active owner.
+
+- `live_workspace_test.go`: Exercises real notifications over the pinned TLS worker with two subscriptions.
+
+- `traffic.go`: Counts application-layer HTTP traffic on both ends with a monotonic timer.
