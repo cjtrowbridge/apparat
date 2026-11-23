@@ -167,3 +167,12 @@ func (p *Personal) Rename(name string) error {
 	}
 	return atomicWrite(p.path, data, 0600)
 }
+
+func (p *Personal) Fingerprint() string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(p.key) == 0 {
+		return ""
+	}
+	return Fingerprint(p.key.Public().(ed25519.PublicKey))
+}

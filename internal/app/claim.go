@@ -9,6 +9,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/adapters/discovery"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
@@ -56,6 +57,11 @@ func (node *Runtime) authenticateWorker(ctx context.Context, network, host strin
 	if err != nil {
 		return "", err
 	}
+	node.mu.Lock()
+	if node.serviceManager != nil {
+		node.serviceManager.notify()
+	}
+	node.mu.Unlock()
 	if client.Access.Admin {
 		return "Connected as a cluster administrator.", nil
 	}
@@ -102,4 +108,16 @@ func (node *Runtime) EditScreenName(ctx context.Context, dialog identity.Dialog)
 	if err != nil {
 		nativeQuestion(dialog, "notice", "Personal identity", err.Error())
 	}
+}
+
+func (node *Runtime) KnownWorkers(ctx context.Context) ([]domain.ClusterDevice, error) {
+	node.mu.Lock()
+	defer node.mu.Unlock()
+	if node.database == nil {
+		return nil, domain.ErrUnavailable
+	}
+	if node.Personal == nil {
+		return nil, nil
+	}
+	return node.database.KnownWorkers(ctx, node.Personal.Fingerprint())
 }

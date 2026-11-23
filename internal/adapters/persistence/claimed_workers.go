@@ -5,6 +5,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 
 	"errors"
 )
@@ -25,4 +26,22 @@ func (db *DB) WorkerPin(ctx context.Context, host string) (string, error) {
 func (db *DB) SaveWorkerAccess(ctx context.Context, host, address, worker string, a Access) error {
 	_, err := db.sql.ExecContext(ctx, `INSERT INTO claimed_workers VALUES(?,?,?,?,?) ON CONFLICT(worker) DO UPDATE SET address=excluded.address,host=excluded.host`, worker, a.Cluster, a.User, host, address)
 	return err
+}
+
+func (db *DB) KnownWorkers(ctx context.Context, user string) ([]domain.ClusterDevice, error) {
+	rows, err := db.sql.QueryContext(ctx, "SELECT worker,host,address,cluster FROM claimed_workers WHERE owner=? ORDER BY host COLLATE NOCASE,worker", user)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var devices []domain.ClusterDevice
+	for rows.Next() {
+		var d domain.ClusterDevice
+		err = rows.Scan(&d.Fingerprint, &d.Host, &d.Address, &d.Cluster)
+		if err != nil {
+			return nil, err
+		}
+		devices = append(devices, d)
+	}
+	return devices, rows.Err()
 }

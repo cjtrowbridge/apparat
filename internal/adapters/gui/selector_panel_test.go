@@ -54,7 +54,12 @@ func TestClusterSelectorHeadingsAreTextAndTasksOwnsTheContentPanel(t *testing.T)
 			t.Fatalf("explicit selection = %d, want 1", got)
 		}
 	}
-	game.selectSection(cluster.ID(), 10)
+	for i, s := range cluster.Sections {
+		if s.Title == "Every Hour" {
+			game.selectSection(cluster.ID(), i)
+			break
+		}
+	}
 	details := game.detailSections(cluster)
 	if len(details) != 1 || details[0].Title != "Every Hour" {
 		t.Fatalf("selected cluster details = %#v, want Every Hour", details)
@@ -203,5 +208,34 @@ func TestProjectEntryFormsOnlyOfferTheirOwnActions(t *testing.T) {
 		if fields != expected[section.ContentKind] {
 			t.Errorf("%s has %d fields, want %d", section.Title, fields, expected[section.ContentKind])
 		}
+	}
+}
+
+func TestClusterDirectoryUsesSavedWorkers(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	g.runtimeInfo.Queries = &projectionSource{}
+	g.serviceProjection.Devices = []domain.ClusterDevice{{Host: "saved-worker", Fingerprint: "public-key", Address: "192.0.2.1:4000", Cluster: "home"}}
+	base := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[2]
+	tab := g.presentedTab(base)
+	for i, s := range tab.Sections {
+		if s.ActionID == "add-new-device" {
+			if tab.Sections[i+1].ActionID != "worker-public-key" || tab.Sections[i+1].Title != "saved-worker" || tab.Sections[i+2].Title != "Routing" {
+				t.Fatal("incorrect device rows")
+			}
+			continue
+		}
+		if s.ActionID == "pixel-2-ai-server" || s.ActionID == "trash-can-mac-pro" {
+			t.Fatal("mock device remained")
+		}
+	}
+	actions := g.queryActions("open saved-worker", true)
+	if !actions.Exact || len(actions.Choices) != 1 {
+		t.Fatal("missing device action")
+	}
+	g.serviceProjection.Devices = nil
+	g.invokeAction(actions.Choices[0].Address)
+	if len(g.queryActions("open saved-worker", true).Choices) != 0 {
+		t.Fatal("stale device action")
 	}
 }

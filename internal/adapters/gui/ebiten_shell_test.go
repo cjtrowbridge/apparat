@@ -115,7 +115,12 @@ func TestMasterDetailShowsOnlyTheSelectedGroupedDetail(t *testing.T) {
 	game := NewGame()
 	tabs := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())
 	cluster := tabs[2]
-	game.selectSection(cluster.ID(), 5)
+	for i, s := range cluster.Sections {
+		if s.ActionID == "chat-pool" {
+			game.selectSection(cluster.ID(), i)
+			break
+		}
+	}
 	details := game.detailSections(cluster)
 	if len(details) != 1 || details[0].Title != "Chat Pool (High priority)" {
 		t.Fatalf("selected cluster details = %#v, want Chat Pool", details)

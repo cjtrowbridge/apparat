@@ -14,8 +14,10 @@ type ServiceQueries interface {
 	Changed() <-chan struct{}
 }
 type ServiceProjection struct {
-	Services []domain.Service
-	State    string
+	Devices     []domain.ClusterDevice
+	DeviceError bool
+	Services    []domain.Service
+	State       string
 }
 
 func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServiceProjection {
@@ -29,6 +31,14 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 		for {
 			queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			list, err := queries.List(queryCtx)
+			var devices []domain.ClusterDevice
+			var deviceErr error
+			q, ok := queries.(interface {
+				KnownWorkers(context.Context) ([]domain.ClusterDevice, error)
+			})
+			if ok {
+				devices, deviceErr = q.KnownWorkers(queryCtx)
+			}
 			cancel()
 			if ctx.Err() != nil {
 				return
@@ -46,7 +56,7 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 				list[index].ObservedAt = 0
 			}
 
-			projection := ServiceProjection{Services: list, State: state}
+			projection := ServiceProjection{Devices: devices, DeviceError: deviceErr != nil, Services: list, State: state}
 			if !reflect.DeepEqual(projection, previous) {
 				select {
 				case <-results:
