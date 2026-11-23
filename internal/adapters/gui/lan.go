@@ -30,7 +30,7 @@ type lanView struct {
 
 func (g *Game) discoveryContent(c *widget.Container) {
 	if g.lan.selected != "" {
-		c.AddChild(widget.NewText(widget.TextOpts.Text(wrapSelectorLabel(g.lan.selected, *g.pageTitleFace, max(1, g.detailPanePreferredWidth()-24)), g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(g.detailPanePreferredWidth()-24))))
+		c.AddChild(widget.NewText(widget.TextOpts.Text(wrapSelectorLabel(g.discoveryLabel(g.lan.selected), *g.pageTitleFace, max(1, g.detailPanePreferredWidth()-24)), g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(g.detailPanePreferredWidth()-24))))
 		if g.runtimeInfo.ClaimHost != nil {
 			host := g.lan.selected
 			g.projectButton(c, "Claim this host for your cluster", func() {
@@ -69,7 +69,7 @@ func (g *Game) discoveryContent(c *widget.Container) {
 	c.AddChild(g.detailText(msg))
 	for _, name := range g.lan.names {
 		width := max(1, g.detailPanePreferredWidth()-tabIconSize-48)
-		label := wrapSelectorLabel(name, *g.theme.ButtonTheme.TextFace, width)
+		label := wrapSelectorLabel(g.discoveryLabel(name), *g.theme.ButtonTheme.TextFace, width)
 		btn := widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter), widget.ButtonOpts.TextPadding(&widget.Insets{Left: 12 + tabIconSize + 8, Right: 12, Top: 8, Bottom: 8}),
 			widget.ButtonOpts.Image(g.theme.ButtonTheme.Image), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 			widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {

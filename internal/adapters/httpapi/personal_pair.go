@@ -18,7 +18,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/identity"
 	"math/big"
 	"net"
-	"os"
+
 	"runtime"
 	"strings"
 	"time"
@@ -246,7 +246,10 @@ func PairTLS(conn net.Conn, device *identity.Session, sending bool) (*tls.Conn, 
 	if sending {
 		local, remote = remote, local
 	}
-	host, _ := os.Hostname()
+	host, err := device.Hostname()
+	if err != nil {
+		return nil, err
+	}
 	leaf, err := namedCertificate(device, local, pkix.Name{CommonName: claimDNS, Organization: []string{host}, OrganizationalUnit: []string{runtime.GOOS}})
 	if err != nil {
 		return nil, err

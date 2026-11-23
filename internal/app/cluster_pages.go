@@ -92,7 +92,7 @@ func (b *clusterPageBuilder) settingsPage() error {
 	if !b.client.Access.Admin {
 		return errors.New("current administrator access required")
 	}
-	b.Detail = fmt.Sprintf("Policy revision %d on %s", v.Head.Revision, b.worker.Host)
+	b.Detail = fmt.Sprintf("Policy revision %d on %s", v.Head.Revision, b.worker.DisplayName())
 	if r.Page != "settings" && r.Page != "sync" && v.Authority != v.Worker {
 		return errors.New("enable worker ordering in Synchronization first")
 	}
@@ -106,7 +106,7 @@ func (b *clusterPageBuilder) settingsPage() error {
 		b.Title = "Synchronization"
 		b.Detail += fmt.Sprintf("\nCheck interval: %d seconds", v.PollSeconds)
 		if v.Authority == v.Worker {
-			b.Detail += "\nOrdering device: " + b.worker.Host
+			b.Detail += "\nOrdering device: " + b.worker.DisplayName()
 			b.edit("Change interval", "Seconds between checks", "", identity.PolicyEdit{Kind: "poll_seconds"})
 		} else {
 			b.Detail += "\nOrdering device: " + v.Authority
@@ -115,19 +115,29 @@ func (b *clusterPageBuilder) settingsPage() error {
 				if v.Authority != identity.Fingerprint(b.runtime.Keys.Public()) {
 					kind, label = "recover_order", "Recover lost authority"
 				}
-				b.edit(label, "", "Transfer policy ordering to "+b.worker.Host+"?", identity.PolicyEdit{Kind: kind, Target: v.Worker, Value: v.Owner, Service: v.Authority})
+				b.edit(label, "", "Transfer policy ordering to "+b.worker.DisplayName()+"?", identity.PolicyEdit{Kind: kind, Target: v.Worker, Value: v.Owner, Service: v.Authority})
 			}
 		}
+	case "rename":
+		for _, d := range v.Devices {
+			if d.ID == r.Target {
+				b.Title = "Rename " + d.DisplayName(b.worker.DisplayName())
+				b.Detail = "Choose a hostname for this device in the cluster."
+				b.edit("Save name", "Device hostname", "", identity.PolicyEdit{Kind: "rename_device", Target: d.ID})
+				return nil
+			}
+		}
+		return errors.New("device unavailable")
 	case "device-pools":
 		return b.devicePools()
 	case "machine":
-		b.Title = b.worker.Host
+		b.Title = b.worker.DisplayName()
 		value, label := "1", "Open registration"
 		if v.RegistrationOpen {
 			value, label = "0", "Close registration"
 		}
-		b.edit(label, "", label+" on "+b.worker.Host+"?", identity.PolicyEdit{Kind: "admission_open", Value: value})
-		b.edit("Drain and check for update", "", "Drain "+b.worker.Host+" and check for an update?", identity.PolicyEdit{Kind: "update_worker", Target: v.Worker})
+		b.edit(label, "", label+" on "+b.worker.DisplayName()+"?", identity.PolicyEdit{Kind: "admission_open", Value: value})
+		b.edit("Drain and check for update", "", "Drain "+b.worker.DisplayName()+" and check for an update?", identity.PolicyEdit{Kind: "update_worker", Target: v.Worker})
 	case "pools":
 		b.Title = "Pools"
 		for _, p := range domain.DefaultPools() {
@@ -161,7 +171,7 @@ func (b *clusterPageBuilder) settingsPage() error {
 		service := persistence.HashService
 		has := slices.Contains(v.Services, persistence.Membership{Pool: r.Pool, Service: service, Principal: v.Worker})
 		label, value := toggle(has, "Enable", "Disable")
-		b.edit(label+" "+service+" on "+b.worker.Host, "", "", identity.PolicyEdit{Kind: "pool_service", Pool: r.Pool, Service: service, Target: v.Worker, Value: value})
+		b.edit(label+" "+service+" on "+b.worker.DisplayName(), "", "", identity.PolicyEdit{Kind: "pool_service", Pool: r.Pool, Service: service, Target: v.Worker, Value: value})
 		b.link("Access", "access", r.Pool, "")
 		b.edit("Change quota", "Maximum active tasks per user", "", identity.PolicyEdit{Kind: "pool_quota", Pool: r.Pool})
 		if has {
@@ -232,7 +242,7 @@ func (b *clusterPageBuilder) people() error {
 				b.Detail += "\n" + u.ID + " · " + role
 				for _, next := range []string{"approved", "admin", "blocked", "pending"} {
 					if next != role {
-						b.edit("Set "+next, "", "Set "+u.Name+" to "+next+" on "+b.worker.Host+"?", identity.PolicyEdit{Kind: "user_role", Target: u.ID, Value: next})
+						b.edit("Set "+next, "", "Set "+u.Name+" to "+next+" on "+b.worker.DisplayName()+"?", identity.PolicyEdit{Kind: "user_role", Target: u.ID, Value: next})
 					}
 				}
 				return nil
@@ -247,7 +257,7 @@ func (b *clusterPageBuilder) poolDevices() {
 	names := []string{}
 	for _, d := range b.view.Devices {
 		if slices.Contains(d.Pools, b.route.Pool) {
-			name := d.DisplayName(b.worker.Host)
+			name := d.DisplayName(b.worker.DisplayName())
 			names = append(names, name)
 			b.link(name+" · Pools", "device-pools", "", d.ID)
 		}
@@ -264,7 +274,7 @@ func (b *clusterPageBuilder) devicePools() error {
 		if d.ID != b.route.Target {
 			continue
 		}
-		b.Title = d.DisplayName(b.worker.Host) + " · Pools"
+		b.Title = d.DisplayName(b.worker.DisplayName()) + " · Pools"
 		b.Detail = "Select the pools this device should take requests from."
 		if !d.Worker {
 			b.Detail += " GUI assignments are saved for future request handling."

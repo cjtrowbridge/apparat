@@ -81,7 +81,7 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 				switch {
 				case game.serviceProjection.DeviceError:
 					s.Description = "Could not load saved devices."
-				case len(game.serviceProjection.Devices) == 0 && len(game.serviceProjection.Peers) == 0:
+				case len(game.serviceProjection.Devices) == 0 && len(game.serviceProjection.Peers) == 0 && game.serviceProjection.LocalDevice.ID == "":
 					s.Description = "Use Add New Device to find a worker."
 				default:
 					s.Description = "Personal app devices appear above headless workers."
@@ -104,7 +104,7 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 					} else {
 						rows = append(rows, hud.Row{Label: "Synchronization", Detail: "Awaiting first authorized worker view."})
 					}
-					sections = append(sections, hud.Section{ActionID: "worker-" + d.Fingerprint, Title: d.Host, SelectorColor: s.SelectorColor, ContentKind: hud.ContentStandard, Rows: rows})
+					sections = append(sections, hud.Section{ActionID: "worker-" + d.Fingerprint, Title: d.DisplayName(), SelectorColor: s.SelectorColor, ContentKind: hud.ContentStandard, Rows: rows})
 				}
 			}
 		}

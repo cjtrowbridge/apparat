@@ -232,6 +232,8 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 			args = append(args, "headless")
 		}
 		cmd := discovery.Command(workCtx, args...)
+		host, _ := node.Keys.Hostname()
+		cmd.Env = append(cmd.Environ(), "APPARAT_DISCOVERY_NAME="+host, "APPARAT_NAME_FILE="+filepath.Join(node.config.IdentityDir, "hostname"))
 		cmd.Stdout = node.WorkerEvents
 		cmd.WaitDelay = 3 * time.Second
 		node.discoveryWorkers.Add(1)
@@ -352,6 +354,7 @@ func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
 	defer node.RequestSync()
 	node.Keys.Setup(dialog)
 	if node.Personal != nil && node.Keys.State() == "unlocked" {
+		node.Keys.SetupHostname(dialog)
 		if node.Personal.Setup(dialog, node.personalUnlockDevice()) {
 			node.openDiscovery.Store(true)
 			return

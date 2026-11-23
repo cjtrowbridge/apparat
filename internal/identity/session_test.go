@@ -144,3 +144,27 @@ func TestMissingPointerOnlyOffersRecovery(t *testing.T) {
 		return "null"
 	})
 }
+
+func TestDeviceNameSetupPersists(t *testing.T) {
+	root := t.TempDir()
+	err := os.WriteFile(filepath.Join(root, "hostname"), []byte("localhost"), 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempts := 0
+	ok := NewSession(root).SetupHostname(func(string) string {
+		attempts++
+		if attempts == 1 {
+			return `"LOCALHOST"`
+		}
+		return `"pixel-4a"`
+	})
+	name, err := NewSession(root).Hostname()
+	if !ok || attempts != 2 || name != "pixel-4a" || err != nil {
+		t.Fatal("name setup did not persist", err)
+	}
+	NewSession(root).SetupHostname(func(string) string {
+		t.Fatal("existing name prompted again")
+		return "null"
+	})
+}

@@ -42,7 +42,7 @@ func readDirectory(ctx context.Context, db directoryReader, a Access, worker str
  SELECT DISTINCT d.device_id,d.hostname,d.platform,0 `+approvedDevices+` AND (? OR d.user_id=?)
  UNION ALL SELECT ?,'','',1), assignments(id,pool) AS (
  SELECT device,pool FROM gui_pool_devices WHERE cluster=? UNION SELECT worker,pool FROM pool_services WHERE cluster=? AND service=?)
- SELECT devices.id,host,os,worker,coalesce(pool,'') FROM devices LEFT JOIN assignments ON assignments.id=devices.id AND (? OR EXISTS(SELECT 1 FROM effective_pool_grants g WHERE g.cluster=? AND g.pool=assignments.pool AND g.service=? AND g.principal IN (?,'public'))) ORDER BY worker,host COLLATE NOCASE,devices.id,pool`, a.Cluster, admin, a.User, worker, a.Cluster, a.Cluster, HashService, admin, a.Cluster, HashService, a.User)
+ SELECT devices.id,coalesce(n.name,host),os,worker,coalesce(pool,'') FROM devices LEFT JOIN cluster_device_names n ON n.cluster=? AND n.device=devices.id LEFT JOIN assignments ON assignments.id=devices.id AND (? OR EXISTS(SELECT 1 FROM effective_pool_grants g WHERE g.cluster=? AND g.pool=assignments.pool AND g.service=? AND g.principal IN (?,'public'))) ORDER BY worker,host COLLATE NOCASE,devices.id,pool`, a.Cluster, admin, a.User, worker, a.Cluster, a.Cluster, HashService, a.Cluster, admin, a.Cluster, HashService, a.User)
 	if err != nil {
 		return nil, err
 	}
@@ -86,4 +86,13 @@ func (db *DB) GUIPeers(ctx context.Context, user string) ([]domain.PoolDevice, e
 		out = append(out, d)
 	}
 	return out, rows.Err()
+}
+
+func renameDevice(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) (sql.Result, error) {
+	if !domain.ValidDeviceName(e.Value) {
+		return nil, errors.New("choose a specific hostname using letters, digits and hyphens")
+	}
+	return tx.ExecContext(ctx, `INSERT INTO cluster_device_names(cluster,device,name) SELECT ?,?,?
+ WHERE EXISTS(SELECT 1 FROM worker_cluster WHERE cluster=? AND worker=?) OR EXISTS(SELECT 1`+approvedDevices+` AND d.device_id=?)
+ ON CONFLICT(cluster,device) DO UPDATE SET name=excluded.name`, e.Cluster, e.Target, e.Value, e.Cluster, e.Target, e.Cluster, e.Target)
 }

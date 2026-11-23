@@ -74,7 +74,7 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 		rightPadding += tabIconSize
 	}
 	padding := &widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}
-	if section.ActionID == "add-new-device" {
+	if section.ActionID == "add-new-device" || section.CurrentDevice {
 		padding.Left = 12 + tabIconSize + 8
 	}
 	if tabData.ID() == hud.TabProjects {
@@ -148,7 +148,7 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 				game.discoveryContent(detailContainer)
 			} else {
 				detailContainer.AddChild(game.buildSectionContainer(section))
-				for _, opt := range game.devicePoolLinks(section.ActionID) {
+				for _, opt := range game.deviceManagementLinks(section.ActionID) {
 					game.projectButton(detailContainer, opt.Label, func() {
 						game.clusterOpen(opt.Route)
 					})

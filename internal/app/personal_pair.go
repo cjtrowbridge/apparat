@@ -39,6 +39,9 @@ func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog
 			return nil
 		}
 	}
+	if !n.Keys.SetupHostname(dialog) {
+		return nil
+	}
 	var listener *net.UnixListener
 	if host == "" {
 		if n.Personal.Fingerprint() == "" {

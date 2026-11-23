@@ -54,3 +54,7 @@ Android launch sessions retain unlocked identities across background/resume. Sha
 
 ### Device directory and pool selection
 Extend Phase 10 personal cluster governance with a signed, cached directory of approved GUI devices, platform badges, pool member lists and administrator-only pool checkboxes. Preserve legacy logins and replica signatures during rolling updates. Show configured membership independently of future GUI execution and remote project access. Verify worker policy, responsive HUD controls, updater label sizing and canonical target delivery.
+
+### Meaningful device names
+Extend the Phase 10 cluster directory. Prompt for a missing or generic local hostname during setup, reuse it for login, pairing and announcements, and keep network lookup independent of the display name. Allow administrators on paired apps to rename a known device by fingerprint through signed policy. Verify legacy records, persistence across login, synchronization, and delivery.
+Mark the local fingerprint with a leading bullseye while retaining its trailing platform badge.

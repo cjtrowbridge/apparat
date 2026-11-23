@@ -22,12 +22,16 @@ func (node *Runtime) ClaimWithDialog(ctx context.Context, network, host string, 
 	if node.Personal == nil {
 		return
 	}
+	if !node.Keys.SetupHostname(dialog) {
+		return
+	}
 	status, err := node.authenticateWorker(ctx, network, host)
 	if err != nil {
 		nativeQuestion(dialog, "notice", "Claim worker", err.Error())
 		return
 	}
-	nativeQuestion(dialog, "notice", host, status)
+	label := domain.PoolDevice{Host: host, Worker: true}
+	nativeQuestion(dialog, "notice", label.DisplayName(host), status)
 }
 
 func (node *Runtime) authenticateWorker(ctx context.Context, network, host string) (string, error) {
@@ -137,19 +141,19 @@ func (n *Runtime) CheckWorker(ctx context.Context, id string, dialog identity.Di
 		}
 		client, err := n.openSavedWorker(ctx, worker)
 		if err != nil {
-			nativeQuestion(dialog, "notice", worker.Host, "Could not authenticate at the saved address. Use discovery to reconnect if the worker moved.")
+			nativeQuestion(dialog, "notice", worker.DisplayName(), "Could not authenticate at the saved address. Use discovery to reconnect if the worker moved.")
 			return
 		}
 		access, err := client.WhoAmI(ctx)
 		if err != nil || access.Cluster != worker.Cluster || access.User != n.Personal.Fingerprint() {
-			nativeQuestion(dialog, "notice", worker.Host, "The worker did not confirm access for this user and cluster.")
+			nativeQuestion(dialog, "notice", worker.DisplayName(), "The worker did not confirm access for this user and cluster.")
 			return
 		}
 		status := "The worker confirmed your approved user access."
 		if access.Admin {
 			status = "The worker confirmed your administrator access."
 		}
-		nativeQuestion(dialog, "notice", worker.Host, status)
+		nativeQuestion(dialog, "notice", worker.DisplayName(), status)
 		return
 	}
 }

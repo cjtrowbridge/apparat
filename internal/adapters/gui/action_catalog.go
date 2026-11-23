@@ -122,9 +122,13 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			kind = "project"
 		}
 		path := tab.Title() + " / " + s.Title
-		for _, opt := range g.devicePoolLinks(s.ActionID) {
+		for _, opt := range g.deviceManagementLinks(s.ActionID) {
 			key, _ := json.Marshal(opt.Route)
-			add("device-pools", owner, string(key), opt.Label+" for "+s.Title, path+" / "+opt.Label, func() {
+			kind := "device-pools"
+			if opt.Route.Page == "rename" {
+				kind = "rename-device"
+			}
+			add(kind, owner, string(key), opt.Label+" for "+s.Title, path+" / "+opt.Label, func() {
 				g.selectTab(index, nil)
 				g.selectSection(tab.ID(), i)
 				g.clusterOpen(opt.Route)
@@ -155,17 +159,18 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 				add("personal-pair-offer", owner, g.lan.device, "Pair another personal device", path+" / Pair another personal device", g.offerPair)
 			}
 			for _, name := range g.lan.names {
+				label := g.discoveryLabel(name)
 				if g.runtimeInfo.PairPersonal != nil {
-					add("personal-pair-receive", owner, g.lan.device+"/"+name, "Receive my identity from "+name, path+" / "+name+" / Receive my identity", func() {
+					add("personal-pair-receive", owner, g.lan.device+"/"+name, "Receive my identity from "+label, path+" / "+label+" / Receive my identity", func() {
 						g.pairFrom(name)
 					})
 				}
 				if g.runtimeInfo.ClaimHost != nil {
-					add("claim-dialog", owner, g.lan.device+"/"+name, "Claim "+name, path+" / "+name+" / Claim host", func() {
+					add("claim-dialog", owner, g.lan.device+"/"+name, "Claim "+label, path+" / "+label+" / Claim host", func() {
 						g.beginClaim(name)
 					})
 				}
-				add("discovered-host", owner, g.lan.device+"/"+name, name, path+" / "+name, func() {
+				add("discovered-host", owner, g.lan.device+"/"+name, label, path+" / "+label, func() {
 					g.selectTab(index, nil)
 					g.selectSection(tab.ID(), i)
 					g.openPeer(name)

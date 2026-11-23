@@ -27,3 +27,5 @@ Domain code defines identity, projects, queues, tasks, capabilities, workload cl
 project.go also defines the project-scoped workspace request and bounded text view shared by the runtime and UI.
 
 - `cluster_page.go`: Defines the initial routing pools, detail routes and explicit worker commands.
+
+- `device_name.go`: validates Apparat host labels and resolves display names without changing endpoint selection.

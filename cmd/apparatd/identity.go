@@ -27,6 +27,7 @@ def ask():
             tty.flush()
             return source.readline().rstrip('\n')
         tty.write(r['Title']+'\n'+r['Message']+'\n')
+        if op=='text':return prompt('Hostname:') or None
         if op=='password':return getpass.getpass('Password: ',stream=tty) or None
         if op=='choose':
             for i,choice in enumerate(r['Options'],1):tty.write(str(i)+'. '+choice+'\n')
@@ -61,6 +62,19 @@ func setupIdentity(args []string) int {
 	}()
 	session := identity.NewSession(cfg.IdentityDir)
 	defer session.Lock()
+	dialog := func(packet string) string {
+		cmd := exec.CommandContext(context.Background(), "/usr/bin/python3", "-I", "-c", terminalDialog)
+		cmd.Stdin = strings.NewReader(packet)
+		out, err := cmd.Output()
+		if err != nil {
+			return "null"
+		}
+		return string(out)
+	}
+	if !session.SetupHostname(dialog) {
+		fmt.Fprintln(os.Stderr, "Set a recognizable device hostname with apparatd identity-setup from a terminal.")
+		return 1
+	}
 	if generate {
 		if session.State() != "missing" {
 			fmt.Fprintln(os.Stderr, "A device identity already exists or needs recovery.")
@@ -74,15 +88,7 @@ func setupIdentity(args []string) int {
 		fmt.Println("Created worker identity", identity.Fingerprint(session.Public()))
 		return 0
 	}
-	session.Setup(func(packet string) string {
-		cmd := exec.CommandContext(context.Background(), "/usr/bin/python3", "-I", "-c", terminalDialog)
-		cmd.Stdin = strings.NewReader(packet)
-		out, err := cmd.Output()
-		if err != nil {
-			return "null"
-		}
-		return string(out)
-	})
+	session.Setup(dialog)
 	fmt.Println("Node identity:", session.State())
 	return 0
 }

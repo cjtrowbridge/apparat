@@ -80,7 +80,7 @@ func (g *Game) clusterLoad() {
 		f.page = domain.ClusterPage{Title: "Cluster settings"}
 		for _, d := range g.serviceProjection.Devices {
 			if d.Admin {
-				f.page.Options = append(f.page.Options, domain.ClusterOption{Label: d.Host, Route: domain.ClusterRoute{Worker: d.Fingerprint, Page: "settings"}})
+				f.page.Options = append(f.page.Options, domain.ClusterOption{Label: d.DisplayName(), Route: domain.ClusterRoute{Worker: d.Fingerprint, Page: "settings"}})
 			}
 		}
 		if len(f.page.Options) == 1 {
@@ -137,6 +137,9 @@ func (g *Game) pollCluster() {
 			g.clusterLoad()
 		default:
 			f.page = response.page
+			if f.route.Page == "rename" && len(f.page.Options) == 1 {
+				f.form = &f.page.Options[0]
+			}
 			f.notice = ""
 		}
 		g.layoutDirty = true

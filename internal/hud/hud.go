@@ -37,6 +37,7 @@ type Section struct {
 	ProjectID            string
 	SelectorSubtitle     string
 	SelectorIcon         string
+	CurrentDevice        bool
 	Title                string
 	Description          string
 	Rows                 []Row

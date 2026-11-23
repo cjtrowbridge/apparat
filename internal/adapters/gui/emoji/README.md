@@ -21,3 +21,5 @@ Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 - `270f.png`: Twemoji pencil, for editing the displayed personal screen name.
 
 - `1f4f1.png` and `1f4bb.png` are the mobile phone and laptop from the same Twemoji release. They identify the operating system reported by an authenticated GUI installation.
+
+- `1f3af.png`: Twemoji bullseye marking the local fingerprint at the start of its device row.

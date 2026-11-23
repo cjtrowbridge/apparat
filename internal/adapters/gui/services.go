@@ -16,6 +16,7 @@ type ServiceQueries interface {
 type ServiceProjection struct {
 	Devices     []domain.ClusterDevice
 	Peers       []domain.PoolDevice
+	LocalDevice domain.PoolDevice
 	ScreenName  string
 	DeviceError bool
 	Services    []domain.Service
@@ -67,6 +68,10 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 			}
 
 			projection := ServiceProjection{Devices: devices, Peers: peers, DeviceError: deviceErr != nil || peerErr != nil, Services: list, State: state}
+			local, hasLocal := queries.(interface{ LocalClusterDevice() domain.PoolDevice })
+			if hasLocal {
+				projection.LocalDevice = local.LocalClusterDevice()
+			}
 			profile, hasProfile := queries.(interface{ ScreenName() string })
 			if hasProfile {
 				projection.ScreenName = profile.ScreenName()

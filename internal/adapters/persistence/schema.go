@@ -43,6 +43,7 @@ var migrations = []Migration{
 	{Version: 15, Name: "device_hostnames", SQL: "ALTER TABLE cluster_devices_authorized ADD COLUMN hostname TEXT NOT NULL DEFAULT ''"},
 	{Version: 16, Name: "worker_replicas", SQL: replicaSchema},
 	{Version: 17, Name: "pool_device_directory", SQL: directorySchema},
+	{Version: 18, Name: "cluster_device_names", SQL: "CREATE TABLE cluster_device_names(cluster TEXT NOT NULL REFERENCES worker_cluster(cluster),device TEXT NOT NULL,name TEXT NOT NULL,PRIMARY KEY(cluster,device))"},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {

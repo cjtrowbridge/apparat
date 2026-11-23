@@ -33,11 +33,16 @@ type PoolDevice struct {
 }
 
 func (d PoolDevice) DisplayName(workerHost string) string {
-	if d.Worker {
-		return workerHost
+	name := SystemDeviceName(d.Host)
+	if name != "" {
+		return name
 	}
-	if d.Host != "" {
-		return d.Host
+	if d.Worker {
+		name := SystemDeviceName(workerHost)
+		if name != "" {
+			return name
+		}
+		return "Worker " + d.ID[:min(8, len(d.ID))]
 	}
 	return "App device " + d.ID[:min(8, len(d.ID))]
 }

@@ -232,6 +232,37 @@ func TestPinnedWorkerClaim(t *testing.T) {
 			t.Fatal("device pool selection did not synchronize", err)
 		}
 	}
+	for _, target := range []string{other.Access.Device, session.Worker} {
+		edit := identity.PolicyEdit{Kind: "rename_device", ID: "name-" + target, Cluster: cluster, Base: page.Head.Revision, Target: target, Value: "localhost"}
+		_, err = session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
+		if err == nil {
+			t.Fatal("accepted localhost")
+		}
+		edit.Value = "lab-device"
+		receipt, err := session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		page.Head = persistence.PolicyCursor{Revision: edit.Base + 1, Hash: receipt.Hash()}
+		other, err = OpenWorker(ctx, address, pin, owner, phone)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = other.Sync(ctx, replicaDB)
+		if err != nil {
+			t.Fatal(err)
+		}
+		snapshot, _, err := replicaDB.LocalReplica(ctx, other.Worker, other.Access)
+		found := false
+		for _, d := range snapshot.View.Devices {
+			if d.ID == target {
+				found = d.Host == edit.Value
+			}
+		}
+		if !found || err != nil {
+			t.Fatal("rename lost after login or sync", err)
+		}
+	}
 	other.token = session.token
 	_, err = other.WhoAmI(ctx)
 	if err == nil {

@@ -59,6 +59,9 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 			btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
 			row.AddChild(btn)
+			if section.CurrentDevice {
+				row.AddChild(leadingIcon("1f3af"))
+			}
 			if subtitle != nil {
 				row.AddChild(subtitle)
 			}
@@ -100,9 +103,12 @@ func plusRow(btn *widget.Button) *widget.Container {
 	row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 	btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
-	row.AddChild(btn, widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("2795")),
+	row.AddChild(btn, leadingIcon("2795"))
+	return row
+}
+func leadingIcon(icon string) *widget.Graphic {
+	return widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon(icon)),
 		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
 			VerticalPosition: widget.AnchorLayoutPositionCenter, Padding: &widget.Insets{Left: 12},
-		}))))
-	return row
+		})))
 }

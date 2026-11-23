@@ -38,12 +38,14 @@ func TestDeviceDirectoryPoolNavigation(t *testing.T) {
 	g := NewGame()
 	roster := []domain.PoolDevice{{ID: "d", Host: "Phone", OS: "android", Pools: []string{"Chat Pool"}}, {ID: "w", Worker: true}}
 	g.serviceProjection.Devices = []domain.ClusterDevice{{Fingerprint: "w", Host: "Worker", Admin: true, Roster: roster}}
+	g.serviceProjection.LocalDevice = roster[0]
+	g.serviceProjection.Peers = []domain.PoolDevice{{ID: "d", Host: "localhost"}, {ID: "other", Host: "Phone"}}
 	rows := g.personalSections()
-	if len(rows) != 1 || rows[0].SelectorIcon != "1f4f1" {
+	if len(rows) != 2 || rows[0].SelectorIcon != "1f4f1" || !rows[0].CurrentDevice || rows[1].CurrentDevice || rows[0].Title != "Phone" {
 		t.Fatal(rows)
 	}
-	opts := g.devicePoolLinks(rows[0].ActionID)
-	if len(opts) != 1 || opts[0].Route.Target != "d" || opts[0].Route.Worker != "w" {
+	opts := g.deviceManagementLinks(rows[0].ActionID)
+	if len(opts) != 2 || opts[1].Route.Page != "rename" || opts[0].Route.Target != "d" || opts[0].Route.Worker != "w" {
 		t.Fatal(opts)
 	}
 	section := g.routingMembers(hud.Section{ActionID: "chat-pool"})
@@ -51,7 +53,7 @@ func TestDeviceDirectoryPoolNavigation(t *testing.T) {
 		t.Fatal(section)
 	}
 	g.serviceProjection.Devices[0].Admin = false
-	if len(g.devicePoolLinks("gui-d")) != 0 {
+	if len(g.deviceManagementLinks("gui-d")) != 0 {
 		t.Fatal("nonadmin pool editor")
 	}
 }

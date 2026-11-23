@@ -49,3 +49,16 @@ func TestULIDCanonicalAndTimeOrder(t *testing.T) {
 		seen[id] = true
 	}
 }
+
+func TestDeviceDisplayName(t *testing.T) {
+	for _, host := range []string{"localhost", "LOCALHOST.localdomain", "127.0.0.1", "::1", "android-deadbeef", ""} {
+		d := PoolDevice{Host: host, ID: "abcdefgh123"}
+		if d.DisplayName("") != "App device abcdefgh" {
+			t.Fatal(host)
+		}
+	}
+	w := ClusterDevice{Fingerprint: "worker-id", Host: "localhost", Roster: []PoolDevice{{ID: "worker-id", Worker: true, Host: "lab-server"}}}
+	if w.DisplayName() != "lab-server" {
+		t.Fatal("lost worker rename")
+	}
+}

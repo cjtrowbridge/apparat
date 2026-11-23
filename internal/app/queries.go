@@ -127,3 +127,12 @@ func (node *Runtime) Backup(ctx context.Context, path string) error {
 	}
 	return node.database.Backup(ctx, path)
 }
+
+func (n *Runtime) LocalClusterDevice() domain.PoolDevice {
+	key := n.Keys.Public()
+	if len(key) == 0 || n.Personal == nil || n.Personal.Fingerprint() == "" {
+		return domain.PoolDevice{}
+	}
+	name, _ := n.Keys.Hostname()
+	return domain.PoolDevice{ID: identity.Fingerprint(key), Host: name, OS: runtime.GOOS}
+}

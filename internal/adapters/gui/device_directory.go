@@ -14,10 +14,14 @@ import (
 func (g *Game) personalSections() []hud.Section {
 	seen := map[string]bool{}
 	var rows []hud.Section
-	peers := slices.Clone(g.serviceProjection.Peers)
+	var peers []domain.PoolDevice
 	for _, w := range g.serviceProjection.Devices {
 		peers = append(peers, w.Roster...)
 	}
+	if g.serviceProjection.LocalDevice.ID != "" {
+		peers = append(peers, g.serviceProjection.LocalDevice)
+	}
+	peers = append(peers, g.serviceProjection.Peers...)
 	for _, d := range peers {
 		if d.Worker || seen[d.ID] {
 			continue
@@ -30,7 +34,7 @@ func (g *Game) personalSections() []hud.Section {
 		case "darwin", "linux", "windows", "freebsd", "openbsd", "netbsd":
 			icon, platform = "1f4bb", d.OS
 		}
-		rows = append(rows, hud.Section{ActionID: "gui-" + d.ID, Title: d.DisplayName(""), SelectorColor: hud.SelectorPalette[2], SelectorIcon: icon, ContentKind: hud.ContentStandard, Rows: []hud.Row{{Label: "App device", Detail: platform}, {Label: "Device fingerprint", Detail: d.ID}}})
+		rows = append(rows, hud.Section{ActionID: "gui-" + d.ID, Title: d.DisplayName(""), SelectorColor: hud.SelectorPalette[2], SelectorIcon: icon, CurrentDevice: d.ID != "" && d.ID == g.serviceProjection.LocalDevice.ID, ContentKind: hud.ContentStandard, Rows: []hud.Row{{Label: "App device", Detail: platform}, {Label: "Device fingerprint", Detail: d.ID}}})
 	}
 	slices.SortStableFunc(rows, func(a, b hud.Section) int {
 		return strings.Compare(strings.ToLower(a.Title), strings.ToLower(b.Title))
@@ -38,7 +42,7 @@ func (g *Game) personalSections() []hud.Section {
 	return rows
 }
 
-func (g *Game) devicePoolLinks(action string) []domain.ClusterOption {
+func (g *Game) deviceManagementLinks(action string) []domain.ClusterOption {
 	var options []domain.ClusterOption
 	for _, w := range g.serviceProjection.Devices {
 		if !w.Admin {
@@ -50,7 +54,8 @@ func (g *Game) devicePoolLinks(action string) []domain.ClusterOption {
 				id = "worker-" + d.ID
 			}
 			if id == action {
-				options = append(options, domain.ClusterOption{Label: "Select pools · " + w.Host, Route: domain.ClusterRoute{Worker: w.Fingerprint, Page: "device-pools", Target: d.ID}})
+				options = append(options, domain.ClusterOption{Label: "Select pools · " + w.DisplayName(), Route: domain.ClusterRoute{Worker: w.Fingerprint, Page: "device-pools", Target: d.ID}})
+				options = append(options, domain.ClusterOption{Label: "Rename device · " + w.DisplayName(), Route: domain.ClusterRoute{Worker: w.Fingerprint, Page: "rename", Target: d.ID}})
 			}
 		}
 	}
@@ -109,4 +114,16 @@ func (g *Game) customPools() []hud.Section {
 		sections = append(sections, g.poolSection(section, name, ""))
 	}
 	return sections
+}
+
+func (g *Game) discoveryLabel(host string) string {
+	for _, w := range g.serviceProjection.Devices {
+		if strings.EqualFold(w.Host, host) {
+			return w.DisplayName()
+		}
+	}
+	if domain.ValidDeviceName(host) {
+		return host
+	}
+	return "Unnamed device"
 }

@@ -6,7 +6,7 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"errors"
-	"os"
+
 	"strings"
 	"unicode"
 )
@@ -42,7 +42,7 @@ func (p *Personal) SignLogin(device *Session, worker, challenge string, platform
 	if err != nil {
 		return Login{}, err
 	}
-	host, err := os.Hostname()
+	host, err := device.Hostname()
 	if err != nil {
 		return Login{}, err
 	}
