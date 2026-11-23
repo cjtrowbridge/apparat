@@ -2,7 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-11-23-15-14-01 | plans/current/2026-11-23-14-00-00_owner-workspaces.md | Operate owner-hosted projects and capture workspace performance | Deliver host-qualified project navigation, file-based performance captures, safe owner edits, live subscriptions, tasks and restricted terminals.
+2026-11-23-15-48-59 | plans/current/2026-11-23-14-00-00_owner-workspaces.md | Operate owner-hosted projects and capture workspace performance | Deliver host-qualified project navigation, file-based performance captures, safe owner edits, live subscriptions, tasks and restricted terminals.
 2026-11-23-13-47-46 | plans/current/2026-11-17-20-34-03_local-project-repos.md | Register local projects and clone GitHub repositories on confirmed workers | Register local working trees, choose clone locations and use a confirmed worker’s provider accounts to clone and inspect a remote checkout.
 2026-11-23-13-47-46 | plans/current/2026-11-22-12-00-00_node-identity-and-rest.md | Node setup, key protection and authenticated REST | Deliver persistent node identities, optional OS unlock and an authenticated local API before cluster enrollment.
 2026-11-23-13-47-46 | plans/current/2026-11-22-15-00-00_personal-cluster.md | Personal identities, replicated policy and first pool queue | Administer the installed worker from either personal device and recover missing policy and job revisions.

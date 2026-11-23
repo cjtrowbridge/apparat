@@ -41,3 +41,5 @@ For the owner-hosted Files, Editor, Tasks and Terminal milestone, distinguish an
 Verify full registered checkout access for approved cluster admins with zero explicit grants. Recheck the current role for every request, watched update and running terminal. Demoting an admin must restore the explicit grant requirements.
 
 Correct Phase 11C file access across all registered repositories. Approved members browse and read. Current administrators save. Test legacy grant rows, demotion, blocking, live watches and read-only presentation.
+
+Gate Phase 11C delivery on two independent owner APIs with paged registrations, signed role changes, persisted file contents and denial of all project routes to anonymous, expired and incorrectly bound sessions. Run the suite on every canonical build, including delivery retries.

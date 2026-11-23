@@ -149,10 +149,16 @@ class BuildPipelineTest(unittest.TestCase):
         with mock.patch("scripts.build_orchestrator.load_build_environment", return_value=[]), mock.patch(
             "scripts.build_orchestrator.build_plans", return_value=plans
         ), mock.patch("scripts.build_orchestrator.build_evidence.qualify", return_value=1) as run:
-            with redirect_stdout(StringIO()):
-                result = build_orchestrator.main([])
+            pass_output = "--- PASS: TestClusterWorkspaceRoleMatrix (1s)\n--- PASS: TestWorkspaceSessionBoundary (1s)"
+            for code, output, publishes in [(0, pass_output, True), (1, pass_output, False), (0, "no tests to run", False)]:
+                run.reset_mock()
+                completed = mock.Mock(returncode=code, stdout=output)
+                with mock.patch.object(build_orchestrator.subprocess, "run", return_value=completed), redirect_stdout(StringIO()):
+                    result = build_orchestrator.main([])
+                self.assertEqual(run.called, publishes)
+                if publishes:
+                    self.assertEqual(run.call_args.args[1], plans)
         self.assertEqual(result, 1)
-        self.assertEqual(run.call_args.args[1], plans)
 
     def test_android_eligibility_with_optional_device(self):
         for reason in ['Pixel unavailable', '']:

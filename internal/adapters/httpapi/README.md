@@ -35,3 +35,5 @@ Worker clients probe TLS without client credentials and require an approved devi
 - `workspace_denial.go`: Translates recognized authorization codes and scope names into local recovery instructions. Legacy workers receive general investigation guidance.
 
 - `workspace_denial_test.go`: Checks permission guidance through the worker client.
+
+- `workspace_session_acceptance_test.go`: Checks all protected workspace route families for uniform JSON denial and verifies file integrity with anonymous, expired and incorrectly bound sessions.

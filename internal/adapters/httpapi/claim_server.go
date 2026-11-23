@@ -68,11 +68,16 @@ func ListenWorkerClaims(path, artifacts string, db *persistence.DB, keys *identi
 		_ = l.Close()
 		return nil, err
 	}
+	return ServeWorkerListener(l, artifacts, db, keys, handlers...), nil
+}
+
+// ServeWorkerListener takes ownership of a listener already bound by its caller.
+func ServeWorkerListener(l net.Listener, artifacts string, db *persistence.DB, keys *identity.Session, handlers ...WorkerSurface) *Server {
 	config := &tls.Config{MinVersion: tls.VersionTLS13, ClientAuth: tls.RequestClientCert, GetCertificate: func(_ *tls.ClientHelloInfo) (*tls.Certificate, error) {
 		cert, err := workerCertificate(keys)
 		return &cert, err
 	}}
-	return serveWorkerClaims(l, config, db, keys, artifacts, handlers...), nil
+	return serveWorkerClaims(l, config, db, keys, artifacts, handlers...)
 }
 
 func serveWorkerClaims(l net.Listener, config *tls.Config, db *persistence.DB, keys *identity.Session, artifacts string, handlers ...WorkerSurface) *Server {

@@ -73,3 +73,5 @@ workspace.go resolves every command by registered project ID and coordinates dra
 - `workspace_live.go`: Subscribes only while a foreground client is using an owner-backed directory.
 
 - `owner_workspace_test.go`: Verifies scoped remote operations on an actual SQLite registration and working file.
+
+- `workspace_roles_acceptance_test.go`: Exercises signed role changes, paginated registrations, nested file access, disk-verified saves and revocation through two isolated worker APIs.

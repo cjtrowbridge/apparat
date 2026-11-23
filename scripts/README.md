@@ -192,3 +192,5 @@ GUI qualification handles the first-run key dialog through its Cancel control. I
 During Pixel GUI qualification, `artifact_acceptance.py` dismisses the Apparat startup unlock prompt to check offline Projects navigation.
 
 Delivery allocates a shared release number in internal/domain/release.txt before compilation and records it on each rebuilt target in releases/verified.json. Linux-only delivery preserves the last qualified APK and its metadata. Reused outputs retain their original version.
+
+The canonical build requires Git, loopback TCP and writable temporary storage for its workspace role acceptance gate. Before target qualification, it runs the two-worker role matrix and the workspace session boundary test uncached. A failure or a missing test stops delivery before artifact promotion. The gate uses temporary identities and repositories.

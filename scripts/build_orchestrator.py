@@ -9,6 +9,7 @@ import argparse
 import importlib.util
 import os
 import shutil
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -168,6 +169,17 @@ def main(argv: list[str] | None = None) -> int:
     possible = [plan for plan in plans if plan.possible]
     if not possible:
         print("No build targets are possible on this machine.", file=sys.stderr)
+        return 1
+    print("Testing cluster workspace permissions on two isolated workers", flush=True)
+    required = ("TestClusterWorkspaceRoleMatrix", "TestWorkspaceSessionBoundary")
+    run = subprocess.run(
+        [args.go, "test", "-count=1", "-v", "-run", "^(" + "|".join(required) + ")$",
+         "./internal/app", "./internal/adapters/httpapi"],
+        cwd=build.ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+    )
+    print(run.stdout, end="")
+    if run.returncode or any(f"--- PASS: {name} (" not in run.stdout for name in required):
+        print("Workspace access acceptance failed or a required test did not run.", file=sys.stderr)
         return 1
     return build_evidence.qualify(build.ROOT, plans, lambda plan, dest: run_plan(args.go, plan, dest), publish=True)
 
