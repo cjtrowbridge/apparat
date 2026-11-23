@@ -207,14 +207,18 @@ func TestPersonalClusterDialogsFollowAvailability(t *testing.T) {
 	g := NewGame()
 	defer g.Close()
 	g.runtimeInfo.EditName = func() {}
+	g.runtimeInfo.PairPersonal = func(string, string) {}
 	g.runtimeInfo.ClaimHost = func(string, string) {}
 	g.receiveLAN(lanNames([]string{"fixture"}))
+	if len(g.queryActions("open receive my identity from fixture", true).Choices) != 1 {
+		t.Fatal("missing peer pairing action")
+	}
 	if len(g.queryActions("open claim fixture", true).Choices) != 1 || len(g.queryActions("open edit screen name", true).Choices) != 1 {
 		t.Fatal("missing identity or claim action")
 	}
 	g.receiveLAN(lanNames(nil))
 	for _, action := range g.actionCatalog() {
-		if action.Address.Kind == "claim-dialog" {
+		if action.Address.Kind == "claim-dialog" || action.Address.Kind == "personal-pair-receive" {
 			t.Fatal("departed host has claim action")
 		}
 	}

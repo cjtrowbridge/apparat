@@ -38,6 +38,12 @@ func (g *Game) discoveryContent(c *widget.Container) {
 			})
 			c.AddChild(g.detailText("Connect using your saved Apparat identity."))
 		}
+		if g.runtimeInfo.PairPersonal != nil {
+			host := g.lan.selected
+			g.projectButton(c, "Receive my identity from this device", func() {
+				g.pairFrom(host)
+			})
+		}
 		g.projectButton(c, "Back to discovery", g.leavePeer)
 		return
 	}
@@ -52,6 +58,9 @@ func (g *Game) discoveryContent(c *widget.Container) {
 				g.startLAN(dev.Name)
 			})
 		}
+	}
+	if g.canOfferPair() {
+		g.projectButton(c, "Pair another personal device", g.offerPair)
 	}
 	msg := g.lan.message
 	if msg == "" {
@@ -218,5 +227,19 @@ func (g *Game) configureAPI() {
 func (g *Game) beginClaim(host string) {
 	if g.runtimeInfo.ClaimHost != nil && slices.Contains(g.lan.names, host) {
 		go g.runtimeInfo.ClaimHost(g.lan.device, host)
+	}
+}
+
+func (g *Game) canOfferPair() bool {
+	return runtime.GOOS == "linux" && g.runtimeInfo.PairPersonal != nil && g.lan.active && g.lan.device != ""
+}
+func (g *Game) offerPair() {
+	if g.canOfferPair() {
+		go g.runtimeInfo.PairPersonal(g.lan.device, "")
+	}
+}
+func (g *Game) pairFrom(host string) {
+	if g.runtimeInfo.PairPersonal != nil && slices.Contains(g.lan.names, host) {
+		go g.runtimeInfo.PairPersonal(g.lan.device, host)
 	}
 }

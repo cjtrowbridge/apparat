@@ -2,6 +2,7 @@
 The owning Apparat process starts this embedded helper with the node database path.
 """
 import contextlib
+import hashlib
 import http.server
 import json
 import os
@@ -171,17 +172,21 @@ def serve(db, rule, headless=False):
             self.connection.settimeout(3)
             if self.connection.recv(1, socket.MSG_PEEK) != b"\x16":
                 return super().handle()
-            if not headless or not permitted():
+            if not permitted():
                 return
             # TLS terminates in the Go worker. Revalidate grants before forwarding
             # each bounded chunk, including after the TLS handshake completes.
             path = db.execute("pragma database_list").fetchone()[2]
             with socket.socket(socket.AF_UNIX) as backend:
                 backend.settimeout(3)
-                backend.connect(os.path.join(os.path.dirname(path), "worker-claims.sock"))
+                name = "worker-claims.sock" if headless else "pair-" + hashlib.sha256(rule.encode()).hexdigest()[:16] + ".sock"
+                try:
+                    backend.connect(os.path.join(os.path.dirname(path), name))
+                except OSError:
+                    return
                 sockets = [self.connection, backend]
-                deadline = time.monotonic() + 8
-                remaining = 65536
+                deadline = time.monotonic() + (8 if headless else 90)
+                remaining = 65536 if headless else 400000
                 while remaining > 0 and time.monotonic() < deadline:
                     ready, _, _ = select.select(sockets, [], [], 0.5)
                     for src in ready:

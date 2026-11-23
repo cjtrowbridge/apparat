@@ -45,3 +45,4 @@ workspace.go resolves every command by registered project ID and coordinates dra
 
 - `workspace_save.go`: Records file transaction identity, base, outcome and rejection before allowing a replay.
 - `claim.go`: Confirms the selected hostname and invited worker fingerprint in local dialogs, signs with both unlocked identities and records the acknowledged worker.
+- `personal_pair.go`: Opens or joins one explicitly approved two-code pairing session. The Linux sender selects an enabled API network grant. The receiver unlocks its portable identity locally and records the signed worker pins.

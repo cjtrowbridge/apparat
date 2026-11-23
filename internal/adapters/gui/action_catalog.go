@@ -102,8 +102,20 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			kind = "project"
 		}
 		path := tab.Title() + " / " + s.Title
+		check := g.workerCheck(s.ActionID)
+		if tab.ID() == hud.TabCluster && check != nil {
+			add("check-worker-access", owner, s.ActionID, "Check my access to "+s.Title, path+" / Check my access", check)
+		}
 		if s.ActionID == "add-new-device" {
+			if g.canOfferPair() {
+				add("personal-pair-offer", owner, g.lan.device, "Pair another personal device", path+" / Pair another personal device", g.offerPair)
+			}
 			for _, name := range g.lan.names {
+				if g.runtimeInfo.PairPersonal != nil {
+					add("personal-pair-receive", owner, g.lan.device+"/"+name, "Receive my identity from "+name, path+" / "+name+" / Receive my identity", func() {
+						g.pairFrom(name)
+					})
+				}
 				if g.runtimeInfo.ClaimHost != nil {
 					add("claim-dialog", owner, g.lan.device+"/"+name, "Claim "+name, path+" / "+name+" / Claim host", func() {
 						g.beginClaim(name)

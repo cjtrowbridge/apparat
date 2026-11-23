@@ -49,3 +49,21 @@ func editScreenName() {
 		node.EditScreenName(context.Background(), dialogs.Ask)
 	}
 }
+
+func pairPersonal(network, host string) {
+	identitySetup.Lock()
+	dialogs := currentDialogs
+	identitySetup.Unlock()
+	if dialogs != nil {
+		node.PairDialog(context.Background(), network, host, dialogs.Ask)
+	}
+}
+
+func checkWorker(id string) {
+	identitySetup.Lock()
+	dialogs := currentDialogs
+	identitySetup.Unlock()
+	if dialogs != nil {
+		node.CheckWorker(context.Background(), id, dialogs.Ask)
+	}
+}

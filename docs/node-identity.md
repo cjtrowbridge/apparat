@@ -63,3 +63,7 @@ After unlocking the device identity, create a personal identity with a screen na
 The private file is `user-identity/user.json` under the app data root. Optional system unlock stores the password through the native credential adapter and keeps its local reference separately. Restoring a portable backup requires the original password. SQLite stores the signed public profile and a user-signed binding to this installation's device key. A screen name is a display label and does not identify an administrator. The headless runtime never starts this personal setup.
 
 Selecting a discovered worker authenticates the already configured user and device with a fresh signed challenge. SQLite admits exactly one first admin. A known worker must present its saved key on subsequent connections.
+
+## Personal device pairing
+
+The Linux sender accepts one attempt on a private Unix socket associated with the selected API grant. The network listener checks the exact grant while forwarding traffic. Both screens display a random eight-digit code and require the other device’s code. RFC 9807 OPAQUE uses both codes and the TLS 1.3 exporter. After mutual confirmation the sender signs the encrypted portable bundle and saved worker pins for the certified receiving device key. The receiving app verifies the signature and password locally. Cancellation or mismatch requires a fresh attempt. Existing unrelated user keys are preserved. The recovery password and OS unlock references stay local. A saved fingerprint remains the trust anchor for subsequent protected worker requests.

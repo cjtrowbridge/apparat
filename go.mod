@@ -3,10 +3,11 @@ module github.com/cjtrowbridge/apparat
 go 1.26.11
 
 require (
-	github.com/pmezard/go-difflib v1.0.0
+	github.com/bytemare/opaque v0.18.0
 	github.com/ebitengine/gomobile v0.0.0-20260820040257-d11f821a26a6
 	github.com/ebitenui/ebitenui v0.7.4-0.20260422023258-b1c31d852489
 	github.com/hajimehoshi/ebiten/v2 v2.10.6
+	github.com/pmezard/go-difflib v1.0.0
 	golang.org/x/crypto v0.56.0
 	golang.org/x/image v0.45.0
 	modernc.org/sqlite v1.53.1-0.20260625155647-5d243466fa05
@@ -14,8 +15,15 @@ require (
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
+	filippo.io/nistec v0.0.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
+	github.com/bytemare/ecc v0.9.0 // indirect
+	github.com/bytemare/hash v0.6.2 // indirect
+	github.com/bytemare/hash2curve v0.5.4 // indirect
+	github.com/bytemare/ksf v0.5.0 // indirect
+	github.com/bytemare/secp256k1 v0.3.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -28,6 +36,7 @@ require (
 	github.com/go-text/typesetting v0.3.5 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gtank/ristretto255 v0.2.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

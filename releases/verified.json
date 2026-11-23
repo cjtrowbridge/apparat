@@ -1,8 +1,8 @@
 {
   "edition": "ordinary",
   "ref": "refs/heads/main",
-  "head": "c08dfe9b836d088c62c37fb2016f8adb8794f2d9",
-  "inputs": "a86a01652bd1f5d3079f2d1afa68b6f974d8ac667d7cacaf994dbef8e15e63bd",
+  "head": "afbafd98ad1a191503fb62c4de0402bd5e95bd93",
+  "inputs": "a41e37bc70dadc55cc2d97ddba6b866c7bb5db11a5c7d32dbd6bec815b4b90fb",
   "go": "go version go1.26.11 linux/amd64",
   "targets": [
     {
@@ -10,16 +10,16 @@
       "output": "releases/linux/amd64/apparat/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "d605d048e38c990150fd909cf484dd6f67e043794901cfff374b883eae55e1b2",
-      "inputs": "a86a01652bd1f5d3079f2d1afa68b6f974d8ac667d7cacaf994dbef8e15e63bd"
+      "sha256": "0c6038655053649fd4472b44cc891dfe234dbf2323092c0d64f38acebd746cd2",
+      "inputs": "a41e37bc70dadc55cc2d97ddba6b866c7bb5db11a5c7d32dbd6bec815b4b90fb"
     },
     {
       "name": "linux/amd64/apparatd",
       "output": "releases/linux/amd64/apparatd/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "0e32baf3641d119033734524c9fc6db136c2d8751e770401bed48e272ae02594",
-      "inputs": "a86a01652bd1f5d3079f2d1afa68b6f974d8ac667d7cacaf994dbef8e15e63bd",
+      "sha256": "02f5ecc3eac555836e6f34af95e9c0b35560d06aee25c66bd4d4cf4ab3beb83f",
+      "inputs": "a41e37bc70dadc55cc2d97ddba6b866c7bb5db11a5c7d32dbd6bec815b4b90fb",
       "device_test": {
         "state": "passed",
         "device": "trashcan0"
@@ -30,12 +30,12 @@
       "output": "releases/android/arm64/apparat/latest.apk",
       "state": "passed",
       "reasons": [],
-      "sha256": "d207e7192bcf4970e515779da9d9449fc7dfbae1c63c7592ed4329f9fb47a85e",
+      "sha256": "2a8817845329ed095c4ccffa3714fd69f32500af4b2355196932e4b4b7ac6788",
       "device_test": {
         "state": "passed",
         "device": "Pixel 4a"
       },
-      "inputs": "a86a01652bd1f5d3079f2d1afa68b6f974d8ac667d7cacaf994dbef8e15e63bd"
+      "inputs": "a41e37bc70dadc55cc2d97ddba6b866c7bb5db11a5c7d32dbd6bec815b4b90fb"
     },
     {
       "name": "android/arm64/apparatd",

@@ -28,3 +28,4 @@ Identity code must redact private keys, passphrases, tokens, raw prompts, raw vo
 - `claim.go`: Computes stable SHA-256 identifiers used by cluster signatures and personal cluster IDs.
 - `policy.go`: Signs proposed administrative edits with both identities, binding the command ID, cluster and base revision.
 - `auth.go`: Creates and verifies domain-separated worker login proofs that require both unlocked keys.
+- `pair_transfer.go`: Signs the encrypted recovery bundle and saved worker directory for a specific receiving device. The recipient checks the signed profile, device key, envelope signature and recovery password before installing a missing identity.

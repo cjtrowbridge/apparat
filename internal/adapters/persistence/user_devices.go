@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
@@ -23,6 +24,10 @@ CREATE TABLE personal_device_bindings (
 `
 
 func (db *DB) RememberDevice(ctx context.Context, profile identity.SignedProfile, binding identity.SignedBinding) error {
+	return db.RememberPairedDevice(ctx, profile, binding, nil)
+}
+
+func (db *DB) RememberPairedDevice(ctx context.Context, profile identity.SignedProfile, binding identity.SignedBinding, workers []domain.ClusterDevice) error {
 	if !profile.Valid() || !binding.Valid() || !bytes.Equal(profile.Profile.Public, binding.Binding.User) {
 		return errors.New("invalid personal credentials")
 	}
@@ -53,6 +58,20 @@ func (db *DB) RememberDevice(ctx context.Context, profile identity.SignedProfile
 	_, err = tx.ExecContext(ctx, "INSERT INTO personal_device_bindings(user_id,device_id,signed_binding) VALUES(?,?,?) ON CONFLICT(user_id,device_id) DO NOTHING", user, device, signed)
 	if err != nil {
 		return err
+	}
+	for _, worker := range workers {
+		var stored string
+		err = tx.QueryRowContext(ctx, "SELECT worker FROM claimed_workers WHERE host=? COLLATE NOCASE", worker.Host).Scan(&stored)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		if err == nil && stored != worker.Fingerprint {
+			return errors.New("paired directory conflicts with an existing saved hostname")
+		}
+		_, err = tx.ExecContext(ctx, "INSERT INTO claimed_workers(worker,cluster,owner,host,address) VALUES(?,?,?,?,?) ON CONFLICT(worker) DO NOTHING", worker.Fingerprint, worker.Cluster, user, worker.Host, worker.Address)
+		if err != nil {
+			return err
+		}
 	}
 	return tx.Commit()
 }

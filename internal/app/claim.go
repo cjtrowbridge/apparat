@@ -121,3 +121,31 @@ func (node *Runtime) KnownWorkers(ctx context.Context) ([]domain.ClusterDevice, 
 	}
 	return node.database.KnownWorkers(ctx, node.Personal.Fingerprint())
 }
+
+func (n *Runtime) CheckWorker(ctx context.Context, id string, dialog identity.Dialog) {
+	rows, err := n.KnownWorkers(ctx)
+	if err != nil {
+		return
+	}
+	for _, worker := range rows {
+		if worker.Fingerprint != id {
+			continue
+		}
+		client, err := httpapi.OpenWorker(ctx, worker.Address, id, n.Personal, n.Keys)
+		if err != nil {
+			nativeQuestion(dialog, "notice", worker.Host, "Could not authenticate at the saved address. Use discovery to reconnect if the worker moved.")
+			return
+		}
+		access, err := client.WhoAmI(ctx)
+		if err != nil || access.Cluster != worker.Cluster || access.User != n.Personal.Fingerprint() {
+			nativeQuestion(dialog, "notice", worker.Host, "The worker did not confirm access for this user and cluster.")
+			return
+		}
+		status := "The worker confirmed your approved user access."
+		if access.Admin {
+			status = "The worker confirmed your administrator access."
+		}
+		nativeQuestion(dialog, "notice", worker.Host, status)
+		return
+	}
+}

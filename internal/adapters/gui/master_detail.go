@@ -144,6 +144,10 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 			game.discoveryContent(detailContainer)
 		} else {
 			detailContainer.AddChild(game.buildSectionContainer(section))
+			check := game.workerCheck(section.ActionID)
+			if tabData.ID() == hud.TabCluster && check != nil {
+				game.projectButton(detailContainer, "Check my access", check)
+			}
 		}
 	}
 	scroll := widget.NewScrollContainer(

@@ -2588,3 +2588,5 @@ The MVP is complete only when the applicable cross-cutting requirements and all 
 Phase 17 local delivery criterion: the ordinary build on main qualifies all host-eligible artifacts, publishes their exact bytes together and verifies remote delivery. Android delivery additionally requires signing continuity and a monotonically increasing package version.
 
 Worker claiming uses the existing unlocked credentials directly from discovery. The first verified login establishes ownership. Two-way OTP belongs to personal app pairing.
+
+Personal pairing now has a Linux sender and a recipient path for Android or Linux. The release checkpoint must distinguish disposable-identity protocol tests from a physical Pixel proving access against the already-claimed worker.

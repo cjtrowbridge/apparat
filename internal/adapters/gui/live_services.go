@@ -96,3 +96,14 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 	}
 	return tab
 }
+
+func (g *Game) workerCheck(action string) func() {
+	for _, d := range g.serviceProjection.Devices {
+		if g.runtimeInfo.CheckWorker != nil && action == "worker-"+d.Fingerprint {
+			return func() {
+				go g.runtimeInfo.CheckWorker(d.Fingerprint)
+			}
+		}
+	}
+	return nil
+}

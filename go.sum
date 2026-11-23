@@ -1,5 +1,9 @@
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
 dario.cat/mergo v1.0.0/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
+filippo.io/edwards25519 v1.2.0 h1:crnVqOiS4jqYleHd9vaKZ+HKtHfllngJIiOpNpoJsjo=
+filippo.io/edwards25519 v1.2.0/go.mod h1:xzAOLCNug/yB62zG1bQ8uziwrIqIuxhctzJT18Q77mc=
+filippo.io/nistec v0.0.4 h1:F14ZHT5htWlMnQVPndX9ro9arf56cBhQxq4LnDI491s=
+filippo.io/nistec v0.0.4/go.mod h1:PK/lw8I1gQT4hUML4QGaqljwdDaFcMyFKSXN7kjrtKI=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
@@ -9,6 +13,18 @@ github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFI
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be/go.mod h1:ySMOLuWl6zY27l47sB3qLNK6tF2fkHG55UZxx8oIVo4=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/bytemare/ecc v0.9.0 h1:6+gqn9l63bd82nQVwIpW3LFtsnIsy8V4mvlybAYq6II=
+github.com/bytemare/ecc v0.9.0/go.mod h1:3sdNyM1oi4YwcUkxlogZT/CnahwrH38T7a1wc8JsICQ=
+github.com/bytemare/hash v0.6.2 h1:Sbrscb1JSAv8LTZa/zz6ILOPLno3dsaYgcm9btzz8tM=
+github.com/bytemare/hash v0.6.2/go.mod h1:DBaB71J+8dVhJg9+sItoVOkV724buQ+2e0sp4uNSS4Y=
+github.com/bytemare/hash2curve v0.5.4 h1:WLgEKcoZKHZ41a/TApFMxhaLYHNh9lL2DNAIZCVCLuM=
+github.com/bytemare/hash2curve v0.5.4/go.mod h1:XxXWaFy2g3AsIPovVp4Q8g9GDHNfr2NStnYNC+z1WRo=
+github.com/bytemare/ksf v0.5.0 h1:XIckFHFuuN5WORCU1zsfTjfgmth1HU9BGnJj7KD13I0=
+github.com/bytemare/ksf v0.5.0/go.mod h1:h8GGDUjR3R5QHkQOE4/MrUYyD2MQiRCLOfN5W7zRBcw=
+github.com/bytemare/opaque v0.18.0 h1:R0a5Xayu26uE/+ge2j0YZKotFgMuy5F9KkQTxiBPWX8=
+github.com/bytemare/opaque v0.18.0/go.mod h1:PUEGRLZhsF5np9IcLAZ0A1R3N9ue3p/raGFj9Q2VGcY=
+github.com/bytemare/secp256k1 v0.3.0 h1:Te2HjAtTRKbqRDBOIMKDFkILTqd6YZ+sIgXvrJ7BaB0=
+github.com/bytemare/secp256k1 v0.3.0/go.mod h1:Z2HjKm36tC+Qz51fe1eqMsAM99oTTNlvSuPmPyVXGm0=
 github.com/cloudflare/circl v1.6.3 h1:9GPOhQGF9MCYUeXyMYlqTR6a5gTrgR/fBLXvUgtVcg8=
 github.com/cloudflare/circl v1.6.3/go.mod h1:2eXP6Qfat4O/Yhh8BznvKnJ+uzEoTQ6jVKJRn81BiS4=
 github.com/cyphar/filepath-securejoin v0.6.1 h1:5CeZ1jPXEiYt3+Z6zqprSAgSWiggmpVyciv8syjIpVE=
@@ -54,6 +70,8 @@ github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e h1:ijClszYn+mADRFY17k
 github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e/go.mod h1:boTsfXsheKC2y+lKOCMpSfarhxDeIzfZG1jqGcPl3cA=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/gtank/ristretto255 v0.2.0 h1:LeOuWr6giplWkkMizx2emfG03SRPJqKt1nfIHLVHQ/0=
+github.com/gtank/ristretto255 v0.2.0/go.mod h1:OJ1ox/dWcp7sJ5grYDcZ+kkHYuj5nelW5aaL7ESVXBw=
 github.com/hajimehoshi/bitmapfont/v4 v4.2.0 h1:bpeN2ph7aHSuX7yoWFkLPo4ado9K+E+Dq7t6MoFcJAU=
 github.com/hajimehoshi/bitmapfont/v4 v4.2.0/go.mod h1:AIeoQek1nxUmDczXNtFEYWTQ4ArINijutPD729q/NeE=
 github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
