@@ -73,7 +73,7 @@ The Comrades tab is first in the HUD so the long-term product shape remains visi
 
 ### Node keys
 
-At GUI startup, restore your original Apparat private key if you have used this device before. Cluster peers recognize its signing identity. Generating a different key requires pairing again. Choose **Find existing keys** or confirm **Generate new keys**, then create a password or use the system credential option when available. Save a password-protected recovery copy somewhere private. Cancel keeps signing locked and lets you work offline. Node keys alone do not enroll a peer. See [node identity and recovery](docs/node-identity.md).
+At GUI startup, Apparat loads the saved identity using its configured protection. A password or system unlock prompt may appear. The restore-or-create choice appears only when the device identity is missing. If you have previously used the device, restore its original private key. Cluster peers recognize its signing identity. Generating a different key requires pairing again. Choose **Find existing keys** or confirm **Generate new keys**, then create a password or use the system credential option when available. Save a password-protected recovery copy somewhere private. Cancel keeps signing locked and lets you work offline. Node keys alone do not enroll a peer. See [node identity and recovery](docs/node-identity.md).
 
 ### Cluster
 

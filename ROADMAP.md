@@ -1784,7 +1784,7 @@ Implementation and acceptance are tracked in the [personal cluster execution pla
 
 The real primary Pixel and Steam Machine have authenticated as the same owner on trashcan0. The installed worker now orders policy changes, and the desktop verified the signed handoff receipt. With the Steam Machine offline, the Pixel created a pool, enabled its service and verified a signed task result. On return, the Steam Machine caught up through policy revision 3 and queue revision 3.
 
-- [ ] Open Cluster settings from the heading gear, browse people, groups, pool policy and synchronization in detail pages, and keep everyday task access direct. Initialize the four routing pools at first claim and verify the installed cluster.
+- [x] Open Cluster settings from the heading gear, browse people, groups, pool policy and synchronization in detail pages, and keep everyday task access direct. Initialize the four routing pools at first claim and verify the installed cluster.
 
 ### Worker updates and future pool coordination
 

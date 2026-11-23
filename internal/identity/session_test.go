@@ -4,6 +4,7 @@ package identity
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -84,4 +85,62 @@ func TestSetupContinuity(t *testing.T) {
 	if fresh.State() != "plain" || fresh.Unlock("") != nil {
 		t.Fatal("unattended worker did not reopen identity")
 	}
+}
+
+func TestStartupUsesSavedProtection(t *testing.T) {
+	for _, mode := range []string{"system", "password", "plain"} {
+		dir := t.TempDir()
+		created := NewSession(dir)
+		err := created.Install(nil, "", mode, "test secret", "reference", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, answer := range []string{"null", `"incorrect"`, `"test secret"`} {
+			restarted := NewSession(dir)
+			restarted.Setup(func(raw string) string {
+				var req request
+				if json.Unmarshal([]byte(raw), &req) != nil {
+					t.Fatal("invalid request")
+				}
+				if req.Op == "notice" && answer == `"incorrect"` {
+					return "null"
+				}
+				if !(mode == "system" && req.Op == "load" && req.Value == "reference" || mode == "password" && req.Op == "password") {
+					t.Fatalf("%s startup unexpectedly asked %s", mode, req.Op)
+				}
+				return answer
+			})
+			unlocked := restarted.State() == "unlocked"
+			if unlocked != (mode == "plain" || answer == `"test secret"`) {
+				t.Fatal("incorrect startup state", mode)
+			}
+			if unlocked && !bytes.Equal(restarted.Public(), created.Public()) {
+				t.Fatal("startup replaced saved identity")
+			}
+		}
+	}
+}
+
+func TestMissingPointerOnlyOffersRecovery(t *testing.T) {
+	dir := t.TempDir()
+	s := NewSession(dir)
+	err := s.Install(nil, "", "plain", "", "", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Remove(filepath.Join(dir, "active.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	restarted := NewSession(dir)
+	if restarted.State() != "recovery" {
+		t.Fatal("orphaned identity mistaken for a new install")
+	}
+	restarted.Setup(func(raw string) string {
+		var req request
+		if json.Unmarshal([]byte(raw), &req) != nil || len(req.Options) != 1 || req.Options[0] != "Find existing keys" {
+			t.Fatal("expected recovery only")
+		}
+		return "null"
+	})
 }

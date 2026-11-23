@@ -45,3 +45,5 @@ The primary Pixel 4a completed pairing with the real Steam Machine identity and 
 ## Cluster settings and initial pools
 
 Extend item 7 with a heading gear and right-pane child pages for people, groups, pools and synchronization. Keep registration and update actions with the worker, and provide a direct pool task path. Verify Back, catalog, permissions and narrow/wide layouts. Seed Chat, Project, Comrade and Research pools on first claim in mock priority order. Apply missing defaults to the installed cluster through signed admin operations and preserve Personal, its grants and history.
+
+Release 0.1.55 (2c13049) passed canonical Linux GUI, Linux worker and Android delivery with GitHub artifact read-back. On both the primary Pixel 4a and the wide Linux GUI, the heading gear opened the real settings, Pools showed the four defaults plus Personal, and Personal → My tasks opened the existing verified result. Back returned to the task list. Worker read-back confirmed the four default pools have no services, and Personal retained its hash-text service and successful task. Physical controller testing was not performed.

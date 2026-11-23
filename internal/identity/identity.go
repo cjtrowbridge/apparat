@@ -11,6 +11,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -226,6 +227,15 @@ func Classify(dir string) Status {
 		return StatusReady
 	}
 	if gen.Directory == "" && os.IsNotExist(privErr) && os.IsNotExist(manifestErr) {
+		entries, err := os.ReadDir(dir)
+		if err != nil && !os.IsNotExist(err) {
+			return StatusInconsistent
+		}
+		for _, entry := range entries {
+			if strings.HasPrefix(entry.Name(), "pair-") {
+				return StatusInconsistent
+			}
+		}
 		return StatusMissing
 	}
 	return StatusInconsistent

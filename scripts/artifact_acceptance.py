@@ -124,7 +124,7 @@ def desktop_gui(binary, directory):
     try:
         for _ in range(80):
             windows = run('xwininfo', '-root', '-tree', text=True)
-            setup = re.search(r'(0x[0-9a-f]+) "(?:Apparat node keys|Unlock Apparat node)"', windows)
+            setup = re.search(r'(0x[0-9a-f]+) "(?:Apparat node keys|Unlock node)"', windows)
             if setup:
                 x.XSetInputFocus(display, ctypes.c_ulong(int(setup[1], 16)), 1, 0)
                 esc = x.XKeysymToKeycode(display, 0xff1b)
@@ -233,7 +233,10 @@ def android(binary, directory, digest):
         tree = phone('exec-out', 'cat', tree_path, text=True)
     finally:
         phone('shell', 'rm', '-f', tree_path)
-    if any(f'text="{title}"' in tree for title in ('Apparat node keys', 'Unlock Apparat node')):
+    if 'text="Unlock Apparat node key"' in tree and 'package="com.android.systemui"' in tree:
+        phone('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+        time.sleep(.5)
+    elif any(f'text="{title}"' in tree for title in ('Apparat node keys', 'Unlock node', 'Unlock personal identity')):
         import xml.etree.ElementTree as ET
         cancel = next(item for item in ET.fromstring(tree).iter('node')
                       if item.get('resource-id') == 'android:id/button2' and item.get('package') == package)

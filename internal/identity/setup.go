@@ -55,38 +55,33 @@ func (s *Session) Setup(dialog Dialog) {
 		if state == "unlocked" {
 			return
 		}
-		if state == "plain" && s.Unlock("") == nil {
+		switch state {
+		case "plain", "system", "password":
+			var secret string
+			ok := true
+			switch state {
+			case "system":
+				secret, ok = ui.ask("load", "Unlock node", "", s.Reference())
+			case "password":
+				secret, ok = ui.ask("password", "Unlock node", "Enter the node key password.", "")
+			}
+			if ok && s.Unlock(secret) != nil {
+				ui.ask("notice", "Key remains locked", "The credential did not unlock this key.", "")
+			}
 			return
 		}
-		if state == "password" || state == "system" {
-			action, ok := ui.ask("choose", "Unlock Apparat node", "Use your existing node identity.", "", "Unlock", "Recover keys")
-			if !ok {
-				return
-			}
-			if action == "Unlock" {
-				var secret string
-				if state == "system" {
-					secret, ok = ui.ask("load", "Unlock node", "", s.Reference())
-				} else {
-					secret, ok = ui.ask("password", "Unlock node", "Enter the node key password.", "")
-				}
-				if ok && s.Unlock(secret) == nil {
-					return
-				}
-				if ok {
-					ui.ask("notice", "Key remains locked", "The credential did not unlock this key.", "")
-				}
-				continue
-			}
+		options := []string{"Find existing keys"}
+		if state == "missing" {
+			options = append(options, "Generate new keys")
 		}
-		action, ok := ui.ask("choose", "Apparat node keys", RecoveryWarning, "", "Find existing keys", "Generate new keys")
+		action, ok := ui.ask("choose", "Apparat node keys", RecoveryWarning, "", options...)
 		if !ok {
 			return
 		}
 		generate := action == "Generate new keys"
 		var backup []byte
 		var old string
-		if generate {
+		if generate && state == "missing" {
 			answer, confirmed := ui.ask("choose", "Create a new node identity", RecoveryWarning, "", "Generate new identity")
 			if !confirmed || answer != "Generate new identity" {
 				continue

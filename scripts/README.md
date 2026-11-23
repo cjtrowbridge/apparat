@@ -188,3 +188,5 @@ Linux GUI artifact qualification enters the STMPCK toolbar with Enter, uses Down
 - `trashcan_acceptance.py`: runs inside canonical Linux amd64 delivery, including reuse. Trusted batch public-key SSH to trashcan0 installs the verified worker in ~/.local/bin after an isolated smoke run and SHA-256 check. SSH unavailability is pending. A reachable incompatible host or failed install blocks publication. Optional systemd user service apparatd.service restarts on replacement.
 
 GUI qualification handles the first-run key dialog through its Cancel control. It checks the ordinary Projects screen with the identity still pending and preserves any identity already on the Pixel.
+
+During Pixel GUI qualification, `artifact_acceptance.py` dismisses the Apparat startup unlock prompt to check offline Projects navigation.

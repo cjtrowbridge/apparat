@@ -28,8 +28,6 @@ func (p *Personal) Setup(dialog Dialog) {
 		password, ok := ui.ask("password", "Unlock personal identity", "Enter your personal identity password.", "")
 		if ok && p.Unlock([]byte(password)) != nil {
 			ui.ask("notice", "Personal identity locked", "Check your password and recovery copy.", "")
-		} else if ok && os.IsNotExist(readErr) {
-			p.offerSystemUnlock(ui, password)
 		}
 		return
 	}
