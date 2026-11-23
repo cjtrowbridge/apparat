@@ -88,6 +88,9 @@ func (g *Game) projectTitle(p domain.Project) string {
 		if g.serviceProjection.LocalDevice.ID == "" {
 			host = g.serviceProjection.ProjectHostname
 			if host == "" {
+				host = strings.Join(strings.Fields(g.runtimeInfo.DeviceName), "-")
+			}
+			if host == "" {
 				host, _ = os.Hostname()
 			}
 			if !domain.ValidDeviceName(host) {

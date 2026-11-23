@@ -33,6 +33,7 @@ func (game *Game) receiveServices() {
 			game.serviceUpdates = nil
 			return
 		}
+		hostChanged := game.serviceProjection.ProjectHostname != projection.ProjectHostname || game.serviceProjection.LocalDevice.Host != projection.LocalDevice.Host
 		nameChanged := game.serviceProjection.ScreenName != projection.ScreenName
 		for _, tab := range game.shell.Snapshot().Tabs {
 			if tab.ID() != hud.TabCluster {
@@ -56,7 +57,7 @@ func (game *Game) receiveServices() {
 			break
 		}
 		active := game.shell.Snapshot().ActiveTab().ID()
-		if active == hud.TabCluster || active == hud.TabSettings && nameChanged {
+		if active == hud.TabCluster || active == hud.TabSettings && nameChanged || active == hud.TabProjects && hostChanged {
 			game.layoutDirty = true
 		}
 	default:

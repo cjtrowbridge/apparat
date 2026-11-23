@@ -23,6 +23,14 @@ var node *app.Runtime
 var bridgeMu sync.Mutex
 
 var initializeOnce sync.Once
+var systemDeviceName string
+
+// SetSystemDeviceName supplies Android's device label before the HUD is created.
+func SetSystemDeviceName(name string) {
+	bridgeMu.Lock()
+	systemDeviceName = name
+	bridgeMu.Unlock()
+}
 
 func Initialize(filesDir string) bool {
 	initializeOnce.Do(func() {
@@ -60,7 +68,10 @@ func initialize(filesDir string) {
 	_ = runtime.RecordLastRun("info", "android", "mobile_game_ready", "Ebitengine mobile game registered", map[string]any{"root": cfg.RootDir})
 	binaryPath, _ := os.Executable()
 	workingDir, _ := os.Getwd()
-	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
+	bridgeMu.Lock()
+	localName := systemDeviceName
+	bridgeMu.Unlock()
+	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{DeviceName: localName,
 		ClaimHost:    claimHost,
 		CheckWorker:  checkWorker,
 		PairPersonal: pairPersonal,

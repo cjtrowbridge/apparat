@@ -30,8 +30,16 @@ func (db *DB) ClearDraft(ctx context.Context, id, path string) error {
 	return err
 }
 func (db *DB) AddProjectEntry(ctx context.Context, project, id, kind, body string) error {
-	_, err := db.sql.ExecContext(ctx, "INSERT INTO project_entries VALUES(?,?,?,?) ON CONFLICT(project,id) DO NOTHING", project, id, kind, body)
+	_, err := db.ReserveEntry(ctx, project, id, kind, body)
 	return err
+}
+func (db *DB) ReserveEntry(ctx context.Context, project, id, kind, body string) (bool, error) {
+	result, err := db.sql.ExecContext(ctx, "INSERT INTO project_entries VALUES(?,?,?,?) ON CONFLICT(project,id) DO NOTHING", project, id, kind, body)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	return rows == 1, err
 }
 func (db *DB) ProjectEntry(ctx context.Context, project, id string) (kind, body string, err error) {
 	err = db.sql.QueryRowContext(ctx, "SELECT kind,body FROM project_entries WHERE project=? AND id=?", project, id).Scan(&kind, &body)

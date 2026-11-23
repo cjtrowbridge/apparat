@@ -162,9 +162,12 @@ func (n *Runtime) projectTask(ctx context.Context, location string, q domain.Wor
 		run.Expires = time.Now().Unix() + selected.RetainSeconds
 	}
 	initial, _ := json.Marshal(run)
-	err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, "run", string(initial))
+	created, err := n.database.ReserveEntry(ctx, q.ProjectID, q.ID, "run", string(initial))
 	if err != nil {
 		return v, err
+	}
+	if !created {
+		return v, errors.New("task already submitted; open Run history for its result")
 	}
 	timeout := selected.TimeoutSeconds
 	if timeout == 0 {

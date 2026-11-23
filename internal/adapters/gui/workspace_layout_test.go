@@ -68,6 +68,11 @@ func TestOwnerTitleAndCatalogNavigation(t *testing.T) {
 		t.Fatal("incorrect title while identity is locked")
 	}
 	g.projects.rows = []domain.Project{local, peer}
+	g.serviceProjection.ProjectHostname = ""
+	g.runtimeInfo.DeviceName = "Pixel 4a"
+	if g.projectTitle(local) != "Pixel-4a://sample" {
+		t.Fatal("missing Android display name fallback")
+	}
 	turns := g.projects.pageTurns()
 	if len(turns) != 1 || turns[0].host != "worker-test" || turns[0].cursor != "r" {
 		t.Fatal(turns)

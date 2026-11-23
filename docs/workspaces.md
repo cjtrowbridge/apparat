@@ -1,6 +1,6 @@
 # Operating an owner-hosted workspace
 
-A project keeps its stable registration ID when its display name changes. The selector and heading show `hostname://repository`. Local work stays usable offline. For a registered worker checkout, Files, Editor, Tasks and Terminal use the confirmed owner's scoped TLS API. Chat on a remote checkout is reserved.
+A project keeps its stable registration ID when its display name changes. The selector and heading show `hostname://repository`. Android can use the system device name for a local project title before an Apparat hostname has been saved. Local work stays usable offline. For a registered worker checkout, Files, Editor, Tasks and Terminal use the confirmed owner's scoped TLS API. Chat on a remote checkout is reserved.
 
 ## Access
 

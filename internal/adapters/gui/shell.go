@@ -17,6 +17,7 @@ type DocumentSession interface {
 	Apply(action, text string) string
 }
 type RuntimeInfo struct {
+	DeviceName      string
 	BrowseLAN       func(bool) string
 	CheckWorker     func(string)
 	PairPersonal    func(string, string)
