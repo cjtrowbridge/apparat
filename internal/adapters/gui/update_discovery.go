@@ -152,3 +152,8 @@ func (game *Game) UpdateStatusDetail() string {
 	}
 	return ""
 }
+
+func (g *Game) updateLabel(label string) string {
+	p := g.theme.ButtonTheme.TextPadding
+	return wrapSelectorLabel(label, *g.theme.ButtonTheme.TextFace, int(g.hudTextMaxWidth())-p.Left-p.Right)
+}

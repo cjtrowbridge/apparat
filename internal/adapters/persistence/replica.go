@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
@@ -38,7 +39,8 @@ type Replica struct {
 	Admin                                 bool
 	PollSeconds                           int
 	Pools                                 []string
-	Governance                            *GovernanceView `json:",omitempty"`
+	Devices                               []domain.PoolDevice `json:",omitempty"`
+	Governance                            *GovernanceView     `json:",omitempty"`
 }
 type SignedReplica struct {
 	View      Replica
@@ -64,7 +66,7 @@ func (db *DB) refreshViewRevision(ctx context.Context) error {
 	return err
 }
 
-func (db *DB) ReadReplica(ctx context.Context, a Access, w string, after uint64) (*Replica, error) {
+func (db *DB) ReadReplica(ctx context.Context, a Access, w string, after uint64, directory bool) (*Replica, error) {
 	db.policyMu.RLock()
 	defer db.policyMu.RUnlock()
 	now, err := db.CurrentAccess(ctx, a.Cluster, a.User, a.Device)
@@ -84,8 +86,17 @@ func (db *DB) ReadReplica(ctx context.Context, a Access, w string, after uint64)
 		if err != nil {
 			return nil, err
 		}
+		if directory {
+			v.Devices = g.Devices
+		}
+		g.Devices = nil
 		g.Limits = nil // Preserve the v1 signed view representation for older peers.
 		v.Governance = &g
+	} else if directory {
+		v.Devices, err = readDirectory(ctx, db.sql, a, w, false)
+		if err != nil {
+			return nil, err
+		}
 	}
 	rows, err := db.sql.QueryContext(ctx, `SELECT DISTINCT s.pool FROM pool_services s WHERE s.cluster=? AND s.service=? AND
  (? OR EXISTS(SELECT 1 FROM effective_pool_grants g WHERE g.cluster=s.cluster AND g.pool=s.pool AND g.service=s.service AND g.principal IN (?,'public'))) ORDER BY s.pool`, a.Cluster, HashService, now.Admin, a.User)

@@ -18,7 +18,7 @@ func (a *workerAuth) reconcile(w http.ResponseWriter, r *http.Request, access pe
 		respond(w, 400, map[string]string{"error": "invalid_sync_request"})
 		return
 	}
-	view, err := a.db.ReadReplica(r.Context(), access, identity.Fingerprint(keys.Public()), cursor.Revision)
+	view, err := a.db.ReadReplica(r.Context(), access, identity.Fingerprint(keys.Public()), cursor.Revision, r.Header.Get("Apparat-Device-Directory") == "1")
 	if err != nil {
 		respond(w, 403, map[string]string{"error": "access_denied"})
 		return
@@ -61,6 +61,9 @@ func (c *WorkerClient) Sync(ctx context.Context, db *persistence.DB) (int, error
 	sort.Strings(pools)
 	for start := 0; start == 0 || start < len(pools); start += 32 {
 		batch := persistence.SyncCursor{Revision: cursor.Revision, Queues: map[string]int64{}}
+		if c.directory && len(r.View.Devices) == 0 {
+			batch.Revision = 0
+		}
 		for _, pool := range pools[start:min(start+32, len(pools))] {
 			batch.Queues[pool] = cursor.Queues[pool]
 		}

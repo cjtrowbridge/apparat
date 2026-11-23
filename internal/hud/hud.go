@@ -36,6 +36,7 @@ type Section struct {
 	ActionID             string
 	ProjectID            string
 	SelectorSubtitle     string
+	SelectorIcon         string
 	Title                string
 	Description          string
 	Rows                 []Row

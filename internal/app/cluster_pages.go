@@ -118,6 +118,8 @@ func (b *clusterPageBuilder) settingsPage() error {
 				b.edit(label, "", "Transfer policy ordering to "+b.worker.Host+"?", identity.PolicyEdit{Kind: kind, Target: v.Worker, Value: v.Owner, Service: v.Authority})
 			}
 		}
+	case "device-pools":
+		return b.devicePools()
 	case "machine":
 		b.Title = b.worker.Host
 		value, label := "1", "Open registration"
@@ -151,6 +153,7 @@ func (b *clusterPageBuilder) settingsPage() error {
 			b.poolAccess()
 			break
 		}
+		b.poolDevices()
 		quota := v.Limits[r.Pool]
 		if quota > 0 {
 			b.Detail += "\nActive tasks per user: " + strconv.Itoa(quota)
@@ -238,4 +241,46 @@ func (b *clusterPageBuilder) people() error {
 		return errors.New("user unavailable")
 	}
 	return nil
+}
+
+func (b *clusterPageBuilder) poolDevices() {
+	names := []string{}
+	for _, d := range b.view.Devices {
+		if slices.Contains(d.Pools, b.route.Pool) {
+			name := d.DisplayName(b.worker.Host)
+			names = append(names, name)
+			b.link(name+" · Pools", "device-pools", "", d.ID)
+		}
+	}
+	if len(names) == 0 {
+		b.Detail += "\nDevices: none assigned"
+	} else {
+		b.Detail += "\nDevices: " + strings.Join(names, ", ")
+	}
+}
+
+func (b *clusterPageBuilder) devicePools() error {
+	for _, d := range b.view.Devices {
+		if d.ID != b.route.Target {
+			continue
+		}
+		b.Title = d.DisplayName(b.worker.Host) + " · Pools"
+		b.Detail = "Select the pools this device should take requests from."
+		if !d.Worker {
+			b.Detail += " GUI assignments are saved for future request handling."
+		}
+		for _, pool := range b.view.Pools {
+			on := slices.Contains(d.Pools, pool)
+			_, value := toggle(on, "", "")
+			edit := identity.PolicyEdit{Kind: "gui_pool", Pool: pool, Target: d.ID, Value: value}
+			if d.Worker {
+				edit.Kind = "pool_service"
+				edit.Service = persistence.HashService
+			}
+			b.edit(pool, "", "", edit)
+			b.Options[len(b.Options)-1].Checked = &on
+		}
+		return nil
+	}
+	return errors.New("device unavailable")
 }

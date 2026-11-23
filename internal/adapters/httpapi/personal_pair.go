@@ -9,14 +9,20 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 	"math/big"
 	"net"
+	"os"
+	"runtime"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/bytemare/opaque"
 )
@@ -240,7 +246,8 @@ func PairTLS(conn net.Conn, device *identity.Session, sending bool) (*tls.Conn, 
 	if sending {
 		local, remote = remote, local
 	}
-	leaf, err := nodeCertificate(device, local)
+	host, _ := os.Hostname()
+	leaf, err := namedCertificate(device, local, pkix.Name{CommonName: claimDNS, Organization: []string{host}, OrganizationalUnit: []string{runtime.GOOS}})
 	if err != nil {
 		return nil, err
 	}
@@ -268,4 +275,17 @@ func pairDevice(state tls.ConnectionState) ed25519.PublicKey {
 	}
 	pub, _ := state.PeerCertificates[1].PublicKey.(ed25519.PublicKey)
 	return pub
+}
+
+func PairedPeer(conn *tls.Conn) domain.PoolDevice {
+	st := conn.ConnectionState()
+	d := domain.PoolDevice{ID: identity.Fingerprint(pairDevice(st))}
+	subject := st.PeerCertificates[0].Subject
+	if len(subject.Organization) == 1 && len(subject.Organization[0]) <= 255 && strings.IndexFunc(subject.Organization[0], unicode.IsControl) < 0 {
+		d.Host = subject.Organization[0]
+	}
+	if len(subject.OrganizationalUnit) == 1 && len(subject.OrganizationalUnit[0]) <= 32 && strings.IndexFunc(subject.OrganizationalUnit[0], unicode.IsControl) < 0 {
+		d.OS = subject.OrganizationalUnit[0]
+	}
+	return d
 }

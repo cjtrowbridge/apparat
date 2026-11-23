@@ -122,6 +122,14 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			kind = "project"
 		}
 		path := tab.Title() + " / " + s.Title
+		for _, opt := range g.devicePoolLinks(s.ActionID) {
+			key, _ := json.Marshal(opt.Route)
+			add("device-pools", owner, string(key), opt.Label+" for "+s.Title, path+" / "+opt.Label, func() {
+				g.selectTab(index, nil)
+				g.selectSection(tab.ID(), i)
+				g.clusterOpen(opt.Route)
+			})
+		}
 		check := g.workerAction(s.ActionID, g.runtimeInfo.CheckWorker)
 		if tab.ID() == hud.TabCluster && check != nil {
 			add("check-worker-access", owner, s.ActionID, "Check my access to "+s.Title, path+" / Check my access", check)

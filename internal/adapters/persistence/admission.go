@@ -102,7 +102,7 @@ func (db *DB) Login(ctx context.Context, l identity.Login) (Access, error) {
 		}
 	}
 	binding, _ := json.Marshal(l.Device)
-	_, err = tx.ExecContext(ctx, "INSERT INTO cluster_devices_authorized(cluster,user_id,device_id,public_binding,hostname) VALUES(?,?,?,?,?) ON CONFLICT(cluster,user_id,device_id) DO UPDATE SET hostname=excluded.hostname", a.Cluster, a.User, a.Device, binding, l.Hostname)
+	_, err = tx.ExecContext(ctx, "INSERT INTO cluster_devices_authorized(cluster,user_id,device_id,public_binding,hostname,platform) VALUES(?,?,?,?,?,?) ON CONFLICT(cluster,user_id,device_id) DO UPDATE SET hostname=excluded.hostname,platform=CASE WHEN excluded.platform='' THEN platform ELSE excluded.platform END", a.Cluster, a.User, a.Device, binding, l.Hostname, l.Platform)
 	if err != nil {
 		return Access{}, err
 	}

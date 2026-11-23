@@ -5,6 +5,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 
 	"errors"
@@ -35,7 +36,7 @@ func (db *DB) KnownWorkers(ctx context.Context, user string) ([]domain.ClusterDe
 func (db *DB) WorkerSummaries(ctx context.Context, user, device string) ([]domain.ClusterDevice, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT w.worker,w.host,w.address,w.cluster,coalesce(r.revision,0),
  coalesce(json_extract(r.body,'$.View.Governance.Head.Revision'),0),coalesce(json_extract(r.body,'$.View.Admin'),0),
- coalesce(json_array_length(r.body,'$.View.Pools'),0),coalesce(json_extract(r.body,'$.View.PollSeconds'),0)
+ coalesce(json_array_length(r.body,'$.View.Pools'),0),coalesce(json_extract(r.body,'$.View.PollSeconds'),0),coalesce(json_extract(r.body,'$.View.Devices'),'[]'),coalesce(json_extract(r.body,'$.View.Governance.Pools'),json_extract(r.body,'$.View.Pools'),'[]')
  FROM claimed_workers w LEFT JOIN worker_replicas r ON r.worker=w.worker AND r.user=w.owner AND r.device=?
  WHERE w.owner=? ORDER BY host COLLATE NOCASE,w.worker`, device, user)
 	if err != nil {
@@ -45,7 +46,15 @@ func (db *DB) WorkerSummaries(ctx context.Context, user, device string) ([]domai
 	var devices []domain.ClusterDevice
 	for rows.Next() {
 		var d domain.ClusterDevice
-		err = rows.Scan(&d.Fingerprint, &d.Host, &d.Address, &d.Cluster, &d.ReplicaRevision, &d.PolicyRevision, &d.Admin, &d.PoolCount, &d.PollSeconds)
+		var roster, pools string
+		err = rows.Scan(&d.Fingerprint, &d.Host, &d.Address, &d.Cluster, &d.ReplicaRevision, &d.PolicyRevision, &d.Admin, &d.PoolCount, &d.PollSeconds, &roster, &pools)
+		if err == nil {
+			err = json.Unmarshal([]byte(roster), &d.Roster)
+		}
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal([]byte(pools), &d.PoolNames)
 		if err != nil {
 			return nil, err
 		}

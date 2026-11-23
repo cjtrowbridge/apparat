@@ -113,6 +113,7 @@ type Game struct {
 	activeTabID                    atomic.Value
 	updateStatus                   atomic.Value
 	updateButton                   *widget.Button
+	updateButtonStatus             string
 	updateDetail                   *widget.Text
 	onCheckForUpdate               func() bool
 	discovery                      updateDiscovery
@@ -250,9 +251,9 @@ func (game *Game) applyUpdateStatus() {
 		if game.desktopUpdates != nil {
 			game.updateButton.GetWidget().Disabled = game.desktopUpdates.busy
 		}
-		text := game.updateButton.Text()
-		if text == nil || text.Label != status {
-			game.updateButton.SetText(status)
+		if game.updateButtonStatus != status {
+			game.updateButtonStatus = status
+			game.updateButton.SetText(game.updateLabel(status))
 			game.ui.Container.RequestRelayout()
 		}
 	}

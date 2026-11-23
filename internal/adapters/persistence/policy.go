@@ -105,6 +105,8 @@ func applyEdit(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
 			return errors.New("pool required")
 		}
 		result, err = tx.ExecContext(ctx, "INSERT INTO cluster_pools(cluster,pool) VALUES(?,?)", e.Cluster, e.Pool)
+	case "gui_pool":
+		result, err = guiPoolEdit(ctx, tx, e)
 	case "pool_service", "pool_grant":
 		if e.Pool == "" || e.Target == "" || e.Service == "" || e.Value != "add" && e.Value != "remove" {
 			return errors.New("invalid pool membership")

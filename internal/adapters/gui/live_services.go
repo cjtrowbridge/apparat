@@ -74,21 +74,26 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 		return game.projectTab(tab)
 	}
 	if tab.ID() == hud.TabCluster && game.runtimeInfo.Queries != nil {
-		tab.Summary = "Known devices are saved on this installation. Routing, tasks and inference types show examples."
+		tab.Summary = "Browse saved devices and pool assignments. Tasks and inference types show examples."
 		sections := []hud.Section{game.liveServicesSection()}
 		for _, s := range tab.Sections {
 			if s.Title == "Cluster Devices" && s.IsSelectorHeading() {
 				switch {
 				case game.serviceProjection.DeviceError:
 					s.Description = "Could not load saved devices."
-				case len(game.serviceProjection.Devices) == 0:
+				case len(game.serviceProjection.Devices) == 0 && len(game.serviceProjection.Peers) == 0:
 					s.Description = "Use Add New Device to find a worker."
 				default:
-					s.Description = "Previously authenticated workers."
+					s.Description = "Personal app devices appear above headless workers."
 				}
 			}
+			if s.Title == "Tasks" && s.IsSelectorHeading() {
+				sections = append(sections, game.customPools()...)
+			}
+			s = game.routingMembers(s)
 			sections = append(sections, s)
 			if s.ActionID == "add-new-device" {
+				sections = append(sections, game.personalSections()...)
 				for _, d := range game.serviceProjection.Devices {
 					rows := []hud.Row{{Label: "Last known endpoint", Detail: d.Address}, {Label: "Worker fingerprint", Detail: d.Fingerprint}, {Label: "Cluster", Detail: d.Cluster}}
 					if d.ReplicaRevision > 0 {

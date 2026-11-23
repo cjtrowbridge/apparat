@@ -54,7 +54,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			}
 			continue
 		}
-		if subtitle != nil || hasIcon {
+		if subtitle != nil || hasIcon || section.SelectorIcon != "" {
 			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
 				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 			btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
@@ -62,8 +62,12 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			if subtitle != nil {
 				row.AddChild(subtitle)
 			}
-			if hasIcon {
-				row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon("1f9e0")),
+			if hasIcon || section.SelectorIcon != "" {
+				icon := section.SelectorIcon
+				if icon == "" {
+					icon = "1f9e0"
+				}
+				row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon(icon)),
 					widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
 						HorizontalPosition: widget.AnchorLayoutPositionEnd, VerticalPosition: widget.AnchorLayoutPositionCenter,
 						Padding: &widget.Insets{Right: 12},

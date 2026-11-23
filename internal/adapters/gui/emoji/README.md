@@ -19,3 +19,5 @@ Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 - `2795.png`: ➕ prefix for pinned repository actions, from the same Twemoji release. The renderer tints it white for contrast.
 
 - `270f.png`: Twemoji pencil, for editing the displayed personal screen name.
+
+- `1f4f1.png` and `1f4bb.png` are the mobile phone and laptop from the same Twemoji release. They identify the operating system reported by an authenticated GUI installation.

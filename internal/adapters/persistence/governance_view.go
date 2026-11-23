@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
@@ -16,6 +17,7 @@ type Member struct {
 }
 type Membership struct{ Pool, Service, Principal string }
 type GovernanceView struct {
+	Devices                           []domain.PoolDevice `json:",omitempty"`
 	Epoch                             uint64
 	Groups                            []string
 	Memberships                       []GroupMember
@@ -122,6 +124,9 @@ func (db *DB) Governance(ctx context.Context, a Access) (GovernanceView, error) 
 	err = rows.Err()
 	if err == nil {
 		err = v.readGroups(ctx, tx)
+	}
+	if err == nil {
+		v.Devices, err = readDirectory(ctx, tx, a, v.Worker, true)
 	}
 	return v, err
 }

@@ -16,6 +16,7 @@ type Login struct {
 	Device          SignedBinding
 	Worker          string
 	Hostname        string
+	Platform        string `json:",omitempty"`
 	Challenge       string
 	UserSignature   []byte
 	DeviceSignature []byte
@@ -29,14 +30,14 @@ func (l Login) message() []byte {
 }
 
 func (l Login) Valid() bool {
-	if l.Hostname == "" || len(l.Hostname) > 255 || strings.IndexFunc(l.Hostname, unicode.IsControl) >= 0 || len(l.Worker) != 43 || len(l.Challenge) != 43 || !l.Profile.Valid() || !l.Device.Valid() || !l.Profile.Profile.Public.Equal(l.Device.Binding.User) {
+	if len(l.Platform) > 32 || strings.IndexFunc(l.Platform, unicode.IsControl) >= 0 || l.Hostname == "" || len(l.Hostname) > 255 || strings.IndexFunc(l.Hostname, unicode.IsControl) >= 0 || len(l.Worker) != 43 || len(l.Challenge) != 43 || !l.Profile.Valid() || !l.Device.Valid() || !l.Profile.Profile.Public.Equal(l.Device.Binding.User) {
 		return false
 	}
 	data := l.message()
 	return ed25519.Verify(l.Device.Binding.User, data, l.UserSignature) && ed25519.Verify(l.Device.Binding.Device, data, l.DeviceSignature)
 }
 
-func (p *Personal) SignLogin(device *Session, worker, challenge string) (Login, error) {
+func (p *Personal) SignLogin(device *Session, worker, challenge string, platform ...string) (Login, error) {
 	profile, binding, err := p.Credentials(device.Public())
 	if err != nil {
 		return Login{}, err
@@ -46,6 +47,9 @@ func (p *Personal) SignLogin(device *Session, worker, challenge string) (Login, 
 		return Login{}, err
 	}
 	login := Login{Hostname: host, Profile: profile, Device: binding, Worker: worker, Challenge: challenge}
+	if len(platform) > 0 {
+		login.Platform = platform[0]
+	}
 	message := login.message()
 	p.mu.Lock()
 	if len(p.key) == 0 {

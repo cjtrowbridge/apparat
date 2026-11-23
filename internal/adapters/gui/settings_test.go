@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"github.com/cjtrowbridge/apparat/internal/hud"
 	"io"
 	"math"
 	"net/http"
@@ -259,5 +260,29 @@ func TestPersonalIdentityShowsNameAndPencil(t *testing.T) {
 	collectTargets(card, &targets)
 	if len(targets) != 1 {
 		t.Fatal("expected one focusable pencil")
+	}
+}
+
+func TestUpdateLabelFitsAfterChange(t *testing.T) {
+	for _, width := range []int{320, 1100} {
+		g := NewGame()
+		g.SetOnCheckForUpdate(func() bool {
+			return true
+		})
+		selectTabThroughStrip(t, g, hud.TabSettings)
+		g.Layout(width, 720)
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		for _, label := range []string{"Checking…", "Download update", "Unable to check for updates"} {
+			g.updateStatus.Store(updateStatus{Label: label})
+			g.applyUpdateStatus()
+			renderNavigation(g)
+			w, h := g.updateButton.Text().PreferredSize()
+			box := g.updateButton.GetWidget().Rect
+			pad := g.theme.ButtonTheme.TextPadding
+			if w+pad.Left+pad.Right > box.Dx() || h+pad.Top+pad.Bottom > box.Dy() {
+				t.Fatalf("width %d, label %q measured %dx%d inside %v", width, label, w, h, box)
+			}
+		}
 	}
 }

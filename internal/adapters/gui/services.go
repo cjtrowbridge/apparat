@@ -15,6 +15,7 @@ type ServiceQueries interface {
 }
 type ServiceProjection struct {
 	Devices     []domain.ClusterDevice
+	Peers       []domain.PoolDevice
 	ScreenName  string
 	DeviceError bool
 	Services    []domain.Service
@@ -40,6 +41,14 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 			if ok {
 				devices, deviceErr = q.KnownWorkers(queryCtx)
 			}
+			var peers []domain.PoolDevice
+			var peerErr error
+			pq, hasPeers := queries.(interface {
+				GUIPeers(context.Context) ([]domain.PoolDevice, error)
+			})
+			if hasPeers {
+				peers, peerErr = pq.GUIPeers(queryCtx)
+			}
 			cancel()
 			if ctx.Err() != nil {
 				return
@@ -57,7 +66,7 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 				list[index].ObservedAt = 0
 			}
 
-			projection := ServiceProjection{Devices: devices, DeviceError: deviceErr != nil, Services: list, State: state}
+			projection := ServiceProjection{Devices: devices, Peers: peers, DeviceError: deviceErr != nil || peerErr != nil, Services: list, State: state}
 			profile, hasProfile := queries.(interface{ ScreenName() string })
 			if hasProfile {
 				projection.ScreenName = profile.ScreenName()

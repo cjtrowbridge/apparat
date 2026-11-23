@@ -33,3 +33,25 @@ func TestClusterSettingsNavigation(t *testing.T) {
 		}
 	}
 }
+
+func TestDeviceDirectoryPoolNavigation(t *testing.T) {
+	g := NewGame()
+	roster := []domain.PoolDevice{{ID: "d", Host: "Phone", OS: "android", Pools: []string{"Chat Pool"}}, {ID: "w", Worker: true}}
+	g.serviceProjection.Devices = []domain.ClusterDevice{{Fingerprint: "w", Host: "Worker", Admin: true, Roster: roster}}
+	rows := g.personalSections()
+	if len(rows) != 1 || rows[0].SelectorIcon != "1f4f1" {
+		t.Fatal(rows)
+	}
+	opts := g.devicePoolLinks(rows[0].ActionID)
+	if len(opts) != 1 || opts[0].Route.Target != "d" || opts[0].Route.Worker != "w" {
+		t.Fatal(opts)
+	}
+	section := g.routingMembers(hud.Section{ActionID: "chat-pool"})
+	if len(section.Rows) != 2 || section.Rows[1].Detail != "Phone" {
+		t.Fatal(section)
+	}
+	g.serviceProjection.Devices[0].Admin = false
+	if len(g.devicePoolLinks("gui-d")) != 0 {
+		t.Fatal("nonadmin pool editor")
+	}
+}

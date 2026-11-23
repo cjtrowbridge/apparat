@@ -51,3 +51,6 @@ Release 0.1.55 (2c13049) passed canonical Linux GUI, Linux worker and Android de
 Items 1 and 2 use the first-device/join setup choice, explicit system unlock consent and a four-digit code from each device for a single, time-limited pairing attempt.
 
 Android launch sessions retain unlocked identities across background/resume. Share the device’s Keystore-gated unlock with an opted-in local personal identity, migrate independent references, and verify a cold restart and warm return. Show the active signed screen name with an adjacent pencil in Settings.
+
+### Device directory and pool selection
+Extend Phase 10 personal cluster governance with a signed, cached directory of approved GUI devices, platform badges, pool member lists and administrator-only pool checkboxes. Preserve legacy logins and replica signatures during rolling updates. Show configured membership independently of future GUI execution and remote project access. Verify worker policy, responsive HUD controls, updater label sizing and canonical target delivery.

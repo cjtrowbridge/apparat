@@ -102,7 +102,7 @@ func (a *workerAuth) route(w http.ResponseWriter, r *http.Request, keys *identit
 		if key == "" {
 			respond(w, 429, map[string]string{"error": "busy"})
 		} else {
-			respond(w, 200, map[string]string{"worker": worker, "challenge": key})
+			respond(w, 200, map[string]string{"worker": worker, "challenge": key, "directory": "1"})
 		}
 	case "/v1/auth":
 		var l identity.Login

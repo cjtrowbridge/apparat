@@ -348,10 +348,10 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 				updateLabel = "Check for update"
 			}
 			updateBtn := widget.NewButton(
-				widget.ButtonOpts.Text(updateLabel, game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
+				widget.ButtonOpts.Text(game.updateLabel(updateLabel), game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor),
 				widget.ButtonOpts.Image(game.theme.ButtonTheme.Image),
 				widget.ButtonOpts.TextPadding(game.theme.ButtonTheme.TextPadding),
-				widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
+				widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 				widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 					if game.bodySelectionSuppressed() {
 						return
@@ -360,6 +360,7 @@ func (game *Game) buildSettingsContent(tabData hud.Tab) *widget.Container {
 					game.applyUpdateStatus()
 				}),
 			)
+			game.updateButtonStatus = updateLabel
 			game.updateButton = updateBtn
 			sectionContainer.AddChild(updateBtn)
 			game.updateDetail = game.hudText(game.UpdateStatusDetail())

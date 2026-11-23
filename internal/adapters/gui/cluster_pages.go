@@ -154,6 +154,9 @@ func (g *Game) clusterBack() {
 	g.cluster.stack = s[:len(s)-1]
 	f := g.clusterTop()
 	if f != nil {
+		if f.route.Page == "pool" && s[len(s)-1].route.Page == "device-pools" {
+			g.clusterLoad()
+		}
 		if g.nav.memory != nil {
 			g.nav.memory[hud.TabCluster] = f.focus
 		}
@@ -234,6 +237,22 @@ func (g *Game) clusterContent(c *widget.Container) {
 		})
 	} else {
 		for _, opt := range f.page.Options {
+			if opt.Checked != nil {
+				label := wrapSelectorLabel(opt.Label, *g.theme.ButtonTheme.TextFace, int(g.detailTextMaxWidth())-36)
+				c.AddChild(widget.NewCheckbox(
+					widget.CheckboxOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.LabelTheme.Color),
+					widget.CheckboxOpts.Image(g.theme.CheckboxTheme.Image),
+					widget.CheckboxOpts.InitialState(checkedState(*opt.Checked)),
+					widget.CheckboxOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
+					widget.CheckboxOpts.StateChangedHandler(func(a *widget.CheckboxChangedEventArgs) {
+						if !g.bodySelectionSuppressed() && (a.State == widget.WidgetChecked) != *opt.Checked {
+							g.clusterSelect(opt)
+						} else {
+							g.layoutDirty = true
+						}
+					})))
+				continue
+			}
 			g.projectButton(c, opt.Label, func() {
 				g.clusterSelect(opt)
 			})

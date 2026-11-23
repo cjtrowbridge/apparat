@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"net"
 	"os"
 	"path/filepath"
@@ -111,6 +112,9 @@ func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog
 			return n.Personal.PairOffer(httpapi.PairDeviceKey(wire), devices)
 		})
 		if err == nil {
+			err = n.rememberGUIPeer(localCtx, httpapi.PairedPeer(wire))
+		}
+		if err == nil {
 			nativeQuestion(dialog, "notice", "Personal pairing", "Encrypted identity delivered. Finish unlocking it on the other device.")
 		}
 		return err
@@ -157,6 +161,9 @@ func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog
 	}
 	n.mu.Unlock()
 	if err == nil {
+		err = n.rememberGUIPeer(localCtx, httpapi.PairedPeer(wire))
+	}
+	if err == nil {
 		n.Personal.OfferPairedUnlock(dialog, password, n.personalUnlockDevice())
 	}
 	return err
@@ -167,4 +174,24 @@ func (n *Runtime) personalUnlockDevice() *identity.Session {
 		return n.Keys
 	}
 	return nil
+}
+
+func (n *Runtime) rememberGUIPeer(ctx context.Context, d domain.PoolDevice) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.database == nil {
+		return domain.ErrUnavailable
+	}
+	return n.database.RememberGUIPeer(ctx, n.Personal.Fingerprint(), d)
+}
+func (n *Runtime) GUIPeers(ctx context.Context) ([]domain.PoolDevice, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.database == nil {
+		return nil, domain.ErrUnavailable
+	}
+	if n.Personal == nil {
+		return nil, nil
+	}
+	return n.database.GUIPeers(ctx, n.Personal.Fingerprint())
 }

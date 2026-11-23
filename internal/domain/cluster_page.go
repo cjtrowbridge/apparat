@@ -8,6 +8,7 @@ type ClusterRoute struct {
 	Worker, Page, Pool, Target string
 }
 type ClusterOption struct {
+	Checked        *bool
 	Label          string
 	Route          ClusterRoute
 	Input, Confirm string
@@ -22,4 +23,21 @@ type PoolDefault struct{ Name, Priority string }
 
 func DefaultPools() []PoolDefault {
 	return []PoolDefault{{"Chat Pool", "High"}, {"Project Pool", "Medium"}, {"Comrade Pool", "Low"}, {"Research Pool", "Last"}}
+}
+
+// PoolDevice is a worker's authorized roster entry. Empty OS denotes a legacy GUI.
+type PoolDevice struct {
+	ID, Host, OS string
+	Worker       bool
+	Pools        []string
+}
+
+func (d PoolDevice) DisplayName(workerHost string) string {
+	if d.Worker {
+		return workerHost
+	}
+	if d.Host != "" {
+		return d.Host
+	}
+	return "App device " + d.ID[:min(8, len(d.ID))]
 }

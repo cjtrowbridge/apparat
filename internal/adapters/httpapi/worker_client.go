@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"runtime"
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
@@ -22,11 +23,12 @@ import (
 var ErrDenied = errors.New("worker denied current access")
 
 type WorkerClient struct {
-	http   *http.Client
-	base   string
-	token  string
-	Worker string
-	Access persistence.Access
+	http      *http.Client
+	directory bool
+	base      string
+	token     string
+	Worker    string
+	Access    persistence.Access
 }
 
 func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal, device *identity.Session) (*WorkerClient, error) {
@@ -65,12 +67,16 @@ func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal
 	client := &WorkerClient{base: "https://" + address.String(), http: &http.Client{Timeout: 8 * time.Second, Transport: &http.Transport{TLSClientConfig: config, DisableKeepAlives: true}, CheckRedirect: func(*http.Request, []*http.Request) error {
 		return http.ErrUseLastResponse
 	}}}
-	var challenge struct{ Worker, Challenge string }
+	var challenge struct{ Worker, Challenge, Directory string }
 	err = client.call(ctx, "GET", "/v1/auth/challenge", nil, &challenge)
 	if err != nil || challenge.Worker != pin {
 		return nil, errors.New("worker challenge unavailable")
 	}
-	proof, err := person.SignLogin(device, pin, challenge.Challenge)
+	platform := ""
+	if challenge.Directory == "1" {
+		platform = runtime.GOOS
+	}
+	proof, err := person.SignLogin(device, pin, challenge.Challenge, platform)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +91,7 @@ func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal
 	if response.Access.User != identity.Fingerprint(proof.Profile.Profile.Public) || response.Access.Device != identity.Fingerprint(proof.Device.Binding.Device) {
 		return nil, errors.New("wrong authenticated identity")
 	}
+	client.directory = challenge.Directory == "1"
 	client.Worker = pin
 	client.token = response.Token
 	client.Access = response.Access
@@ -104,6 +111,7 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Apparat-Device-Directory", "1")
 	if input != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

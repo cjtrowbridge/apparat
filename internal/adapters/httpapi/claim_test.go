@@ -7,6 +7,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"net"
+	"runtime"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -208,6 +210,28 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	})
 	body, _ := json.Marshal(reply)
 	t.Logf("unchanged JSON object %d bytes before HTTP encoder newline, new TLS connection per request, concurrent full policy reads: median %v, p95 %v", len(body), timings[10], timings[18])
+	for _, value := range []string{"add", "remove"} {
+		edit := identity.PolicyEdit{Kind: "gui_pool", ID: "gui-" + value, Cluster: cluster, Base: page.Head.Revision, Pool: "Chat Pool", Target: other.Access.Device, Value: value}
+		receipt, err := session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		page.Head = persistence.PolicyCursor{Revision: edit.Base + 1, Hash: receipt.Hash()}
+		_, err = other.Sync(ctx, replicaDB)
+		if err != nil {
+			t.Fatal(err)
+		}
+		snapshot, _, err := replicaDB.LocalReplica(ctx, other.Worker, other.Access)
+		found := false
+		for _, d := range snapshot.View.Devices {
+			if d.ID == other.Access.Device {
+				found = d.Host != "" && d.OS == runtime.GOOS && slices.Contains(d.Pools, "Chat Pool") == (value == "add")
+			}
+		}
+		if err != nil || !found {
+			t.Fatal("device pool selection did not synchronize", err)
+		}
+	}
 	other.token = session.token
 	_, err = other.WhoAmI(ctx)
 	if err == nil {

@@ -66,9 +66,11 @@ type ClusterDevice struct {
 	Host            string
 	Address         string
 	Cluster         string
-	ReplicaRevision uint64 `json:"-"`
-	PolicyRevision  uint64 `json:"-"`
-	Admin           bool   `json:"-"`
-	PoolCount       int    `json:"-"`
-	PollSeconds     int    `json:"-"`
+	PoolNames       []string     `json:"-"`
+	Roster          []PoolDevice `json:"-"`
+	ReplicaRevision uint64       `json:"-"`
+	PolicyRevision  uint64       `json:"-"`
+	Admin           bool         `json:"-"`
+	PoolCount       int          `json:"-"`
+	PollSeconds     int          `json:"-"`
 }

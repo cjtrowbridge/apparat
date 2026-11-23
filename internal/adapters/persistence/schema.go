@@ -42,6 +42,7 @@ var migrations = []Migration{
 	{Version: 14, Name: "pool_task_queue", SQL: queueSchema},
 	{Version: 15, Name: "device_hostnames", SQL: "ALTER TABLE cluster_devices_authorized ADD COLUMN hostname TEXT NOT NULL DEFAULT ''"},
 	{Version: 16, Name: "worker_replicas", SQL: replicaSchema},
+	{Version: 17, Name: "pool_device_directory", SQL: directorySchema},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {

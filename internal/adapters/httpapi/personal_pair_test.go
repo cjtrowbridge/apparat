@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -95,7 +96,7 @@ func TestTransferPortableIdentityAndWorkerPin(t *testing.T) {
 		t.Fatal("wrong recovery password accepted")
 	}
 	peers, err := receiver.AcceptPair(packet, []byte("fixture password"), deviceB.Public())
-	if err != nil || source.Fingerprint() != receiver.Fingerprint() || len(peers) != 1 || peers[0] != want {
+	if err != nil || source.Fingerprint() != receiver.Fingerprint() || len(peers) != 1 || !reflect.DeepEqual(peers[0], want) {
 		t.Fatal("failed to restore user and worker", err)
 	}
 }

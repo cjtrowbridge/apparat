@@ -70,7 +70,7 @@ func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 
 func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionIndex int) (*widget.Button, *widget.Text) {
 	rightPadding := 12
-	if tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline) {
+	if section.SelectorIcon != "" || tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline) {
 		rightPadding += tabIconSize
 	}
 	padding := &widget.Insets{Left: 40, Right: rightPadding, Top: 12, Bottom: 12}
@@ -148,6 +148,11 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 				game.discoveryContent(detailContainer)
 			} else {
 				detailContainer.AddChild(game.buildSectionContainer(section))
+				for _, opt := range game.devicePoolLinks(section.ActionID) {
+					game.projectButton(detailContainer, opt.Label, func() {
+						game.clusterOpen(opt.Route)
+					})
+				}
 				check := game.workerAction(section.ActionID, game.runtimeInfo.CheckWorker)
 				if tabData.ID() == hud.TabCluster && check != nil {
 					game.projectButton(detailContainer, "Check my access", check)

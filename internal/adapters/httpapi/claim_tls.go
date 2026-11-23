@@ -37,6 +37,10 @@ func workerCertificate(keys *identity.Session) (tls.Certificate, error) {
 }
 
 func nodeCertificate(keys *identity.Session, usage x509.ExtKeyUsage) (tls.Certificate, error) {
+	return namedCertificate(keys, usage, pkix.Name{CommonName: claimDNS})
+}
+
+func namedCertificate(keys *identity.Session, usage x509.ExtKeyUsage, subject pkix.Name) (tls.Certificate, error) {
 	var empty tls.Certificate
 	now := time.Now()
 	issuer := &x509.Certificate{SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "Apparat worker identity"}, NotBefore: now.Add(-time.Minute), NotAfter: now.Add(24 * time.Hour), IsCA: true, BasicConstraintsValid: true, KeyUsage: x509.KeyUsageCertSign}
@@ -53,7 +57,7 @@ func nodeCertificate(keys *identity.Session, usage x509.ExtKeyUsage) (tls.Certif
 	if err != nil {
 		return empty, err
 	}
-	leaf := &x509.Certificate{SerialNumber: serial, Subject: pkix.Name{CommonName: claimDNS}, DNSNames: []string{claimDNS}, NotBefore: issuer.NotBefore, NotAfter: issuer.NotAfter, KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{usage}}
+	leaf := &x509.Certificate{SerialNumber: serial, Subject: subject, DNSNames: []string{claimDNS}, NotBefore: issuer.NotBefore, NotAfter: issuer.NotAfter, KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{usage}}
 	cert, err := x509.CreateCertificate(rand.Reader, leaf, issuer, public, key)
 	if err != nil {
 		return empty, err
