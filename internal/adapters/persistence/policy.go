@@ -53,7 +53,7 @@ func authorizeEdit(ctx context.Context, tx *sql.Tx, p identity.Proposal) error {
 }
 
 func applyEdit(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
-	if len(e.Target) > 256 || len(e.Service) > 128 || len(e.Pool) > 128 || len(e.Value) > 128 {
+	if len(e.Target) > 256 || len(e.Service) > 128 || len(e.Pool) > 128 || (e.Kind != "device_pools" && len(e.Value) > 128) {
 		return errors.New("policy value exceeds limit")
 	}
 	var result sql.Result
@@ -107,6 +107,8 @@ func applyEdit(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
 		result, err = tx.ExecContext(ctx, "INSERT INTO cluster_pools(cluster,pool) VALUES(?,?)", e.Cluster, e.Pool)
 	case "rename_device":
 		result, err = renameDevice(ctx, tx, e)
+	case "device_pools":
+		return replaceDevicePools(ctx, tx, e)
 	case "gui_pool":
 		result, err = guiPoolEdit(ctx, tx, e)
 	case "pool_service", "pool_grant":

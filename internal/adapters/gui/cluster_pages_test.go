@@ -5,9 +5,14 @@
 package gui
 
 import (
+	"context"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/ebitenui/ebitenui/event"
+	"github.com/ebitenui/ebitenui/widget"
+	"slices"
 	"testing"
+	"time"
 )
 
 func TestClusterSettingsNavigation(t *testing.T) {
@@ -55,5 +60,68 @@ func TestDeviceDirectoryPoolNavigation(t *testing.T) {
 	g.serviceProjection.Devices[0].Admin = false
 	if len(g.deviceManagementLinks("gui-d")) != 0 {
 		t.Fatal("nonadmin pool editor")
+	}
+}
+
+func TestPoolSelectionSaveAndCancel(t *testing.T) {
+	for _, button := range []string{"Cancel", "Save changes"} {
+		g := NewGame()
+		saved := make(chan []string, 1)
+		page := domain.ClusterPage{Pools: []string{"Chat", "Research"}, Assigned: []string{"Chat"}, SavePools: func(_ context.Context, p []string) error {
+			saved <- p
+			return nil
+		}}
+		selectTabThroughStrip(t, g, hud.TabCluster)
+		g.clusterPush(clusterFrame{route: domain.ClusterRoute{Page: "device-pools"}, page: page, selectedPools: map[string]bool{"Chat": true}})
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		var checks []*widget.Checkbox
+		for _, w := range g.cluster.pane.GetFocusers() {
+			c, ok := w.(*widget.Checkbox)
+			if ok {
+				checks = append(checks, c)
+			}
+		}
+		if len(checks) != 2 || checks[0].State() != widget.WidgetChecked || checks[1].State() == widget.WidgetChecked {
+			t.Fatal("expected saved pool checks")
+		}
+		iw, _ := g.theme.CheckboxTheme.Image.Unchecked.MinSize()
+		if iw < 16 {
+			t.Fatal("invisible checkbox")
+		}
+		checks[0].SetState(widget.WidgetUnchecked)
+		checks[1].SetState(widget.WidgetChecked)
+		event.ExecuteDeferred()
+		if len(saved) != 0 || g.cluster.pending != nil {
+			t.Fatal("checkbox submitted a change")
+		}
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		var action *widget.Button
+		for _, w := range g.cluster.pane.GetFocusers() {
+			b, ok := w.(*widget.Button)
+			if ok && b.Text() != nil && b.Text().Label == button {
+				action = b
+			}
+		}
+		if action == nil {
+			t.Fatal("missing action", button)
+		}
+		action.Click()
+		event.ExecuteDeferred()
+		if button == "Cancel" {
+			if g.clusterTop() != nil || len(saved) != 0 {
+				t.Fatal("cancel submitted or retained draft")
+			}
+		} else {
+			select {
+			case p := <-saved:
+				if !slices.Equal(p, []string{"Research"}) {
+					t.Fatal("wrong saved selection", p)
+				}
+			case <-time.After(time.Second):
+				t.Fatal("save did not submit")
+			}
+		}
 	}
 }

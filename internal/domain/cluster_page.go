@@ -8,7 +8,6 @@ type ClusterRoute struct {
 	Worker, Page, Pool, Target string
 }
 type ClusterOption struct {
-	Checked        *bool
 	Label          string
 	Route          ClusterRoute
 	Input, Confirm string
@@ -17,6 +16,9 @@ type ClusterOption struct {
 type ClusterPage struct {
 	Title, Detail string
 	Options       []ClusterOption
+	Pools         []string
+	Assigned      []string
+	SavePools     func(context.Context, []string) error
 }
 
 type PoolDefault struct{ Name, Priority string }

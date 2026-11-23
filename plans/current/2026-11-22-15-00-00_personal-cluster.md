@@ -58,3 +58,6 @@ Extend Phase 10 personal cluster governance with a signed, cached directory of a
 ### Meaningful device names
 Extend the Phase 10 cluster directory. Prompt for a missing or generic local hostname during setup, reuse it for login, pairing and announcements, and keep network lookup independent of the display name. Allow administrators on paired apps to rename a known device by fingerprint through signed policy. Verify legacy records, persistence across login, synchronization, and delivery.
 Mark the local fingerprint with a leading bullseye while retaining its trailing platform badge.
+
+### Stage and publish pool assignments
+Keep per-device checkbox edits in a right-column draft. Save all selected memberships as one revision-checked policy transaction on the ordering worker and verify them in another client's SQLite replica. Cancel and Back discard the draft. Exercise empty selections, failures and visible checkbox indicators.

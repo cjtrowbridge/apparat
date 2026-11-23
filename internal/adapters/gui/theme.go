@@ -15,6 +15,7 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	ebitentext "github.com/hajimehoshi/ebiten/v2/text/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"golang.org/x/image/font/basicfont"
 )
 
@@ -116,8 +117,8 @@ func createUITheme() *widget.Theme {
 
 	theme.CheckboxTheme = &widget.CheckboxParams{
 		Image: &widget.CheckboxImage{
-			Unchecked: image.NewNineSliceColor(panelBgColor),
-			Checked:   image.NewNineSliceColor(accentColor),
+			Unchecked: checkboxIndicator(false),
+			Checked:   checkboxIndicator(true),
 		},
 		Label: &widget.LabelParams{
 			Color: &widget.LabelColor{
@@ -220,4 +221,15 @@ func (g *Game) diffText(c *widget.Container, report string) {
 		block.WriteByte('\n')
 	}
 	flush()
+}
+
+func checkboxIndicator(checked bool) *image.NineSlice {
+	canvas := ebiten.NewImage(24, 44)
+	vector.StrokeRect(canvas, 2, 12, 20, 20, 2, mutedTextColor, true)
+	if checked {
+		vector.FillRect(canvas, 3, 13, 18, 18, activeTabColor, false)
+		vector.StrokeLine(canvas, 5, 21, 10, 26, 3, color.White, true)
+		vector.StrokeLine(canvas, 10, 26, 19, 17, 3, color.White, true)
+	}
+	return image.NewFixedNineSlice(canvas)
 }

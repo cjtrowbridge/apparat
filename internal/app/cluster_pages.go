@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -279,16 +280,33 @@ func (b *clusterPageBuilder) devicePools() error {
 		if !d.Worker {
 			b.Detail += " GUI assignments are saved for future request handling."
 		}
-		for _, pool := range b.view.Pools {
-			on := slices.Contains(d.Pools, pool)
-			_, value := toggle(on, "", "")
-			edit := identity.PolicyEdit{Kind: "gui_pool", Pool: pool, Target: d.ID, Value: value}
-			if d.Worker {
-				edit.Kind = "pool_service"
-				edit.Service = persistence.HashService
+		b.Pools = b.view.Pools
+		b.Assigned = d.Pools
+		v := b.view
+		id := commandID()
+		b.SavePools = func(ctx context.Context, pools []string) error {
+			value, err := json.Marshal(pools)
+			if err != nil {
+				return err
 			}
-			b.edit(pool, "", "", edit)
-			b.Options[len(b.Options)-1].Checked = &on
+			edit := identity.PolicyEdit{Kind: "device_pools", Target: d.ID, ID: id, Cluster: v.Cluster, Base: v.Head.Revision, Epoch: &v.Epoch, Value: string(value)}
+			_, err = b.client.ChangePolicy(ctx, b.runtime.Personal, b.runtime.Keys, edit, v.Head.Hash)
+			if err == nil {
+				n := b.runtime
+				n.mu.Lock()
+				db := n.database
+				n.mu.Unlock()
+				if db != nil {
+					_, _ = b.client.Sync(ctx, db)
+					n.mu.Lock()
+					if n.serviceManager != nil {
+						n.serviceManager.notify()
+					}
+					n.mu.Unlock()
+				}
+				n.RequestSync()
+			}
+			return err
 		}
 		return nil
 	}

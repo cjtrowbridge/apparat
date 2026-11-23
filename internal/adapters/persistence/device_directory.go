@@ -5,6 +5,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
@@ -95,4 +96,40 @@ func renameDevice(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) (sql.R
 	return tx.ExecContext(ctx, `INSERT INTO cluster_device_names(cluster,device,name) SELECT ?,?,?
  WHERE EXISTS(SELECT 1 FROM worker_cluster WHERE cluster=? AND worker=?) OR EXISTS(SELECT 1`+approvedDevices+` AND d.device_id=?)
  ON CONFLICT(cluster,device) DO UPDATE SET name=excluded.name`, e.Cluster, e.Target, e.Value, e.Cluster, e.Target, e.Cluster, e.Target)
+}
+
+// Replaces just the target's selectable assignments in the policy receipt transaction.
+// A missing pool, stale revision or ineligible target rolls back the entire edit.
+func replaceDevicePools(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
+	var pools []string
+	if json.Unmarshal([]byte(e.Value), &pools) != nil || pools == nil {
+		return errors.New("invalid pool selection")
+	}
+	var worker, approved bool
+	err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM worker_cluster WHERE cluster=? AND worker=?), EXISTS(SELECT 1`+approvedDevices+` AND d.device_id=?)`, e.Cluster, e.Target, e.Cluster, e.Target).Scan(&worker, &approved)
+	if err != nil {
+		return err
+	}
+	if !worker && !approved {
+		return errors.New("device is unavailable")
+	}
+	if worker {
+		_, err = tx.ExecContext(ctx, "DELETE FROM pool_services WHERE cluster=? AND worker=? AND service=?", e.Cluster, e.Target, HashService)
+	} else {
+		_, err = tx.ExecContext(ctx, "DELETE FROM gui_pool_devices WHERE cluster=? AND device=?", e.Cluster, e.Target)
+	}
+	if err != nil {
+		return err
+	}
+	for _, pool := range pools {
+		if worker {
+			_, err = tx.ExecContext(ctx, "INSERT INTO pool_services(cluster,pool,worker,service) VALUES(?,?,?,?)", e.Cluster, pool, e.Target, HashService)
+		} else {
+			_, err = tx.ExecContext(ctx, "INSERT INTO gui_pool_devices(cluster,pool,device) VALUES(?,?,?)", e.Cluster, pool, e.Target)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

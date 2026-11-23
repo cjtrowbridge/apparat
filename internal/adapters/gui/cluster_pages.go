@@ -9,6 +9,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
+	"slices"
 	"time"
 )
 
@@ -20,6 +21,7 @@ type clusterFrame struct {
 	page          domain.ClusterPage
 	form          *domain.ClusterOption
 	draft, notice string
+	selectedPools map[string]bool
 	scroll        float64
 	focus         focusBookmark
 }
@@ -130,6 +132,8 @@ func (g *Game) pollCluster() {
 		switch {
 		case response.err != nil:
 			f.notice = "Worker request failed. Refresh to check the current state. " + response.err.Error()
+		case response.edited && f.page.SavePools != nil:
+			g.clusterBack()
 		case response.edited:
 			if f.form != nil {
 				g.clusterBack()
@@ -137,6 +141,12 @@ func (g *Game) pollCluster() {
 			g.clusterLoad()
 		default:
 			f.page = response.page
+			if f.page.SavePools != nil {
+				f.selectedPools = make(map[string]bool)
+				for _, pool := range f.page.Assigned {
+					f.selectedPools[pool] = true
+				}
+			}
 			if f.route.Page == "rename" && len(f.page.Options) == 1 {
 				f.form = &f.page.Options[0]
 			}
@@ -231,6 +241,10 @@ func (g *Game) clusterContent(c *widget.Container) {
 		c.AddChild(g.detailText("Contacting worker…"))
 		return
 	}
+	if f.page.SavePools != nil {
+		g.poolControls(c, f)
+		return
+	}
 	if f.form != nil {
 		if f.form.Input != "" {
 			g.projectField(c, f.form.Input, &f.draft)
@@ -240,22 +254,6 @@ func (g *Game) clusterContent(c *widget.Container) {
 		})
 	} else {
 		for _, opt := range f.page.Options {
-			if opt.Checked != nil {
-				label := wrapSelectorLabel(opt.Label, *g.theme.ButtonTheme.TextFace, int(g.detailTextMaxWidth())-36)
-				c.AddChild(widget.NewCheckbox(
-					widget.CheckboxOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.LabelTheme.Color),
-					widget.CheckboxOpts.Image(g.theme.CheckboxTheme.Image),
-					widget.CheckboxOpts.InitialState(checkedState(*opt.Checked)),
-					widget.CheckboxOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
-					widget.CheckboxOpts.StateChangedHandler(func(a *widget.CheckboxChangedEventArgs) {
-						if !g.bodySelectionSuppressed() && (a.State == widget.WidgetChecked) != *opt.Checked {
-							g.clusterSelect(opt)
-						} else {
-							g.layoutDirty = true
-						}
-					})))
-				continue
-			}
 			g.projectButton(c, opt.Label, func() {
 				g.clusterSelect(opt)
 			})
@@ -285,4 +283,48 @@ func (game *Game) addHeading(shell *widget.Container, title string, id hud.TabID
 		game.cluster.gear = nil
 		shell.AddChild(heading)
 	}
+}
+
+func (g *Game) poolControls(c *widget.Container, f *clusterFrame) {
+	for _, pool := range f.page.Pools {
+		label := wrapSelectorLabel(pool, *g.theme.ButtonTheme.TextFace, int(g.detailTextMaxWidth())-36)
+		c.AddChild(widget.NewCheckbox(
+			widget.CheckboxOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.LabelTheme.Color),
+			widget.CheckboxOpts.Image(g.theme.CheckboxTheme.Image),
+			widget.CheckboxOpts.InitialState(checkedState(f.selectedPools[pool])),
+			widget.CheckboxOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
+			widget.CheckboxOpts.StateChangedHandler(func(a *widget.CheckboxChangedEventArgs) {
+				if g.bodySelectionSuppressed() {
+					g.layoutDirty = true
+					return
+				}
+				f.selectedPools[pool] = a.State == widget.WidgetChecked
+			})))
+	}
+	if f.notice != "" {
+		g.projectButton(c, "Reload saved selection", g.clusterLoad)
+	}
+	g.projectButton(c, "Save changes", func() {
+		g.savePoolSelection(f)
+	})
+	g.projectButton(c, "Cancel", g.clusterBack)
+}
+func (g *Game) savePoolSelection(f *clusterFrame) {
+	if g.clusterTop() != f || g.cluster.pending != nil {
+		return
+	}
+	selected := []string{}
+	for _, pool := range f.page.Pools {
+		if f.selectedPools[pool] {
+			selected = append(selected, pool)
+		}
+	}
+	if slices.Equal(selected, f.page.Assigned) {
+		g.clusterBack()
+		return
+	}
+	save := f.page.SavePools
+	g.clusterRequest(func(ctx context.Context) clusterResponse {
+		return clusterResponse{edited: true, err: save(ctx, selected)}
+	})
 }

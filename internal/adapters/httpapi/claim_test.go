@@ -263,6 +263,39 @@ func TestPinnedWorkerClaim(t *testing.T) {
 			t.Fatal("rename lost after login or sync", err)
 		}
 	}
+	for _, target := range []string{other.Access.Device, session.Worker} {
+		for _, want := range [][]string{{"Chat Pool", "Research Pool"}, {"Project Pool"}, {}} {
+			raw, _ := json.Marshal(want)
+			edit := identity.PolicyEdit{Kind: "device_pools", ID: target + string(raw), Target: target, Base: page.Head.Revision, Cluster: cluster, Value: string(raw)}
+			receipt, err := session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
+			if err != nil {
+				t.Fatal(err)
+			}
+			page.Head = persistence.PolicyCursor{Revision: edit.Base + 1, Hash: receipt.Hash()}
+			invalid := edit
+			invalid.Base = page.Head.Revision
+			invalid.ID += "invalid"
+			invalid.Value = `["Chat Pool","absent pool"]`
+			_, err = session.ChangePolicy(ctx, owner, client, invalid, page.Head.Hash)
+			if err == nil {
+				t.Fatal("accepted partial selection")
+			}
+			_, err = other.Sync(ctx, replicaDB)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cached, _, err := replicaDB.LocalReplica(ctx, other.Worker, other.Access)
+			found := false
+			for _, d := range cached.View.Devices {
+				if d.ID == target {
+					found = slices.Equal(d.Pools, want)
+				}
+			}
+			if err != nil || !found || cached.View.Governance.Head != page.Head {
+				t.Fatal("saved set not replicated atomically", err)
+			}
+		}
+	}
 	other.token = session.token
 	_, err = other.WhoAmI(ctx)
 	if err == nil {

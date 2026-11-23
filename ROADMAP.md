@@ -1785,7 +1785,7 @@ Implementation and acceptance are tracked in the [personal cluster execution pla
 The real primary Pixel and Steam Machine have authenticated as the same owner on trashcan0. The installed worker now orders policy changes, and the desktop verified the signed handoff receipt. With the Steam Machine offline, the Pixel created a pool, enabled its service and verified a signed task result. On return, the Steam Machine caught up through policy revision 3 and queue revision 3.
 
 - [x] Open Cluster settings from the heading gear, browse people, groups, pool policy and synchronization in detail pages, and keep everyday task access direct. Initialize the four routing pools at first claim and verify the installed cluster.
-- [x] Display the synchronized GUI roster above workers, identify reported mobile and desktop platforms, list pool members and let admins select each device’s pools. Prompt for missing device hostnames, synchronize administrator renames and mark the current device by fingerprint. GUI task execution and remote projects remain later deliverables.
+- [x] Display the synchronized GUI roster above workers, identify reported mobile and desktop platforms, list pool members and let admins stage each device’s pool choices, save one atomic replicated policy edit or cancel. Prompt for missing device hostnames, synchronize administrator renames and mark the current device by fingerprint. GUI task execution and remote projects remain later deliverables.
 
 ### Worker updates and future pool coordination
 
