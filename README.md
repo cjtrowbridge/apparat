@@ -43,7 +43,7 @@ This slice proves the HUD, controller input, identity, networking, API, persiste
 
 The game engine renders the application HUD and input system. For the MVP, there is no RPG world, quest system, progression system, or active gameplay layer. Comrades and Research are visible as future-facing tabs but are not actively developed beyond navigable placeholders.
 
-The GUI includes the offline STMPCK gallery on Linux and Android. Its 💉 tab sits immediately before Settings. Settings is always last when adding or reorganizing tabs.
+The GUI includes the offline STMPCK gallery on Linux and Android. Both targets import the shared game surface directly from the pinned upstream STMPCK submodule. Its 💉 tab sits immediately before Settings. Settings is always last when adding or reorganizing tabs.
 
 The canonical order is Comrades, Projects, Cluster, Research, STMPCK, Settings.
 

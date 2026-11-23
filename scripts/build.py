@@ -230,7 +230,7 @@ def build_patched_gomobile(go: str, source: Path) -> None:
     })
     patch_file(temp / "cmd" / "gomobile" / "bind.go", {
         "if f == nil {\n\t\t\treturn nil\n\t\t}":
-        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo {GO_TOOLCHAIN.removeprefix("go")}\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.10.6\\n)\\n\\nreplace ebe-boilerplate => {(ROOT / ".tmp/stmpck-module").as_posix()}\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {engine.as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
+        f'if f == nil {{\\n\\t\\t\\t_, err := io.WriteString(w, `module gomobilebind\\n\\ngo {GO_TOOLCHAIN.removeprefix("go")}\\n\\nrequire (\\n\\tgithub.com/cjtrowbridge/apparat v0.0.0\\n\\tgithub.com/ebitengine/gomobile {GOMOBILE_VERSION}\\n\\tgithub.com/hajimehoshi/ebiten/v2 v2.10.6\\n)\\n\\nreplace ebe-boilerplate => {(ROOT / "third_party/stmpck").as_posix()}\\nreplace github.com/cjtrowbridge/apparat => {ROOT.as_posix()}\\nreplace github.com/ebitengine/gomobile => {temp.as_posix()}\\nreplace github.com/hajimehoshi/ebiten/v2 => {engine.as_posix()}\\n`)\\n\\t\\t\\treturn err\\n\\t\\t}}'.replace("\\n", "\n").replace("\\t", "\t"),
     })
     PATCHED_GOMOBILE.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()

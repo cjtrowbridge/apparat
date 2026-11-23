@@ -157,7 +157,7 @@ Host formatting is scoped to `cmd/` and `internal/`; `make fmt` must not format 
 - `artifact_acceptance.py`: Internal artifact tests locate the 24-pixel Projects divider in the rendered desktop frame before dragging it. Linux uses Xvfb, xwininfo, libXtst, ImageMagick and Pillow. Android uses system ADB and one unlocked, authorized Pixel 4a with existing Apparat signing continuity. Reinstalls the ordinary package in place and opens Projects. Captures stay private in the run directory. A failed test prevents promotion.
 
 - `build_evidence.py`: Stages per-run candidates under .tmp/build-runs on the same filesystem, records checksums/tests, and promotes only complete runs. An interrupted promotion restores backups before the next build. The per-machine report is private; keep release metadata free of credentials.
-- `stmpck_sources.py`: Exports the indexed private STMPCK gitlink and applies the tracked embedding patch before Go tools run. Initialize third_party/stmpck recursively after cloning. The generated module lives under .tmp. Restore the pinned dependency if preparation fails.
+Desktop and Android read the same upstream STMPCK module directly from `third_party/stmpck`. The build gate checks that its importable surface is present and the checkout matches the staged pin. Initialize it with `git submodule update --init third_party/stmpck`.
 
 Linux GUI artifact acceptance opens STMPCK with Alt+5, starts Merge, makes moves and checks the isolated save for undo history. Gallery and board screenshots accompany each run.
 

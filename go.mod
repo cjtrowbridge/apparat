@@ -65,4 +65,4 @@ require (
 	golang.org/x/sys v0.47.0
 )
 
-replace ebe-boilerplate => ./.tmp/stmpck-module
+replace ebe-boilerplate => ./third_party/stmpck

@@ -32,7 +32,7 @@ class BuildGovernanceTest(unittest.TestCase):
     def test_valid_gate_runs_once_and_preserves_failure_status(self):
         with patch.object(sys, 'argv', ['build_gate.py', '--', 'compiler', 'input']), patch.object(
             build_gate.subprocess, 'run'
-        ), patch('scripts.stmpck_sources.prepare'), patch.object(build_gate.subprocess, 'call', return_value=9) as invoke:
+        ), patch.object(build_gate.subprocess, 'call', return_value=9) as invoke:
             self.assertEqual(build_gate.main(), 9)
             self.assertEqual(invoke.call_count, 1)
             self.assertEqual(invoke.call_args.args[0], ['compiler', 'input'])

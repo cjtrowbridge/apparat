@@ -44,11 +44,10 @@ def prepare():
     for command in checks:
         print(f'Build prerequisite: {Path(command[1]).name}', flush=True)
         subprocess.run(command, cwd=ROOT, env=env, check=True)
-    try:
-        from scripts.stmpck_sources import prepare as prepare_games
-    except ImportError:
-        from stmpck_sources import prepare as prepare_games
-    prepare_games()
+    source = ROOT / 'third_party/stmpck'
+    if not (source / 'surface/surface.go').is_file():
+        raise SystemExit('Initialize the pinned game source: git submodule update --init third_party/stmpck')
+    subprocess.run(['git', 'diff', '--exit-code', '--ignore-submodules=none', '--', 'third_party/stmpck'], cwd=ROOT, check=True)
     return env
 
 
