@@ -31,3 +31,5 @@ Later phases add inference, routing optimization, remote project browsing, leade
 - **Remaining acceptance.** Automatic policy and queue reconciliation, snapshots and permission changes, admin and pool controls, full queue lifecycle on hardware, authority recovery, and the overhead measurement remain open. Preserve the real worker ownership through each validation.
 
 The Linux-to-personal-app path now exchanges both codes over TLS-bound OPAQUE, verifies the intended receiving device and copies the password-encrypted identity plus the signed worker directory. A saved worker offers a protected access check. Physical pairing and automatic policy and queue replication remain separate acceptance checks.
+
+Queue heads now hydrate at startup and update under the writer lock after commit. Checking an unchanged authorized reader cursor skips the event table. The physical pairing test reached the Pixel’s missing device-key prerequisite. The pairing action now invokes normal key setup there and resumes on success.

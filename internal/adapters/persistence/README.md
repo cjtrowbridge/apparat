@@ -52,3 +52,4 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `pool_tasks.go`: Migration 14 creates one task table across pools, an attempt history, artifact references and ordered per-pool revisions. Hash-text admission checks membership, dispatch rechecks current grants, and stale or cancelled leases cannot commit results.
 - `pool_task_views.go`: Checks current admission and device authorization before returning a creator's task revisions or artifact reference.
 - `pool_tasks_test.go`: Covers denied pool access, duplicate submissions, expired leases, stale completion, result integrity and cross-user visibility.
+- `queue_heads.go`: Hydrates per-user pool cursors on startup and publishes new heads after commit. A synchronized reader checks its current grant and cached cursor without reading the event journal.

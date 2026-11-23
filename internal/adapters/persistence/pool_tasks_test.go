@@ -74,7 +74,20 @@ func TestHashTaskFencing(t *testing.T) {
 		t.Fatal("missing task history", err)
 	}
 	changes, err = db.QueueAfter(ctx, friend, "p", 0)
-	if err != nil || len(changes) != 0 {
+	if err == nil || len(changes) != 0 {
 		t.Fatal("task history leaked", err)
 	}
+	err = db.loadQueueHeads(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.sql.ExecContext(ctx, "ALTER TABLE pool_queue_events RENAME TO hidden_events")
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes, err = db.QueueAfter(ctx, owner, "p", 4)
+	if err != nil || len(changes) != 0 {
+		t.Fatal("unchanged cursor read the event table", err)
+	}
+
 }

@@ -49,20 +49,16 @@ func (db *DB) SubmitHash(ctx context.Context, a Access, pool, id, prompt string)
 	if len(prompt) > 4096 || len(id) == 0 || len(id) > 128 {
 		return errors.New("invalid hash task")
 	}
+	db.queueMu.Lock()
+	defer db.queueMu.Unlock()
 	tx, err := db.sql.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	var permitted bool
-	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM cluster_users u JOIN cluster_devices_authorized d USING(cluster,user_id)
-	WHERE u.cluster=? AND u.user_id=? AND d.device_id=? AND u.admission='approved' AND NOT EXISTS
-	(SELECT 1 FROM revoked_devices WHERE cluster=u.cluster AND device=d.device_id)
-	AND EXISTS(SELECT 1 FROM pool_services WHERE cluster=u.cluster AND pool=? AND service=?)
-	AND (u.admin=1 OR EXISTS(SELECT 1 FROM pool_grants WHERE cluster=u.cluster AND pool=? AND service=? AND principal IN (u.user_id,'public'))))`,
-		a.Cluster, a.User, a.Device, pool, HashService, pool, HashService).Scan(&permitted)
-	if err != nil || !permitted {
-		return errors.New("pool service is unavailable")
+	err = queueAccess(ctx, tx, a, pool)
+	if err != nil {
+		return err
 	}
 	now := time.Now().UnixMilli()
 	_, err = tx.ExecContext(ctx, `INSERT INTO pool_tasks(cluster,pool,id,creator,service,prompt,created_ms,updated_ms,state)
@@ -75,11 +71,13 @@ func (db *DB) SubmitHash(ctx context.Context, a Access, pool, id, prompt string)
 	if err != nil || !matches {
 		return errors.New("duplicate task ID conflicts")
 	}
-	return tx.Commit()
+	return db.commitQueue(ctx, tx, queueView{a.Cluster, pool, a.User})
 }
 
 func (db *DB) LeaseHash(ctx context.Context, cluster, pool, worker string, now time.Time) (Task, error) {
 	var t Task
+	db.queueMu.Lock()
+	defer db.queueMu.Unlock()
 	tx, err := db.sql.BeginTx(ctx, nil)
 	if err != nil {
 		return t, err
@@ -104,10 +102,12 @@ func (db *DB) LeaseHash(ctx context.Context, cluster, pool, worker string, now t
 	if err != nil {
 		return Task{}, err
 	}
-	return t, tx.Commit()
+	return t, db.commitQueue(ctx, tx, queueView{t.Cluster, t.Pool, t.Creator})
 }
 
 func (db *DB) CompleteHash(ctx context.Context, t Task, worker string, digest string, now time.Time) error {
+	db.queueMu.Lock()
+	defer db.queueMu.Unlock()
 	tx, err := db.sql.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -133,15 +133,21 @@ func (db *DB) CompleteHash(ctx context.Context, t Task, worker string, digest st
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+	return db.commitQueue(ctx, tx, queueView{t.Cluster, t.Pool, t.Creator})
 }
 
 func (db *DB) CancelTask(ctx context.Context, a Access, pool, id string) error {
+	db.queueMu.Lock()
+	defer db.queueMu.Unlock()
 	tx, err := db.sql.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+	err = queueAccess(ctx, tx, a, pool)
+	if err != nil {
+		return err
+	}
 	var fence int64
 	err = tx.QueryRowContext(ctx, "UPDATE pool_tasks SET state='cancelled',lease_until=0,updated_ms=? WHERE cluster=? AND pool=? AND id=? AND creator=? AND state IN ('running','queued') RETURNING fence", time.Now().UnixMilli(), a.Cluster, pool, id, a.User).Scan(&fence)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -153,5 +159,5 @@ func (db *DB) CancelTask(ctx context.Context, a Access, pool, id string) error {
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+	return db.commitQueue(ctx, tx, queueView{a.Cluster, pool, a.User})
 }

@@ -32,7 +32,10 @@ func (n *Runtime) PairDialog(ctx context.Context, network, host string, dialog i
 
 func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog identity.Dialog) error {
 	if len(n.Keys.Public()) == 0 {
-		return errors.New("Unlock your device identity first.")
+		n.Keys.Setup(dialog)
+		if len(n.Keys.Public()) == 0 {
+			return nil
+		}
 	}
 	var listener *net.UnixListener
 	if host == "" {

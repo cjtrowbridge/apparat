@@ -20,6 +20,8 @@ import (
 
 type DB struct {
 	sql         *sql.DB
+	queueMu     sync.RWMutex
+	queueHeads  map[queueView]int64
 	policyMu    sync.RWMutex
 	policyHeads map[string]PolicyCursor
 }

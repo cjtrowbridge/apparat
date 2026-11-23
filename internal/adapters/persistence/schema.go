@@ -48,5 +48,9 @@ func (db *DB) Migrate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return db.loadPolicyHeads(ctx)
+	err = db.loadPolicyHeads(ctx)
+	if err != nil {
+		return err
+	}
+	return db.loadQueueHeads(ctx)
 }

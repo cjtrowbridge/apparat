@@ -4,6 +4,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"time"
 )
@@ -14,14 +15,28 @@ type QueueChange struct {
 }
 
 func (db *DB) QueueAfter(ctx context.Context, a Access, pool string, after int64) ([]QueueChange, error) {
+	db.queueMu.RLock()
+	defer db.queueMu.RUnlock()
 	if after < 0 {
 		return nil, errors.New("invalid queue cursor")
 	}
-	_, err := db.CurrentAccess(ctx, a.Cluster, a.User, a.Device)
+	tx, err := db.sql.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.sql.QueryContext(ctx, `SELECT revision,task,state,fence,changed_ms FROM pool_queue_events
+	defer tx.Rollback()
+	err = queueAccess(ctx, tx, a, pool)
+	if err != nil {
+		return nil, err
+	}
+	head := db.queueHeads[queueView{a.Cluster, pool, a.User}]
+	if after == head {
+		return []QueueChange{}, nil
+	}
+	if after > head {
+		return nil, errors.New("unknown queue cursor")
+	}
+	rows, err := tx.QueryContext(ctx, `SELECT revision,task,state,fence,changed_ms FROM pool_queue_events
 	WHERE cluster=? AND pool=? AND creator=? AND revision>? ORDER BY revision LIMIT 64`, a.Cluster, pool, a.User, after)
 	if err != nil {
 		return nil, err
@@ -40,12 +55,17 @@ func (db *DB) QueueAfter(ctx context.Context, a Access, pool string, after int64
 }
 
 func (db *DB) ResultReference(ctx context.Context, a Access, pool, id string) (string, error) {
-	_, err := db.CurrentAccess(ctx, a.Cluster, a.User, a.Device)
+	tx, err := db.sql.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+	err = queueAccess(ctx, tx, a, pool)
 	if err != nil {
 		return "", err
 	}
 	var hash string
-	err = db.sql.QueryRowContext(ctx, `SELECT r.digest FROM pool_task_artifacts r JOIN pool_tasks t
+	err = tx.QueryRowContext(ctx, `SELECT r.digest FROM pool_task_artifacts r JOIN pool_tasks t
 	ON r.cluster=t.cluster AND r.pool=t.pool AND r.task=t.id
 	WHERE t.cluster=? AND t.pool=? AND t.id=? AND t.creator=? AND t.state='succeeded' AND r.slot='result'`, a.Cluster, pool, id, a.User).Scan(&hash)
 	return hash, err
