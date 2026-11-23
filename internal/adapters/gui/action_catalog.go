@@ -88,7 +88,14 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 		})
 		f := g.clusterTop()
 		if f != nil {
+			g.poolActions(add, index, f)
 			for _, o := range f.page.Options {
+				if o.Run != nil && o.Route.Page == "pool-add-user" {
+					add("pool-grant-confirm", o.Route.Worker, o.Route.Pool+"/"+o.Route.Target, o.Label, "Cluster / "+o.Route.Pool+" / Add authorized user / "+o.Label, func() {
+						g.selectTab(index, nil)
+						g.clusterSelect(o)
+					})
+				}
 				if o.Run == nil {
 					r := o.Route
 					key, _ := json.Marshal(r)
@@ -158,7 +165,7 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			if g.canOfferPair() {
 				add("personal-pair-offer", owner, g.lan.device, "Pair another personal device", path+" / Pair another personal device", g.offerPair)
 			}
-			for _, name := range g.lan.names {
+			for _, name := range g.discoverableNames() {
 				label := g.discoveryLabel(name)
 				if g.runtimeInfo.PairPersonal != nil {
 					add("personal-pair-receive", owner, g.lan.device+"/"+name, "Receive my identity from "+label, path+" / "+label+" / Receive my identity", func() {

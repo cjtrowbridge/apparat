@@ -5,6 +5,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 )
@@ -77,4 +78,31 @@ func (db *DB) MayDispatch(ctx context.Context, a Access, pool, worker string) bo
 	AND EXISTS(SELECT 1 FROM pool_tasks t WHERE t.cluster=s.cluster AND t.pool=s.pool AND t.creator=?
 	AND (t.state='queued' OR (t.state='running' AND lease_until<=?))))`, a.Cluster, pool, worker, HashService, a.User, time.Now().UnixMilli()).Scan(&allowed)
 	return err == nil && allowed
+}
+
+// LocalPoolTasks folds the synchronized event stream to one latest row per task.
+func (db *DB) LocalPoolTasks(ctx context.Context, worker string, a Access, pool string) ([]QueueChange, error) {
+	rows, err := db.sql.QueryContext(ctx, `WITH ranked AS (
+ SELECT body,row_number() OVER(PARTITION BY json_extract(body,'$.ID') ORDER BY revision DESC) AS n
+ FROM replica_queue WHERE worker=? AND user=? AND device=? AND pool=?)
+ SELECT body FROM ranked WHERE n=1`, worker, a.User, a.Device, pool)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var tasks []QueueChange
+	for rows.Next() {
+		var data []byte
+		var change QueueChange
+		err = rows.Scan(&data)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(data, &change)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, change)
+	}
+	return tasks, rows.Err()
 }

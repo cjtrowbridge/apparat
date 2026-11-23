@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"runtime"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -63,11 +64,14 @@ func (g *Game) discoveryContent(c *widget.Container) {
 		g.projectButton(c, "Pair another personal device", g.offerPair)
 	}
 	msg := g.lan.message
+	if len(g.lan.names) > 0 && len(g.discoverableNames()) == 0 {
+		msg = "Searching · no new hosts"
+	}
 	if msg == "" {
 		msg = "Select a network to browse."
 	}
 	c.AddChild(g.detailText(msg))
-	for _, name := range g.lan.names {
+	for _, name := range g.discoverableNames() {
 		width := max(1, g.detailPanePreferredWidth()-tabIconSize-48)
 		label := wrapSelectorLabel(g.discoveryLabel(name), *g.theme.ButtonTheme.TextFace, width)
 		btn := widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter), widget.ButtonOpts.TextPadding(&widget.Insets{Left: 12 + tabIconSize + 8, Right: 12, Top: 8, Bottom: 8}),
@@ -161,7 +165,7 @@ func (g *Game) receiveLAN(msg string) {
 }
 
 func (g *Game) openPeer(name string) {
-	if slices.Contains(g.lan.names, name) {
+	if slices.Contains(g.discoverableNames(), name) {
 		g.lan.selected = name
 		g.layoutDirty = true
 	}
@@ -225,7 +229,7 @@ func (g *Game) configureAPI() {
 }
 
 func (g *Game) beginClaim(host string) {
-	if g.runtimeInfo.ClaimHost != nil && slices.Contains(g.lan.names, host) {
+	if g.runtimeInfo.ClaimHost != nil && slices.Contains(g.discoverableNames(), host) {
 		go g.runtimeInfo.ClaimHost(g.lan.device, host)
 	}
 }
@@ -239,7 +243,7 @@ func (g *Game) offerPair() {
 	}
 }
 func (g *Game) pairFrom(host string) {
-	if g.runtimeInfo.PairPersonal != nil && slices.Contains(g.lan.names, host) {
+	if g.runtimeInfo.PairPersonal != nil && slices.Contains(g.discoverableNames(), host) {
 		go g.runtimeInfo.PairPersonal(g.lan.device, host)
 	}
 }
@@ -262,4 +266,28 @@ func (g *Game) openRequestedDiscovery() {
 			}
 		}
 	}
+}
+
+func (g *Game) discoverableNames() []string {
+	known := map[string]bool{}
+	remember := func(host string) {
+		known[strings.TrimSuffix(strings.TrimSuffix(strings.ToLower(host), "."), ".local")] = true
+	}
+	remember(g.serviceProjection.LocalDevice.Host)
+	for _, d := range g.serviceProjection.Peers {
+		remember(d.Host)
+	}
+	for _, w := range g.serviceProjection.Devices {
+		remember(w.Host)
+		for _, d := range w.Roster {
+			remember(d.Host)
+		}
+	}
+	var out []string
+	for _, name := range g.lan.names {
+		if !known[strings.ToLower(name)] {
+			out = append(out, name)
+		}
+	}
+	return out
 }

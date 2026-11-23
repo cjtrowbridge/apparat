@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
 )
@@ -38,7 +39,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 		}
 		sectionIndex := index
 		btn, subtitle := game.sectionButton(tabData, section, sectionIndex)
-		if game.selectedSectionIndex(tabData) == index {
+		if tabData.ID() != hud.TabCluster && game.selectedSectionIndex(tabData) == index {
 			btn.SetState(widget.WidgetChecked)
 		}
 		hasIcon := tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline)
@@ -111,4 +112,36 @@ func leadingIcon(icon string) *widget.Graphic {
 		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
 			VerticalPosition: widget.AnchorLayoutPositionCenter, Padding: &widget.Insets{Left: 12},
 		})))
+}
+
+func (game *Game) selectSection(tabID hud.TabID, index int) {
+	var pool string
+	for _, tabData := range game.shell.Snapshot().Tabs {
+		tabData = game.presentedTab(tabData)
+		if tabData.ID() == tabID {
+			if !tabData.IsSelectableSection(index) {
+				return
+			}
+			if tabID == hud.TabCluster {
+				pool = sectionPool(tabData.Sections[index])
+			}
+		}
+	}
+	if tabID == hud.TabProjects && !game.selectProjectEntry(index) {
+		return
+	}
+	if tabID == hud.TabCluster {
+		game.cluster.stack = nil
+		game.cluster.pending = nil
+		game.leavePeer()
+	}
+	game.selectedSections[tabID] = index
+	if pool != "" {
+		game.clusterOpen(domain.ClusterRoute{Page: "pool", Pool: pool})
+		return
+	}
+	if game.collapsed() {
+		game.detailOpen[tabID] = true
+	}
+	game.rebuildUI(game.shell.Snapshot())
 }

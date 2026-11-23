@@ -17,13 +17,15 @@ type clusterSource interface {
 	ClusterPage(context.Context, domain.ClusterRoute) (domain.ClusterPage, error)
 }
 type clusterFrame struct {
-	route         domain.ClusterRoute
-	page          domain.ClusterPage
-	form          *domain.ClusterOption
-	draft, notice string
-	selectedPools map[string]bool
-	scroll        float64
-	focus         focusBookmark
+	route                       domain.ClusterRoute
+	page                        domain.ClusterPage
+	form                        *domain.ClusterOption
+	draft, notice               string
+	selectedPools               map[string]bool
+	poolTab, taskFilter         string
+	oldestFirst, choosingFilter bool
+	scroll                      float64
+	focus                       focusBookmark
 }
 type clusterResponse struct {
 	page   domain.ClusterPage
@@ -76,6 +78,10 @@ func (g *Game) clusterOpen(r domain.ClusterRoute) {
 func (g *Game) clusterLoad() {
 	f := g.clusterTop()
 	if f == nil || g.cluster.pending != nil {
+		return
+	}
+	if f.route.Page == "device-detail" {
+		g.layoutDirty = true
 		return
 	}
 	if f.route.Worker == "" && f.route.Page == "settings" {
@@ -167,7 +173,7 @@ func (g *Game) clusterBack() {
 	g.cluster.stack = s[:len(s)-1]
 	f := g.clusterTop()
 	if f != nil {
-		if f.route.Page == "pool" && s[len(s)-1].route.Page == "device-pools" {
+		if f.route.Page == "pool" || f.route.Page == "pool-policy" && s[len(s)-1].route.Page == "device-pools" {
 			g.clusterLoad()
 		}
 		if g.nav.memory != nil {
@@ -175,6 +181,10 @@ func (g *Game) clusterBack() {
 		}
 	} else {
 		g.detailOpen[hud.TabCluster] = g.cluster.previousDetail
+		if s[len(s)-1].route.Page == "pool" {
+			delete(g.selectedSections, hud.TabCluster)
+			g.detailOpen[hud.TabCluster] = false
+		}
 	}
 	g.layoutDirty = true
 }
@@ -230,6 +240,10 @@ func (g *Game) openClusterSettings() {
 func (g *Game) clusterContent(c *widget.Container) {
 	f := g.clusterTop()
 	c.AddChild(g.hudIcon("1f519", g.clusterBack))
+	if f.route.Page == "device-detail" {
+		g.poolDeviceDetail(c, f.route.Target)
+		return
+	}
 	c.AddChild(widget.NewText(widget.TextOpts.Text(f.page.Title, g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(max(1, g.detailPanePreferredWidth()-24)))))
 	if f.page.Detail != "" {
 		c.AddChild(g.detailText(f.page.Detail))
@@ -239,6 +253,10 @@ func (g *Game) clusterContent(c *widget.Container) {
 	}
 	if g.cluster.pending != nil {
 		c.AddChild(g.detailText("Contacting worker…"))
+		return
+	}
+	if f.page.Overview != nil {
+		g.poolTabs(c, f)
 		return
 	}
 	if f.page.SavePools != nil {
@@ -258,7 +276,9 @@ func (g *Game) clusterContent(c *widget.Container) {
 				g.clusterSelect(opt)
 			})
 		}
-		g.projectButton(c, "Refresh", g.clusterLoad)
+		if f.route.Page != "" {
+			g.projectButton(c, "Refresh", g.clusterLoad)
+		}
 	}
 }
 func (g *Game) workerPage(action, page string, admin bool) func() {

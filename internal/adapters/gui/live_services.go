@@ -7,6 +7,7 @@ package gui
 import (
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"slices"
 )
 
 func (game *Game) Close() {
@@ -40,6 +41,9 @@ func (game *Game) receiveServices() {
 			old := game.presentedTab(tab)
 			selected := game.selectedSectionIndex(old)
 			game.serviceProjection = projection
+			if game.lan.selected != "" && !slices.Contains(game.discoverableNames(), game.lan.selected) {
+				game.leavePeer()
+			}
 			if selected >= 0 {
 				delete(game.selectedSections, hud.TabCluster)
 				for i, s := range game.presentedTab(tab).Sections {

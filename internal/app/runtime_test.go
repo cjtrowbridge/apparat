@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/config"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
@@ -92,5 +93,25 @@ func TestRenameLocalWithoutWorker(t *testing.T) {
 	err = page.Options[0].Run(ctx, "Pixel 10 XL")
 	if err != nil || n.LocalClusterDevice().Host != "Pixel-10-XL" {
 		t.Fatal("local rename failed", err)
+	}
+}
+
+func TestEffectivePoolUserList(t *testing.T) {
+	v := persistence.GovernanceView{Memberships: []persistence.GroupMember{{User: "me", Name: "team"}}}
+	member := persistence.Member{ID: "me", Admission: "approved"}
+	for _, target := range []string{"public", "me", "group:team", "other", "group:other"} {
+		v.Grants = []persistence.Membership{{Pool: "Chat", Service: persistence.HashService, Principal: target}}
+		expected := target == "public" || target == "me" || target == "group:team"
+		if poolAuthorized(&v, member, "Chat") != expected || poolAuthorized(&v, member, "Other") {
+			t.Fatal("wrong effective permission", target)
+		}
+	}
+	member.Admin = true
+	if !poolAuthorized(&v, member, "Other") {
+		t.Fatal("missing administrator")
+	}
+	member.Admission = "blocked"
+	if poolAuthorized(&v, member, "Chat") {
+		t.Fatal("included blocked account")
 	}
 }

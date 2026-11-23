@@ -23,3 +23,5 @@ Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 - `1f4f1.png` and `1f4bb.png` are the mobile phone and laptop from the same Twemoji release. They identify the operating system reported by an authenticated GUI installation.
 
 - `1f3af.png`: Twemoji bullseye marking the local fingerprint at the start of its device row.
+
+Pool tabs use ☑️ (2611.png from Twemoji v16.0.1), the existing networked computers icon, and 👥 (1f465.png from the STMPCK Twemoji set).

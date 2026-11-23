@@ -126,3 +126,43 @@ func TestPoolSelectionSaveAndCancel(t *testing.T) {
 		}
 	}
 }
+
+func TestPoolTabsAndDirectoryReturn(t *testing.T) {
+	for _, width := range []int{360, 1200} {
+		g := NewGame()
+		g.width = width
+		g.runtimeInfo.Queries = &projectionSource{}
+		selectTabThroughStrip(t, g, hud.TabCluster)
+		opt := domain.ClusterOption{Label: "Worker", Route: domain.ClusterRoute{Page: "device-detail", Target: "worker-w"}}
+		g.serviceProjection.Devices = []domain.ClusterDevice{{Host: "worker", Fingerprint: "w"}}
+		g.clusterPush(clusterFrame{route: domain.ClusterRoute{Page: "pool", Pool: "Chat Pool"}, page: domain.ClusterPage{Title: "Chat Pool", Overview: &domain.PoolOverview{Devices: []domain.ClusterOption{opt}}}})
+		f := g.clusterTop()
+		if !poolTaskMatches("succeeded", f.taskFilter) || poolTaskMatches("running", f.taskFilter) || f.oldestFirst {
+			t.Fatal("unexpected initial task filter or sort order")
+		}
+		for _, view := range []string{"Tasks", "Authorized users", "Devices"} {
+			g.selectPoolView(f, view)
+			g.rebuildUI(g.shell.Snapshot())
+			renderNavigation(g)
+		}
+		g.clusterOpen(opt.Route)
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		if g.clusterTop().route.Target != "worker-w" {
+			t.Fatal("wrong device")
+		}
+		g.clusterBack()
+		if g.clusterTop().poolTab != "Devices" || g.clusterTop().route.Pool != "Chat Pool" {
+			t.Fatal("lost pool destination on Back")
+		}
+		g.serviceProjection.Peers = []domain.PoolDevice{{Host: "Phone.local."}}
+		g.receiveLAN(`["Worker","phone","fresh"]`)
+		if !slices.Equal(g.discoverableNames(), []string{"fresh"}) {
+			t.Fatal(g.discoverableNames())
+		}
+		g.openPeer("Worker")
+		if g.lan.selected != "" {
+			t.Fatal("known worker reopened in discovery")
+		}
+	}
+}

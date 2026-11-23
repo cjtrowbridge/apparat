@@ -50,3 +50,5 @@ workspace.go resolves every command by registered project ID and coordinates dra
 
 - `cluster_pages.go`: Projects current worker governance and revision-bound commands.
 - `cluster_task_pages.go`: Reads pool queue history and submits or cancels tasks.
+
+- `pool_overview.go`: reads the current user's verified worker replicas and latest task states for a routing pool. Administrator views expand direct, public and group grants for approved users. Adding a user rechecks live governance and signs a revision-bound grant for the selected worker. Offline browsing shows the last synchronized state.

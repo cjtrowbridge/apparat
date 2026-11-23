@@ -104,12 +104,11 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 		_, height := subtitle.PreferredSize()
 		padding.Bottom += height + 3
 	}
-	return widget.NewButton(
+	opts := []widget.ButtonOpt{
 		widget.ButtonOpts.Text(label, face, game.theme.ButtonTheme.TextColor),
 		widget.ButtonOpts.Image(selectorButtonImage(section.SelectorColor)),
 		widget.ButtonOpts.TextPadding(padding),
 		widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter),
-		widget.ButtonOpts.ToggleMode(),
 		widget.ButtonOpts.WidgetOpts(
 			widget.WidgetOpts.MinSize(0, tabHeight),
 			widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true}),
@@ -120,7 +119,11 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 			}
 			game.selectSection(tabData.ID(), sectionIndex)
 		}),
-	), subtitle
+	}
+	if tabData.ID() != hud.TabCluster {
+		opts = append(opts, widget.ButtonOpts.ToggleMode())
+	}
+	return widget.NewButton(opts...), subtitle
 }
 
 func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.PreferredSizeLocateableWidget {
@@ -147,24 +150,7 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 			if section.ActionID == "add-new-device" {
 				game.discoveryContent(detailContainer)
 			} else {
-				detailContainer.AddChild(game.buildSectionContainer(section))
-				for _, opt := range game.deviceManagementLinks(section.ActionID) {
-					game.projectButton(detailContainer, opt.Label, func() {
-						game.clusterOpen(opt.Route)
-					})
-				}
-				check := game.workerAction(section.ActionID, game.runtimeInfo.CheckWorker)
-				if tabData.ID() == hud.TabCluster && check != nil {
-					game.projectButton(detailContainer, "Check my access", check)
-				}
-				pool := game.workerPage(section.ActionID, "work", false)
-				if tabData.ID() == hud.TabCluster && pool != nil {
-					game.projectButton(detailContainer, "Pool tasks", pool)
-				}
-				manage := game.workerPage(section.ActionID, "machine", true)
-				if tabData.ID() == hud.TabCluster && manage != nil {
-					game.projectButton(detailContainer, "Worker settings", manage)
-				}
+				game.sectionDetail(detailContainer, tabData.ID(), section)
 			}
 		}
 	}
@@ -375,4 +361,25 @@ func (game *Game) selectedSectionIndex(tabData hud.Tab) int {
 		return -1
 	}
 	return index
+}
+
+func (game *Game) sectionDetail(detailContainer *widget.Container, tabID hud.TabID, section hud.Section) {
+	detailContainer.AddChild(game.buildSectionContainer(section))
+	for _, opt := range game.deviceManagementLinks(section.ActionID) {
+		game.projectButton(detailContainer, opt.Label, func() {
+			game.clusterOpen(opt.Route)
+		})
+	}
+	check := game.workerAction(section.ActionID, game.runtimeInfo.CheckWorker)
+	if tabID == hud.TabCluster && check != nil {
+		game.projectButton(detailContainer, "Check my access", check)
+	}
+	pool := game.workerPage(section.ActionID, "work", false)
+	if tabID == hud.TabCluster && pool != nil {
+		game.projectButton(detailContainer, "Pool tasks", pool)
+	}
+	manage := game.workerPage(section.ActionID, "machine", true)
+	if tabID == hud.TabCluster && manage != nil {
+		game.projectButton(detailContainer, "Worker settings", manage)
+	}
 }

@@ -119,3 +119,33 @@ func TestHashTaskFencing(t *testing.T) {
 	}
 
 }
+
+func TestLocalPoolTaskLatestVisibleState(t *testing.T) {
+	db := serviceDB(t)
+	ctx := context.Background()
+	for _, row := range []struct{ worker, user, device, pool, body string }{
+		{"w", "u", "d", "p", `{"ID":"one","State":"queued"}`},
+		{"w", "u", "d", "p", `{"ID":"one","State":"succeeded"}`},
+		{"w", "u", "d", "p", `{"ID":"two","State":"running"}`},
+		{"w", "other", "d", "p", `{"ID":"hidden"}`},
+		{"w", "u", "other", "p", `{"ID":"hidden"}`},
+		{"other", "u", "d", "p", `{"ID":"hidden"}`},
+		{"w", "u", "d", "other", `{"ID":"hidden"}`},
+	} {
+		_, err := db.sql.ExecContext(ctx, "INSERT INTO replica_queue SELECT ?,?,?,?,COUNT(*)+1,? FROM replica_queue", row.worker, row.user, row.device, row.pool, []byte(row.body))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	rows, err := db.LocalPoolTasks(ctx, "w", Access{User: "u", Device: "d"}, "p")
+	if err != nil || len(rows) != 2 {
+		t.Fatalf("expected two visible tasks, got %v, %v", rows, err)
+	}
+	got := map[string]string{}
+	for _, r := range rows {
+		got[r.ID] = r.State
+	}
+	if got["one"] != "succeeded" || got["two"] != "running" {
+		t.Fatal(got)
+	}
+}

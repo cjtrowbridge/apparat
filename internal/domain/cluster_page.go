@@ -14,6 +14,7 @@ type ClusterOption struct {
 	Run            func(context.Context, string) error
 }
 type ClusterPage struct {
+	Overview      *PoolOverview
 	Title, Detail string
 	Options       []ClusterOption
 	Pools         []string
@@ -47,4 +48,15 @@ func (d PoolDevice) DisplayName(workerHost string) string {
 		return "Worker " + d.ID[:min(8, len(d.ID))]
 	}
 	return "App device " + d.ID[:min(8, len(d.ID))]
+}
+
+// PoolOverview is the signed-in user's last synchronized view across the selected workers.
+type PoolOverview struct {
+	Tasks                []PoolTaskRow
+	Devices, Add, Policy []ClusterOption
+	Users                []string
+}
+type PoolTaskRow struct {
+	ID, State, Worker, Host string
+	Changed                 int64
 }

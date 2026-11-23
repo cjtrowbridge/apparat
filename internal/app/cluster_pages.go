@@ -29,6 +29,9 @@ type clusterPageBuilder struct {
 }
 
 func (n *Runtime) ClusterPage(ctx context.Context, r domain.ClusterRoute) (domain.ClusterPage, error) {
+	if r.Page == "pool" {
+		return n.poolOverview(ctx, r)
+	}
 	if r.Page == "rename-local" {
 		return n.localRenamePage(r)
 	}
@@ -86,6 +89,17 @@ func (b *clusterPageBuilder) edit(label, input, confirm string, e identity.Polic
 		}
 		_, err := b.client.ChangePolicy(ctx, b.runtime.Personal, b.runtime.Keys, edit, v.Head.Hash)
 		if err == nil {
+			if b.route.Page == "pool-add-user" {
+				b.runtime.mu.Lock()
+				db := b.runtime.database
+				b.runtime.mu.Unlock()
+				if db != nil {
+					_, syncErr := b.client.Sync(ctx, db)
+					if syncErr != nil {
+						return errors.New("access granted; the local directory will refresh on the next synchronization")
+					}
+				}
+			}
 			b.runtime.RequestSync()
 		}
 		return err
@@ -157,9 +171,13 @@ func (b *clusterPageBuilder) settingsPage() error {
 			}
 		}
 		b.edit("Create pool", "Pool name", "", identity.PolicyEdit{Kind: "add_pool"})
-	case "pool", "access":
+	case "pool-policy", "pool-add-user", "access":
 		if !slices.Contains(v.Pools, r.Pool) {
 			return errors.New("pool unavailable")
+		}
+		if r.Page == "pool-add-user" {
+			b.poolAddUser()
+			break
 		}
 		b.Title = r.Pool
 		if r.Page == "access" {

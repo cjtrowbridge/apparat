@@ -64,3 +64,6 @@ Keep per-device checkbox edits in a right-column draft. Save all selected member
 
 ### Correct device targeting and Android update feedback
 Phase 10 directory follow-up. Resolve the selected fingerprint for renames, permit naming this installation after cancelling setup, and restrict new pool assignments to workers. Preserve historical policy receipts. Verify generic names, GUI and worker controls, and Android update phases including known and unknown download lengths before canonical delivery.
+
+### Pool browsing and discovery
+Phase 10 pool details open on completed tasks, newest first. Provide status and sort controls, worker drill-down and Back, and an effective access list with explicit signed administrator grants. Use authenticated local replicas and preserve queue visibility. Remove known hosts from discovery and clear persistent pressed styling on Cluster selectors. Verify navigation, filtering and grants before canonical delivery.

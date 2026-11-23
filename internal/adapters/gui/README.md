@@ -198,3 +198,5 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `cluster_pages.go`: Renders the gear and cluster detail navigation.
 - `cluster_pages_test.go`: Verifies settings navigation and Back on wide and narrow layouts.
 - `device_directory.go`: projects synchronized GUI peers above workers, resolves device pool menus against the worker that owns the policy and lists assigned devices on routing pages.
+
+- `pool_tabs.go`: renders Tasks, Devices and Authorized users below the pool heading. It keeps filters and sort direction on the navigation frame. Task and device details use the existing detail stack and authorization paths. Discovery compares advertised hostnames with the saved worker and personal-device directory before offering navigation, pairing or claiming.
