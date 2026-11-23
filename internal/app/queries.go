@@ -10,6 +10,7 @@ import (
 )
 
 type Diagnostic struct {
+	Version        string
 	Healthy        bool
 	Mode           Mode
 	RootDir        string
@@ -22,7 +23,7 @@ type Diagnostic struct {
 func (node *Runtime) Health() domain.NodeHealth {
 	node.mu.Lock()
 	defer node.mu.Unlock()
-	return domain.NodeHealth{Version: "0.1.0", State: node.state, Ready: node.state == "ready"}
+	return domain.NodeHealth{Version: domain.ReleaseVersion(), State: node.state, Ready: node.state == "ready"}
 }
 func (node *Runtime) Device() domain.Device {
 	return domain.Device{OS: runtime.GOOS, Architecture: runtime.GOARCH, IdentityStatus: string(identity.Classify(node.config.IdentityDir))}
@@ -105,7 +106,7 @@ func (node *Runtime) Address() string {
 	return node.server.Address()
 }
 func (node *Runtime) Doctor(ctx context.Context) Diagnostic {
-	diag := Diagnostic{Mode: node.mode, RootDir: node.config.RootDir, LastRunPath: node.config.LastRunPath, DatabasePath: node.config.DatabasePath, IdentityStatus: identity.Classify(node.config.IdentityDir), Message: "ok"}
+	diag := Diagnostic{Version: node.Health().Version, Mode: node.mode, RootDir: node.config.RootDir, LastRunPath: node.config.LastRunPath, DatabasePath: node.config.DatabasePath, IdentityStatus: identity.Classify(node.config.IdentityDir), Message: "ok"}
 	err := node.Initialize(ctx)
 	if err == nil {
 		node.mu.Lock()

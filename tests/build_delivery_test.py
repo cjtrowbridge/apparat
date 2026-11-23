@@ -25,7 +25,11 @@ class DeliveryTest(unittest.TestCase):
         self.git('config','user.email','fixture@invalid')
         self.git('init','--bare','-b','main',self.remote)
         self.git('remote','add','origin',self.remote)
-        self.git('commit','--allow-empty','-m','initial')
+        version = self.root/delivery.VERSION
+        version.parent.mkdir(parents=True)
+        version.write_text('0.1.5\n')
+        self.git('add',delivery.VERSION)
+        self.git('commit','-m','initial')
         self.git('push','origin','main')
         self.output = 'releases/linux/amd64/apparat/latest'
         self.plan = BuildPlan('linux/amd64/apparat','linux','amd64','apparat',self.root/self.output,True)
@@ -103,3 +107,6 @@ class DeliveryTest(unittest.TestCase):
         report = json.loads((self.root/delivery.REPORT).read_text())
         android = next(r for r in report['targets'] if r['name'] == previous['name'])
         self.assertEqual(android, previous)
+        linux = next(r for r in report['targets'] if r['name'] == self.plan.name)
+        self.assertEqual(linux['version'], '0.1.6')
+        self.assertEqual(linux['version'], (self.root/delivery.VERSION).read_text().strip())

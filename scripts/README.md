@@ -190,3 +190,5 @@ Linux GUI artifact qualification enters the STMPCK toolbar with Enter, uses Down
 GUI qualification handles the first-run key dialog through its Cancel control. It checks the ordinary Projects screen with the identity still pending and preserves any identity already on the Pixel.
 
 During Pixel GUI qualification, `artifact_acceptance.py` dismisses the Apparat startup unlock prompt to check offline Projects navigation.
+
+Delivery allocates a shared release number in internal/domain/release.txt before compilation and records it on each rebuilt target in releases/verified.json. Linux-only delivery preserves the last qualified APK and its metadata. Reused outputs retain their original version.

@@ -24,6 +24,7 @@ except ImportError:
 MANIFEST = 'android/apparat/AndroidManifest.xml'
 APK = 'releases/android/arm64/apparat/latest.apk'
 REPORT = 'releases/verified.json'
+VERSION = 'internal/domain/release.txt'
 INPUTS = ('cmd', 'internal', 'android', 'scripts', 'go.mod', 'go.sum', 'third_party',
           '.gitmodules', 'agentic-pipelines', 'source-governance.yaml')
 REPOSITORY = 'cjtrowbridge/apparat'
@@ -61,19 +62,31 @@ def published_metadata(root, remote, storage):
 
 
 def allocate(root, remote, baseline):
+    # Older deliveries recorded the shared number only in the Android manifest.
+    exists = subprocess.run(['git','-C',root,'cat-file','-e',remote+':'+VERSION],
+                            stderr=subprocess.DEVNULL).returncode == 0
+    if exists:
+        old = git(root,'show',remote+':'+VERSION)
+    else:
+        manifest = git(root,'show',remote+':'+MANIFEST)
+        old = re.search(r'android:versionName="([^"]+)"', manifest)[1]
+    match = re.fullmatch(r'(\d+\.\d+\.)(\d+)',old)
+    if not match:
+        raise ValueError('Expected three-part published release number')
+    name = match[1] + str(int(match[2])+1)
+    (root/VERSION).write_text(name+'\n')
+    git(root,'add','--',VERSION)
+    if baseline is None:
+        return name
     path = root/MANIFEST
     content = path.read_text()
-    old = git(root,'show',remote+':'+MANIFEST)
     version = baseline['version'] + 1
-    match = re.search(r'android:versionName="(\d+\.\d+\.)(\d+)"',old)
-    if not match:
-        raise ValueError('Expected three-part published Android version name')
-    name = match[1] + str(int(match[2])+1)
     content = re.sub(r'android:versionCode="\d+"', f'android:versionCode="{version}"',content)
     content = re.sub(r'android:versionName="[^"]+"', f'android:versionName="{name}"',content)
     path.write_text(content)
     git(root,'add','--',MANIFEST)
     print(f'Android release {name}, version code {version}',flush=True)
+    return name
 
 
 def verify_download(output, expected):
@@ -128,6 +141,7 @@ def deliver(root, plans, compile_target, storage):
                 {r['name'] for r in rows} == expected and
                 all(r.get('inputs') == current and evidence.digest(root/r['output']) == r['sha256'] for r in rows))
     android = any(p.possible and p.goos == 'android' for p in plans)
+    baseline = None
     if android:
         baseline = published_metadata(root,remote,storage)
         if reusable:
@@ -143,14 +157,14 @@ def deliver(root, plans, compile_target, storage):
             row['device_test'] = artifact_acceptance.android(root/APK, directory, row['sha256'])
             evidence.write(report, prior)
     if not reusable:
-        if android:
-            allocate(root,remote,baseline)
+        name = allocate(root,remote,baseline)
         if evidence.locked_run(root,plans,compile_target,storage):
             return 1
         result = json.loads(report.read_text())
         rows = [r for r in result['targets'] if r['state']=='passed']
         for row in rows:
             row['inputs'] = result['inputs']
+            row['version'] = name
         if android:
             android_release.validate_candidate(metadata(root/APK),baseline,android_release.expected_signer())
         result['delivery_schema'] = 1

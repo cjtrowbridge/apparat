@@ -21,6 +21,7 @@ const Repository = "cjtrowbridge/apparat"
 const MaxBinaryBytes int64 = 256 << 20
 
 var hexRevision = regexp.MustCompile(`^[0-9a-f]{40}$`)
+var releaseNumber = regexp.MustCompile(`^[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9}$`)
 var hexDigest = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 // Error codes are safe to display. Underlying transport errors may include private paths.
@@ -53,7 +54,7 @@ func NewClient() *Client {
 }
 
 type Release struct {
-	Revision, Path, SHA256 string
+	Revision, Path, SHA256, Version string
 }
 
 type manifest struct {
@@ -61,7 +62,7 @@ type manifest struct {
 	Ref      string
 	Accepted bool
 	Schema   int `json:"delivery_schema"`
-	Targets  []struct{ Name, Output, State, SHA256 string }
+	Targets  []struct{ Name, Output, State, SHA256, Version string }
 }
 
 func (c *Client) request(ctx context.Context, url string) (*http.Response, error) {
@@ -120,7 +121,10 @@ func (c *Client) Latest(ctx context.Context) (Release, error) {
 			if target.Output != path || target.State != "passed" || !hexDigest.MatchString(target.SHA256) {
 				return Release{}, ErrMetadata
 			}
-			found = append(found, Release{commit.SHA, path, target.SHA256})
+			if target.Version != "" && !releaseNumber.MatchString(target.Version) {
+				return Release{}, ErrMetadata
+			}
+			found = append(found, Release{Revision: commit.SHA, Path: path, SHA256: target.SHA256, Version: target.Version})
 		}
 	}
 	if len(found) != 1 {

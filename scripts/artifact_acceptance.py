@@ -254,7 +254,13 @@ def android(binary, directory, digest):
 def validate(plan, candidate, directory, digest):
     if plan.goos == 'android':
         return android(candidate, directory, digest)
-    elif plan.target == 'apparatd':
+    if plan.goos == 'linux':
+        display = ['xvfb-run', '-a'] if plan.target == 'apparat' else []
+        diagnostic = json.loads(run(*display, candidate, '--runtime-dir', directory/'doctor', '--doctor'))
+        expected = (Path(__file__).resolve().parents[1]/'internal/domain/release.txt').read_text().strip()
+        if diagnostic.get('Version') != expected:
+            raise ValueError(f'{plan.name} does not report release {expected}')
+    if plan.target == 'apparatd':
         env = dict(os.environ)
         env.pop('DISPLAY', None)
         run(candidate, '--runtime-dir', directory/'runtime', '--smoke-test', env=env)

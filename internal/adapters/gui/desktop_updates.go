@@ -10,23 +10,29 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"time"
+
+	"github.com/cjtrowbridge/apparat/internal/domain"
+	"github.com/cjtrowbridge/apparat/internal/hud"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/selfupdate"
 )
 
 type desktopUpdateResult struct {
-	err       error
-	installed bool
+	err                            error
+	installed, available, relaunch bool
+	comparison                     string
 }
 
 type desktopUpdateState struct {
-	ctx           context.Context
-	cancel        context.CancelFunc
-	client        *selfupdate.Client
-	binary        string
-	result        chan desktopUpdateResult
-	workers       sync.WaitGroup
-	busy, restart bool
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	client                *selfupdate.Client
+	binary                string
+	result                chan desktopUpdateResult
+	workers               sync.WaitGroup
+	busy, restart, inside bool
+	checked               time.Time
 }
 
 func (g *Game) initDesktopUpdates(ctx context.Context) {
@@ -40,32 +46,62 @@ func (g *Game) initDesktopUpdates(ctx context.Context) {
 	u := &desktopUpdateState{client: selfupdate.NewClient(), binary: binary, result: make(chan desktopUpdateResult, 1)}
 	u.ctx, u.cancel = context.WithCancel(ctx)
 	g.desktopUpdates = u
-	g.linuxUpdateStatus("Check for update", "")
+	g.linuxUpdateStatus("Check for update", linuxVersions(""))
 	g.SetOnCheckForUpdate(func() bool {
-		if u.busy || u.restart {
-			return true
-		}
-		u.busy = true
-		g.linuxUpdateStatus("Checking…", "Checking for a Linux update…")
-		u.workers.Add(1)
-		go func() {
-			defer u.workers.Done()
-			u.result <- u.update(g.linuxUpdateStatus)
-		}()
+		g.startLinuxUpdate(true)
 		return true
 	})
 	g.layoutDirty = true
 }
 
-func (u *desktopUpdateState) update(progress func(string, string)) desktopUpdateResult {
-	release, err := u.client.Latest(u.ctx)
+func linuxVersions(published string) string {
+	if published == "" {
+		published = "unknown"
+	}
+	return "Installed " + domain.ReleaseVersion() + " · Published " + published
+}
+
+func (g *Game) startLinuxUpdate(install bool) {
+	u := g.desktopUpdates
+	if u.busy || u.restart {
+		return
+	}
+	u.busy = true
+	u.checked = time.Now()
+	g.linuxUpdateStatus("Checking…", linuxVersions("")+"\nReading Linux release information…")
+	u.workers.Add(1)
+	go func() {
+		defer u.workers.Done()
+		u.result <- u.update(install, g.linuxUpdateStatus)
+	}()
+}
+
+func (u *desktopUpdateState) update(install bool, status func(string, string)) desktopUpdateResult {
+	ctx, cancel := context.WithTimeout(u.ctx, 15*time.Second)
+	defer cancel()
+	release, err := u.client.Latest(ctx)
+	result := desktopUpdateResult{comparison: linuxVersions(release.Version), err: err}
 	if err != nil {
-		return desktopUpdateResult{err: err}
+		return result
+	}
+	progress := func(label, detail string) {
+		status(label, result.comparison+"\n"+detail)
 	}
 	progress("Checking…", "Comparing the installed executable with the published digest.")
 	current, err := selfupdate.Digest(u.binary)
-	if err != nil || current == release.SHA256 {
-		return desktopUpdateResult{err: err}
+	if err != nil {
+		result.err = err
+		return result
+	}
+	if current == release.SHA256 {
+		// An open Linux process can still be executing the old, replaced file.
+		result.relaunch = release.Version != "" && release.Version != domain.ReleaseVersion()
+		result.installed = result.relaunch && install
+		return result
+	}
+	if !install {
+		result.available = true
+		return result
 	}
 	progress("Updating…", "Connecting to the Linux update download…")
 	candidate, err := u.client.DownloadWithProgress(u.ctx, release, u.binary, func(received, total int64) {
@@ -77,12 +113,15 @@ func (u *desktopUpdateState) update(progress func(string, string)) desktopUpdate
 		progress(status.Label, detail)
 	})
 	if err != nil {
-		return desktopUpdateResult{err: err}
+		result.err = err
+		return result
 	}
 	defer candidate.Discard()
 	progress("Updating…", "Installing the update and restarting Apparat…")
 	err = candidate.Install(u.ctx)
-	return desktopUpdateResult{err: err, installed: err == nil}
+	result.err = err
+	result.installed = err == nil
+	return result
 }
 
 func (g *Game) linuxUpdateStatus(label, detail string) {
@@ -94,6 +133,11 @@ func (g *Game) pollDesktopUpdates() bool {
 	if u == nil {
 		return false
 	}
+	inside := g.shell.Snapshot().ActiveTab().ID() == hud.TabSettings
+	if inside && !u.inside && time.Since(u.checked) > time.Minute {
+		g.startLinuxUpdate(false)
+	}
+	u.inside = inside
 	select {
 	case result := <-u.result:
 		u.busy = false
@@ -106,9 +150,13 @@ func (g *Game) pollDesktopUpdates() bool {
 			} else if errors.Is(result.err, selfupdate.ErrInstall) {
 				detail = "Could not replace the executable. Check that its directory is writable. Your installed app was kept."
 			}
-			g.linuxUpdateStatus("Check for update", detail+" Select again to retry.")
+			g.linuxUpdateStatus("Check for update", result.comparison+"\n"+detail+" Select again to retry.")
+		case result.available:
+			g.linuxUpdateStatus("Download update", result.comparison)
+		case result.relaunch:
+			g.linuxUpdateStatus("Restart Apparat", result.comparison+"\nThe published executable is already on disk.")
 		case !result.installed:
-			g.linuxUpdateStatus("Up to date", "Select again to check for a newer build.")
+			g.linuxUpdateStatus("Up to date", result.comparison)
 		}
 	default:
 	}

@@ -45,3 +45,6 @@ Extend the no-flag build on main through automatic monotonic APK versioning, all
 Distribution decision: Apparat and STMPCK are now private. The operator selected private Git delivery only. Verify all artifacts by authenticated GitHub read-back. The Pixel 10 anonymous updater is outside this distribution path. Continue Pixel 4a USB validation.
 
 The first private delivery pushed code 5 and all three artifacts together. Binary streaming through the GitHub CLI failed during read-back; the run exited incomplete. Verified each artifact via a fresh GitHub-issued download URL and SHA-256. Adopt this read-back method in the pipeline. Fixture tests cover non-promotion, rejected push, interrupted read-back and idempotent retries.
+
+### Linux release comparison
+Bind the canonical build and update delivery roadmap to one release number for rebuilt targets. Embed it in runtime health, publish it beside each verified digest, show the installed and published Linux versions on Settings entry, and keep download and restart user-initiated. Verify Linux-only delivery, reuse, metadata errors and the full target pipeline.

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/speech"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/event"
 )
@@ -55,7 +56,7 @@ func TestLinuxUpdateSingleActivation(t *testing.T) {
 			data, _ = json.Marshal(map[string]string{"sha": revision})
 		case strings.HasSuffix(r.URL.Path, "/releases/verified.json"):
 			data, _ = json.Marshal(map[string]any{"accepted": true, "edition": "ordinary", "ref": "refs/heads/main", "delivery_schema": 1,
-				"targets": []map[string]any{{"name": "linux/amd64/apparat", "output": "releases/linux/amd64/apparat/latest", "state": "passed", "sha256": digest}}})
+				"targets": []map[string]any{{"name": "linux/amd64/apparat", "output": "releases/linux/amd64/apparat/latest", "state": "passed", "sha256": digest, "version": domain.ReleaseVersion()}}})
 		default:
 			data = binary
 		}
@@ -79,6 +80,13 @@ func TestLinuxUpdateSingleActivation(t *testing.T) {
 	if button.Text().Label != "Check for update" {
 		t.Fatalf("initial button label: %s", button.Text().Label)
 	}
+	game.pollDesktopUpdates()
+	finish()
+	game.applyUpdateStatus()
+	before, err := os.ReadFile(target)
+	if err != nil || string(before) != "old installed binary" || game.UpdateStatus() != "Download update" || game.UpdateStatusDetail() != linuxVersions(domain.ReleaseVersion()) {
+		t.Fatal("Settings must compare versions before a user selects the download", game.UpdateStatusDetail())
+	}
 	button.Click()
 	event.ExecuteDeferred()
 	game.requestUpdateAction() // Duplicate input during the same operation.
@@ -99,7 +107,7 @@ func TestLinuxUpdateSingleActivation(t *testing.T) {
 	game.requestUpdateAction()
 	finish()
 	game.applyUpdateStatus()
-	if button.Text().Label != "Up to date" || button.GetWidget().Disabled || u.restart {
+	if button.Text().Label != "Up to date" || game.UpdateStatusDetail() != linuxVersions(domain.ReleaseVersion()) || button.GetWidget().Disabled || u.restart {
 		t.Fatalf("current build status: %s", game.UpdateStatusDetail())
 	}
 	u.client.HTTP.Transport = updateTransport(func(*http.Request) (*http.Response, error) {
