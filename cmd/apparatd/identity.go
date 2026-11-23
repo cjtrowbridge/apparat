@@ -146,9 +146,9 @@ func workspaceAccess(args []string) int {
 			scopes, err = db.WorkspaceScopes(ctx, args[1], args[2])
 			if err == nil {
 				if len(scopes) == 0 {
-					fmt.Println("Registered checkout. No permissions for this user.")
+					fmt.Println("Registered checkout. No effective permissions for this user.")
 				} else {
-					fmt.Println("Checkout permissions:", strings.Join(scopes, ", "))
+					fmt.Println("Effective checkout permissions:", strings.Join(scopes, ", "))
 				}
 				return 0
 			}

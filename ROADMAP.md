@@ -1854,7 +1854,7 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 **Dependencies:** Phase 9 local registry and Phase 10 trusted membership and authenticated REST. This milestone provides read-only catalog browsing. Phase 11A repeats the local workspace tests with the shared catalog. Phase 11C adds remote workspace operations.
 
-**Available today.** Administrators see live summaries of checkouts created through a confirmed worker’s clone API alongside local projects. Remote row identity includes the worker fingerprint and its project ID. The worker remains authoritative. The current refresh skips unreachable or unauthorized workers. The checklists below cover the wider signed catalog, per-project visibility, offline retention and reconciliation.
+**Available today.** Administrators see live summaries of checkouts created through a confirmed worker’s clone API alongside local projects. Remote row identity includes the worker fingerprint and its project ID. The worker remains authoritative. Approved cluster administrators inherit workspace permissions for registered checkouts. Other approved users need explicit grants for each checkout. The current refresh skips unreachable or unauthorized workers. The checklists below cover the wider signed catalog, per-project visibility, offline retention and reconciliation.
 
 ### Owner-published summaries
 

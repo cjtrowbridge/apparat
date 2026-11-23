@@ -1,9 +1,10 @@
 // Exercises real notifications over the pinned TLS worker with two subscriptions.
-// A revoked project grant closes the socket before another directory event can be disclosed.
+// Demoting an admin without a checkout grant closes the socket before another directory event can be disclosed.
 package httpapi
 
 import (
 	"context"
+	"database/sql"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"os"
@@ -12,7 +13,7 @@ import (
 	"time"
 )
 
-func exerciseWorkspaceWatch(t *testing.T, c *WorkerClient, db *persistence.DB) {
+func exerciseWorkspaceWatch(t *testing.T, c *WorkerClient, db *persistence.DB, dbPath string) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
@@ -26,7 +27,7 @@ func exerciseWorkspaceWatch(t *testing.T, c *WorkerClient, db *persistence.DB) {
 	check(os.Mkdir(filepath.Join(dir, "sub"), 0700))
 	const p = "live-test"
 	check(db.RegisterProject(ctx, domain.Project{ID: p, Name: "fixture", Location: dir}))
-	check(db.WorkspaceGrant(ctx, p, c.Access.User, "read", true))
+	// An approved administrator watches without an explicit checkout grant.
 	events := make(chan Notice, 8)
 	done := make(chan error, 1)
 	go func() {
@@ -53,7 +54,16 @@ func exerciseWorkspaceWatch(t *testing.T, c *WorkerClient, db *persistence.DB) {
 	if n.Reset || n.Resource.Directory != "sub" {
 		t.Fatal(n)
 	}
-	check(db.WorkspaceGrant(ctx, p, c.Access.User, "read", false))
+	fixture, err := sql.Open("sqlite", dbPath)
+	check(err)
+	defer fixture.Close()
+	_, err = fixture.Exec("UPDATE cluster_users SET admin=0 WHERE user_id=?", c.Access.User)
+	check(err)
+	defer func() {
+		_, restoreErr := fixture.Exec("UPDATE cluster_users SET admin=1 WHERE user_id=?", c.Access.User)
+		check(restoreErr)
+	}()
+
 	check(os.WriteFile(filepath.Join(dir, "sub", "new"), []byte("changed"), 0600))
 	select {
 	case <-done:

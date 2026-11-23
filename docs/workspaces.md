@@ -4,6 +4,8 @@ A project keeps its stable registration ID when its display name changes. The se
 
 ## Access
 
+Approved cluster administrators have full access to registered workspaces on confirmed workers through their enrolled devices. Other approved users need checkout-specific permissions.
+
 Run the following on the owning worker using its service account and normal node root. Read the project ID from its registration and use the approved personal identity fingerprint. Repeat for each permission required.
 
 ```sh
@@ -13,7 +15,7 @@ apparatd workspace-access grant PROJECT_ID USER_FINGERPRINT write
 apparatd workspace-access revoke PROJECT_ID USER_FINGERPRINT write
 ```
 
-If a worker project appears but Files cannot list it, check the account’s grants with the status command above. An admin can see registrations with zero checkout permissions. Use the project ID and personal fingerprint from the denial message. After the operator grants the missing scope, reopen the folder or repeat the failed operation. A sign-in or owner-confirmation error has separate recovery instructions.
+If a worker project appears but Files cannot list it, check the account’s grants with the status command above. Status lists effective permissions using the same access check as the API. An administrator inherits all five permissions from the current cluster role. Use the project ID and personal fingerprint from the denial message. After the operator grants the missing scope, reopen the folder or repeat the failed operation. A sign-in or owner-confirmation error has separate recovery instructions.
 
 Read permits directory listings, text, task definitions and verified run results. Write and tasks also require read. Terminal access uses terminal-view, with terminal-control additionally required to start, send input, take over, resize or stop. Access to GitHub credentials and permission to clone are separate from checkout grants.
 

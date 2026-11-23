@@ -36,7 +36,8 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := persistence.Open(ctx, t.TempDir()+"/worker.db")
+	dbPath := t.TempDir() + "/worker.db"
+	db, err := persistence.Open(ctx, dbPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +130,7 @@ func TestPinnedWorkerClaim(t *testing.T) {
 		t.Fatal("pending user could enumerate accounts")
 	}
 	exerciseWorkerGit(t, session, other, unapproved)
-	exerciseWorkspaceWatch(t, session, db)
+	exerciseWorkspaceWatch(t, session, db, dbPath)
 	unapproved.token = session.token
 	_, err = unapproved.GitAccounts(ctx)
 	if !errors.Is(err, ErrDenied) {

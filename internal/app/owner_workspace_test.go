@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
@@ -19,7 +20,8 @@ import (
 
 func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	ctx := context.Background()
-	db, err := persistence.Open(ctx, filepath.Join(t.TempDir(), "node.db"))
+	dbPath := filepath.Join(t.TempDir(), "node.db")
+	db, err := persistence.Open(ctx, dbPath)
 	check := func(err error) {
 		t.Helper()
 		if err != nil {
@@ -49,10 +51,20 @@ func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	n := Runtime{database: db}
 	defer n.pages.Close()
 	q := domain.WorkspaceRequest{Action: "read", ProjectID: project, Path: "file"}
+	view, err := n.serveWorkspace(ctx, caller, q)
+	check(err)
+	if view.Text != "first" {
+		t.Fatal("admin could not read without a grant")
+	}
+	fixture, err := sql.Open("sqlite", dbPath)
+	check(err)
+	defer fixture.Close()
+	_, err = fixture.Exec("UPDATE cluster_users SET admin=0 WHERE user_id=?", caller.User)
+	check(err)
 	_, err = n.serveWorkspace(ctx, caller, q)
 	var missing httpapi.WorkspaceGrantNeeded
 	if !errors.Is(err, httpapi.ErrDenied) || !errors.As(err, &missing) || missing.Scope != "read" {
-		t.Fatal("admin obtained file access without grant")
+		t.Fatal("demoted account retained access without a grant")
 	}
 	check(db.WorkspaceGrant(ctx, project, caller.User, "read", true))
 	v, err := n.serveWorkspace(ctx, caller, q)

@@ -29,7 +29,9 @@ func (db *DB) WorkspaceGrant(ctx context.Context, project, user, scope string, e
 }
 func (db *DB) WorkspaceLocation(ctx context.Context, project, user, scope string) (string, error) {
 	var location string
-	err := db.sql.QueryRowContext(ctx, `SELECT p.location FROM project_registry p JOIN workspace_grants g ON p.id=g.project WHERE p.id=? AND g.user=? AND g.scope=?`, project, user, scope).Scan(&location)
+	err := db.sql.QueryRowContext(ctx, `SELECT p.location FROM project_registry p JOIN cluster_users u ON u.user_id=?
+ WHERE p.id=? AND u.admission='approved' AND (u.admin=1 OR EXISTS
+ (SELECT 1 FROM workspace_grants g WHERE g.project=p.id AND g.user=u.user_id AND g.scope=?))`, user, project, scope).Scan(&location)
 	return location, err
 }
 func (db *DB) ProjectLocation(ctx context.Context, id string) (string, error) {
@@ -69,7 +71,7 @@ func (db *DB) FinishRemoteSave(ctx context.Context, project, user, op string) er
 	return err
 }
 
-// WorkspaceScopes reports host-local grants and distinguishes an unknown registration.
+// WorkspaceScopes inspects effective access using the same lookup as the API and distinguishes an unknown registration.
 func (db *DB) WorkspaceScopes(ctx context.Context, project, user string) ([]string, error) {
 	_, err := db.ProjectLocation(ctx, project)
 	if err != nil {
@@ -78,19 +80,16 @@ func (db *DB) WorkspaceScopes(ctx context.Context, project, user string) ([]stri
 		}
 		return nil, err
 	}
-	rows, err := db.sql.QueryContext(ctx, "SELECT scope FROM workspace_grants WHERE project=? AND user=? ORDER BY scope", project, user)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 	var scopes []string
-	for rows.Next() {
-		var scope string
-		err = rows.Scan(&scope)
+	for _, scope := range []string{"read", "write", "tasks", "terminal-view", "terminal-control"} {
+		_, err = db.WorkspaceLocation(ctx, project, user, scope)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
 		scopes = append(scopes, scope)
 	}
-	return scopes, rows.Err()
+	return scopes, nil
 }
