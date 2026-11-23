@@ -56,6 +56,10 @@ Settings must always be the final top-level tab, including optional editions. Ad
    * Native platform views may be used as temporary bridges only when the engine cannot perform the platform operation directly.
    * Native views must be hidden outside the tab and body element they support.
 
+### Right-hand detail navigation
+
+Use a child page in the same detail pane when a button offers several app-owned choices. Show a touch-sized 🔙 Back button first, then a heading and the available options. Keep the selected object visible in the wide selector. On narrow screens use the full detail area. Back returns exactly one level, restores the launching control and scroll position, and leaves pending edits unapplied. Verify touch Back, Escape, controller B and platform Back where supported, including after a data refresh. Keep OS-owned prompts and short confirmations for consequential actions when their interruption serves a specific purpose. Record the reason when retaining a multi-choice popup during HUD review.
+
 ## Tab Patterns
 
 * **Settings**: a single vertical list of fieldsets. Each settings category gets a title, optional explanation, and grouped controls or rows. Platform-specific temporary controls belong in the relevant fieldset; new settings groups are appended as additional fieldsets rather than floating over earlier content.

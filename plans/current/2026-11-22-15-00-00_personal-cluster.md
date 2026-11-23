@@ -37,3 +37,11 @@ Queue heads now hydrate at startup and update under the writer lock after commit
 Physical pairing verified on the Pixel 4a using a separate Android user. The same portable user and distinct device authorizations were verified in SQLite. With the desktop sender closed, the phone claimed a disposable worker, opened its saved row, and passed a protected admin check. The installed trashcan0 retained its real owner throughout this fixture test.
 
 The primary Pixel enrolled its permanent Android-protected device key. The real one-time-code exchange with the Steam Machine reached the local personal recovery unlock prompt. App-side reconciliation now installs worker-signed governance views and incremental task history. Administration and pool task controls use pinned worker sessions. Hardware deployment and validation of these changes are pending the real receiver finishing its open pairing dialog.
+
+## Installed worker handoff
+
+The primary Pixel 4a completed pairing with the real Steam Machine identity and received an administrator response from the installed trashcan0. The worker recorded one administrator and two distinct device bindings. The owner then signed the policy-ordering handoff on the Steam Machine. The worker applied it and the desktop verified the receipt before going offline. A second real administrator was explicitly declined. The independent-admin regression covers that case. With the Steam Machine app closed, the primary Pixel created the Personal pool on trashcan0, enabled hash-text and submitted a task. The Pixel retrieved the signed result and its digest matched an independent calculation. After reopening the Steam Machine, its SQLite replica held all three worker policy receipts and three queue transitions. The installed worker retained exactly one administrator and two authorized device bindings.
+
+## Cluster settings and initial pools
+
+Extend item 7 with a heading gear and right-pane child pages for people, groups, pools and synchronization. Keep registration and update actions with the worker, and provide a direct pool task path. Verify Back, catalog, permissions and narrow/wide layouts. Seed Chat, Project, Comrade and Research pools on first claim in mock priority order. Apply missing defaults to the installed cluster through signed admin operations and preserve Personal, its grants and history.

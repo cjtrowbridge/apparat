@@ -62,8 +62,6 @@ func initialize(filesDir string) {
 	workingDir, _ := os.Getwd()
 	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{
 		ClaimHost:    claimHost,
-		PoolTasks:    poolTasks,
-		ManageWorker: manageWorker,
 		CheckWorker:  checkWorker,
 		PairPersonal: pairPersonal,
 		EditName:     editScreenName,

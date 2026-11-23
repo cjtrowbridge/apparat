@@ -79,6 +79,8 @@ func (game *Game) selectSection(tabID hud.TabID, index int) {
 		return
 	}
 	if tabID == hud.TabCluster {
+		game.cluster.stack = nil
+		game.cluster.pending = nil
 		game.leavePeer()
 	}
 	game.selectedSections[tabID] = index

@@ -116,12 +116,3 @@ func (g *Game) workerAction(action string, callback func(string)) func() {
 	}
 	return nil
 }
-
-func (g *Game) permittedWorkerAction(action string, admin bool, callback func(string)) func() {
-	for _, d := range g.serviceProjection.Devices {
-		if action == "worker-"+d.Fingerprint && d.ReplicaRevision > 0 && (admin && d.Admin || !admin && d.PoolCount > 0) {
-			return g.workerAction(action, callback)
-		}
-	}
-	return nil
-}

@@ -105,10 +105,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		root.AddChild(strip)
 	}
 	if !gallery {
-		shell.AddChild(widget.NewText(
-			widget.TextOpts.Text(title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
-			widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth())),
-		))
+		game.addHeading(shell, title, snapshot.ActiveTab().ID())
 	}
 	body := game.buildActiveTabBody(snapshot)
 	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0, MaxWidth: game.hudPreferredWidth()}

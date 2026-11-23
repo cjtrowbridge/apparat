@@ -1782,6 +1782,10 @@ Implementation and acceptance are tracked in the [personal cluster execution pla
 - [ ] Bring forward the first Phase 13 queue slice: one shared local task table, stable requester/idempotency identity, owner-created time, immutable optional prompt and input hashes, mutable state and terminal time, distinct attempts, leases, fencing and verified output hashes. Keep artifact bytes out of feeds. Support cancellation and a harmless operation with authorized result retrieval. Reconcile queues independently of assignment latency; workers use bounded waits. Drain new claims across pools and finish active attempts before updating a worker.
 - [ ] Prove the real Steam Machine/Pixel/trashcan0 workflow, offline catch-up and protected admin operation. Verify competing claims/admin edits, replay, stale leases, duplicate completion, viewer isolation and bounded unchanged responses with no event reads. Keep remote projects, real inference and third-party relays deferred.
 
+The real primary Pixel and Steam Machine have authenticated as the same owner on trashcan0. The installed worker now orders policy changes, and the desktop verified the signed handoff receipt. With the Steam Machine offline, the Pixel created a pool, enabled its service and verified a signed task result. On return, the Steam Machine caught up through policy revision 3 and queue revision 3.
+
+- [ ] Open Cluster settings from the heading gear, browse people, groups, pool policy and synchronization in detail pages, and keep everyday task access direct. Initialize the four routing pools at first claim and verify the installed cluster.
+
 ### Worker updates and future pool coordination
 
 - [x] Standalone Linux workers enable automatic updates by default. Check on the first completed API response when due, including an anonymous 401. Target daily checks with traffic, allow hourly failure retries, and support an owner-requested immediate check. Quiet nodes retain their due state across restarts. Install the verified worker and resume service.

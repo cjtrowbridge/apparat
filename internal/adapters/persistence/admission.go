@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
@@ -49,6 +50,12 @@ func (db *DB) Login(ctx context.Context, l identity.Login) (Access, error) {
 		return a, err
 	}
 	if first == 1 {
+		for _, pool := range domain.DefaultPools() {
+			_, err = tx.ExecContext(ctx, "INSERT INTO cluster_pools(cluster,pool) VALUES(?,?)", cluster, pool.Name)
+			if err != nil {
+				return a, err
+			}
+		}
 		profile, _ := json.Marshal(l.Profile)
 		_, err = tx.ExecContext(ctx, "INSERT INTO cluster_users VALUES(?,?,?,'approved',1)", cluster, a.User, profile)
 		if err != nil {

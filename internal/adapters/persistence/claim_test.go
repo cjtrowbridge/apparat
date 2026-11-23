@@ -4,6 +4,7 @@ package persistence
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"testing"
 
@@ -63,6 +64,10 @@ func TestOnlyOneOwner(t *testing.T) {
 	for a := range results {
 		if a.Admin {
 			admins++
+			v, err := db.Governance(ctx, a)
+			if err != nil || !slices.Equal(v.Pools, []string{"Chat Pool", "Comrade Pool", "Project Pool", "Research Pool"}) || len(v.Services) != 0 || len(v.Grants) != 0 {
+				t.Fatalf("unexpected initial pools or permissions: %v, %v", v.Pools, err)
+			}
 			profile, _, err := personal.Credentials(device.Public())
 			if err != nil {
 				t.Fatal(err)

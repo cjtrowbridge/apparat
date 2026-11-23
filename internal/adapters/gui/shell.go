@@ -18,8 +18,6 @@ type DocumentSession interface {
 }
 type RuntimeInfo struct {
 	BrowseLAN       func(bool) string
-	PoolTasks       func(string)
-	ManageWorker    func(string)
 	CheckWorker     func(string)
 	PairPersonal    func(string, string)
 	ClaimHost       func(string, string)

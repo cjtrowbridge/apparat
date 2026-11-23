@@ -51,6 +51,8 @@ The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, �
 
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 
+For controls in the right-hand detail pane, the default layout for choosing among options is a child page in that pane. It starts with a touch-sized 🔙 Back button, then a heading, then the options. On a phone the page uses the full detail area. Back returns one level and restores the previous selection and scroll position. System-owned prompts such as biometric unlock and brief confirmations of consequential actions may interrupt the page.
+
 ### Comrades
 
 Comrades will eventually contain real friends and trusted groups. It is the social and cooperative-compute surface for:
@@ -134,6 +136,8 @@ The planned workspace includes:
 Project operations use constrained application APIs. Apparat does not expose an unrestricted remote shell.
 
 A Pipeline is not a separate repository or workflow authority. It is a project that defines at least one Apparat-executable entrypoint. Each entrypoint is a Task owned with that project. A Task may be run manually with no trigger, or connected to one or more interval, webhook, internal-application, or cluster-event triggers.
+
+The Cluster heading gear opens settings for people, groups, pools and synchronization. Worker settings contain registration and update controls. Open Pool tasks on a worker to submit a task, check progress or retrieve a verified result. New clusters start with Chat Pool (high), Project Pool (medium), Comrade Pool (low) and Research Pool (last). Each starts empty. Enabling services and granting access are separate administrator actions.
 
 ### Routing (Cluster detail)
 

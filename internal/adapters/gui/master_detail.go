@@ -131,30 +131,35 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 			widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 12, Bottom: 12}),
 		)),
 	)
-	selected := game.selectedSectionIndex(tabData)
-	peer := tabData.ID() == hud.TabCluster && game.lan.selected != ""
-	if withBack && !peer && selected >= 0 && !(tabData.ID() == hud.TabProjects && game.projects.workspace.id != "" && tabData.Sections[selected].ProjectID == game.projects.workspace.id && game.projects.workspace.mode != "registration") {
-		detailContainer.AddChild(game.backButton(tabData.ID()))
-	}
-	if selected >= 0 && tabData.Summary != "" && !peer {
-		detailContainer.AddChild(game.detailText(tabData.Summary))
-	}
-	for _, section := range game.detailSections(tabData) {
-		if section.ActionID == "add-new-device" {
-			game.discoveryContent(detailContainer)
-		} else {
-			detailContainer.AddChild(game.buildSectionContainer(section))
-			check := game.workerAction(section.ActionID, game.runtimeInfo.CheckWorker)
-			if tabData.ID() == hud.TabCluster && check != nil {
-				game.projectButton(detailContainer, "Check my access", check)
-			}
-			pool := game.permittedWorkerAction(section.ActionID, false, game.runtimeInfo.PoolTasks)
-			if tabData.ID() == hud.TabCluster && pool != nil {
-				game.projectButton(detailContainer, "Pool tasks", pool)
-			}
-			manage := game.permittedWorkerAction(section.ActionID, true, game.runtimeInfo.ManageWorker)
-			if tabData.ID() == hud.TabCluster && manage != nil {
-				game.projectButton(detailContainer, "Worker administration", manage)
+	child := tabData.ID() == hud.TabCluster && game.clusterTop() != nil
+	if child {
+		game.clusterContent(detailContainer)
+	} else {
+		selected := game.selectedSectionIndex(tabData)
+		peer := tabData.ID() == hud.TabCluster && game.lan.selected != ""
+		if withBack && !peer && selected >= 0 && !(tabData.ID() == hud.TabProjects && game.projects.workspace.id != "" && tabData.Sections[selected].ProjectID == game.projects.workspace.id && game.projects.workspace.mode != "registration") {
+			detailContainer.AddChild(game.backButton(tabData.ID()))
+		}
+		if selected >= 0 && tabData.Summary != "" && !peer {
+			detailContainer.AddChild(game.detailText(tabData.Summary))
+		}
+		for _, section := range game.detailSections(tabData) {
+			if section.ActionID == "add-new-device" {
+				game.discoveryContent(detailContainer)
+			} else {
+				detailContainer.AddChild(game.buildSectionContainer(section))
+				check := game.workerAction(section.ActionID, game.runtimeInfo.CheckWorker)
+				if tabData.ID() == hud.TabCluster && check != nil {
+					game.projectButton(detailContainer, "Check my access", check)
+				}
+				pool := game.workerPage(section.ActionID, "work", false)
+				if tabData.ID() == hud.TabCluster && pool != nil {
+					game.projectButton(detailContainer, "Pool tasks", pool)
+				}
+				manage := game.workerPage(section.ActionID, "machine", true)
+				if tabData.ID() == hud.TabCluster && manage != nil {
+					game.projectButton(detailContainer, "Worker settings", manage)
+				}
 			}
 		}
 	}
@@ -165,6 +170,10 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		widget.ScrollContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(game.detailLayoutData())),
 	)
 	game.registerVerticalScroll(scroll)
+	if child {
+		game.cluster.pane = scroll
+		scroll.ScrollTop = game.clusterTop().scroll
+	}
 	game.restoreWorkspaceScroll(scroll, tabData)
 	if tabData.ID() == hud.TabProjects && game.inWorkspace() && game.projects.workspace.mode == "conversation" {
 		return game.workspaceChatPane(scroll)

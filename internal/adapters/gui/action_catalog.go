@@ -7,6 +7,7 @@ package gui
 import (
 	"context"
 	"ebe-boilerplate/surface"
+	"encoding/json"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"runtime"
@@ -80,6 +81,25 @@ func (g *Game) registerSettingsActions(add registerAction, index int, tab hud.Ta
 
 func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab) {
 	owner := string(tab.ID())
+	if tab.ID() == hud.TabCluster {
+		add("screen", owner, "cluster-settings", "Cluster settings", "Cluster / Cluster settings", func() {
+			g.selectTab(index, nil)
+			g.openClusterSettings()
+		})
+		f := g.clusterTop()
+		if f != nil {
+			for _, o := range f.page.Options {
+				if o.Run == nil {
+					r := o.Route
+					key, _ := json.Marshal(r)
+					add("cluster-page", r.Worker, string(key), o.Label, "Cluster / "+f.page.Title+" / "+o.Label, func() {
+						g.selectTab(index, nil)
+						g.clusterOpen(r)
+					})
+				}
+			}
+		}
+	}
 	counts := make(map[string]int)
 	if tab.ID() == hud.TabProjects {
 		for _, p := range g.projects.rows {
@@ -106,13 +126,21 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 		if tab.ID() == hud.TabCluster && check != nil {
 			add("check-worker-access", owner, s.ActionID, "Check my access to "+s.Title, path+" / Check my access", check)
 		}
-		pool := g.permittedWorkerAction(s.ActionID, false, g.runtimeInfo.PoolTasks)
+		pool := g.workerPage(s.ActionID, "work", false)
 		if tab.ID() == hud.TabCluster && pool != nil {
-			add("worker-pool-tasks", owner, s.ActionID, "Pool tasks on "+s.Title, path+" / Pool tasks", pool)
+			add("worker-pool-tasks", owner, s.ActionID, "Pool tasks on "+s.Title, path+" / Pool tasks", func() {
+				g.selectTab(index, nil)
+				g.selectSection(tab.ID(), i)
+				pool()
+			})
 		}
-		manage := g.permittedWorkerAction(s.ActionID, true, g.runtimeInfo.ManageWorker)
+		manage := g.workerPage(s.ActionID, "machine", true)
 		if tab.ID() == hud.TabCluster && manage != nil {
-			add("manage-worker", owner, s.ActionID, "Manage "+s.Title, path+" / Worker administration", manage)
+			add("manage-worker", owner, s.ActionID, "Manage "+s.Title, path+" / Worker settings", func() {
+				g.selectTab(index, nil)
+				g.selectSection(tab.ID(), i)
+				manage()
+			})
 		}
 		if s.ActionID == "add-new-device" {
 			if g.canOfferPair() {

@@ -77,6 +77,8 @@ Supporting ownership:
 
 Every new or changed HUD control must satisfy `docs/controller-map.md` and the navigation acceptance procedure in `playbooks/how_to_add_or_modify_hud_tab_contents.md`. Use the shared keyboard and D-pad route, including on custom-drawn surfaces. Preserve text-edit, modal and gameplay input ownership.
 
+Default to a child page for any right-hand detail control that opens multiple choices. Render a touch-sized 🔙 Back button first, a heading second, then the options. Apply the same hierarchy in full-width narrow layouts. Follow the HUD tab playbook for exceptions and return-navigation checks.
+
 ## Application Governance
 
 - Treat every new file or feature as undocumented until its purpose, operation, assumptions, failure modes, and verification path are recorded at the closest useful documentation layer.

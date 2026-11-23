@@ -107,6 +107,7 @@ type Game struct {
 	researchContributionSort       hud.ContributionSort
 	researchContributionDescending bool
 	pttHeld                        bool
+	cluster                        clusterNavigation
 	lan                            lanView
 	runtimeInfo                    RuntimeInfo
 	activeTabID                    atomic.Value
@@ -168,12 +169,16 @@ func (game *Game) Update() error {
 	game.pollProjects()
 	game.pollUpdateDiscovery()
 	game.pollLAN()
+	game.pollCluster()
+	clusterOpen := game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster && game.clusterTop() != nil
 	game.pollDirectoryStatus()
 	peerOpen := game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster && game.lan.selected != ""
-	game.workspaceBackEnabled.Store(game.actions.mode != "" || game.inWorkspace() || peerOpen)
+	game.workspaceBackEnabled.Store(game.actions.mode != "" || game.inWorkspace() || peerOpen || clusterOpen)
 	if game.workspaceBackRequested.Swap(false) {
 		if game.actions.mode != "" {
 			game.backActionScreen()
+		} else if clusterOpen {
+			game.clusterBack()
 		} else if peerOpen {
 			game.leavePeer()
 		} else {

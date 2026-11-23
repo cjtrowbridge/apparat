@@ -26,6 +26,7 @@ type GovernanceView struct {
 	Head                              PolicyCursor
 	Users                             []Member
 	Pools                             []string
+	Limits                            map[string]int `json:",omitempty"`
 	Services, Grants                  []Membership
 }
 
@@ -78,17 +79,22 @@ func (db *DB) Governance(ctx context.Context, a Access) (GovernanceView, error) 
 	if err != nil {
 		return GovernanceView{}, err
 	}
-	rows, err = tx.QueryContext(ctx, "SELECT pool FROM cluster_pools WHERE cluster=? ORDER BY pool", v.Cluster)
+	rows, err = tx.QueryContext(ctx, "SELECT p.pool,coalesce(l.max_active,64) FROM cluster_pools p LEFT JOIN pool_limits l USING(cluster,pool) WHERE p.cluster=? ORDER BY p.pool", v.Cluster)
 	if err != nil {
 		return GovernanceView{}, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var name string
-		err = rows.Scan(&name)
+		var limit int
+		err = rows.Scan(&name, &limit)
 		if err != nil {
 			return GovernanceView{}, err
 		}
+		if v.Limits == nil {
+			v.Limits = map[string]int{}
+		}
+		v.Limits[name] = limit
 		v.Pools = append(v.Pools, name)
 	}
 	err = rows.Err()

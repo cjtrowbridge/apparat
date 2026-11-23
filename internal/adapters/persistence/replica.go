@@ -84,6 +84,7 @@ func (db *DB) ReadReplica(ctx context.Context, a Access, w string, after uint64)
 		if err != nil {
 			return nil, err
 		}
+		g.Limits = nil // Preserve the v1 signed view representation for older peers.
 		v.Governance = &g
 	}
 	rows, err := db.sql.QueryContext(ctx, `SELECT DISTINCT s.pool FROM pool_services s WHERE s.cluster=? AND s.service=? AND

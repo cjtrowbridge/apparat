@@ -67,19 +67,3 @@ func checkWorker(id string) {
 		node.CheckWorker(context.Background(), id, dialogs.Ask)
 	}
 }
-func manageWorker(id string) {
-	identitySetup.Lock()
-	dialogs := currentDialogs
-	identitySetup.Unlock()
-	if dialogs != nil {
-		node.ManageWorker(context.Background(), id, dialogs.Ask)
-	}
-}
-func poolTasks(id string) {
-	identitySetup.Lock()
-	dialogs := currentDialogs
-	identitySetup.Unlock()
-	if dialogs != nil {
-		node.PoolDialog(context.Background(), id, dialogs.Ask)
-	}
-}

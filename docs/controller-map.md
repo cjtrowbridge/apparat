@@ -85,3 +85,5 @@ focused toolbar control. Embedded settings keep navigation inside the panel.
 Gameplay receives the game's own inputs. Back returns to the gallery.
 
 Opening a discovered worker exposes **Claim this host for your cluster**. Keyboard and D-pad activation authenticate the saved identity through the same claim action as a tap. Settings → Personal identity → Edit screen name opens local text input. The action catalog opens each dialog through the same handler.
+
+The Cluster heading gear opens Cluster settings. Escape, B, Android Back and the detail-page Back button return one level. Selecting a task opens its details. Cancellation and role changes have a separate confirmation.

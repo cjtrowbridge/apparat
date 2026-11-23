@@ -57,6 +57,9 @@ func collectTargets(node widget.PreferredSizeLocateableWidget, targets *[]focusT
 }
 func (g *Game) bodyTargets() []focusTarget {
 	var targets []focusTarget
+	if g.nav.owner == hud.TabCluster && g.cluster.gear != nil {
+		collectTargets(g.cluster.gear, &targets)
+	}
 	collectTargets(g.nav.body, &targets)
 	return targets
 }

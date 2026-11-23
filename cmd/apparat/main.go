@@ -107,10 +107,6 @@ func run() (code int) {
 		executable, _ := os.Executable()
 		err = gui.RunWithRuntimeInfo(ctx, gui.RuntimeInfo{EditName: func() {
 			node.EditScreenName(ctx, dialog)
-		}, PoolTasks: func(id string) {
-			node.PoolDialog(ctx, id, dialog)
-		}, ManageWorker: func(id string) {
-			node.ManageWorker(ctx, id, dialog)
 		}, CheckWorker: func(id string) {
 			node.CheckWorker(ctx, id, dialog)
 		}, PairPersonal: func(network, host string) {
