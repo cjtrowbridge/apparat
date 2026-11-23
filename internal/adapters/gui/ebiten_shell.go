@@ -63,6 +63,8 @@ type Game struct {
 	theme                          *widget.Theme
 	selectorDescriptionFace        *ebitentext.Face
 	pageTitleFace                  *ebitentext.Face
+	formLabelFace                  *ebitentext.Face
+	formDescriptionFace            *ebitentext.Face
 	width                          int
 	height                         int
 	layoutDirty                    bool

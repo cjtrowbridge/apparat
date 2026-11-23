@@ -176,8 +176,8 @@ func (g *Game) projectButton(c *widget.Container, label string, click func()) {
 		})))
 }
 func (g *Game) projectInput(c *widget.Container, label, initial string, changed func(string)) {
-	c.AddChild(g.detailText(label))
-	c.AddChild(g.editorForLayout(label, func() *widget.TextInput {
+	row := g.formFieldRow(c, label)
+	row.AddChild(g.editorForLayout(label, func() *widget.TextInput {
 		return g.newProjectInput(initial, changed)
 	}))
 }

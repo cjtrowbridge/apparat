@@ -11,6 +11,8 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	uiimage "github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
+	"golang.org/x/image/font/gofont/gobold"
+	"golang.org/x/image/font/gofont/goitalic"
 	"image/color"
 	"slices"
 )
@@ -57,6 +59,8 @@ func (g *Game) applyPreferences(p domain.Preferences) {
 	face := createTextFace(float64(p.Font))
 	g.theme.ButtonTheme.TextFace = face
 	g.theme.LabelTheme.Face = face
+	g.formLabelFace = fontFace(gobold.TTF, float64(p.Font))
+	g.formDescriptionFace = fontFace(goitalic.TTF, float64(p.Font))
 	g.pageTitleFace = createTextFace(float64(p.Font) * 2)
 	g.selectorDescriptionFace = createTextFace(float64(p.Font) * 0.8)
 	theme := hud.ThemeDark

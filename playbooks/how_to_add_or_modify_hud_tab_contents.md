@@ -142,3 +142,7 @@ Register new destinations with the action catalog using the feature's existing s
 Exercise search with a command-shaped dictation, voice cancellation, spoken and directional clarification, and a retry after no match. Verify partial transcripts and approximate matches cannot activate an action. Changing a navigation verb to execute or mutate state requires a separately designed action and authorization boundary.
 
 On Linux, `make test-hud-navigation` runs the rendered navigation and catalog regressions and is included in `make verify`.
+
+### Form typography and alignment
+
+Place a persistent bold label immediately to the left of each editable field, including search filters and controls that open native text entry. Use a shared label-column width within the form. Wrap long labels within that column on narrow screens. Render explanatory descriptions in italics and user-entered values in regular type. Check both an empty field and a populated field at phone and desktop widths.

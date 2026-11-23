@@ -6,6 +6,8 @@ package gui
 
 import (
 	"context"
+	"github.com/hajimehoshi/ebiten/v2"
+	"image"
 	"strings"
 	"testing"
 	"time"
@@ -304,5 +306,41 @@ func TestNewProjectLocksFormAndOpensExactCheckout(t *testing.T) {
 	}
 	if g.projects.workspace.id != "new" || g.projects.workspace.mode != "files" || g.selectedSections[hud.TabProjects] != len(projectEntrySections)+1 {
 		t.Fatal("did not open the newly registered checkout")
+	}
+}
+
+func TestProjectLabelsBesideFields(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	for _, width := range []int{320, 960} {
+		g.Layout(width, 720)
+		for _, native := range []bool{false, true} {
+			g.runtimeInfo.PromptValue = nil
+			if native {
+				g.runtimeInfo.PromptValue = func(string, string) (string, bool) {
+					return "", false
+				}
+			}
+			form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))))
+			var value string
+			for _, label := range []string{"Search devices", "Destination parent folder (optional)"} {
+				g.projectField(form, label, &value)
+			}
+			form.GetWidget().SetTheme(g.theme)
+			form.Validate()
+			available := g.detailPanePreferredWidth() - 48
+			screen := ebiten.NewImage(available, 320)
+			form.SetLocation(image.Rect(0, 0, available, 320))
+			form.Render(screen)
+			screen.Deallocate()
+			for _, child := range form.Children() {
+				row := child.(*widget.Container)
+				caption, control := row.Children()[0], row.Children()[1]
+				left, right := caption.GetWidget().Rect, control.GetWidget().Rect
+				if left.Dx() != g.formLabelWidth() || right.Min.X != left.Max.X+8 || right.Max.X > available || right.Dx() < 50 || left.Min.Y >= right.Max.Y || right.Min.Y >= left.Max.Y {
+					t.Fatalf("width %d native %t: label %v and field %v outside row %v", width, native, left, right, row.GetWidget().Rect)
+				}
+			}
+		}
 	}
 }

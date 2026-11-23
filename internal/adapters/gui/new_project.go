@@ -97,8 +97,8 @@ func (g *Game) chooseProject(c setupChoice) {
 func (g *Game) newProjectControls(c *widget.Container) {
 	f := &g.projects
 	w := &f.wizard
-	c.AddChild(g.detailText("Choose a device"))
-	c.AddChild(g.detailText("Work takes place on the selected device. With remote projects, it will be able to use the cluster’s online resources, and cluster devices will be able to browse its contents while the host is online."))
+	c.AddChild(g.formLabel("Choose a device"))
+	c.AddChild(g.formDescription("Work takes place on the selected device. With remote projects, it will be able to use the cluster’s online resources, and cluster devices will be able to browse its contents while the host is online."))
 	if g.runtimeInfo.PromptValue != nil {
 		g.projectField(c, "Search devices", &w.search)
 	} else {
@@ -121,7 +121,7 @@ func (g *Game) newProjectControls(c *widget.Container) {
 					label = "Project template"
 				}
 			}
-			c.AddChild(g.detailText(label))
+			c.AddChild(g.formLabel(label))
 		}
 		label := choice.label
 		if choice.id == w.host || choice.id == w.source || choice.id == w.mode {
@@ -132,17 +132,17 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		})
 	}
 	if len(choices) == 0 {
-		c.AddChild(g.detailText("No matching devices."))
+		c.AddChild(g.formDescription("No matching devices."))
 	}
 	if step == "host" {
 		return
 	}
 	local := w.host == "local"
 	if !local {
-		c.AddChild(g.detailText("Remote project setup is a preview. Execution on this host is not available yet."))
+		c.AddChild(g.formDescription("Remote project setup is a preview. Execution on this host is not available yet."))
 	}
 	if w.mode == "starter" {
-		c.AddChild(g.detailText("A blank project with agentic-pipelines and a repeatable bootstrap. Available once the public starter repository is published."))
+		c.AddChild(g.formDescription("A blank project with agentic-pipelines and a repeatable bootstrap. Available once the public starter repository is published."))
 		return
 	}
 	folder := func(label string, value *string, optional bool) {
@@ -164,7 +164,7 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		if local && runtime.GOOS != "android" {
 			g.projectAccount(c, &f.account)
 		} else if local {
-			c.AddChild(g.detailText("Public GitHub repositories only on Android."))
+			c.AddChild(g.formDescription("Public GitHub repositories only on Android."))
 		} else {
 			g.projectField(c, "GitHub login on the host (optional)", &w.remoteAccount)
 		}

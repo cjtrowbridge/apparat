@@ -42,3 +42,5 @@ Verified in 0.1.34. The packaged Linux GUI created and opened a named repo. The 
 ### New Project host selection (Phase 9 with a Phase 11 preview)
 
 Consolidate the three pinned entry points into a progressive host, source and template form. Preserve local creation, clone preview, optional system GitHub login and folder registration. Display safe operation progress and open the registered workspace by its canonical location. Verify search, conditional controls, offline template and remote execution boundaries, and the ordinary release matrix. The default Agentic Pipelines template awaits its public repository.
+
+Use a consistent left column for bold project form labels and italic text for descriptions. Verify field and label bounds on narrow and wide layouts for native prompt controls and inline editing.

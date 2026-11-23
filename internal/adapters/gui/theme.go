@@ -134,9 +134,12 @@ func createUITheme() *widget.Theme {
 }
 
 func createTextFace(size float64) *ebitentext.Face {
-	// TTF Font Setup using embedded DejaVu Sans for full Unicode support.
+	return fontFace(dejavuSansTTF, size)
+}
+
+func fontFace(data []byte, size float64) *ebitentext.Face {
 	var face ebitentext.Face
-	source, err := ebitentext.NewGoTextFaceSource(bytes.NewReader(dejavuSansTTF))
+	source, err := ebitentext.NewGoTextFaceSource(bytes.NewReader(data))
 	if err == nil {
 		face = &ebitentext.GoTextFace{
 			Source: source,

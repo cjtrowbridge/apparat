@@ -149,11 +149,14 @@ func (g *Game) projectField(c *widget.Container, label string, value *string) {
 		})
 		return
 	}
-	caption := label
+	row := g.formFieldRow(c, label)
+	caption := "Tap to enter…"
 	if *value != "" {
-		caption += " · " + *value
+		caption = *value
 	}
-	g.projectButton(c, caption, func() {
+	width := max(1, g.detailPanePreferredWidth()-56-g.formLabelWidth()-8-32)
+	caption = wrapSelectorLabel(caption, *g.theme.ButtonTheme.TextFace, width)
+	g.projectButton(row, caption, func() {
 		initial := *value
 		g.projectWork(func(ctx context.Context) projectResult {
 			text, ok := prompt(label, initial)
