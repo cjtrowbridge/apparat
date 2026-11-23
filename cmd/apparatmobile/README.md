@@ -19,3 +19,5 @@ Android safe-area color comes from the GUI renderer through `BackgroundARGB` in 
 
 - `document.go`: Binds the Android document editor to the selected file and draft session.
 - `identity.go`: Bridges the local node identity workflow to private Android prompts and locks the signing session on background.
+
+The Activity supplies its current Android user's files directory before the Go runtime registers the game. Recreating the Activity within one process reuses the same initialized runtime. Each Android profile has its own device identity, database and private storage.

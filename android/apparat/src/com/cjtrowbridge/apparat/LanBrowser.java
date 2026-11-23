@@ -11,13 +11,13 @@ import android.net.NetworkCapabilities;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Build;
-import java.util.TreeSet;
+import java.util.TreeMap;
 
 final class LanBrowser {
     private final MainActivity activity;
     private final NsdManager nsd;
     private final ConnectivityManager connectivity;
-    private final TreeSet<String> names = new TreeSet<>();
+    private final TreeMap<String,NsdServiceInfo> names = new TreeMap<>();
     private NsdManager.DiscoveryListener listener;
     private Network network;
     private boolean foreground;
@@ -42,6 +42,44 @@ final class LanBrowser {
         listener = null;
         network = null;
         names.clear();
+    }
+    String resolve(String device, String name) {
+        final Network expected;
+        final NsdServiceInfo selected;
+        synchronized (this) {
+            expected = network;
+            selected = names.get(name);
+            android.net.LinkProperties link = connectivity.getLinkProperties(expected);
+            if (!foreground || expected == null || selected == null || link == null ||
+                !device.equals(link.getInterfaceName()) || !expected.equals(connectivity.getActiveNetwork())) return "";
+        }
+        java.util.concurrent.ArrayBlockingQueue<String> answer = new java.util.concurrent.ArrayBlockingQueue<>(1);
+        try {
+            nsd.resolveService(selected, new NsdManager.ResolveListener() {
+                public void onResolveFailed(NsdServiceInfo ignored, int code) {
+                    answer.offer("");
+                }
+                public void onServiceResolved(NsdServiceInfo result) {
+                    String address = "";
+                    synchronized (LanBrowser.this) {
+                        if (foreground && expected.equals(network) && expected.equals(connectivity.getActiveNetwork()) &&
+                            names.containsKey(name) && name.equals(result.getServiceName()) &&
+                            result.getHost() != null && result.getPort() > 0) {
+                            String host = result.getHost().getHostAddress();
+                            address = (host.contains(":") ? "[" + host + "]" : host) + ":" + result.getPort();
+                        }
+                    }
+                    answer.offer(address);
+                }
+            });
+            String address = answer.poll(5, java.util.concurrent.TimeUnit.SECONDS);
+            return address == null ? "" : address;
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            return "";
+        } catch (RuntimeException error) {
+            return "";
+        }
     }
     synchronized String browse(boolean open) {
         if (!open || !foreground) {
@@ -70,7 +108,7 @@ final class LanBrowser {
                 public void onStopDiscoveryFailed(String type, int error) {}
                 public void onServiceFound(NsdServiceInfo info) {
                     synchronized (LanBrowser.this) {
-                        if (listener == this && names.size() < 128) names.add(info.getServiceName());
+                        if (listener == this && names.size() < 128) names.put(info.getServiceName(), info);
                     }
                 }
                 public void onServiceLost(NsdServiceInfo info) {
@@ -90,7 +128,7 @@ final class LanBrowser {
         android.net.LinkProperties link = connectivity.getLinkProperties(current);
         if (link == null || link.getInterfaceName() == null) return "Wi-Fi interface unavailable";
         try {
-            return new org.json.JSONObject().put("network",link.getInterfaceName()).put("hosts",new org.json.JSONArray(names)).toString();
+            return new org.json.JSONObject().put("network",link.getInterfaceName()).put("hosts",new org.json.JSONArray(names.keySet())).toString();
         } catch (org.json.JSONException e) {
             return "Network discovery unavailable";
         }

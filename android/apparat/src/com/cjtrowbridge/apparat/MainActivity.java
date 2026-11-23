@@ -66,7 +66,7 @@ public class MainActivity extends Activity {
         Seq.setContext(getApplicationContext());
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        if (!Apparatmobile.ready()) {
+        if (!Apparatmobile.initialize(getFilesDir().getAbsolutePath())) {
             Log.e(TAG, "Local runtime initialization failed");
             Toast.makeText(this, "Apparat could not initialize its local data. See app diagnostics.", Toast.LENGTH_LONG).show();
             finish();

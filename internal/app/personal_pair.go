@@ -114,7 +114,7 @@ func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog
 		}
 		return err
 	}
-	address, err := discovery.ResolveWorker(ctx, network, host)
+	address, err := n.resolvePeer(ctx, network, host)
 	if err != nil {
 		return err
 	}

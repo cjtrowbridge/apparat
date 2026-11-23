@@ -35,7 +35,7 @@ func (node *Runtime) authenticateWorker(ctx context.Context, network, host strin
 	if err != nil {
 		return "", errors.New("Unlock your saved Apparat identity to connect.")
 	}
-	address, err := discovery.ResolveWorker(ctx, network, host)
+	address, err := node.resolvePeer(ctx, network, host)
 	if err != nil {
 		return "", err
 	}
@@ -148,4 +148,11 @@ func (n *Runtime) CheckWorker(ctx context.Context, id string, dialog identity.Di
 		nativeQuestion(dialog, "notice", worker.Host, status)
 		return
 	}
+}
+
+func (node *Runtime) resolvePeer(ctx context.Context, network, host string) (string, error) {
+	if node.ResolvePeer != nil {
+		return node.ResolvePeer(ctx, network, host)
+	}
+	return discovery.ResolveWorker(ctx, network, host)
 }

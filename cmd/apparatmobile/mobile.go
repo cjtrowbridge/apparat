@@ -6,6 +6,7 @@ package apparatmobile
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"sync"
@@ -21,8 +22,17 @@ var game *gui.Game
 var node *app.Runtime
 var bridgeMu sync.Mutex
 
-func init() {
-	cfg, err := config.Load(config.Options{DefaultMode: config.ModeGUI, BinaryName: "apparat"})
+var initializeOnce sync.Once
+
+func Initialize(filesDir string) bool {
+	initializeOnce.Do(func() {
+		initialize(filesDir)
+	})
+	return Ready()
+}
+
+func initialize(filesDir string) {
+	cfg, err := config.Load(config.Options{Env: map[string]string{"APPARAT_ANDROID_FILES_DIR": filesDir}, DefaultMode: config.ModeGUI, BinaryName: "apparat"})
 	if err != nil {
 		slog.Error("parse android config", "error", err)
 		return
@@ -34,6 +44,7 @@ func init() {
 		slog.Error("create android runtime", "error", err)
 		return
 	}
+	runtime.ResolvePeer = resolveWorker
 	runtime.SetDrivers(mockprovider.Drivers())
 	node = runtime
 	nodeCache = cfg.CacheDir
@@ -123,6 +134,7 @@ func ReportUpdateStatus(code string) {
 }
 
 type Updater interface {
+	ResolveWorker(string, string) string
 	BrowseLAN(bool) string
 	InstalledRelease() string
 	CheckForUpdate()
@@ -193,4 +205,17 @@ func sayChoice(text string) {
 func microphoneReady() bool {
 	host := actionSpeechHost()
 	return host != nil && host.Microphone()
+}
+
+func resolveWorker(ctx context.Context, network, host string) (string, error) {
+	bridgeMu.Lock()
+	current := updater
+	bridgeMu.Unlock()
+	if current != nil && ctx.Err() == nil {
+		addr := current.ResolveWorker(network, host)
+		if addr != "" && ctx.Err() == nil {
+			return addr, nil
+		}
+	}
+	return "", errors.New("The host is no longer visible on the selected Wi-Fi network.")
 }
