@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/hajimehoshi/ebiten/v2"
+	"slices"
 	"strings"
 )
 
@@ -15,6 +16,7 @@ type liveDirectory struct {
 	project, dir, session string
 	cancel                context.CancelFunc
 	dirty                 chan *domain.WorkspaceView
+	listing               chan workspaceReply
 }
 type directoryWatcher interface {
 	WatchDirectory(context.Context, string, string, string, func(*domain.WorkspaceView)) error
@@ -40,7 +42,7 @@ func (g *Game) pollWorkspaceLive() {
 	if l.cancel == nil {
 		ctx, cancel := context.WithCancel(f.ctx)
 		ch := make(chan *domain.WorkspaceView, 1)
-		*l = liveDirectory{w.id, w.dir, session, cancel, ch}
+		*l = liveDirectory{project: w.id, dir: w.dir, session: session, cancel: cancel, dirty: ch}
 		id, dir := w.id, w.dir
 		f.workers.Add(1)
 		go func() {
@@ -58,17 +60,45 @@ func (g *Game) pollWorkspaceLive() {
 			})
 		}()
 	}
-	if f.pending == nil {
+	if f.pending != nil {
+		l.listing = nil
+		return
+	}
+	if l.listing != nil {
 		select {
-		case view := <-l.dirty:
-			if view != nil {
-				w.report = view.Report
-				w.selected.State = view.Detail
+		case r := <-l.listing:
+			l.listing = nil
+			if r.err != nil || !slices.Equal(w.entries, r.view.Entries) {
+				g.applyWorkspace(&r)
 				g.layoutDirty = true
 			} else {
-				g.workspaceRequest("list")
+				g.startDirectoryStatus(r.request)
 			}
 		default:
 		}
+		return
+	}
+	select {
+	case view := <-l.dirty:
+		if view != nil {
+			w.report = view.Report
+			w.selected.State = view.Detail
+			g.layoutDirty = true
+		} else {
+			store, ok := g.runtimeInfo.Queries.(workspaceStore)
+			if !ok {
+				return
+			}
+			q := domain.WorkspaceRequest{ProjectID: w.id, Path: w.dir, Action: "list"}
+			reply := make(chan workspaceReply, 1)
+			l.listing = reply
+			f.workers.Add(1)
+			go func() {
+				defer f.workers.Done()
+				v, err := store.Workspace(f.ctx, q)
+				reply <- workspaceReply{q, v, err}
+			}()
+		}
+	default:
 	}
 }

@@ -81,7 +81,7 @@ func (g *Game) discoveryContent(c *widget.Container) {
 					g.openPeer(name)
 				}
 			}))
-		c.AddChild(plusRow(btn))
+		c.AddChild(leadingIconRow(btn, "2795"))
 	}
 }
 

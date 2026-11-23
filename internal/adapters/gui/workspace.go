@@ -6,6 +6,8 @@ package gui
 
 import (
 	"context"
+	"errors"
+	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"path"
 	"slices"
 	"strings"
@@ -109,6 +111,12 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		return
 	}
 	if r.err != nil {
+		if r.request.Action == "list" || r.request.Action == "read" && errors.Is(r.err, httpapi.ErrDenied) {
+			g.stopFolderCheck()
+			w.entries = nil
+			w.changes = nil
+			w.cursor = ""
+		}
 		w.autoEdit = false
 		w.report = r.err.Error()
 		return

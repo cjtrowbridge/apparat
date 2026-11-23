@@ -27,3 +27,5 @@ Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 Pool tabs use ☑️ (2611.png from Twemoji v16.0.1), the existing networked computers icon, and 👥 (1f465.png from the STMPCK Twemoji set).
 
 Workspace navigation uses the pinned Twemoji speech balloon (1f4ac.png) and folder (1f4c1.png), plus the existing pencil, laptop and checklist artwork.
+
+Files uses the pinned Twemoji page (1f4c4.png) and folder (1f4c1.png) before each row’s Git marker and name.

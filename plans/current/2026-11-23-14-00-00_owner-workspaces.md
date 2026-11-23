@@ -25,3 +25,11 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 The race-enabled app and adapter suites passed on Linux, including the real isolated PTY, authenticated live socket, 2,100-entry directory, stale base, retry receipt, grant revocation and private capture failure tests. The current protocol recovers by snapshot on reconnect. Cross-connection event replay, wider catalog scale and hardware acceptance remain separate checks.
 
 The first published checkpoint qualified all three host targets, including Pixel 4a installation and trashcan0 installation. A physical Pixel inspection verified the five workspace icons and identified a hostname fallback when the keys were locked. The follow-up uses the saved installation hostname. The selector pages registrations by owner, and the terminal list streams session directories. Keep acceptance on existing main checkouts. Hardware tests may use a temporary file inside an existing approved checkout.
+
+### Physical acceptance on 0.1.75
+
+Using the saved identity on the Pixel 4a and the existing main checkout on trashcan0, opened a temporary text file, saved a marker, and observed the editor return to Files with the untracked marker. Verified the saved contents independently on the worker. Started an isolated terminal from the Pixel and used it to read the marker back from that checkout. Removed the test file, revoked all four temporary scopes and verified the original zero-grant state. The narrow-screen heading clipped at the right edge. Previously displayed directory rows also remained visible on returning to Files after revocation. Immediate clearing of that stale display is unverified.
+
+### Files list presentation and activation
+
+Verify intact workspace tab icons, page-colored file rows, leading file or folder artwork, Git markers and one-activation navigation. Keep background refresh independent of foreground operations. Surface read failures above the listing and clear unavailable rows.

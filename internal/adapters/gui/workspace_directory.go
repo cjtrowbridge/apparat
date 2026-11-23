@@ -43,7 +43,7 @@ func directoryItems(dir string, entries []domain.WorkspaceEntry, changes []domai
 			}
 			item = directoryItem{WorkspaceEntry: domain.WorkspaceEntry{Name: name, Directory: nested || ch.Directory}, missing: true}
 		}
-		if !nested && !ch.Directory {
+		if !nested {
 			item.change = ch
 		}
 		children[name] = item
@@ -72,17 +72,18 @@ func (g *Game) directoryListing(c *widget.Container, w *workspacePanel) {
 	}
 	list.AddChild(g.detailText(location))
 	if w.dir != "." {
-		g.filenameRow(list, "../", false, g.workspaceBack)
+		g.filenameRow(list, "../", true, false, g.workspaceBack)
 	}
 	rows := directoryItems(w.dir, w.entries, w.changes)
 	for _, entry := range rows[:min(w.page+24, len(rows))] {
 		label := entry.Name
 		if entry.Directory {
 			label += "/"
-		} else if entry.change.Marker != "" {
+		}
+		if entry.change.Marker != "" {
 			label = entry.change.Marker + "  " + label
 		}
-		g.filenameRow(list, label, entry.change.Marker != "", func() {
+		g.filenameRow(list, label, entry.Directory, entry.change.Marker != "", func() {
 			dest := path.Join(w.dir, entry.Name)
 			switch {
 			case entry.Directory:
@@ -119,21 +120,27 @@ func (g *Game) directoryListing(c *widget.Container, w *workspacePanel) {
 		})
 	}
 }
-func (g *Game) filenameRow(c *widget.Container, label string, changed bool, click func()) {
+func (g *Game) filenameRow(c *widget.Container, label string, directory, changed bool, click func()) {
 	// Keep keyboard/controller focus and a full-width touch target on the plain list row.
 	tint := color.RGBA{255, 255, 255, 255}
 	if changed {
 		tint = color.RGBA{255, 145, 145, 255}
 	}
 	colors := &widget.ButtonTextColor{Idle: tint, Hover: tint, Pressed: tint, Disabled: tint}
-	bg := *g.theme.ButtonTheme.Image
-	bg.Idle = uiimage.NewNineSliceColor(color.Transparent)
-	label = wrapSelectorLabel(label, *g.theme.ButtonTheme.TextFace, max(80, g.detailPanePreferredWidth()-52))
-	c.AddChild(widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, colors), widget.ButtonOpts.Image(&bg), widget.ButtonOpts.TextPadding(&widget.Insets{Left: 4, Right: 4}), widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
+	clear := uiimage.NewNineSliceColor(color.Transparent)
+	bg := &widget.ButtonImage{Idle: clear, Hover: clear, Pressed: clear, PressedHover: clear, Disabled: clear, PressedDisabled: clear}
+	icon := "1f4c4"
+	if directory {
+		icon = "1f4c1"
+	}
+	const inset = 12 + tabIconSize + 4
+	label = wrapSelectorLabel(label, *g.theme.ButtonTheme.TextFace, max(40, g.detailPanePreferredWidth()-52-inset))
+	button := widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, colors), widget.ButtonOpts.Image(bg), widget.ButtonOpts.TextPadding(&widget.Insets{Left: inset, Right: 4}), widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 		if g.projects.pending == nil && !g.bodySelectionSuppressed() {
 			click()
 		}
-	})))
+	}))
+	c.AddChild(leadingIconRow(button, icon))
 }
 
 func (g *Game) stopFolderCheck() {

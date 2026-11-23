@@ -33,3 +33,5 @@ Records include operation class, time, latency, measured bytes, row counts, outc
 ## Verification
 
 The owner tests exercise denied grants, base conflicts, retry after a lost acknowledgement, revocation and a directory with thousands of entries. The isolated Linux terminal test checks actual command output, controller transfer and resize. The telemetry tests exercise overflow, file permissions and failed writes. Release qualification uses the repository-wide build pipeline. A physical device acceptance check should include a separate editor, an external change and loss of the live connection.
+
+In Files, each row starts with 📁 or 📄, followed by its Git marker when available and its name. Select anywhere on the row to enter the folder or open the file in the editor. An owner read failure appears above the listing.

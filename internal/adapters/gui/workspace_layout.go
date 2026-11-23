@@ -120,15 +120,17 @@ func (g *Game) workspaceRow(c *widget.Container, label string, click func()) {
 		})))
 }
 func (g *Game) workspaceNavButton(c *widget.Container, label string, active bool, click func()) {
-	images := *g.theme.ButtonTheme.Image
+	images := tabButtonImage()
 	if active {
 		images.Idle = images.Pressed
 	}
-	c.AddChild(widget.NewButton(widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon(label)}), widget.ButtonOpts.Image(&images), widget.ButtonOpts.TextPadding(&widget.Insets{Left: 8, Right: 8}), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
+	button := widget.NewButton(widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon(label)}), widget.ButtonOpts.Image(images), widget.ButtonOpts.GraphicPadding(widget.Insets{}), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(44, 44)), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 		if !g.bodySelectionSuppressed() && g.projects.pending == nil {
 			click()
 		}
-	})))
+	}))
+	button.GetWidget().SetTheme(&widget.Theme{})
+	c.AddChild(button)
 }
 
 func reattachEditor(editor *widget.TextInput) {

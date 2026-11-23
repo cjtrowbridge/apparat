@@ -117,12 +117,14 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 			g.workspaceGo(mode, action)
 		})
 	}
-	nav := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal))))
+	// Leave room for the detail panel padding and the scroll gutter on narrow layouts.
+	columns := max(1, min(1+len(workspaceDestinations), (g.detailPanePreferredWidth()-52)/44))
+	nav := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(columns))))
 	back := widget.NewButton(
 		widget.ButtonOpts.Image(tabButtonImage()),
 		widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon("1f519")}),
 		widget.ButtonOpts.GraphicPadding(widget.Insets{}),
-		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(54, 48)),
+		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(44, 44)),
 		widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 			if !g.bodySelectionSuppressed() {
 				g.workspaceBack()
@@ -151,11 +153,15 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	case "editor":
 		c.AddChild(g.detailText("Select a file in Files to open it in the editor."))
 	case "files":
+		if w.report != "" {
+			c.AddChild(g.detailText(w.report))
+		}
 		g.workspaceBrowser(c, w)
 		if !remote {
 			goTo("Changes", "changes", "changes")
 			goTo("Folder options", "folder-options", "")
 		}
+		return
 	case "folder-options":
 		goTo("New file", "create", "")
 		goTo("New folder", "mkdir", "")

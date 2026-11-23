@@ -47,7 +47,7 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			if actions == nil && section.ActionID != "add-new-device" {
 				actions = game.selectorRows()
 			}
-			row := plusRow(btn)
+			row := leadingIconRow(btn, "2795")
 			if section.ActionID == "add-new-device" {
 				listContainer.AddChild(row)
 			} else {
@@ -100,11 +100,11 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 	return boundPreferredWidth(box, game.masterPanePreferredWidth)
 }
 
-func plusRow(btn *widget.Button) *widget.Container {
+func leadingIconRow(btn *widget.Button, icon string) *widget.Container {
 	row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 	btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
-	row.AddChild(btn, leadingIcon("2795"))
+	row.AddChild(btn, leadingIcon(icon))
 	return row
 }
 func leadingIcon(icon string) *widget.Graphic {

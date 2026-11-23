@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
@@ -85,5 +86,16 @@ func TestOwnerTitleAndCatalogNavigation(t *testing.T) {
 				t.Fatal(dst)
 			}
 		}
+	}
+}
+
+func TestFailedFolderReplacesPreviousListing(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	w := &g.projects.workspace
+	*w = workspacePanel{id: "worker-fixture/project", dir: "sub", mode: "files", cursor: "previous", entries: []domain.WorkspaceEntry{{Name: "from-parent"}}, changes: []domain.WorkspaceChange{{Path: "from-parent"}}}
+	g.applyWorkspace(&workspaceReply{request: domain.WorkspaceRequest{ProjectID: w.id, Path: w.dir, Action: "list"}, err: errors.New("folder is unavailable")})
+	if len(w.entries) != 0 || len(w.changes) != 0 || w.cursor != "" || w.report != "folder is unavailable" {
+		t.Fatal("failed navigation retained the previous directory")
 	}
 }
