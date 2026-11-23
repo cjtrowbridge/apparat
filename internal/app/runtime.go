@@ -352,7 +352,7 @@ func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
 	defer node.RequestSync()
 	node.Keys.Setup(dialog)
 	if node.Personal != nil && node.Keys.State() == "unlocked" {
-		if node.Personal.Setup(dialog) {
+		if node.Personal.Setup(dialog, node.personalUnlockDevice()) {
 			node.openDiscovery.Store(true)
 			return
 		}
@@ -361,6 +361,9 @@ func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
 			node.mu.Lock()
 			if node.database != nil {
 				err = node.database.RememberDevice(context.Background(), pub, binding)
+				if err == nil && node.serviceManager != nil {
+					node.serviceManager.notify()
+				}
 			}
 			node.mu.Unlock()
 			if err != nil {

@@ -32,6 +32,7 @@ func (game *Game) receiveServices() {
 			game.serviceUpdates = nil
 			return
 		}
+		nameChanged := game.serviceProjection.ScreenName != projection.ScreenName
 		for _, tab := range game.shell.Snapshot().Tabs {
 			if tab.ID() != hud.TabCluster {
 				continue
@@ -50,7 +51,8 @@ func (game *Game) receiveServices() {
 			}
 			break
 		}
-		if game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster {
+		active := game.shell.Snapshot().ActiveTab().ID()
+		if active == hud.TabCluster || active == hud.TabSettings && nameChanged {
 			game.layoutDirty = true
 		}
 	default:

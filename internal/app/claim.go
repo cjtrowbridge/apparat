@@ -103,6 +103,9 @@ func (node *Runtime) EditScreenName(ctx context.Context, dialog identity.Dialog)
 		node.mu.Lock()
 		if err == nil && node.database != nil {
 			err = node.database.RememberDevice(ctx, profile, binding)
+			if err == nil && node.serviceManager != nil {
+				node.serviceManager.notify()
+			}
 		}
 		node.mu.Unlock()
 	}
@@ -194,4 +197,11 @@ func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevi
 		n.serviceManager.notify()
 	}
 	return client, err
+}
+
+func (n *Runtime) ScreenName() string {
+	if n.Personal == nil {
+		return ""
+	}
+	return n.Personal.ScreenName()
 }

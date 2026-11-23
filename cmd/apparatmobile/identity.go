@@ -1,7 +1,7 @@
 //go:build android && gui
 
 // Runs local identity setup through private Android dialogs away from the UI thread.
-// The node runtime owns the unlocked session and clears it when the Activity backgrounds.
+// The node runtime owns the unlocked session and clears it when the Activity finishes.
 package apparatmobile
 
 import (
@@ -27,6 +27,9 @@ func SetupKeys(dialogs KeyDialogs) {
 }
 
 func LockKeys() {
+	identitySetup.Lock()
+	defer identitySetup.Unlock()
+	currentDialogs = nil
 	if node != nil {
 		node.LockIdentities()
 	}

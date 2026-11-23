@@ -29,3 +29,5 @@ Identity code must redact private keys, passphrases, tokens, raw prompts, raw vo
 - `policy.go`: Signs proposed administrative edits with both identities, binding the command ID, cluster and base revision.
 - `auth.go`: Creates and verifies domain-separated worker login proofs that require both unlocked keys.
 - `pair_transfer.go`: Signs the encrypted recovery bundle and saved worker directory for a specific receiving device. The recipient checks the signed profile, device key, envelope signature and recovery password before installing a missing identity.
+
+- `launch_unlock.go`: Wraps the opted-in local personal unlock with the OS-protected device secret and migrates independently protected references after a successful unlock.

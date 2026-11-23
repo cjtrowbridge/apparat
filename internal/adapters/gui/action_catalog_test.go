@@ -207,6 +207,7 @@ func TestPersonalClusterDialogsFollowAvailability(t *testing.T) {
 	g := NewGame()
 	defer g.Close()
 	g.runtimeInfo.EditName = func() {}
+	g.serviceProjection.ScreenName = "Example owner"
 	g.runtimeInfo.PairPersonal = func(string, string) {}
 	g.runtimeInfo.ClaimHost = func(string, string) {}
 	g.receiveLAN(lanNames([]string{"fixture"}))

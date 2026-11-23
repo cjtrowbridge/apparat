@@ -22,9 +22,10 @@ type generation struct {
 }
 
 type Session struct {
-	mu  sync.Mutex
-	dir string
-	key ed25519.PrivateKey
+	mu        sync.Mutex
+	dir       string
+	launchKey []byte
+	key       ed25519.PrivateKey
 }
 
 func NewSession(dir string) *Session {
@@ -108,6 +109,7 @@ func (s *Session) Unlock(secret string) error {
 	if err == nil {
 		clear(s.key)
 		s.key = key
+		s.setLaunchKey(gen.Mode, secret)
 	}
 	return err
 }
@@ -117,6 +119,8 @@ func (s *Session) Lock() {
 	defer s.mu.Unlock()
 	clear(s.key)
 	s.key = nil
+	clear(s.launchKey)
+	s.launchKey = nil
 }
 
 func (s *Session) Install(backup []byte, oldPassword, mode, secret, reference string, generate bool) error {
@@ -200,6 +204,7 @@ func (s *Session) Install(backup []byte, oldPassword, mode, secret, reference st
 	committed = true
 	clear(s.key)
 	s.key = verified
+	s.setLaunchKey(mode, secret)
 	return nil
 }
 

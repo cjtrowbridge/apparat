@@ -5,7 +5,9 @@ package identity
 import (
 	"bytes"
 	"encoding/json"
+	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -67,8 +69,74 @@ func TestJoiningFromAnotherDeviceRequestsDiscovery(t *testing.T) {
 		answer, _ := json.Marshal(answers[0])
 		answers = answers[1:]
 		return string(answer)
-	})
+	}, nil)
 	if !openDiscovery || len(answers) != 0 || personal.Fingerprint() != "" {
 		t.Fatal("joining should open discovery with no new personal key")
+	}
+}
+
+func TestLaunchUnlockMigration(t *testing.T) {
+	user := NewPersonal(t.TempDir())
+	password := "portable fixture password"
+	err := user.Create("Original", []byte(password))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = user.Rename("Updated")
+	if err != nil || user.ScreenName() != "Updated" {
+		t.Fatal("rename not reflected")
+	}
+	device := NewSession(t.TempDir())
+	err = device.Install(nil, "", "system", "fixture device secret", "fixture reference", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(filepath.Dir(user.path), "unlock.ref")
+	err = atomicWrite(path, []byte("legacy reference"), 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for launch := 0; launch < 2; launch++ {
+		user.Lock()
+		device.Lock()
+		ref, _ := readPrivate(path)
+		_, ok := device.wrapLocal(password)
+		if ok {
+			t.Fatal("locked device can wrap credentials")
+		}
+		loads := 0
+		dialog := func(raw string) string {
+			var r request
+			if json.Unmarshal([]byte(raw), &r) != nil {
+				t.Fatal("invalid dialog")
+			}
+			switch r.Op {
+			case "load":
+				loads++
+				if r.Value == "fixture reference" {
+					return `"fixture device secret"`
+				}
+				if r.Value == "legacy reference" {
+					return `"portable fixture password"`
+				}
+			case "remove":
+				return `""`
+			}
+			t.Fatal("unexpected credential request", r.Op)
+			return "null"
+		}
+		device.Setup(dialog)
+		user.Setup(dialog, device)
+		if user.ScreenName() != "Updated" || loads != 2-launch {
+			t.Fatal("wrong launch identity or prompt count", loads)
+		}
+		if launch == 1 && !strings.HasPrefix(string(ref), launchPrefix) {
+			t.Fatal("legacy reference did not migrate")
+		}
+		device.Setup(dialog)
+		user.Setup(dialog, device)
+		if loads != 2-launch {
+			t.Fatal("unlocked session prompted again")
+		}
 	}
 }

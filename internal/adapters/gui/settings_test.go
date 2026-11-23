@@ -244,3 +244,20 @@ func TestReleaseDiscovery(t *testing.T) {
 		}()
 	}
 }
+
+func TestPersonalIdentityShowsNameAndPencil(t *testing.T) {
+	g := NewGame()
+	g.runtimeInfo.EditName = func() {}
+	g.serviceProjection.ScreenName = "Example owner"
+	card := widget.NewContainer()
+	g.settingsCardControls(card, "personal-identity")
+	labels := collectTextLabels(card)
+	if !containsLabel(labels, "Example owner") || containsLabel(labels, "Edit screen name") {
+		t.Fatal("expected screen name beside icon")
+	}
+	var targets []focusTarget
+	collectTargets(card, &targets)
+	if len(targets) != 1 {
+		t.Fatal("expected one focusable pencil")
+	}
+}

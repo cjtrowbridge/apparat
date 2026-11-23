@@ -30,7 +30,7 @@ final class NodeKeys implements KeyDialogs {
     private ArrayBlockingQueue<String> pending;
     private byte[] export;
     private boolean closed;
-    private boolean running;
+    private boolean started;
     private AlertDialog visible;
 
     NodeKeys(Activity activity) {
@@ -39,18 +39,11 @@ final class NodeKeys implements KeyDialogs {
     }
 
     synchronized void start() {
-        if (running || closed) return;
-        running = true;
+        if (started || closed) return;
+        started = true;
         new Thread(new Runnable() {
             @Override public void run() {
-                try {
-                    Apparatmobile.setupKeys(NodeKeys.this);
-                }
-                finally {
-                    synchronized (NodeKeys.this) {
-                        running = false;
-                    }
-                }
+                Apparatmobile.setupKeys(NodeKeys.this);
             }
         }, "Apparat-key-setup").start();
     }

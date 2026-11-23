@@ -158,11 +158,6 @@ public class MainActivity extends Activity {
 
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Apparatmobile.lockKeys();
-    }
 
     @Override
     protected void onPause() {
@@ -180,6 +175,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (nodeKeys!=null) nodeKeys.close();
+        if (isFinishing()) Apparatmobile.lockKeys();
         destroyed = true;
         Apparatmobile.registerActionSpeech(null);
         if (voice != null) voice.close();

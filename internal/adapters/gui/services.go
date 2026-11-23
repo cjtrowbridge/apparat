@@ -15,6 +15,7 @@ type ServiceQueries interface {
 }
 type ServiceProjection struct {
 	Devices     []domain.ClusterDevice
+	ScreenName  string
 	DeviceError bool
 	Services    []domain.Service
 	State       string
@@ -57,6 +58,10 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 			}
 
 			projection := ServiceProjection{Devices: devices, DeviceError: deviceErr != nil, Services: list, State: state}
+			profile, hasProfile := queries.(interface{ ScreenName() string })
+			if hasProfile {
+				projection.ScreenName = profile.ScreenName()
+			}
 			if !reflect.DeepEqual(projection, previous) {
 				select {
 				case <-results:

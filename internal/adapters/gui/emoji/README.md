@@ -17,3 +17,5 @@ Source: https://github.com/jdecked/twemoji/tree/v16.0.1/assets/72x72
 - `1f519.png`: 🔙 workspace Back, from the pinned Twemoji release above. Its dark monochrome ink is tinted white when drawn on the dark navigation button.
 
 - `2795.png`: ➕ prefix for pinned repository actions, from the same Twemoji release. The renderer tints it white for contrast.
+
+- `270f.png`: Twemoji pencil, for editing the displayed personal screen name.

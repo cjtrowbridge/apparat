@@ -184,7 +184,7 @@ func (g *Game) clusterRun(opt domain.ClusterOption, value string) {
 		return clusterResponse{edited: true, err: opt.Run(ctx, value)}
 	})
 }
-func (g *Game) clusterIcon(name string, click func()) *widget.Button {
+func (g *Game) hudIcon(name string, click func()) *widget.Button {
 	b := widget.NewButton(widget.ButtonOpts.Image(tabButtonImage()), widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon(name)}), widget.ButtonOpts.GraphicPadding(widget.Insets{}), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(48, 44)), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 		if !g.bodySelectionSuppressed() {
 			click()
@@ -197,7 +197,7 @@ func (g *Game) clusterHeader(title *widget.Text) *widget.Container {
 	row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2), widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false}))))
 	row.GetWidget().LayoutData = widget.GridLayoutData{MaxWidth: g.masterPanePreferredWidth()}
 	row.AddChild(title)
-	g.cluster.gear = g.clusterIcon("2699", g.openClusterSettings)
+	g.cluster.gear = g.hudIcon("2699", g.openClusterSettings)
 	row.AddChild(g.cluster.gear)
 	return row
 }
@@ -213,7 +213,7 @@ func (g *Game) openClusterSettings() {
 }
 func (g *Game) clusterContent(c *widget.Container) {
 	f := g.clusterTop()
-	c.AddChild(g.clusterIcon("1f519", g.clusterBack))
+	c.AddChild(g.hudIcon("1f519", g.clusterBack))
 	c.AddChild(widget.NewText(widget.TextOpts.Text(f.page.Title, g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(max(1, g.detailPanePreferredWidth()-24)))))
 	if f.page.Detail != "" {
 		c.AddChild(g.detailText(f.page.Detail))

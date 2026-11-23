@@ -248,8 +248,11 @@ func (g *Game) settingsCardControls(c *widget.Container, id string) {
 	case "speech-recognition":
 		g.speechSettings(c)
 	case "personal-identity":
-		if g.runtimeInfo.EditName != nil {
-			g.projectButton(c, "Edit screen name", g.editName)
+		if g.runtimeInfo.EditName != nil && g.serviceProjection.ScreenName != "" {
+			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal), widget.RowLayoutOpts.Spacing(8))))
+			row.AddChild(widget.NewText(widget.TextOpts.Text(g.serviceProjection.ScreenName, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(max(44, g.hudPreferredWidth()-120)))))
+			row.AddChild(g.hudIcon("270f", g.editName))
+			c.AddChild(row)
 		}
 	case "api-configuration":
 		if runtime.GOOS == "linux" {
@@ -292,7 +295,7 @@ func (g *Game) actionRow(c *widget.Container, label string, id hud.ActionAddress
 }
 
 func (g *Game) editName() {
-	if g.runtimeInfo.EditName != nil {
+	if g.runtimeInfo.EditName != nil && g.serviceProjection.ScreenName != "" {
 		go g.runtimeInfo.EditName()
 	}
 }

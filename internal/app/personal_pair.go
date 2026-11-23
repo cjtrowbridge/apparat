@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -156,7 +157,14 @@ func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog
 	}
 	n.mu.Unlock()
 	if err == nil {
-		n.Personal.OfferPairedUnlock(dialog, password)
+		n.Personal.OfferPairedUnlock(dialog, password, n.personalUnlockDevice())
 	}
 	return err
+}
+
+func (n *Runtime) personalUnlockDevice() *identity.Session {
+	if runtime.GOOS == "android" {
+		return n.Keys
+	}
+	return nil
 }

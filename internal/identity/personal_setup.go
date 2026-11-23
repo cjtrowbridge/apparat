@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func (p *Personal) Setup(dialog Dialog) bool {
+func (p *Personal) Setup(dialog Dialog, device *Session) bool {
 	p.mu.Lock()
 	ready := len(p.key) > 0
 	p.mu.Unlock()
@@ -19,11 +19,8 @@ func (p *Personal) Setup(dialog Dialog) bool {
 	_, err := os.Lstat(p.path)
 	if !os.IsNotExist(err) {
 		ref, readErr := readPrivate(filepath.Join(filepath.Dir(p.path), "unlock.ref"))
-		if readErr == nil {
-			pass, loaded := ui.ask("load", "Unlock personal identity", "", string(ref))
-			if loaded && p.Unlock([]byte(pass)) == nil {
-				return false
-			}
+		if readErr == nil && p.unlockLocal(ui, device, string(ref)) {
+			return false
 		}
 		password, ok := ui.ask("password", "Unlock personal identity", "Enter your personal identity password.", "")
 		if ok && p.Unlock([]byte(password)) != nil {
@@ -82,7 +79,7 @@ func (p *Personal) Setup(dialog Dialog) bool {
 		ui.ask("notice", "Personal identity setup", err.Error(), "")
 		return false
 	}
-	p.offerSystemUnlock(ui, password)
+	p.offerSystemUnlock(ui, password, device)
 	choice, ok := ui.ask("choose", "Personal identity ready", "Keep an encrypted recovery copy so you can restore your user on another device.", "", "Save recovery copy", "Finish")
 	if ok && choice == "Save recovery copy" {
 		data, err := readPrivate(p.path)
@@ -101,25 +98,31 @@ func NotifyIdentityUnavailable(dialog Dialog) {
 	ui.ask("notice", "Personal identity locked", "Apparat could not record your device authorization. Retry after checking local storage.", "")
 }
 
-func (p *Personal) offerSystemUnlock(ui setupUI, password string) {
+func (p *Personal) offerSystemUnlock(ui setupUI, password string, device *Session) {
 	useSystem, ok := ui.systemUnlockChoice("Unlock your personal identity")
 	if !ok || !useSystem {
 		return
 	}
-	ref, saved := ui.ask("store", "Protect personal identity", "", password)
+	ref, saved := device.wrapLocal(password)
+	local := saved
+	if !saved {
+		ref, saved = ui.ask("store", "Protect personal identity", "", password)
+	}
 	if saved && ref != "" {
 		err := atomicWrite(filepath.Join(filepath.Dir(p.path), "unlock.ref"), []byte(ref), 0600)
 		if err == nil {
 			return
 		}
-		ui.ask("remove", "", "", ref)
+		if !local {
+			ui.ask("remove", "", "", ref)
+		}
 	}
 	ui.ask("notice", "System unlock unavailable", "Use your personal identity password to unlock.", "")
 }
 
-func (p *Personal) OfferPairedUnlock(dialog Dialog, password string) {
+func (p *Personal) OfferPairedUnlock(dialog Dialog, password string, device *Session) {
 	_, err := os.Lstat(filepath.Join(filepath.Dir(p.path), "unlock.ref"))
 	if os.IsNotExist(err) {
-		p.offerSystemUnlock(setupUI{dialog}, password)
+		p.offerSystemUnlock(setupUI{dialog}, password, device)
 	}
 }

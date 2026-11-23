@@ -49,3 +49,5 @@ Extend item 7 with a heading gear and right-pane child pages for people, groups,
 Release 0.1.55 (2c13049) passed canonical Linux GUI, Linux worker and Android delivery with GitHub artifact read-back. On both the primary Pixel 4a and the wide Linux GUI, the heading gear opened the real settings, Pools showed the four defaults plus Personal, and Personal → My tasks opened the existing verified result. Back returned to the task list. Worker read-back confirmed the four default pools have no services, and Personal retained its hash-text service and successful task. Physical controller testing was not performed.
 
 Items 1 and 2 use the first-device/join setup choice, explicit system unlock consent and a four-digit code from each device for a single, time-limited pairing attempt.
+
+Android launch sessions retain unlocked identities across background/resume. Share the device’s Keystore-gated unlock with an opted-in local personal identity, migrate independent references, and verify a cold restart and warm return. Show the active signed screen name with an adjacent pencil in Settings.

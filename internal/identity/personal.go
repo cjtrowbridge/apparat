@@ -37,6 +37,7 @@ type personalBundle struct {
 type Personal struct {
 	mu   sync.Mutex
 	path string
+	name string
 	key  ed25519.PrivateKey
 }
 
@@ -100,7 +101,7 @@ func (p *Personal) Create(name string, password []byte) error {
 func (p *Personal) Import(data, password []byte) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	_, key, err := unlockBundle(data, password)
+	bundle, key, err := unlockBundle(data, password)
 	if err != nil {
 		return err
 	}
@@ -119,6 +120,7 @@ func (p *Personal) Import(data, password []byte) error {
 	}
 	if err == nil {
 		p.key = bytes.Clone(key)
+		p.name = bundle.Profile.Profile.Name
 	}
 	return err
 }
@@ -130,10 +132,11 @@ func (p *Personal) Unlock(password []byte) error {
 	if err != nil {
 		return err
 	}
-	_, key, err := unlockBundle(data, password)
+	bundle, key, err := unlockBundle(data, password)
 	if err == nil {
 		clear(p.key)
 		p.key = key
+		p.name = bundle.Profile.Profile.Name
 	}
 	return err
 }
@@ -143,6 +146,7 @@ func (p *Personal) Lock() {
 	defer p.mu.Unlock()
 	clear(p.key)
 	p.key = nil
+	p.name = ""
 }
 
 func (p *Personal) Rename(name string) error {
@@ -165,7 +169,11 @@ func (p *Personal) Rename(name string) error {
 	if err != nil {
 		return err
 	}
-	return atomicWrite(p.path, data, 0600)
+	err = atomicWrite(p.path, data, 0600)
+	if err == nil {
+		p.name = name
+	}
+	return err
 }
 
 func (p *Personal) Fingerprint() string {
@@ -175,4 +183,10 @@ func (p *Personal) Fingerprint() string {
 		return ""
 	}
 	return Fingerprint(p.key.Public().(ed25519.PublicKey))
+}
+
+func (p *Personal) ScreenName() string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.name
 }

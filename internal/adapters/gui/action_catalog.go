@@ -70,7 +70,7 @@ func (g *Game) registerSettingsActions(add registerAction, index int, tab hud.Ta
 			g.selectTab(index, nil)
 		})
 	}
-	if g.runtimeInfo.EditName != nil {
+	if g.runtimeInfo.EditName != nil && g.serviceProjection.ScreenName != "" {
 		add("screen", owner, "edit-name", "Edit screen name", "Settings / Personal identity / Edit screen name", g.editName)
 	}
 	if runtime.GOOS == "linux" {
