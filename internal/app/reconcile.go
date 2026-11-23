@@ -95,6 +95,10 @@ func (n *Runtime) syncOne(ctx context.Context, db *persistence.DB, w domain.Clus
 			}
 		}
 	}
+	var change *httpapi.ChangedWorker
+	if errors.As(err, &change) {
+		n.notifyReplacement(w, change)
+	}
 	if errors.Is(err, httpapi.ErrDenied) {
 		return 0, errors.Join(err, db.ForgetReplica(ctx, w.Fingerprint, a))
 	}

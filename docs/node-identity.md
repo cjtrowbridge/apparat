@@ -62,7 +62,7 @@ After unlocking the device identity, create a personal identity with a screen na
 
 The private file is `user-identity/user.json` under the app data root. Optional system unlock stores the password through the native credential adapter and keeps its local reference separately. Restoring a portable backup requires the original password. SQLite stores the signed public profile and a user-signed binding to this installation's device key. A screen name is a display label and does not identify an administrator. The headless runtime never starts this personal setup.
 
-Selecting a discovered worker authenticates the already configured user and device with a fresh signed challenge. SQLite admits exactly one first admin. A known worker must present its saved key on subsequent connections.
+Selecting a discovered worker authenticates the already configured user and device with a fresh signed challenge. SQLite admits the personal identity explicitly confirmed through the worker console as the first admin. Compare the displayed worker fingerprint before accepting. A known worker must present its saved key on subsequent connections.
 
 ## Personal device pairing
 

@@ -18,3 +18,5 @@ Loopback-only read-only JSON mappings over the application query boundary. Numer
 - `personal_pair_test.go`: Verifies successful mutual authentication and rejects mistyped codes before releasing any payload.
 - `replication.go`: Serves the protected batch sync route and catches a reader up using snapshots and per-pool queue cursors.
 - `queue_client.go`: Submits, cancels and reads the user’s hash tasks. Result retrieval checks the artifact digest.
+
+Worker clients probe TLS without client credentials and require an approved device fingerprint for login. The authenticated GitHub username directory also requires current admin access and host-local owner confirmation. Exercise the positive and denial paths with TestPinnedWorkerClaim.

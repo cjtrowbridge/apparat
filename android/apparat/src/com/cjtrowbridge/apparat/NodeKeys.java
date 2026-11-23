@@ -148,7 +148,7 @@ final class NodeKeys implements KeyDialogs {
                     answer.offer(JSONObject.quote(labels[which]));
                 }
             });
-        } else if (op.equals("choose")) {
+        } else if (op.equals("choose") || op.equals("trust")) {
             JSONArray items = r.getJSONArray("Options");
             String first = items.getString(0);
             builder.setPositiveButton(first,respond(answer,JSONObject.quote(first)));
@@ -160,6 +160,7 @@ final class NodeKeys implements KeyDialogs {
         visible = builder.create();
         if (op.equals("password")) visible.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         visible.show();
+        if (op.equals("trust")) visible.getWindow().setLayout(-1,-1);
     }
 
     void documentResult(int code, Uri uri) {

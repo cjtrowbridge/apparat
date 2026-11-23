@@ -5,11 +5,11 @@ package httpapi
 import (
 	"bytes"
 	"context"
-	"crypto/ed25519"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/netip"
@@ -37,27 +37,8 @@ func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal
 		return nil, errors.New("invalid worker address")
 	}
 	config := claimClientTLS(pin)
-	// On first contact learn the worker key from its TLS chain. Every subsequent
-	// handshake, including the signed login, must present that same key.
 	if pin == "" {
-		config.VerifyConnection = func(state tls.ConnectionState) error {
-			if len(state.PeerCertificates) != 2 {
-				return errors.New("missing worker identity")
-			}
-			key, ok := state.PeerCertificates[1].PublicKey.(ed25519.PublicKey)
-			if !ok {
-				return errors.New("invalid worker key")
-			}
-			candidate := identity.Fingerprint(key)
-			err := verifyPeerChain(state, candidate, x509.ExtKeyUsageServerAuth)
-			if err == nil && pin != "" && pin != candidate {
-				return errors.New("worker key changed")
-			}
-			if err == nil && pin == "" {
-				pin = candidate
-			}
-			return err
-		}
+		return nil, errors.New("approve the worker fingerprint before signing in")
 	}
 	leaf, err := nodeCertificate(device, x509.ExtKeyUsageClientAuth)
 	if err != nil {
@@ -69,7 +50,10 @@ func OpenWorker(ctx context.Context, addr, pin string, person *identity.Personal
 	}}}
 	var challenge struct{ Worker, Challenge, Directory string }
 	err = client.call(ctx, "GET", "/v1/auth/challenge", nil, &challenge)
-	if err != nil || challenge.Worker != pin {
+	if err != nil {
+		return nil, err
+	}
+	if challenge.Worker != pin {
 		return nil, errors.New("worker challenge unavailable")
 	}
 	platform := ""
@@ -120,7 +104,11 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return errors.New("could not verify or contact the worker")
+		var change *ChangedWorker
+		if errors.As(err, &change) {
+			return &ChangedWorker{Expected: change.Expected, Presented: change.Presented, Address: req.URL.Host}
+		}
+		return fmt.Errorf("could not verify or contact the worker: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
@@ -170,4 +158,10 @@ func (c *WorkerClient) Governance(ctx context.Context) (persistence.GovernanceVi
 		err = errors.New("wrong worker governance view")
 	}
 	return v, err
+}
+
+func (c *WorkerClient) GitAccounts(ctx context.Context) ([]string, error) {
+	var data struct{ Usernames []string }
+	err := c.call(ctx, "GET", "/v1/admin/git/accounts", nil, &data)
+	return data.Usernames, err
 }

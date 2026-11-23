@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 type catalogAction struct {
@@ -108,6 +109,19 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 		}
 	}
 	if tab.ID() == hud.TabProjects && g.projects.store != nil && g.projects.pending == nil && g.selectedSections[hud.TabProjects] == 1 {
+		w := &g.projects.wizard
+		if w.mode == "clone" && (strings.HasPrefix(w.host, "worker-") || w.host == "local" && runtime.GOOS != "android") {
+			value := &w.remoteAccount
+			if w.host == "local" {
+				value = &g.projects.account
+			}
+			for _, o := range g.accountOptions(w.host, value) {
+				add("project-github-account", w.host, o.id, o.label, "Projects / New Project / GitHub account / "+o.label, func() {
+					g.selectTab(index, nil)
+					o.run()
+				})
+			}
+		}
 		for _, choice := range g.projectChoices() {
 			add("project-setup-"+choice.step, g.projects.wizard.host, choice.id, choice.label, "Projects / New Project / "+choice.label, func() {
 				g.selectTab(index, nil)

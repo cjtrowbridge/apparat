@@ -3,6 +3,7 @@
 package httpapi
 
 import (
+	"context"
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -12,6 +13,7 @@ import (
 	"errors"
 	"io"
 	"math/big"
+	"net/netip"
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/identity"
@@ -67,7 +69,14 @@ func namedCertificate(keys *identity.Session, usage x509.ExtKeyUsage, subject pk
 
 func claimClientTLS(pin string) *tls.Config {
 	return &tls.Config{MinVersion: tls.VersionTLS13, InsecureSkipVerify: true, VerifyConnection: func(state tls.ConnectionState) error {
-		return verifyPeerChain(state, pin, x509.ExtKeyUsageServerAuth)
+		key, err := serverFingerprint(state)
+		if err != nil {
+			return err
+		}
+		if key != pin {
+			return &ChangedWorker{Expected: pin, Presented: key}
+		}
+		return nil
 	}}
 }
 
@@ -84,4 +93,46 @@ func verifyPeerChain(state tls.ConnectionState, pin string, usage x509.ExtKeyUsa
 	pool.AddCert(root)
 	_, err := state.PeerCertificates[0].Verify(x509.VerifyOptions{Roots: pool, DNSName: claimDNS, KeyUsages: []x509.ExtKeyUsage{usage}})
 	return err
+}
+
+// ChangedWorker is returned only for a valid chain signed by a different identity.
+type ChangedWorker struct{ Expected, Presented, Address string }
+
+func (e *ChangedWorker) Error() string {
+	return "worker identity has changed"
+}
+
+func serverFingerprint(state tls.ConnectionState) (string, error) {
+	if len(state.PeerCertificates) != 2 {
+		return "", errors.New("missing worker identity")
+	}
+	pub, ok := state.PeerCertificates[1].PublicKey.(ed25519.PublicKey)
+	if !ok {
+		return "", errors.New("unsupported worker identity")
+	}
+	pin := identity.Fingerprint(pub)
+	return pin, verifyPeerChain(state, pin, x509.ExtKeyUsageServerAuth)
+}
+
+// ProbeWorker verifies the presented chain without sending client credentials or HTTP.
+func ProbeWorker(ctx context.Context, address string) (string, error) {
+	addr, err := netip.ParseAddrPort(address)
+	if err != nil || addr.Port() == 0 {
+		return "", errors.New("invalid worker address")
+	}
+	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+	var pin string
+	config := &tls.Config{MinVersion: tls.VersionTLS13, InsecureSkipVerify: true, VerifyConnection: func(state tls.ConnectionState) error {
+		var err error
+		pin, err = serverFingerprint(state)
+		return err
+	}}
+	dialer := tls.Dialer{Config: config}
+	conn, err := dialer.DialContext(ctx, "tcp", addr.String())
+	if err != nil {
+		return "", err
+	}
+	conn.Close()
+	return pin, nil
 }

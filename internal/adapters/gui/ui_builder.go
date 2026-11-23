@@ -107,6 +107,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	if !gallery {
 		game.addHeading(shell, title, snapshot.ActiveTab().ID())
 	}
+	game.projects.wizard.focusControl = nil
 	body := game.buildActiveTabBody(snapshot)
 	body.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0, MaxWidth: game.hudPreferredWidth()}
 	shell.AddChild(body)

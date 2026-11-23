@@ -16,9 +16,13 @@ import (
 
 type newProjectState struct {
 	search, host, source, mode, remoteAccount string
+	accountHost                               string
+	accounts                                  []string
 	preview                                   domain.LocalProjectSetup
 	progress                                  chan string
 	output                                    []string
+	focusStep                                 string
+	focusControl                              widget.Focuser
 }
 type setupChoice struct{ id, label, step string }
 
@@ -44,7 +48,7 @@ func (g *Game) projectChoices() []setupChoice {
 	for _, host := range g.projectHosts() {
 		selected := w.host == host.id
 		found = found || selected
-		if selected || strings.Contains(strings.ToLower(host.label), strings.ToLower(strings.TrimSpace(w.search))) {
+		if selected || matchesProjectHost(host, w.search) {
 			choices = append(choices, host)
 		}
 	}
@@ -71,8 +75,12 @@ func (g *Game) chooseProject(c setupChoice) {
 		if w.host == c.id {
 			return
 		}
+		w.focusStep = "source"
 		w.host = c.id
 		w.remoteAccount = ""
+		w.accounts = nil
+		w.accountHost = ""
+		f.account = ""
 		f.cloneParent, f.initParent, f.importPath = "", "", ""
 		w.source = ""
 		w.mode = ""
@@ -80,12 +88,14 @@ func (g *Game) chooseProject(c setupChoice) {
 		if w.source == c.id {
 			return
 		}
+		w.focusStep = "mode"
 		w.source = c.id
 		w.mode = ""
 		if c.id == "create" {
 			w.mode = "starter"
 		}
 	case "mode":
+		w.focusStep = "details"
 		w.mode = c.id
 	}
 	w.preview = domain.LocalProjectSetup{}
@@ -118,9 +128,10 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		if choice.id == w.host || choice.id == w.source || choice.id == w.mode {
 			label = "✓ " + label
 		}
-		g.projectButton(c, label, func() {
+		button := g.projectButton(c, label, func() {
 			g.chooseProject(choice)
 		})
+		g.projectFocusControl(choice.step, button)
 	}
 	if len(choices) == 0 {
 		c.AddChild(g.formDescription("No matching devices."))
@@ -136,28 +147,31 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		c.AddChild(g.formDescription("A blank project with agentic-pipelines and a repeatable bootstrap. Available once the public starter repository is published."))
 		return
 	}
-	folder := func(label string, value *string, optional bool) {
+	folder := func(label string, value *string, optional bool) widget.Focuser {
 		if local {
-			g.projectFolder(c, label, value, optional)
-		} else {
-			g.projectField(c, label, value)
+			return g.projectFolder(c, label, value, optional)
 		}
+		return g.projectField(c, label, value)
 	}
 	switch w.mode {
 	case "empty":
-		g.projectField(c, "New repo name", &f.name)
+		g.projectFocusControl("details", g.projectField(c, "New repo name", &f.name))
 		folder("Parent folder (optional)", &f.initParent, true)
 	case "import":
-		folder("Existing repo folder", &f.importPath, false)
+		g.projectFocusControl("details", folder("Existing repo folder", &f.importPath, false))
 	case "clone":
-		g.projectField(c, "GitHub owner/repo or URL", &f.repo)
+		g.projectFocusControl("details", g.projectField(c, "GitHub owner/repo or URL", &f.repo))
 		folder("Destination parent folder (optional)", &f.cloneParent, true)
 		if local && runtime.GOOS != "android" {
 			g.projectAccount(c, &f.account)
 		} else if local {
 			c.AddChild(g.formDescription("Public GitHub repositories only on Android."))
 		} else {
-			g.projectField(c, "GitHub login on the host (optional)", &w.remoteAccount)
+			if strings.HasPrefix(w.host, "worker-") {
+				g.hostAccountPicker(c, w.host, &w.remoteAccount)
+			} else {
+				c.AddChild(g.formDescription("Account selection requires a hosting worker."))
+			}
 		}
 	default:
 		return
@@ -289,17 +303,13 @@ func (g *Game) deviceSearchField(c *widget.Container) {
 	const label = "Search devices"
 	w := &g.projects.wizard
 	if g.runtimeInfo.PromptValue != nil {
-		g.nativeProjectField(c, label, &w.search, true)
+		button := g.nativeProjectField(c, label, w.search, true, g.filterProjectHosts)
+		g.projectFocusControl("search", button)
 		return
 	}
 	row := g.formFieldRow(c, label)
 	field := g.editorForLayout(label, func() *widget.TextInput {
-		input := g.newProjectInput(w.search, func(value string) {
-			if w.search != value {
-				w.search = value
-				g.layoutDirty = true
-			}
-		})
+		input := g.newProjectInput(w.search, g.filterProjectHosts)
 		widget.TextInputOpts.Validation(func(value string) (bool, *string) {
 			line := searchLine(value)
 			if line != value {
@@ -311,4 +321,66 @@ func (g *Game) deviceSearchField(c *widget.Container) {
 		return input
 	})
 	row.AddChild(field)
+	g.projectFocusControl("search", field)
+}
+
+func matchesProjectHost(host setupChoice, query string) bool {
+	return strings.Contains(strings.ToLower(host.label), strings.ToLower(strings.TrimSpace(query)))
+}
+
+func (g *Game) filterProjectHosts(value string) {
+	w := &g.projects.wizard
+	value = searchLine(value)
+	if value == w.search {
+		return
+	}
+	w.search = value
+	g.layoutDirty = true
+	if strings.TrimSpace(value) == "" || g.projects.pending != nil {
+		return
+	}
+	var match setupChoice
+	for _, host := range g.projectHosts() {
+		if !matchesProjectHost(host, value) {
+			continue
+		}
+		if match.id != "" {
+			return
+		}
+		match = host
+	}
+	if match.id != "" {
+		g.chooseProject(match)
+		w.focusStep = "source"
+	}
+}
+
+func (g *Game) projectFocusControl(step string, control widget.Focuser) {
+	w := &g.projects.wizard
+	if w.focusStep == step && w.focusControl == nil {
+		w.focusControl = control
+	}
+}
+
+// Apply after layout so a focus change can reveal the next control in its viewport.
+func (g *Game) applyProjectFocus() {
+	w := &g.projects.wizard
+	if w.focusControl == nil || g.nav.owner != hud.TabProjects || g.actions.mode != "" {
+		return
+	}
+	targets := g.bodyTargets()
+	for i, target := range targets {
+		if target.w != w.focusControl {
+			continue
+		}
+		g.focusBody(targets, i)
+		field, editing := target.w.(*widget.TextInput)
+		if editing && w.focusStep == "search" {
+			g.ui.SetFocusedWidget(field)
+			field.SelectAll()
+		}
+		w.focusStep = ""
+		w.focusControl = nil
+		return
+	}
 }

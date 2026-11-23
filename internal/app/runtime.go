@@ -40,6 +40,9 @@ type Runtime struct {
 	Keys             *identity.Session
 	Personal         *identity.Personal
 	openDiscovery    atomic.Bool
+	trustMu          sync.Mutex
+	trustDialog      identity.Dialog
+	reviewedPins     map[string]string
 	claimMu          sync.Mutex
 	workspaceMu      sync.Mutex
 	documents        ProjectDocuments
@@ -351,6 +354,9 @@ func MillisNow() int64 {
 }
 
 func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
+	node.trustMu.Lock()
+	node.trustDialog = dialog
+	node.trustMu.Unlock()
 	defer node.RequestSync()
 	node.Keys.Setup(dialog)
 	if node.Personal != nil && node.Keys.State() == "unlocked" {
@@ -378,6 +384,10 @@ func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
 }
 
 func (node *Runtime) LockIdentities() {
+	node.trustMu.Lock()
+	node.trustDialog = nil
+	node.reviewedPins = nil
+	node.trustMu.Unlock()
 	node.Keys.Lock()
 	if node.Personal != nil {
 		node.Personal.Lock()

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 
@@ -41,7 +42,7 @@ func (db *DB) Login(ctx context.Context, l identity.Login) (Access, error) {
 	a.Device = identity.Fingerprint(l.Device.Binding.Device)
 	cluster := identity.ClaimDigest("apparat/personal-cluster/v1/" + a.User)
 	result, err := tx.ExecContext(ctx, `INSERT INTO worker_cluster(singleton,cluster,worker,owner_user,authority_device)
-		VALUES(1,?,?,?,?) ON CONFLICT(singleton) DO NOTHING`, cluster, l.Worker, a.User, a.Device)
+		SELECT 1,?,?,?,? WHERE EXISTS(SELECT 1 FROM local_runtime WHERE key='confirmed_worker_owner' AND value=?) ON CONFLICT(singleton) DO NOTHING`, cluster, l.Worker, a.User, a.Device, l.Worker+"/"+a.User)
 	if err != nil {
 		return a, err
 	}
@@ -115,4 +116,33 @@ func (db *DB) CurrentAccess(ctx context.Context, cluster, user, device string) (
 	WHERE u.cluster=? AND u.user_id=? AND d.device_id=? AND u.admission='approved' AND NOT EXISTS
 	(SELECT 1 FROM revoked_devices WHERE cluster=u.cluster AND device=d.device_id)`, cluster, user, device).Scan(&a.Admission, &a.Admin)
 	return a, err
+}
+
+// ConfirmOwner is a host-local operation. An established worker can only confirm its original owner.
+func (db *DB) ConfirmOwner(ctx context.Context, worker, user string) error {
+	for _, pin := range []string{worker, user} {
+		raw, err := base64.RawURLEncoding.Strict().DecodeString(pin)
+		if err != nil || len(raw) != 32 || base64.RawURLEncoding.EncodeToString(raw) != pin {
+			return errors.New("invalid identity fingerprint")
+		}
+	}
+	result, err := db.sql.ExecContext(ctx, `INSERT INTO local_runtime(key,value,updated_at_ms)
+	SELECT 'confirmed_worker_owner',?,0 WHERE NOT EXISTS
+	(SELECT 1 FROM worker_cluster WHERE worker<>? OR owner_user<>?)
+	ON CONFLICT(key) DO UPDATE SET value=excluded.value`, worker+"/"+user, worker, user)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err != nil || count != 1 {
+		return errors.New("worker or owner differs from existing claim")
+	}
+	return nil
+}
+
+func (db *DB) OwnerConfirmed(ctx context.Context, worker string) bool {
+	var confirmed bool
+	err := db.sql.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM worker_cluster w JOIN local_runtime r
+	ON r.key='confirmed_worker_owner' AND r.value=w.worker||'/'||w.owner_user WHERE w.worker=?)`, worker).Scan(&confirmed)
+	return err == nil && confirmed
 }

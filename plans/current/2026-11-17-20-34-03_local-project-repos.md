@@ -48,3 +48,5 @@ Use a consistent left column for bold project form labels and italic text for de
 End visible field and choice-group labels with a colon. Pad each field row above and below by half the selected font size. Verify spacing and punctuation in the rendered layout.
 
 Right-align field labels against their controls. Keep device search compact and single-line for inline entry, pastes and Android's native search prompt, while retaining multiline editing elsewhere.
+
+- [x] Focus device search on New Project entry and advance to the next enabled group after a selection. A nonempty query with one matching host selects it. Verify keyboard and controller traversal, empty and ambiguous searches, and Android prompt behavior. Record the shared form contract in the HUD playbook.

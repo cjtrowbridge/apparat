@@ -1762,7 +1762,7 @@ Startup identity setup supports recovering the prior signing key, explicitly con
 ### User claims and node administration
 
 - [ ] Add a set-up-if-missing screen-name prompt after identity setup and make the name editable in Settings. Bind it to the separate user identity. Reuse it in the node’s authenticated-user list and future chat. For STMPCK leaderboards require a separate opt-in popup and an editable Settings preference before sharing names or scores.
-- [ ] Enable Claim from discovery through a JSON public-key registration with signed proof of possession, hostname, screen name and verified target/cluster context. Preserve scoped ingress, server verification and authenticated device enrollment. Resolve how the intended owner authorizes the first remote claim on an exposed LAN.
+- [ ] Enable Claim from discovery through a JSON public-key registration with signed proof of possession, hostname, screen name and verified target/cluster context. Preserve scoped ingress, server verification and authenticated device enrollment. Confirm the intended owner locally with apparatd trust-host and verify the worker fingerprint during enrollment.
 - [ ] Atomically make the first verified user on an unclaimed node its approved admin with full access to that node’s services. Default every later user to pending. Persist approval, blocking, admin grants and revocation by user fingerprint. Enforce decisions at protected services across restart.
 - [ ] In Cluster, let admins review authenticated users, approve/block access, grant/revoke admin, and close/reopen new registrations. Existing users retain their access state. Test independent public provider endpoints separately from Apparat-mediated service calls.
 - [ ] Later, let setup designate the intended initial admin by verified user fingerprint before opening remote registration. Test that another user arriving first cannot take its place.
@@ -2592,6 +2592,8 @@ The MVP is complete only when the applicable cross-cutting requirements and all 
 
 Phase 17 local delivery criterion: the ordinary build on main qualifies all host-eligible artifacts, publishes their exact bytes together and verifies remote delivery. Android delivery additionally requires signing continuity and a monotonically increasing package version.
 
-Worker claiming uses the existing unlocked credentials directly from discovery. The first verified login establishes ownership. Two-way OTP belongs to personal app pairing.
+Worker claiming uses the existing unlocked credentials directly from discovery. Only a login by the host-confirmed owner establishes ownership. Two-way OTP belongs to personal app pairing.
 
 Personal pairing now has a Linux sender and a recipient path for Android or Linux. Hardware acceptance requires the owner's real identity in the primary Pixel profile and a protected operation on the already-claimed trashcan0.
+
+Phase 10 worker trust includes host-confirmed owner enrollment, manual approval of signing-key changes, and administrator-only retrieval of GitHub usernames for the Phase 9 picker. Cluster-wide signed key succession and ordering-authority recovery remain separate from local certificate approval.

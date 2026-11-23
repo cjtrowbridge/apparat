@@ -1,6 +1,6 @@
 // Displays local macOS password, file picker and recovery dialogs through Standard Additions.
 // Request and response travel on private pipes; secret values stay outside process arguments.
-ObjC.import('Foundation')
+ObjC.import('AppKit')
 const app = Application.currentApplication()
 app.includeStandardAdditions = true
 function run() {
@@ -29,6 +29,16 @@ function run() {
             value = app.displayDialog(req.Message,{
                 withTitle:req.Title, defaultAnswer:'', hiddenAnswer:req.Op === 'password', buttons:['Cancel','Continue'],defaultButton:'Continue',cancelButton:'Cancel'
             }).textReturned
+        } else if (req.Op === 'trust') {
+            const alert = $.NSAlert.alloc.init
+            alert.messageText = req.Title
+            alert.informativeText = req.Message
+            for (const option of req.Options) alert.addButtonWithTitle(option)
+            alert.layout
+            alert.window.setFrameDisplay($.NSScreen.mainScreen.frame, true)
+            const result = alert.runModal - 1000
+            if (result < 0 || result >= req.Options.length) return 'null'
+            value = req.Options[result]
         } else if (req.Op === 'choose') {
             const selection = app.chooseFromList(req.Options,{
                 withTitle:req.Title,withPrompt:req.Message

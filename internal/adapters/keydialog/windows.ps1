@@ -46,6 +46,10 @@ function Prompt {
     $form = New-Object Windows.Forms.Form
     $form.Text = $r.Title
     $form.AutoSize = $true
+    if ($r.Op -eq 'trust') {
+        $form.FormBorderStyle = 'None'
+        $form.WindowState = 'Maximized'
+    }
     $form.StartPosition = 'CenterScreen'
     $panel = New-Object Windows.Forms.FlowLayoutPanel
     $panel.FlowDirection = 'TopDown'

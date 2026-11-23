@@ -139,3 +139,16 @@ func atomicWrite(path string, data []byte, mode os.FileMode) error {
 	}
 	return nil
 }
+
+// DeviceFingerprint reads the active public manifest without unlocking the signer.
+func DeviceFingerprint(dir string) (string, error) {
+	_, selected, err := current(dir)
+	if err != nil {
+		return "", err
+	}
+	m, err := readManifest(filepath.Join(selected, "device.manifest.json"))
+	if err != nil || m.Kind != "device" || m.RevokedAt != "" {
+		return "", errors.New("no active device manifest")
+	}
+	return m.Fingerprint, nil
+}

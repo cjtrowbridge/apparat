@@ -3,6 +3,7 @@ module github.com/cjtrowbridge/apparat
 go 1.26.11
 
 require (
+	gopkg.in/yaml.v3 v3.0.1
 	github.com/bytemare/opaque v0.18.0
 	github.com/ebitengine/gomobile v0.0.0-20260820040257-d11f821a26a6
 	github.com/ebitenui/ebitenui v0.7.4-0.20260422023258-b1c31d852489

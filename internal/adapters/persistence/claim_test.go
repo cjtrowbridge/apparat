@@ -41,6 +41,10 @@ func TestOnlyOneOwner(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = db.ConfirmOwner(ctx, identity.Fingerprint(worker.Public), personal.Fingerprint())
+	if err != nil {
+		t.Fatal(err)
+	}
 	var wg sync.WaitGroup
 	results := make(chan Access, 2)
 	for _, p := range []*identity.Personal{personal, second} {
@@ -53,7 +57,10 @@ func TestOnlyOneOwner(t *testing.T) {
 			defer wg.Done()
 			a, err := db.Login(ctx, proof)
 			if err != nil {
-				t.Error(err)
+				if p == personal {
+					t.Error(err)
+				}
+				return
 			}
 			results <- a
 		}()
@@ -64,6 +71,9 @@ func TestOnlyOneOwner(t *testing.T) {
 	for a := range results {
 		if a.Admin {
 			admins++
+			if a.User != personal.Fingerprint() {
+				t.Fatal("wrong claim owner")
+			}
 			v, err := db.Governance(ctx, a)
 			if err != nil || !slices.Equal(v.Pools, []string{"Chat Pool", "Comrade Pool", "Project Pool", "Research Pool"}) || len(v.Services) != 0 || len(v.Grants) != 0 {
 				t.Fatalf("unexpected initial pools or permissions: %v, %v", v.Pools, err)
@@ -162,6 +172,10 @@ func TestLostOrderingDeviceRecovery(t *testing.T) {
 	}
 	var access Access
 	worker := identity.Fingerprint(nodes[0].Public())
+	err = db.ConfirmOwner(ctx, worker, owner.Fingerprint())
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, device := range nodes[1:] {
 		login, err := owner.SignLogin(device, worker, identity.ClaimDigest("challenge"))
 		if err != nil {
@@ -219,4 +233,45 @@ func TestLostOrderingDeviceRecovery(t *testing.T) {
 		t.Fatal("revoked device retained access")
 	}
 
+}
+
+func TestApprovedWorkerReplacementPersists(t *testing.T) {
+	ctx := context.Background()
+	path := t.TempDir() + "/node.db"
+	db, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	err = db.Migrate(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := Access{Cluster: "cluster", User: "owner", Admission: "approved"}
+	err = db.SaveWorkerAccess(ctx, "host", "10.0.0.5:9000", "old", a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.ReplaceWorkerPin(ctx, "old", "new", "10.0.0.5:9000", a)
+	if err == nil {
+		t.Fatal("accepted a non-admin replacement")
+	}
+	a.Admin = true
+	err = db.ReplaceWorkerPin(ctx, "old", "new", "10.0.0.5:9000", a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.SaveWorkerAccess(ctx, "host", "10.0.0.5:9000", "old", a)
+	if err == nil {
+		t.Fatal("stale login restored obsolete identity")
+	}
+	reopened, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	pin, err := reopened.WorkerPin(ctx, "alias", "10.0.0.5:9000")
+	if err != nil || pin != "new" {
+		t.Fatal("new pin missing after reopening database")
+	}
 }

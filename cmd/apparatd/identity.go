@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/config"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 	"github.com/cjtrowbridge/apparat/internal/platform"
@@ -90,5 +91,37 @@ func setupIdentity(args []string) int {
 	}
 	session.Setup(dialog)
 	fmt.Println("Node identity:", session.State())
+	return 0
+}
+
+func trustHost(args []string) int {
+	if len(args) > 1 {
+		fmt.Fprintln(os.Stderr, "Usage: apparatd trust-host [OWNER_FINGERPRINT]")
+		return 2
+	}
+	cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})
+	if err != nil {
+		return 1
+	}
+	pin, err := identity.DeviceFingerprint(cfg.IdentityDir)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	fmt.Println("Worker fingerprint:", pin)
+	if len(args) == 0 {
+		return 0
+	}
+	ctx := context.Background()
+	db, err := persistence.Open(ctx, cfg.DatabasePath)
+	if err == nil {
+		defer db.Close()
+		err = db.ConfirmOwner(ctx, pin, args[0])
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	fmt.Println("Confirmed owner fingerprint:", args[0])
 	return 0
 }

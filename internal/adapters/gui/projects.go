@@ -177,11 +177,13 @@ func (g *Game) projectButton(c *widget.Container, label string, click func()) *w
 	c.AddChild(button)
 	return button
 }
-func (g *Game) projectInput(c *widget.Container, label, initial string, changed func(string)) {
+func (g *Game) projectInput(c *widget.Container, label, initial string, changed func(string)) *widget.TextInput {
 	row := g.formFieldRow(c, label)
-	row.AddChild(g.editorForLayout(label, func() *widget.TextInput {
+	field := g.editorForLayout(label, func() *widget.TextInput {
 		return g.newProjectInput(initial, changed)
-	}))
+	})
+	row.AddChild(field)
+	return field
 }
 func (g *Game) newProjectInput(initial string, changed func(string)) *widget.TextInput {
 	w := widget.NewTextInput(widget.TextInputOpts.Face(g.theme.ButtonTheme.TextFace), widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(backgroundColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}), widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}), widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.TextInputOpts.ChangedHandler(func(e *widget.TextInputChangedEventArgs) {
@@ -327,6 +329,10 @@ func (g *Game) selectProjectEntry(index int) bool {
 	f := &g.projects
 	if f.pending != nil {
 		return false
+	}
+	f.wizard.focusStep = ""
+	if index == 1 {
+		f.wizard.focusStep = "search"
 	}
 	if index != g.selectedSections[hud.TabProjects] {
 		f.editID = ""

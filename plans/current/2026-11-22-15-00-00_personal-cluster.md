@@ -67,3 +67,6 @@ Phase 10 directory follow-up. Resolve the selected fingerprint for renames, perm
 
 ### Pool browsing and discovery
 Phase 10 pool details open on completed tasks, newest first. Provide status and sort controls, worker drill-down and Back, and an effective access list with explicit signed administrator grants. Use authenticated local replicas and preserve queue visibility. Remove known hosts from discovery and clear persistent pressed styling on Cluster selectors. Verify navigation, filtering and grants before canonical delivery.
+
+### Worker trust and host account selection (Phases 9 and 10)
+Probe the worker without identifying the client, compare its identity fingerprint during setup, and pin it before login. Require explicit local review for a changed key. Keep replica history scoped to its signing identity. Limit host GitHub account discovery to authenticated administrators over pinned TLS and list only validated usernames. Verify first contact, changed pins, and the authorization boundary using isolated identities.

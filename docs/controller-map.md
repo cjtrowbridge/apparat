@@ -90,4 +90,6 @@ The Cluster heading gear opens Cluster settings. Escape, B, Android Back and the
 
 Cluster pool detail uses three focusable emoji tabs for Tasks, Devices and Authorized users. Directional navigation reaches task status and order, device rows and the administrator's add-user control. Opening a worker from Devices pushes its normal detail page. Back restores Devices for that pool.
 
-In Projects, focus the pinned ➕ New Project and activate it to open device search. Navigate the device, source and template or import choices in order using the D-pad or keyboard. Remote choices preview the form. Only the local device offers execution. When setup finishes, navigation enters the registered workspace.
+In Projects, focus the pinned ➕ New Project and activate it to focus device search. A nonempty search with one matching host selects it and puts focus on repository source. Choosing a source focuses the first template or import option. Choosing an option with additional fields focuses the first field. Tab and Shift+Tab follow the visible form order, and the D-pad moves to adjacent controls. Android focuses the search launcher and opens the system keyboard on activation. Remote choices preview the form. Only the local device offers execution. When setup finishes, navigation enters the registered workspace.
+
+In New Project, Choose account, Public access, each returned username and Add account on host follow the same focus order on keyboard and D-pad. Worker identity review is a native modal that owns input. Dismissal keeps the worker disconnected.

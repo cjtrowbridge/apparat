@@ -16,17 +16,31 @@ CREATE TABLE claimed_workers(worker TEXT PRIMARY KEY,cluster TEXT NOT NULL,owner
 CREATE TABLE claim_receipts(worker TEXT PRIMARY KEY,digest TEXT NOT NULL);
 `
 
-func (db *DB) WorkerPin(ctx context.Context, host string) (string, error) {
+func (db *DB) WorkerPin(ctx context.Context, host, address string) (string, error) {
 	var pin string
-	err := db.sql.QueryRowContext(ctx, "SELECT worker FROM claimed_workers WHERE host=? COLLATE NOCASE", host).Scan(&pin)
+	var count int
+	err := db.sql.QueryRowContext(ctx, "SELECT coalesce(min(worker),''),count(*) FROM claimed_workers WHERE host=? COLLATE NOCASE OR address=?", host, address).Scan(&pin, &count)
+	if count > 1 {
+		return "", errors.New("ambiguous saved worker identity")
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
 	return pin, err
 }
 func (db *DB) SaveWorkerAccess(ctx context.Context, host, address, worker string, a Access) error {
-	_, err := db.sql.ExecContext(ctx, `INSERT INTO claimed_workers VALUES(?,?,?,?,?) ON CONFLICT(worker) DO UPDATE SET address=excluded.address,host=excluded.host`, worker, a.Cluster, a.User, host, address)
-	return err
+	result, err := db.sql.ExecContext(ctx, `INSERT INTO claimed_workers SELECT ?,?,?,?,?
+	WHERE NOT EXISTS(SELECT 1 FROM claimed_workers WHERE worker<>? AND (host=? COLLATE NOCASE OR address=?))
+	ON CONFLICT(worker) DO UPDATE SET address=excluded.address,host=excluded.host
+	WHERE owner=excluded.owner AND cluster=excluded.cluster`, worker, a.Cluster, a.User, host, address, worker, host, address)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err != nil || count != 1 {
+		return errors.New("conflicting saved worker registration")
+	}
+	return nil
 }
 
 func (db *DB) KnownWorkers(ctx context.Context, user string) ([]domain.ClusterDevice, error) {
@@ -61,4 +75,25 @@ func (db *DB) WorkerSummaries(ctx context.Context, user, device string) ([]domai
 		devices = append(devices, d)
 	}
 	return devices, rows.Err()
+}
+
+func (db *DB) UpdateWorkerAddress(ctx context.Context, pin, user, address string) error {
+	_, err := db.sql.ExecContext(ctx, "UPDATE claimed_workers SET address=? WHERE worker=? AND owner=?", address, pin, user)
+	return err
+}
+
+// ReplaceWorkerPin changes one selected registration. Historical receipts remain keyed to the old signer.
+func (db *DB) ReplaceWorkerPin(ctx context.Context, old, newPin, address string, a Access) error {
+	if !a.Admin || a.Admission != "approved" {
+		return errors.New("administrator required")
+	}
+	result, err := db.sql.ExecContext(ctx, "UPDATE claimed_workers SET worker=?,address=? WHERE worker=? AND owner=? AND cluster=?", newPin, address, old, a.User, a.Cluster)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err != nil || count != 1 {
+		return errors.New("worker registration changed during review")
+	}
+	return nil
 }

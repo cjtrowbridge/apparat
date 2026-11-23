@@ -52,6 +52,8 @@ def prompt(req):
             data = src.read(16385)
         return base64.b64encode(data).decode() if len(data)<=16384 else None
     dialog = Gtk.Dialog(title=req["Title"], modal=True)
+    if op == "trust":
+        dialog.fullscreen()
     box = dialog.get_content_area()
     box.set_border_width(16)
     box.set_spacing(10)

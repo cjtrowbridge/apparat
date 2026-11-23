@@ -29,6 +29,9 @@ func main() {
 	os.Exit(code)
 }
 func run() (code int) {
+	if len(os.Args) > 1 && os.Args[1] == "trust-host" {
+		return trustHost(os.Args[2:])
+	}
 	if len(os.Args) > 1 && os.Args[1] == "identity-setup" {
 		return setupIdentity(os.Args[2:])
 	}

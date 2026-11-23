@@ -6,9 +6,14 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"net"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"slices"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,16 +58,43 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	address := listener.Addr().String()
 	pin := identity.Fingerprint(worker.Public())
 	_, err = OpenWorker(ctx, address, identity.Fingerprint(client.Public()), owner, client)
-	if err == nil {
-		t.Fatal("accepted incorrect saved fingerprint")
+	var mismatch *ChangedWorker
+	if !errors.As(err, &mismatch) || mismatch.Presented != pin {
+		t.Fatal("missing valid replacement fingerprint")
 	}
-	session, err := OpenWorker(ctx, address, "", owner, client)
+	observed, err := ProbeWorker(ctx, address)
+	if err != nil || observed != pin {
+		t.Fatal("probe failed", err)
+	}
+	_, err = OpenWorker(ctx, address, "", owner, client)
+	if err == nil {
+		t.Fatal("signed in without a pin")
+	}
+	_, err = OpenWorker(ctx, address, pin, owner, client)
+	if err == nil {
+		t.Fatal("claimed without local approval")
+	}
+	err = db.ConfirmOwner(ctx, pin, owner.Fingerprint())
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := OpenWorker(ctx, address, pin, owner, client)
 	if err != nil {
 		t.Fatal(err)
 	}
 	access, err := session.WhoAmI(ctx)
 	if err != nil || !access.Admin || session.Worker != pin {
 		t.Fatal("owner access failed", err)
+	}
+	dir := t.TempDir()
+	t.Setenv("GH_CONFIG_DIR", dir)
+	err = os.WriteFile(filepath.Join(dir, "hosts.yml"), []byte("github.com:\n  user: alice\n  users:\n    bob:\n      oauth_token: TESTSECRET\n"), 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names, err := session.GitAccounts(ctx)
+	if err != nil || !slices.Equal(names, []string{"alice", "bob"}) {
+		t.Fatal("unexpected account directory", err)
 	}
 	cluster := access.Cluster
 	phone := identity.NewSession(t.TempDir())
@@ -91,6 +123,15 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	_, err = unapproved.WhoAmI(ctx)
 	if err == nil {
 		t.Fatal("unapproved user accessed protected endpoint")
+	}
+	_, err = unapproved.GitAccounts(ctx)
+	if !errors.Is(err, ErrDenied) {
+		t.Fatal("pending user could enumerate accounts")
+	}
+	unapproved.token = session.token
+	_, err = unapproved.GitAccounts(ctx)
+	if !errors.Is(err, ErrDenied) {
+		t.Fatal("token worked with wrong device")
 	}
 	edit := identity.PolicyEdit{Cluster: cluster, ID: "handoff", Kind: "order_on_worker", Value: access.User, Service: access.Device, Target: pin}
 	handoff, err := session.ChangePolicy(ctx, owner, client, edit, "")
@@ -281,6 +322,39 @@ func TestPinnedWorkerClaim(t *testing.T) {
 		}
 		if err != nil || !found || cached.View.Governance.Head != page.Head {
 			t.Fatal("saved set not replicated atomically", err)
+		}
+	}
+	for _, edit := range []identity.PolicyEdit{
+		{Kind: "user_role", Target: secondAdmin.Access.User, Value: "approved"},
+		{Kind: "revoke_device", Target: other.Access.Device},
+	} {
+		edit.ID = "deny-accounts-" + edit.Kind
+		edit.Cluster = cluster
+		edit.Base = page.Head.Revision
+		receipt, err := session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		page.Head = persistence.PolicyCursor{Revision: edit.Base + 1, Hash: receipt.Hash()}
+	}
+	for _, denied := range []*WorkerClient{other, secondAdmin} {
+		_, err = denied.GitAccounts(ctx)
+		if !errors.Is(err, ErrDenied) {
+			t.Fatal("accepted stale administrator session")
+		}
+	}
+	auth := newWorkerAuth(db, t.TempDir())
+	for _, lifetime := range []time.Duration{time.Minute, -time.Minute} {
+		auth.tokens[identity.ClaimDigest("fixture")] = credential{access: access, until: time.Now().Add(lifetime)}
+		req := httptest.NewRequest("GET", "/v1/admin/git/accounts", nil)
+		req.Header.Set("Authorization", "Bearer fixture")
+		if lifetime < 0 {
+			req.TLS = &tls.ConnectionState{Version: tls.VersionTLS13}
+		}
+		rec := httptest.NewRecorder()
+		auth.route(rec, req, worker)
+		if rec.Code != 401 || strings.Contains(rec.Body.String(), "alice") {
+			t.Fatal("directory exposed over plaintext or expired session")
 		}
 	}
 	other.token = session.token

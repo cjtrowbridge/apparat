@@ -1,5 +1,5 @@
 // Coordinates the local confirmation, scoped TLS request and durable worker registration.
-// Untrusted discovery names are labels. The private invitation supplies the trust anchor.
+// Discovery supplies an address. The user verifies the fingerprint through the worker console.
 package app
 
 import (
@@ -25,7 +25,7 @@ func (node *Runtime) ClaimWithDialog(ctx context.Context, network, host string, 
 	if !node.Keys.SetupHostname(dialog) {
 		return
 	}
-	status, err := node.authenticateWorker(ctx, network, host)
+	status, err := node.authenticateWorker(ctx, network, host, dialog)
 	if err != nil {
 		nativeQuestion(dialog, "notice", "Claim worker", err.Error())
 		return
@@ -34,7 +34,7 @@ func (node *Runtime) ClaimWithDialog(ctx context.Context, network, host string, 
 	nativeQuestion(dialog, "notice", label.DisplayName(host), status)
 }
 
-func (node *Runtime) authenticateWorker(ctx context.Context, network, host string) (string, error) {
+func (node *Runtime) authenticateWorker(ctx context.Context, network, host string, dialog identity.Dialog) (string, error) {
 	_, _, err := node.Personal.Credentials(node.Keys.Public())
 	if err != nil {
 		return "", errors.New("Unlock your saved Apparat identity to connect.")
@@ -49,9 +49,23 @@ func (node *Runtime) authenticateWorker(ctx context.Context, network, host strin
 	if db == nil {
 		return "", errors.New("local database unavailable")
 	}
-	pin, err := db.WorkerPin(ctx, host)
+	pin, err := db.WorkerPin(ctx, host, address)
 	if err != nil {
 		return "", err
+	}
+	observed, err := httpapi.ProbeWorker(ctx, address)
+	if err != nil {
+		return "", err
+	}
+	if pin != "" && pin != observed {
+		return "Updated the approved worker identity.", node.reviewReplacement(ctx, dialog, pin, observed, address)
+	}
+	if pin == "" {
+		message := "On " + host + ", run apparatd trust-host and compare its fingerprint with:\n" + observed + "\nFor initial setup, authorize your personal identity on the worker with:\napparatd trust-host " + node.Personal.Fingerprint()
+		if !approveTrust(dialog, "Authenticate "+host, message) {
+			return "", errors.New("worker kept disconnected")
+		}
+		pin = observed
 	}
 	client, err := httpapi.OpenWorker(ctx, address, pin, node.Personal, node.Keys)
 	if err != nil {
@@ -141,6 +155,14 @@ func (n *Runtime) CheckWorker(ctx context.Context, id string, dialog identity.Di
 		}
 		client, err := n.openSavedWorker(ctx, worker)
 		if err != nil {
+			var change *httpapi.ChangedWorker
+			if errors.As(err, &change) {
+				err = n.reviewReplacement(ctx, dialog, id, change.Presented, change.Address)
+				if err != nil {
+					nativeQuestion(dialog, "notice", "Worker trust", err.Error())
+				}
+				return
+			}
 			nativeQuestion(dialog, "notice", worker.DisplayName(), "Could not authenticate at the saved address. Use discovery to reconnect if the worker moved.")
 			return
 		}
@@ -173,7 +195,8 @@ func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevi
 		}
 		return client, nil
 	}
-	if errors.Is(err, httpapi.ErrDenied) {
+	var changed *httpapi.ChangedWorker
+	if errors.As(err, &changed) || errors.Is(err, httpapi.ErrDenied) {
 		return nil, err
 	}
 	resolver := n.ResolveSaved
@@ -196,7 +219,7 @@ func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevi
 	if n.database == nil {
 		return nil, domain.ErrUnavailable
 	}
-	err = n.database.SaveWorkerAccess(ctx, worker.Host, address, worker.Fingerprint, client.Access)
+	err = n.database.UpdateWorkerAddress(ctx, worker.Fingerprint, client.Access.User, address)
 	if err == nil && n.serviceManager != nil {
 		n.serviceManager.notify()
 	}
