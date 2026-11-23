@@ -2,7 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-11-23-12-04-33 | plans/current/2026-11-17-20-34-03_local-project-repos.md | Open local checkouts and clone GitHub repos on this device | Open local checkouts and clone to a chosen location on Linux and Android, with private GitHub access on Linux.
+2026-11-23-12-11-15 | plans/current/2026-11-17-20-34-03_local-project-repos.md | Open local checkouts and clone GitHub repos on this device | Open local checkouts and clone to a chosen location on Linux and Android, with private GitHub access on Linux.
 2026-11-22-20-40-20 | plans/current/2026-11-22-15-00-00_personal-cluster.md | Personal identities, replicated policy and first pool queue | Administer the installed worker from either personal device and recover missing policy and job revisions.
 2026-11-22-20-28-39 | plans/current/2026-11-17-12-43-19_recover-canonical-builds.md | Recover Apparat main and verify every app build target | Reconcile the private prototype, restore Apparat artifacts, and enforce Apparat checkout and per-target validation locally.
 2026-11-22-20-20-51 | plans/current/2026-11-17-11-08-46_embed-stmpck.md | Bring STMPCK into Apparat while preserving standalone play | Prove private embedding with three representative games, validate all eighteen in both hosts, and qualify a reproducible release.

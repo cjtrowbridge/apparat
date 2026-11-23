@@ -313,6 +313,11 @@ func TestProjectLabelsBesideFields(t *testing.T) {
 	g := NewGame()
 	defer g.Close()
 	for _, width := range []int{320, 960} {
+		p := g.prefs.Preferences
+		if width == 960 {
+			p.Font = 20
+		}
+		g.applyPreferences(p)
 		g.Layout(width, 720)
 		for _, native := range []bool{false, true} {
 			g.runtimeInfo.PromptValue = nil
@@ -337,6 +342,10 @@ func TestProjectLabelsBesideFields(t *testing.T) {
 				row := child.(*widget.Container)
 				caption, control := row.Children()[0], row.Children()[1]
 				left, right := caption.GetWidget().Rect, control.GetWidget().Rect
+				bounds := row.GetWidget().Rect
+				if !strings.HasSuffix(caption.(*widget.Text).Label, ":") || min(left.Min.Y, right.Min.Y)-bounds.Min.Y != p.Font/2 || bounds.Max.Y-max(left.Max.Y, right.Max.Y) != p.Font/2 {
+					t.Fatalf("expected colon and half-em clearance at font size %d: row %v, label %v, field %v", p.Font, bounds, left, right)
+				}
 				if left.Dx() != g.formLabelWidth() || right.Min.X != left.Max.X+8 || right.Max.X > available || right.Dx() < 50 || left.Min.Y >= right.Max.Y || right.Min.Y >= left.Max.Y {
 					t.Fatalf("width %d native %t: label %v and field %v outside row %v", width, native, left, right, row.GetWidget().Rect)
 				}
