@@ -17,35 +17,6 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
-func (g *Game) createProjectControls(c *widget.Container) {
-	f := &g.projects
-	g.projectField(c, "New repo name", &f.name)
-	g.projectFolder(c, "Parent folder (optional)", &f.initParent, true)
-	g.projectButton(c, "Initialize repo", func() {
-		name, parent := f.name, f.initParent
-		store := f.store
-		g.projectWork(func(ctx context.Context) projectResult {
-			path, err := store.CreateProject(ctx, parent, name)
-			if err != nil {
-				return projectResult{message: err.Error()}
-			}
-			rows, err := store.Projects(ctx)
-			if err != nil {
-				return projectResult{message: "Project created. Reopen Projects to refresh the list."}
-			}
-			return projectResult{applyField: func() {
-				f.rows = rows
-				f.name = ""
-				for i, p := range rows {
-					if p.Location == path {
-						g.selectSection(hud.TabProjects, len(projectEntrySections)+i)
-						break
-					}
-				}
-			}}
-		})
-	})
-}
 func clonePreview(dest, account string) string {
 	if account == "" {
 		account = "public access"
@@ -60,17 +31,11 @@ func (g *Game) projectDestination(parent, repo string) (string, error) {
 	return projectgit.Destination(g.runtimeInfo.RuntimePath, parent, repo)
 }
 
-const (
-	cloneRepoForm  hud.ContentKind = "clone-repo"
-	initRepoForm   hud.ContentKind = "init-repo"
-	importRepoForm hud.ContentKind = "import-repo"
-)
+const newRepoForm hud.ContentKind = "new-project"
 
 var projectEntrySections = [...]hud.Section{
 	{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device."},
-	{Title: "Clone remote repo", Description: "Download a GitHub repository to this device.", SelectorColor: "#36ad9c", ContentKind: cloneRepoForm},
-	{Title: "Init new repo", Description: "Create an empty Git repository in a new folder.", SelectorColor: "#36ad9c", ContentKind: initRepoForm},
-	{Title: "Import local repo", Description: "Add an existing Git working tree to Projects in its current location.", SelectorColor: "#36ad9c", ContentKind: importRepoForm},
+	{Title: "New Project", ContentKind: newRepoForm, SelectorColor: "#36ad9c"},
 }
 
 func (g *Game) projectFolder(c *widget.Container, label string, value *string, optional bool) {
@@ -132,43 +97,5 @@ func (g *Game) editProjectControls(c *widget.Container) {
 		f.editID = ""
 		f.message = ""
 		g.layoutDirty = true
-	})
-}
-
-func (g *Game) cloneProjectControls(c *widget.Container) {
-	f := &g.projects
-	store := f.store
-	g.projectButton(c, "Preview clone", func() {
-		repo, err := projectgit.RepoName(f.repo)
-		if err != nil {
-			f.message = err.Error()
-			g.layoutDirty = true
-			return
-		}
-		dest, err := g.projectDestination(f.cloneParent, repo)
-		if err != nil {
-			f.message = err.Error()
-		} else {
-			f.message = clonePreview(dest, f.account)
-		}
-		g.layoutDirty = true
-	})
-	g.projectButton(c, "Clone", func() {
-		parent, repo, account := f.cloneParent, f.repo, f.account
-		normalized, err := projectgit.RepoName(repo)
-		if err != nil {
-			f.message = err.Error()
-			g.layoutDirty = true
-			return
-		}
-		dest, err := g.projectDestination(parent, normalized)
-		if err != nil || f.message != clonePreview(dest, account) {
-			f.message = "Preview the destination and account first."
-			g.layoutDirty = true
-			return
-		}
-		g.changeProjects(func(ctx context.Context) error {
-			return store.CloneProject(ctx, parent, normalized, account)
-		})
 	})
 }

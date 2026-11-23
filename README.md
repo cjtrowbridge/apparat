@@ -111,11 +111,11 @@ The full Cluster view will show:
 
 Project Repos lists Git working trees the user explicitly registers on this device. It works offline before the device joins any cluster. SQLite remembers the registration and its stable project ID. The checkout supplies the current Git branch and labeled tasks from a JSON-format .vscode/tasks.json. Apparat displays the labels without running repository commands. A moved or inaccessible checkout can be reconnected, and removing a registration leaves its files intact.
 
-Projects keeps three actions pinned above the checkout list as you scroll.
+Projects keeps **➕ New Project** pinned above the checkout list as you scroll.
 
-- **➕ Clone remote repo** downloads a shallow checkout from GitHub. Enter an owner/repo or URL, preview the destination and account, then select **Clone**. The default destination is `<node-root>/data/repos/<owner>/<repo>`.
-- **➕ Init new repo** creates an empty Git working tree on `main`. Enter a name, optionally choose a parent folder, and select **Initialize repo** to open its Files workspace. The default parent is `<node-root>/data/repos/`.
-- **➕ Import local repo** registers a Git working tree in place. Choose the existing repository folder and select **Import repo**.
+- **➕ New Project** opens a device search above the repository choices. Choose this device for local setup. Other cluster devices preview future hosting, sharing and online resource use.
+- **Create a new repository** defaults to the planned Agentic Pipelines starter. Its repeatable bootstrap will come from a public template repository once published. Choose **Empty Git repository** to initialize a working tree on `main` now.
+- **Bring in a repository** offers a shallow GitHub clone or an existing Git working tree. Preview the destination and optional desktop GitHub account before cloning. The default clone path is `<node-root>/data/repos/<owner>/<repo>`. Existing folders register in place. Setup shows progress and opens the registered workspace on success.
 
 The Linux folder button uses Zenity when installed, and the path field also accepts absolute paths. Linux uses the system GitHub CLI for private clones, with a default account and per-repo overrides. Android starts with local checkouts and public clones. Phase 11B adds Android GitHub sign-in and private clones. Local checkouts open offline regardless of sign-in state.
 

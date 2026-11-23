@@ -22,8 +22,7 @@ import (
 type projectStore interface {
 	Projects(context.Context) ([]domain.Project, error)
 	StoreProject(context.Context, string, string, string) error
-	CreateProject(context.Context, string, string) (string, error)
-	CloneProject(context.Context, string, string, string) error
+	SetupLocalProject(context.Context, domain.LocalProjectSetup, func(string)) (string, error)
 	RemoveProject(context.Context, string) error
 	ProjectDefault(context.Context) (string, error)
 	SetProjectDefault(context.Context, string) error
@@ -36,6 +35,7 @@ type projectResult struct {
 	reload                  bool
 }
 type projectForm struct {
+	wizard                                                     newProjectState
 	directoryStatus                                            chan workspaceReply
 	stopDirectoryStatus                                        context.CancelFunc
 	bookmarks                                                  map[[2]string][3]int
@@ -116,9 +116,12 @@ func (g *Game) pollProjects() {
 		})
 	}
 	f.active = active
+	g.receiveProjectProgress()
 	select {
 	case r := <-f.pending:
 		f.pending = nil
+		g.receiveProjectProgress()
+		f.wizard.progress = nil
 		f.message = r.message
 		if r.applyField != nil {
 			r.applyField()
@@ -198,6 +201,16 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		g.workspaceControlsFor(c, s.ProjectID)
 		return
 	}
+	if projectEntryAction(s.ContentKind) && len(f.wizard.output) > 0 {
+		c.AddChild(g.detailText(strings.Join(f.wizard.output, "\n")))
+		if f.wizard.progress != nil {
+			g.newProjectControls(c)
+			for _, child := range c.Children() {
+				child.GetWidget().Disabled = true
+			}
+			return
+		}
+	}
 	if f.pending != nil {
 		c.AddChild(g.detailText("Working…"))
 		g.projectButton(c, "Cancel", f.cancel)
@@ -240,23 +253,8 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 		}
 		return
 	}
-	switch s.ContentKind {
-	case cloneRepoForm:
-		g.projectField(c, "GitHub owner/repo or URL", &f.repo)
-		g.projectFolder(c, "Destination parent folder (optional)", &f.cloneParent, true)
-		g.projectAccount(c, &f.account)
-		g.cloneProjectControls(c)
-	case initRepoForm:
-		g.createProjectControls(c)
-	case importRepoForm:
-		g.projectFolder(c, "Existing repo folder", &f.importPath, false)
-		g.projectButton(c, "Import repo", func() {
-			path := f.importPath
-			account := f.defaultAccount
-			g.changeProjects(func(ctx context.Context) error {
-				return store.StoreProject(ctx, "", path, account)
-			})
-		})
+	if projectEntryAction(s.ContentKind) {
+		g.newProjectControls(c)
 	}
 }
 

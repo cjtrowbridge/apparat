@@ -126,6 +126,10 @@ func Destination(base, parent, name string) (string, error) {
 }
 
 func Clone(ctx context.Context, base, parent, input, account string) (domain.Project, error) {
+	return CloneWithProgress(ctx, base, parent, input, account, nil)
+}
+
+func CloneWithProgress(ctx context.Context, base, parent, input, account string, report func(string)) (domain.Project, error) {
 	var p domain.Project
 	name, err := RepoName(input)
 	if err != nil {
@@ -140,6 +144,9 @@ func Clone(ctx context.Context, base, parent, input, account string) (domain.Pro
 		if runtime.GOOS == "android" || !ValidAccount(account) {
 			return p, errors.New("account unavailable on this device")
 		}
+		if report != nil {
+			report("Reading the selected account from the system GitHub CLI…")
+		}
 		opts.Auth, err = accountAuth(ctx, account)
 		if err != nil {
 			return p, err
@@ -153,7 +160,7 @@ func Clone(ctx context.Context, base, parent, input, account string) (domain.Pro
 	}
 	_, err = os.Lstat(dest)
 	if !errors.Is(err, os.ErrNotExist) {
-		return p, errors.New("destination unavailable or occupied; use Import local repo for a checkout")
+		return p, errors.New("destination unavailable or occupied; choose Existing folder to register a checkout")
 	}
 	stage, err := os.MkdirTemp(filepath.Dir(dest), ".apparat-clone-")
 	if err != nil {
@@ -162,9 +169,15 @@ func Clone(ctx context.Context, base, parent, input, account string) (domain.Pro
 	defer func() {
 		_ = os.RemoveAll(stage)
 	}()
+	if report != nil {
+		report("Downloading Git objects and checking out the default branch in a temporary folder…")
+	}
 	_, err = git.PlainCloneContext(ctx, stage, false, opts)
 	if err != nil {
 		return p, errors.New("clone incomplete; check the connection and the selected account’s repository access")
+	}
+	if report != nil {
+		report("Moving the completed checkout into its destination and reading repository metadata…")
 	}
 	err = installClone(stage, dest)
 	if err != nil {

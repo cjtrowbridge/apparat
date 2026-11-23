@@ -211,7 +211,11 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 		game.projectControls(sectionContainer, section)
 		return sectionContainer
 	}
-	sectionContainer.AddChild(game.detailText(strings.ToUpper(section.Title)))
+	if projectEntryAction(section.ContentKind) {
+		sectionContainer.AddChild(widget.NewText(widget.TextOpts.Text(section.Title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle)))
+	} else {
+		sectionContainer.AddChild(game.detailText(strings.ToUpper(section.Title)))
+	}
 	if section.Description != "" {
 		sectionContainer.AddChild(game.detailText(section.Description))
 	}

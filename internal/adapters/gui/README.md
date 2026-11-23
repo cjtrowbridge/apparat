@@ -158,7 +158,7 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 Workspace Files publishes folder entries first. A cancellable background check decorates the current directory. Navigating discards obsolete results, and a failed check leaves filenames accessible with an error message.
 
 - `dictation.go`: Owns workspace PTT sessions, targeted text insertion and device-local model selection in Settings.
-- `project_creation.go`: Defines separate clone, init and local import entries, their folder and account controls, and registration editing. New local repositories open in Files. Each form owns its folder draft.
+- `project_creation.go`: Defines the pinned New Project entry, folder and account controls, clone destination preview and registration editing.
 - `update_discovery.go`: Checks the Android release manifest on Settings entry, coalesces checks and separates discovery from installation.
 
 - `desktop_updates.go`: Owns one cancellable Linux update worker, candidate cleanup, UI status and restart intent. No network I/O runs on the frame thread.
@@ -200,3 +200,5 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `device_directory.go`: projects synchronized GUI peers above workers, resolves device pool menus against the worker that owns the policy and lists assigned devices on routing pages.
 
 - `pool_tabs.go`: renders Tasks, Devices and Authorized users below the pool heading. It keeps filters and sort direction on the navigation frame. Task and device details use the existing detail stack and authorization paths. Discovery compares advertised hostnames with the saved worker and personal-device directory before offering navigation, pairing or claiming.
+
+- `new_project.go`: Builds the host-first New Project form and runs local checkout setup with progress, registration refresh and workspace selection. Remote hosts and the unpublished template have preview-only controls.

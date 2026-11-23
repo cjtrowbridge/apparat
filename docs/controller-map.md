@@ -89,3 +89,5 @@ Opening a discovered worker exposes **Claim this host for your cluster**. Keyboa
 The Cluster heading gear opens Cluster settings. Escape, B, Android Back and the detail-page Back button return one level. Selecting a task opens its details. Cancellation and role changes have a separate confirmation.
 
 Cluster pool detail uses three focusable emoji tabs for Tasks, Devices and Authorized users. Directional navigation reaches task status and order, device rows and the administrator's add-user control. Opening a worker from Devices pushes its normal detail page. Back restores Devices for that pool.
+
+In Projects, focus the pinned ➕ New Project and activate it to open device search. Navigate the device, source and template or import choices in order using the D-pad or keyboard. Remote choices preview the form. Only the local device offers execution. When setup finishes, navigation enters the registered workspace.

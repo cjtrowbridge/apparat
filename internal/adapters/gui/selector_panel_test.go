@@ -5,9 +5,10 @@
 package gui
 
 import (
-	"runtime"
+	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
@@ -115,7 +116,7 @@ func TestLocalProjectTabIncludesOnlyRegisteredCheckouts(t *testing.T) {
 	game := NewGameWithRuntimeInfo(RuntimeInfo{})
 	defer game.Close()
 	tab := game.projectTab(hud.Tab{})
-	if len(tab.Sections) != 4 || tab.Sections[1].Title != "Clone remote repo" || tab.Sections[2].Title != "Init new repo" || tab.Sections[3].Title != "Import local repo" {
+	if len(tab.Sections) != 2 || tab.Sections[1].Title != "New Project" {
 		t.Fatal("unexpected rows in empty registry")
 	}
 	game.projects.rows = []domain.Project{
@@ -173,42 +174,54 @@ func TestProjectEntryFormsOnlyOfferTheirOwnActions(t *testing.T) {
 	g := NewGame()
 	defer g.Close()
 	g.projects.store = layoutRegistry{}
-	actions := []string{"Preview clone", "Clone", "Initialize repo", "Import repo", "Save registration"}
 	selectTabThroughStrip(t, g, hud.TabProjects)
+	g.serviceProjection.Devices = []domain.ClusterDevice{{Fingerprint: "other", Host: "worker"}}
 	g.Layout(360, 720)
-	for i, section := range projectEntrySections[1:] {
-		g.selectSection(hud.TabProjects, i+1)
-		renderNavigation(g)
-		if !g.detailOpen[hud.TabProjects] || g.inWorkspace() {
-			t.Fatalf("%s did not open its detail pane", section.Title)
-		}
-		form := g.buildSectionContainer(section)
+	g.selectSection(hud.TabProjects, 1)
+	renderNavigation(g)
+	check := func(label string, want bool) {
+		form := g.buildSectionContainer(projectEntrySections[1])
 		form.GetWidget().SetTheme(g.theme)
 		form.Validate()
-		for _, label := range actions {
-			want := section.ContentKind == cloneRepoForm && (label == "Preview clone" || label == "Clone") ||
-				section.ContentKind == initRepoForm && label == "Initialize repo" ||
-				section.ContentKind == importRepoForm && label == "Import repo"
-			found := findButtonByLabel(form, label) != nil
-			if found != want {
-				t.Errorf("%s shows %q = %t, want %t", section.Title, label, found, want)
-			}
-		}
-		fields := 0
-		for _, target := range form.GetFocusers() {
-			_, ok := target.(*widget.TextInput)
-			if ok {
-				fields++
-			}
-		}
-		expected := map[hud.ContentKind]int{cloneRepoForm: 3, initRepoForm: 2, importRepoForm: 1}
-		if runtime.GOOS == "android" {
-			expected[cloneRepoForm] = 2
-		}
-		if fields != expected[section.ContentKind] {
-			t.Errorf("%s has %d fields, want %d", section.Title, fields, expected[section.ContentKind])
+		if (findButtonByLabel(form, label) != nil) != want {
+			t.Fatalf("unexpected visibility for %q (wanted %t)", label, want)
 		}
 	}
+	choose := func(id string) {
+		for _, choice := range g.projectChoices() {
+			if choice.id == id {
+				g.chooseProject(choice)
+				return
+			}
+		}
+		t.Fatal("choice unavailable", id)
+	}
+	check("Create a new repository", false)
+	g.projects.wizard.search = "WORK"
+	check("worker", true)
+	check("This device", false)
+	choose("worker-other")
+	choose("create")
+	check("✓ Agentic Pipelines starter (default)", true)
+	choose("empty")
+	check("Initialize repo", false)
+	g.startLocalProject()
+	if g.projects.pending != nil {
+		t.Fatal("remote preview started local setup")
+	}
+	g.projects.wizard.search = ""
+	choose("local")
+	check("Existing folder", false)
+	choose("bring")
+	choose("clone")
+	check("Preview clone", true)
+	check("Import repo", false)
+	choose("import")
+	check("Import repo", true)
+	choose("create")
+	choose("empty")
+	check("Initialize repo", true)
+	check("Clone", false)
 }
 
 func TestClusterDirectoryUsesSavedWorkers(t *testing.T) {
@@ -237,5 +250,59 @@ func TestClusterDirectoryUsesSavedWorkers(t *testing.T) {
 	g.invokeAction(actions.Choices[0].Address)
 	if len(g.queryActions("open saved-worker", true).Choices) != 0 {
 		t.Fatal("stale device action")
+	}
+}
+
+type wizardRegistry struct {
+	projectStore
+	started, finish chan struct{}
+}
+
+func (s wizardRegistry) SetupLocalProject(ctx context.Context, req domain.LocalProjectSetup, progress func(string)) (string, error) {
+	progress("Initializing Git")
+	close(s.started)
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case <-s.finish:
+		return "/new/project", nil
+	}
+}
+func (s wizardRegistry) Projects(context.Context) ([]domain.Project, error) {
+	return []domain.Project{{ID: "old", Name: "project", Location: "/old/project", Available: true}, {ID: "new", Name: "project", Location: "/new/project", Available: true}}, nil
+}
+func TestNewProjectLocksFormAndOpensExactCheckout(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	store := wizardRegistry{started: make(chan struct{}), finish: make(chan struct{})}
+	g.projects.store = store
+	selectTabThroughStrip(t, g, hud.TabProjects)
+	g.selectSection(hud.TabProjects, 1)
+	g.projects.active = true
+	g.projects.catalogInitialized = true
+	g.projects.wizard = newProjectState{host: "local", source: "create", mode: "empty"}
+	g.projects.name = "project"
+	g.startLocalProject()
+	select {
+	case <-store.started:
+	case <-time.After(time.Second):
+		t.Fatal("setup did not start")
+	}
+	g.pollProjects()
+	form := g.buildSectionContainer(projectEntrySections[1])
+	form.GetWidget().SetTheme(g.theme)
+	form.Validate()
+	button := findButtonByLabel(form, "Initialize repo")
+	if button == nil || !button.GetWidget().Disabled || len(g.projects.wizard.output) < 2 {
+		t.Fatal("form did not lock and report progress")
+	}
+	close(store.finish)
+	deadline := time.Now().Add(2 * time.Second)
+	for g.projects.pending != nil && time.Now().Before(deadline) {
+		g.pollProjects()
+		time.Sleep(time.Millisecond)
+	}
+	if g.projects.workspace.id != "new" || g.projects.workspace.mode != "files" || g.selectedSections[hud.TabProjects] != len(projectEntrySections)+1 {
+		t.Fatal("did not open the newly registered checkout")
 	}
 }

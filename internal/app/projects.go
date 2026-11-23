@@ -73,37 +73,62 @@ func (n *Runtime) registerProject(ctx context.Context, p domain.Project) error {
 	return n.database.RegisterProject(ctx, p)
 }
 func (n *Runtime) CreateProject(ctx context.Context, parent, name string) (string, error) {
+	return n.SetupLocalProject(ctx, domain.LocalProjectSetup{Mode: "empty", Parent: parent, Name: name}, nil)
+}
+func (n *Runtime) CloneProject(ctx context.Context, parent, repo, account string) error {
+	_, err := n.SetupLocalProject(ctx, domain.LocalProjectSetup{Mode: "clone", Parent: parent, Name: repo, Account: account}, nil)
+	return err
+}
+func (n *Runtime) SetupLocalProject(ctx context.Context, req domain.LocalProjectSetup, progress func(string)) (string, error) {
+	report := func(message string) {
+		if progress != nil {
+			progress(message)
+		}
+	}
 	var p domain.Project
 	var err error
-	if strings.HasPrefix(parent, "content://") {
-		if n.documents == nil {
-			return "", errors.New("folder access unavailable")
+	tree := strings.HasPrefix(req.Parent, "content://")
+	if tree && n.documents == nil {
+		return "", errors.New("folder access unavailable")
+	}
+	switch req.Mode {
+	case "empty":
+		report("Creating the project folder and initializing Git on main…")
+		if tree {
+			p, err = n.documents.CreateTree(ctx, req.Parent, req.Name)
+		} else {
+			p, err = projectgit.Create(ctx, n.config.RootDir, req.Parent, req.Name)
 		}
-		p, err = n.documents.CreateTree(ctx, parent, name)
-	} else {
-		p, err = projectgit.Create(ctx, n.config.RootDir, parent, name)
+	case "clone":
+		report("Preparing the GitHub checkout destination…")
+		if tree {
+			if req.Account != "" {
+				return "", errors.New("GitHub login is unavailable for this folder provider")
+			}
+			report("Downloading the repository and exporting its working tree to the selected folder…")
+			p, err = n.documents.CloneTree(ctx, req.Parent, req.Name)
+		} else {
+			p, err = projectgit.CloneWithProgress(ctx, n.config.RootDir, req.Parent, req.Name, req.Account, progress)
+		}
+	case "import":
+		report("Inspecting the selected Git working tree…")
+		p, err = n.inspectProject(req.Name)
+		p.Account = req.Account
+	default:
+		return "", errors.New("unknown local repository source")
 	}
 	if err != nil {
 		return "", err
 	}
+	if !projectgit.ValidAccount(p.Account) {
+		return "", errors.New("invalid GitHub account")
+	}
+	report("Saving the checkout registration in the local project database…")
 	err = n.registerProject(ctx, p)
 	if err != nil {
-		return "", errors.New("repository created; choose Import local repo to finish registration")
+		return "", errors.New("could not save the registration; the checkout can be added using Existing folder")
 	}
 	return p.Location, nil
-}
-func (n *Runtime) CloneProject(ctx context.Context, parent, repo, account string) error {
-	var p domain.Project
-	var err error
-	if strings.HasPrefix(parent, "content://") && n.documents != nil {
-		p, err = n.documents.CloneTree(ctx, parent, repo)
-	} else {
-		p, err = projectgit.Clone(ctx, n.config.RootDir, parent, repo, account)
-	}
-	if err != nil {
-		return err
-	}
-	return n.registerProject(ctx, p)
 }
 func (n *Runtime) RemoveProject(ctx context.Context, id string) error {
 	n.workspaceMu.Lock()

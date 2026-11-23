@@ -11,6 +11,11 @@ type Project struct {
 	Available                          bool
 }
 
+// LocalProjectSetup describes one checkout operation on the executing node.
+type LocalProjectSetup struct {
+	Mode, Parent, Name, Account string
+}
+
 // WorkspaceRequest addresses one registration and repository-relative path.
 type WorkspaceRequest struct {
 	ProjectID, Action, Path, Base, Text, Argument, ID, Thread, RelatedRun string

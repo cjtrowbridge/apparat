@@ -1592,7 +1592,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Persist a stable project ID independent of path, local owner ID and reopening information in SQLite. Read Git state and configured actions from the checkout. Keep the existing blue/purple outlines and right-aligned 🧠 for repos with actions.
 - [x] Show lost access or a moved checkout and support reconnecting the same registration. Removing a registration preserves the working tree.
 - [x] Create a named local repo offline under the default or chosen parent and open its Files workspace on an unborn main branch.
-- [x] Offer separate Import local repo, Init new repo and Clone remote repo workflows. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
+- [x] Offer import, init and clone through one host-first New Project form. Remote hosts support preview until remote projects ship. The Agentic Pipelines starter awaits publication of its template. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
 - [x] Use the system GitHub CLI on Linux, with a device default account and per-repo overrides. Keep account credentials outside project metadata.
 
 **Exit criteria**

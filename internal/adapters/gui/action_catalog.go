@@ -107,6 +107,14 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			}
 		}
 	}
+	if tab.ID() == hud.TabProjects && g.projects.store != nil && g.projects.pending == nil && g.selectedSections[hud.TabProjects] == 1 {
+		for _, choice := range g.projectChoices() {
+			add("project-setup-"+choice.step, g.projects.wizard.host, choice.id, choice.label, "Projects / New Project / "+choice.label, func() {
+				g.selectTab(index, nil)
+				g.chooseProject(choice)
+			})
+		}
+	}
 	counts := make(map[string]int)
 	if tab.ID() == hud.TabProjects {
 		for _, p := range g.projects.rows {

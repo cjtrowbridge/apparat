@@ -143,17 +143,17 @@ func TestProjectActionsStayPinned(t *testing.T) {
 		renderNavigation(g)
 		targets := g.bodyTargets()
 		pane := g.verticalScrolls[0]
-		var pinned [3]image.Rectangle
+		var pinned [1]image.Rectangle
 		for i := range pinned {
 			pinned[i] = targets[i].w.GetWidget().Rect
 			if targets[i].pane != nil || pinned[i].Empty() || pinned[i].Max.Y > pane.ViewRect().Min.Y {
 				t.Fatalf("width %d: action %d outside pinned area: %v, viewport %v", width, i, pinned[i], pane.ViewRect())
 			}
 		}
-		first := targets[3].w.GetWidget().Rect
+		first := targets[len(pinned)].w.GetWidget().Rect
 		pane.ScrollTop = 0.8
 		renderNavigation(g)
-		if targets[3].pane != pane || targets[3].w.GetWidget().Rect.Min.Y >= first.Min.Y {
+		if targets[len(pinned)].pane != pane || targets[len(pinned)].w.GetWidget().Rect.Min.Y >= first.Min.Y {
 			t.Fatalf("width %d: checkout list did not scroll", width)
 		}
 		g.focusBody(targets, 0)

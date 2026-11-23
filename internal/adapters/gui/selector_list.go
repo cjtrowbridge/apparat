@@ -13,7 +13,7 @@ import (
 const selectorListInset = 8
 
 func projectEntryAction(kind hud.ContentKind) bool {
-	return kind == cloneRepoForm || kind == initRepoForm || kind == importRepoForm
+	return kind == newRepoForm
 }
 
 func (game *Game) selectorRows() *widget.Container {

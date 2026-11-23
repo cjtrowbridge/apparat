@@ -38,3 +38,7 @@ The Linux portal registered the existing public checkout. Linux integration test
 - [x] Create a named local project offline on main under the default or selected parent. Protect existing folders, register the empty checkout, and verify reopening and the first commit.
 
 Verified in 0.1.34. The packaged Linux GUI created and opened a named repo. The Pixel 4a created and reopened repos in both app-private and granted Documents storage with HEAD pointing to main. Runtime tests checked the first commit, duplicate creation, invalid names and reopening from SQLite.
+
+### New Project host selection (Phase 9 with a Phase 11 preview)
+
+Consolidate the three pinned entry points into a progressive host, source and template form. Preserve local creation, clone preview, optional system GitHub login and folder registration. Display safe operation progress and open the registered workspace by its canonical location. Verify search, conditional controls, offline template and remote execution boundaries, and the ordinary release matrix. The default Agentic Pipelines template awaits its public repository.
