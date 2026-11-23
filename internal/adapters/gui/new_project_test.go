@@ -88,3 +88,18 @@ func TestNewProjectNativeSearchInitialFocus(t *testing.T) {
 		t.Fatal("native search control should be focused and ready for activation")
 	}
 }
+
+func TestRemoteCloneAcceptsRepositoryAtActivation(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	g.projects.wizard.host = "worker-example"
+	g.projects.wizard.mode = "clone"
+	action := g.remoteCloneOption()
+	if action == nil {
+		t.Fatal("clone must be available before the field receives keyboard input")
+	}
+	action.run()
+	if g.projects.message == "" || g.projects.pending != nil {
+		t.Fatal("empty repository requires inline guidance")
+	}
+}

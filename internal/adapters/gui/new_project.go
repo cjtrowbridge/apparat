@@ -146,7 +146,7 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		return
 	}
 	local := w.host == "local"
-	if !local && (w.mode != "clone" || !strings.HasPrefix(w.host, "worker-")) {
+	if !local && (!strings.HasPrefix(w.host, "worker-") || w.mode == "import" || w.mode == "empty") {
 		c.AddChild(g.formDescription("Remote project setup is a preview. Execution on this host is not available yet."))
 	}
 	if w.mode == "starter" {
@@ -167,11 +167,10 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		g.projectFocusControl("details", folder("Existing repo folder", &f.importPath, false))
 	case "clone":
 		g.projectFocusControl("details", g.projectField(c, "GitHub owner/repo or URL", &f.repo))
-		repo, repoErr := projectgit.RepoName(f.repo)
 		if local {
 			folder("Destination parent folder (optional)", &f.cloneParent, true)
-		} else if repoErr == nil {
-			c.AddChild(g.formDescription("Worker destination: apparat/data/repos/" + repo))
+		} else if strings.HasPrefix(w.host, "worker-") {
+			c.AddChild(g.formDescription("The worker saves the checkout in apparat/data/repos/<owner>/<repository>."))
 		}
 		if local && runtime.GOOS != "android" {
 			g.projectAccount(c, &f.account)

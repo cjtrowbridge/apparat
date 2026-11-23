@@ -35,7 +35,7 @@ func (g *Game) projectDestination(parent, repo string) (string, error) {
 const newRepoForm hud.ContentKind = "new-project"
 
 var projectEntrySections = [...]hud.Section{
-	{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device."},
+	{Title: "Project repos", SelectorKind: hud.SelectorHeading, Description: "Working trees on this device and connected workers."},
 	{Title: "New Project", ContentKind: newRepoForm, SelectorColor: "#36ad9c"},
 }
 

@@ -209,11 +209,13 @@ func (g *Game) remoteCloneOption() *accountOption {
 	if w.mode != "clone" || !strings.HasPrefix(w.host, "worker-") {
 		return nil
 	}
-	_, err := projectgit.RepoName(f.repo)
-	if err != nil {
-		return nil
-	}
 	return &accountOption{"clone", "Clone on " + g.projectHostName(w.host), func() {
+		_, err := projectgit.RepoName(f.repo)
+		if err != nil {
+			f.message = "Enter a GitHub owner/repository or repository URL."
+			g.layoutDirty = true
+			return
+		}
 		g.startHostOperation(w.host, domain.GitRequest{Provider: "github", Operation: "clone", Repo: f.repo, Account: w.remoteAccount}, &w.remoteAccount)
 	}}
 }
