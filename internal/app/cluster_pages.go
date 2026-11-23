@@ -29,6 +29,9 @@ type clusterPageBuilder struct {
 }
 
 func (n *Runtime) ClusterPage(ctx context.Context, r domain.ClusterRoute) (domain.ClusterPage, error) {
+	if r.Page == "rename-local" {
+		return n.localRenamePage(r)
+	}
 	rows, err := n.KnownWorkers(ctx)
 	if err != nil {
 		return domain.ClusterPage{}, err
@@ -257,7 +260,7 @@ func (b *clusterPageBuilder) people() error {
 func (b *clusterPageBuilder) poolDevices() {
 	names := []string{}
 	for _, d := range b.view.Devices {
-		if slices.Contains(d.Pools, b.route.Pool) {
+		if d.Worker && slices.Contains(d.Pools, b.route.Pool) {
 			name := d.DisplayName(b.worker.DisplayName())
 			names = append(names, name)
 			b.link(name+" · Pools", "device-pools", "", d.ID)
@@ -272,14 +275,11 @@ func (b *clusterPageBuilder) poolDevices() {
 
 func (b *clusterPageBuilder) devicePools() error {
 	for _, d := range b.view.Devices {
-		if d.ID != b.route.Target {
+		if !d.Worker || d.ID != b.route.Target {
 			continue
 		}
 		b.Title = d.DisplayName(b.worker.DisplayName()) + " · Pools"
 		b.Detail = "Select the pools this device should take requests from."
-		if !d.Worker {
-			b.Detail += " GUI assignments are saved for future request handling."
-		}
 		b.Pools = b.view.Pools
 		b.Assigned = d.Pools
 		v := b.view
@@ -311,4 +311,46 @@ func (b *clusterPageBuilder) devicePools() error {
 		return nil
 	}
 	return errors.New("device unavailable")
+}
+
+// Bootstrap the local hostname before making any signed network request.
+// The worker route, when present, publishes the alias for this same fingerprint.
+func (n *Runtime) localRenamePage(r domain.ClusterRoute) (domain.ClusterPage, error) {
+	d := n.LocalClusterDevice()
+	if d.ID == "" || d.ID != r.Target {
+		return domain.ClusterPage{}, errors.New("local device identity unavailable")
+	}
+	save := func(ctx context.Context, value string) error {
+		if n.LocalClusterDevice().ID != r.Target {
+			return errors.New("local device identity changed")
+		}
+		err := n.Keys.SetHostname(value)
+		if err != nil {
+			return err
+		}
+		n.mu.Lock()
+		if n.serviceManager != nil {
+			n.serviceManager.notify()
+		}
+		n.mu.Unlock()
+		defer n.RequestSync()
+		if r.Worker == "" {
+			return nil
+		}
+		remote := r
+		remote.Page = "rename"
+		page, err := n.ClusterPage(ctx, remote)
+		if err == nil {
+			if len(page.Options) != 1 || page.Options[0].Run == nil {
+				return errors.New("name saved locally, cluster rename unavailable")
+			}
+			name, _ := n.Keys.Hostname()
+			err = page.Options[0].Run(ctx, name)
+		}
+		if err != nil {
+			return fmt.Errorf("name saved on this device; retry to publish the cluster name: %w", err)
+		}
+		return nil
+	}
+	return domain.ClusterPage{Title: "Rename " + d.DisplayName(""), Detail: "Choose a hostname for this installation.", Options: []domain.ClusterOption{{Label: "Save name", Input: "Device hostname", Run: save}}}, nil
 }

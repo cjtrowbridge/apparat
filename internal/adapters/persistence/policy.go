@@ -191,6 +191,9 @@ func (db *DB) recordPolicy(ctx context.Context, event PolicyEvent, signer *ident
 	if !errors.Is(err, sql.ErrNoRows) {
 		return empty, err
 	}
+	if signer != nil && (p.Edit.Kind == "gui_pool" || p.Edit.Kind == "device_pools" && p.Edit.Target != worker) {
+		return empty, errors.New("only a headless worker can be assigned to a pool")
+	}
 	orderKey := authority
 	if p.Edit.Kind == "recover_order" {
 		if authority == worker || p.Edit.Target != worker || p.Edit.Service != authority || p.Edit.Value != owner || identity.Fingerprint(p.Device.Binding.User) != owner || p.Edit.Epoch == nil {

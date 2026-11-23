@@ -17,6 +17,7 @@ final class UpdateTransfer {
     interface State {
         long now();
         boolean cancelled();
+        void progress(long received);
     }
 
     static final class Failure extends IOException {
@@ -35,6 +36,8 @@ final class UpdateTransfer {
     static void copy(InputStream input, OutputStream output, State state) throws IOException {
         long started = state.now();
         long total = 0;
+        long lastReport = started;
+        state.progress(0);
         byte[] buffer = new byte[64 * 1024];
         while (true) {
             check(state, started, total);
@@ -46,6 +49,7 @@ final class UpdateTransfer {
             }
             check(state, started, total);
             if (count == -1) {
+                state.progress(total);
                 return;
             }
             total += count;
@@ -53,6 +57,11 @@ final class UpdateTransfer {
                 throw new Failure("unable_size", total, state.now() - started);
             }
             output.write(buffer, 0, count);
+            long now = state.now();
+            if (now - lastReport >= 250) {
+                state.progress(total);
+                lastReport = now;
+            }
         }
     }
 

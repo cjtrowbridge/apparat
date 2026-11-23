@@ -33,21 +33,25 @@ func (s *Session) SetupHostname(dialog Dialog) bool {
 		return true
 	}
 	ui := setupUI{dialog}
-	message := "Choose a recognizable hostname for this device, such as pixel-4a. Other devices in your cluster will see this name."
-	for {
-		name, ok := ui.ask("text", "Name this device", message, "")
-		if !ok {
-			return false
-		}
-		name = strings.TrimSpace(name)
-		if !domain.ValidDeviceName(name) {
-			message = "Use 1–63 letters, digits or hyphens. Choose a specific name, such as pixel-4a."
-			continue
-		}
-		err = atomicWrite(filepath.Join(s.dir, "hostname"), []byte(name), 0600)
-		if err != nil {
-			ui.ask("notice", "Device name", "Could not save the hostname.", "")
-		}
-		return err == nil
+	name, ok := ui.ask("text", "Name this device", "Choose a recognizable hostname, such as Pixel 10 XL. Spaces become hyphens. You can also name this device later in Cluster.", "")
+	if !ok {
+		return false
 	}
+	err = s.SetHostname(name)
+	if err != nil {
+		ui.ask("notice", "Device name", err.Error(), "")
+	}
+	return err == nil
+}
+
+func (s *Session) SetHostname(value string) error {
+	name := strings.Join(strings.Fields(value), "-")
+	if !domain.ValidDeviceName(name) {
+		return errors.New("choose a specific name with 1–63 letters, digits or hyphens, such as Pixel-10-XL")
+	}
+	err := atomicWrite(filepath.Join(s.dir, "hostname"), []byte(name), 0600)
+	if err != nil {
+		return errors.New("could not save this device’s hostname")
+	}
+	return nil
 }

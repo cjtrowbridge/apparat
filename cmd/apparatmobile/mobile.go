@@ -125,6 +125,12 @@ func ActiveTab() string {
 	return game.ActiveTabID()
 }
 
+func ReportUpdateProgress(received, total int64) {
+	if game != nil {
+		game.SetUpdateProgress(received, total)
+	}
+}
+
 func ReportUpdateStatus(code string) {
 	if game == nil {
 		slog.Warn("android update status before game registration", "reason", code)

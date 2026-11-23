@@ -250,6 +250,8 @@ func (game *Game) applyUpdateStatus() {
 	if game.updateButton != nil {
 		if game.desktopUpdates != nil {
 			game.updateButton.GetWidget().Disabled = game.desktopUpdates.busy
+		} else {
+			game.updateButton.GetWidget().Disabled = game.androidTransferBusy() || game.discovery.pending != nil
 		}
 		if game.updateButtonStatus != status {
 			game.updateButtonStatus = status

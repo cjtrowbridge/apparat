@@ -42,8 +42,8 @@ func readDirectory(ctx context.Context, db directoryReader, a Access, worker str
 	rows, err := db.QueryContext(ctx, `WITH devices(id,host,os,worker) AS (
  SELECT DISTINCT d.device_id,d.hostname,d.platform,0 `+approvedDevices+` AND (? OR d.user_id=?)
  UNION ALL SELECT ?,'','',1), assignments(id,pool) AS (
- SELECT device,pool FROM gui_pool_devices WHERE cluster=? UNION SELECT worker,pool FROM pool_services WHERE cluster=? AND service=?)
- SELECT devices.id,coalesce(n.name,host),os,worker,coalesce(pool,'') FROM devices LEFT JOIN cluster_device_names n ON n.cluster=? AND n.device=devices.id LEFT JOIN assignments ON assignments.id=devices.id AND (? OR EXISTS(SELECT 1 FROM effective_pool_grants g WHERE g.cluster=? AND g.pool=assignments.pool AND g.service=? AND g.principal IN (?,'public'))) ORDER BY worker,host COLLATE NOCASE,devices.id,pool`, a.Cluster, admin, a.User, worker, a.Cluster, a.Cluster, HashService, a.Cluster, admin, a.Cluster, HashService, a.User)
+ SELECT worker,pool FROM pool_services WHERE cluster=? AND service=?)
+ SELECT devices.id,coalesce(n.name,host),os,worker,coalesce(pool,'') FROM devices LEFT JOIN cluster_device_names n ON n.cluster=? AND n.device=devices.id LEFT JOIN assignments ON assignments.id=devices.id AND (? OR EXISTS(SELECT 1 FROM effective_pool_grants g WHERE g.cluster=? AND g.pool=assignments.pool AND g.service=? AND g.principal IN (?,'public'))) ORDER BY worker,host COLLATE NOCASE,devices.id,pool`, a.Cluster, admin, a.User, worker, a.Cluster, HashService, a.Cluster, admin, a.Cluster, HashService, a.User)
 	if err != nil {
 		return nil, err
 	}

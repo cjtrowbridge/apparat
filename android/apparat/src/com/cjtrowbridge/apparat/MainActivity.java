@@ -6,9 +6,6 @@ package com.cjtrowbridge.apparat;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import android.net.Uri;
 import android.os.Build;
@@ -25,13 +22,10 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.util.Locale;
 
 import go.Seq;
 import com.cjtrowbridge.apparat.apparatmobile.Apparatmobile;
@@ -199,8 +193,7 @@ public class MainActivity extends Activity {
         }
         Log.i(TAG, "Starting update check userInitiated=" + userInitiated);
         if (userInitiated) {
-            reportUpdateStatus("checking");
-            showToast("Checking Apparat update...");
+            reportUpdateStatus("connecting");
         }
         updateThread = new Thread(new Runnable() {
             @Override
@@ -228,6 +221,7 @@ public class MainActivity extends Activity {
                         return;
                     }
                     downloadedUpdate = apk;
+                    reportUpdateStatus("hashing");
                     String installedHash;
                     String downloadedHash;
                     try {
@@ -247,7 +241,8 @@ public class MainActivity extends Activity {
                         }
                         return;
                     }
-                    String rejection = updateRejection(apk);
+                    reportUpdateStatus("verifying");
+                    String rejection = AndroidUpdater.updateRejection(MainActivity.this, apk);
                     if (rejection != null) {
                         reportUpdateFailure(rejection, userInitiated);
                         apk.delete();
@@ -271,28 +266,6 @@ public class MainActivity extends Activity {
         updateThread.start();
     }
 
-    // TLS protects transport; installed signing identity and monotonic version
-    // protect handoff. A public hash is equality evidence, not authenticity.
-    @SuppressWarnings("deprecation")
-    private String updateRejection(File apk) throws Exception {
-        PackageManager manager = getPackageManager();
-        PackageInfo current = manager.getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
-        PackageInfo candidate = manager.getPackageArchiveInfo(apk.getPath(), PackageManager.GET_SIGNATURES);
-        if (candidate == null || !getPackageName().equals(candidate.packageName)) {
-            return "unable_package";
-        }
-        long oldVersion = Build.VERSION.SDK_INT >= 28 ? current.getLongVersionCode() : current.versionCode;
-        long newVersion = Build.VERSION.SDK_INT >= 28 ? candidate.getLongVersionCode() : candidate.versionCode;
-        if (current.signatures == null || candidate.signatures == null
-                || !Arrays.equals(current.signatures, candidate.signatures)) {
-            return "unable_signer";
-        }
-        if (newVersion <= oldVersion) {
-            return "no_newer_update";
-        }
-        return null;
-    }
-
     private File downloadLatestApk() throws Exception {
         File partial = new File(getCacheDir(), "latest.apk.part");
         File apk = new File(getCacheDir(), "latest.apk");
@@ -301,6 +274,7 @@ public class MainActivity extends Activity {
         boolean complete = false;
         try {
             connection.setUseCaches(false);
+            connection.setRequestProperty("Accept-Encoding", "identity");
             connection.setConnectTimeout(15000);
             connection.setReadTimeout(UpdateTransfer.READ_TIMEOUT_MS);
             connection.setInstanceFollowRedirects(false);
@@ -308,9 +282,13 @@ public class MainActivity extends Activity {
             if (status != 200) {
                 throw new UpdateHttpException();
             }
+            final long length = connection.getContentLength();
             try (InputStream in = connection.getInputStream();
                  FileOutputStream out = new FileOutputStream(partial)) {
                 UpdateTransfer.copy(in, out, new UpdateTransfer.State() {
+                    public void progress(long received) {
+                        Apparatmobile.reportUpdateProgress(received, length);
+                    }
                     public long now() {
                         return android.os.SystemClock.elapsedRealtime();
                     }
@@ -348,7 +326,7 @@ public class MainActivity extends Activity {
 
     private void installDownloadedUpdate() {
         try {
-            String rejection = downloadedUpdate == null ? "unable_verification" : updateRejection(downloadedUpdate);
+            String rejection = downloadedUpdate == null ? "unable_verification" : AndroidUpdater.updateRejection(this, downloadedUpdate);
             if (rejection != null) {
                 reportUpdateStatus(rejection);
                 return;
@@ -362,6 +340,7 @@ public class MainActivity extends Activity {
             showToast("No downloaded update is ready");
             return;
         }
+        reportUpdateStatus("installing");
         Uri uri = Uri.parse("content://" + UPDATE_AUTHORITY + "/latest.apk");
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(uri, APK_MIME_TYPE);

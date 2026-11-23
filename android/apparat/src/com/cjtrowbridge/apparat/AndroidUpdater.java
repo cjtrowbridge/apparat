@@ -4,6 +4,8 @@
  */
 package com.cjtrowbridge.apparat;
 import android.content.pm.PackageInfo;
+import android.os.Build;
+import java.util.Arrays;
 import android.content.pm.PackageManager;
 import com.cjtrowbridge.apparat.apparatmobile.Updater;
 
@@ -32,4 +34,26 @@ final class AndroidUpdater implements Updater {
     public void checkForUpdate() {
         activity.checkForUpdate(true);
     }
+    // TLS protects transport; installed signing identity and monotonic version
+    // protect handoff. A public hash is equality evidence, not authenticity.
+    @SuppressWarnings("deprecation")
+    static String updateRejection(MainActivity activity, java.io.File apk) throws Exception {
+        PackageManager manager = activity.getPackageManager();
+        PackageInfo current = manager.getPackageInfo(activity.getPackageName(), PackageManager.GET_SIGNATURES);
+        PackageInfo candidate = manager.getPackageArchiveInfo(apk.getPath(), PackageManager.GET_SIGNATURES);
+        if (candidate == null || !activity.getPackageName().equals(candidate.packageName)) {
+            return "unable_package";
+        }
+        long oldVersion = Build.VERSION.SDK_INT >= 28 ? current.getLongVersionCode() : current.versionCode;
+        long newVersion = Build.VERSION.SDK_INT >= 28 ? candidate.getLongVersionCode() : candidate.versionCode;
+        if (current.signatures == null || candidate.signatures == null
+                || !Arrays.equals(current.signatures, candidate.signatures)) {
+            return "unable_signer";
+        }
+        if (newVersion <= oldVersion) {
+            return "no_newer_update";
+        }
+        return null;
+    }
+
 }

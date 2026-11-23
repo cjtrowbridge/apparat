@@ -62,12 +62,20 @@ func (u *desktopUpdateState) update(progress func(string, string)) desktopUpdate
 	if err != nil {
 		return desktopUpdateResult{err: err}
 	}
+	progress("Checking…", "Comparing the installed executable with the published digest.")
 	current, err := selfupdate.Digest(u.binary)
 	if err != nil || current == release.SHA256 {
 		return desktopUpdateResult{err: err}
 	}
-	progress("Updating…", "Downloading and verifying the update…")
-	candidate, err := u.client.Download(u.ctx, release, u.binary)
+	progress("Updating…", "Connecting to the Linux update download…")
+	candidate, err := u.client.DownloadWithProgress(u.ctx, release, u.binary, func(received, total int64) {
+		status := downloadProgress(received, total)
+		detail := status.Detail
+		if total > 0 && received == total {
+			detail += " · Verifying the executable…"
+		}
+		progress(status.Label, detail)
+	})
 	if err != nil {
 		return desktopUpdateResult{err: err}
 	}
@@ -98,7 +106,7 @@ func (g *Game) pollDesktopUpdates() bool {
 			} else if errors.Is(result.err, selfupdate.ErrInstall) {
 				detail = "Could not replace the executable. Check that its directory is writable. Your installed app was kept."
 			}
-			g.linuxUpdateStatus("Check for update", detail + " Select again to retry.")
+			g.linuxUpdateStatus("Check for update", detail+" Select again to retry.")
 		case !result.installed:
 			g.linuxUpdateStatus("Up to date", "Select again to check for a newer build.")
 		}

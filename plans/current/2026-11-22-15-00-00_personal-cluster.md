@@ -61,3 +61,6 @@ Mark the local fingerprint with a leading bullseye while retaining its trailing 
 
 ### Stage and publish pool assignments
 Keep per-device checkbox edits in a right-column draft. Save all selected memberships as one revision-checked policy transaction on the ordering worker and verify them in another client's SQLite replica. Cancel and Back discard the draft. Exercise empty selections, failures and visible checkbox indicators.
+
+### Correct device targeting and Android update feedback
+Phase 10 directory follow-up. Resolve the selected fingerprint for renames, permit naming this installation after cancelling setup, and restrict new pool assignments to workers. Preserve historical policy receipts. Verify generic names, GUI and worker controls, and Android update phases including known and unknown download lengths before canonical delivery.

@@ -27,6 +27,9 @@ func (g *Game) personalSections() []hud.Section {
 			continue
 		}
 		seen[d.ID] = true
+		if d.ID == g.serviceProjection.LocalDevice.ID && !domain.ValidDeviceName(d.Host) {
+			d = g.serviceProjection.LocalDevice
+		}
 		icon, platform := "1f5a7", "Platform not reported"
 		switch d.OS {
 		case "android", "ios":
@@ -54,10 +57,24 @@ func (g *Game) deviceManagementLinks(action string) []domain.ClusterOption {
 				id = "worker-" + d.ID
 			}
 			if id == action {
-				options = append(options, domain.ClusterOption{Label: "Select pools · " + w.DisplayName(), Route: domain.ClusterRoute{Worker: w.Fingerprint, Page: "device-pools", Target: d.ID}})
-				options = append(options, domain.ClusterOption{Label: "Rename device · " + w.DisplayName(), Route: domain.ClusterRoute{Worker: w.Fingerprint, Page: "rename", Target: d.ID}})
+				if d.Worker {
+					options = append(options, domain.ClusterOption{Label: "Select pools", Route: domain.ClusterRoute{Worker: w.Fingerprint, Page: "device-pools", Target: d.ID}})
+				}
+				page := "rename"
+				if action == "gui-"+g.serviceProjection.LocalDevice.ID {
+					page = "rename-local"
+				}
+				label := "Rename " + d.DisplayName(w.Host)
+				if len(g.serviceProjection.Devices) > 1 {
+					label += " via " + w.DisplayName()
+				}
+				options = append(options, domain.ClusterOption{Label: label, Route: domain.ClusterRoute{Worker: w.Fingerprint, Page: page, Target: d.ID}})
 			}
 		}
+	}
+	local := g.serviceProjection.LocalDevice
+	if len(options) == 0 && local.ID != "" && action == "gui-"+local.ID {
+		options = append(options, domain.ClusterOption{Label: "Rename " + local.DisplayName(""), Route: domain.ClusterRoute{Page: "rename-local", Target: local.ID}})
 	}
 	return options
 }
@@ -81,7 +98,7 @@ func (g *Game) poolSection(section hud.Section, name, priority string) hud.Secti
 	seen := map[string]bool{}
 	for _, w := range g.serviceProjection.Devices {
 		for _, d := range w.Roster {
-			if !seen[d.ID] && slices.Contains(d.Pools, name) {
+			if d.Worker && !seen[d.ID] && slices.Contains(d.Pools, name) {
 				section.Rows = append(section.Rows, hud.Row{Label: "Device", Detail: d.DisplayName(w.Host)})
 				seen[d.ID] = true
 			}

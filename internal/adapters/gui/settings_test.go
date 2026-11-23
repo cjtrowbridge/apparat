@@ -89,14 +89,14 @@ func TestSettingsUpdateButtonInvokesCallback(t *testing.T) {
 	}
 	{
 		got := button.Text().Label
-		if got != "Checking..." {
-			t.Fatalf("button label after callback = %q, want Checking...", got)
+		if got != "Connecting…" {
+			t.Fatalf("button label after callback = %q, want Connecting…", got)
 		}
 	}
 	{
 		got := game.UpdateStatus()
-		if got != "Checking..." {
-			t.Fatalf("game update status = %q, want Checking...", got)
+		if got != "Connecting…" {
+			t.Fatalf("game update status = %q, want Connecting…", got)
 		}
 	}
 }

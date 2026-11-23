@@ -84,7 +84,7 @@ func TestLinuxUpdateSingleActivation(t *testing.T) {
 	game.requestUpdateAction() // Duplicate input during the same operation.
 	game.applyUpdateStatus()
 	busyLabel := button.Text().Label
-	if (busyLabel != "Checking…" && busyLabel != "Updating…") || !button.GetWidget().Disabled {
+	if (busyLabel != "Checking…" && busyLabel != "Updating…" && !strings.HasPrefix(busyLabel, "Downloading")) || !button.GetWidget().Disabled {
 		t.Fatal("busy update button must show progress and reject duplicate input")
 	}
 	finish()

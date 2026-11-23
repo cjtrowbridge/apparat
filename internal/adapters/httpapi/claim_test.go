@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"net"
-	"runtime"
 	"slices"
 	"sort"
 	"testing"
@@ -210,26 +209,15 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	})
 	body, _ := json.Marshal(reply)
 	t.Logf("unchanged JSON object %d bytes before HTTP encoder newline, new TLS connection per request, concurrent full policy reads: median %v, p95 %v", len(body), timings[10], timings[18])
-	for _, value := range []string{"add", "remove"} {
-		edit := identity.PolicyEdit{Kind: "gui_pool", ID: "gui-" + value, Cluster: cluster, Base: page.Head.Revision, Pool: "Chat Pool", Target: other.Access.Device, Value: value}
-		receipt, err := session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
-		if err != nil {
-			t.Fatal(err)
+	for _, kind := range []string{"gui_pool", "device_pools"} {
+		value := "add"
+		if kind == "device_pools" {
+			value = `["Chat Pool"]`
 		}
-		page.Head = persistence.PolicyCursor{Revision: edit.Base + 1, Hash: receipt.Hash()}
-		_, err = other.Sync(ctx, replicaDB)
-		if err != nil {
-			t.Fatal(err)
-		}
-		snapshot, _, err := replicaDB.LocalReplica(ctx, other.Worker, other.Access)
-		found := false
-		for _, d := range snapshot.View.Devices {
-			if d.ID == other.Access.Device {
-				found = d.Host != "" && d.OS == runtime.GOOS && slices.Contains(d.Pools, "Chat Pool") == (value == "add")
-			}
-		}
-		if err != nil || !found {
-			t.Fatal("device pool selection did not synchronize", err)
+		edit := identity.PolicyEdit{Kind: kind, ID: kind, Cluster: cluster, Base: page.Head.Revision, Pool: "Chat Pool", Target: other.Access.Device, Value: value}
+		_, err = session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
+		if err == nil {
+			t.Fatal("accepted GUI device pool assignment", kind)
 		}
 	}
 	for _, target := range []string{other.Access.Device, session.Worker} {
@@ -263,37 +251,36 @@ func TestPinnedWorkerClaim(t *testing.T) {
 			t.Fatal("rename lost after login or sync", err)
 		}
 	}
-	for _, target := range []string{other.Access.Device, session.Worker} {
-		for _, want := range [][]string{{"Chat Pool", "Research Pool"}, {"Project Pool"}, {}} {
-			raw, _ := json.Marshal(want)
-			edit := identity.PolicyEdit{Kind: "device_pools", ID: target + string(raw), Target: target, Base: page.Head.Revision, Cluster: cluster, Value: string(raw)}
-			receipt, err := session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
-			if err != nil {
-				t.Fatal(err)
+	target := session.Worker
+	for _, want := range [][]string{{"Chat Pool", "Research Pool"}, {"Project Pool"}, {}} {
+		raw, _ := json.Marshal(want)
+		edit := identity.PolicyEdit{Kind: "device_pools", ID: target + string(raw), Target: target, Base: page.Head.Revision, Cluster: cluster, Value: string(raw)}
+		receipt, err := session.ChangePolicy(ctx, owner, client, edit, page.Head.Hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		page.Head = persistence.PolicyCursor{Revision: edit.Base + 1, Hash: receipt.Hash()}
+		invalid := edit
+		invalid.Base = page.Head.Revision
+		invalid.ID += "invalid"
+		invalid.Value = `["Chat Pool","absent pool"]`
+		_, err = session.ChangePolicy(ctx, owner, client, invalid, page.Head.Hash)
+		if err == nil {
+			t.Fatal("accepted partial selection")
+		}
+		_, err = other.Sync(ctx, replicaDB)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cached, _, err := replicaDB.LocalReplica(ctx, other.Worker, other.Access)
+		found := false
+		for _, d := range cached.View.Devices {
+			if d.ID == target {
+				found = slices.Equal(d.Pools, want)
 			}
-			page.Head = persistence.PolicyCursor{Revision: edit.Base + 1, Hash: receipt.Hash()}
-			invalid := edit
-			invalid.Base = page.Head.Revision
-			invalid.ID += "invalid"
-			invalid.Value = `["Chat Pool","absent pool"]`
-			_, err = session.ChangePolicy(ctx, owner, client, invalid, page.Head.Hash)
-			if err == nil {
-				t.Fatal("accepted partial selection")
-			}
-			_, err = other.Sync(ctx, replicaDB)
-			if err != nil {
-				t.Fatal(err)
-			}
-			cached, _, err := replicaDB.LocalReplica(ctx, other.Worker, other.Access)
-			found := false
-			for _, d := range cached.View.Devices {
-				if d.ID == target {
-					found = slices.Equal(d.Pools, want)
-				}
-			}
-			if err != nil || !found || cached.View.Governance.Head != page.Head {
-				t.Fatal("saved set not replicated atomically", err)
-			}
+		}
+		if err != nil || !found || cached.View.Governance.Head != page.Head {
+			t.Fatal("saved set not replicated atomically", err)
 		}
 	}
 	other.token = session.token

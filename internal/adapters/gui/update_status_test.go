@@ -45,3 +45,19 @@ func TestUnknownUpdateStatusCodeIsRedacted(t *testing.T) {
 		}
 	}
 }
+
+func TestAndroidDownloadProgress(t *testing.T) {
+	g := NewGame()
+	g.SetUpdateProgress(1048576, 4194304)
+	if g.UpdateStatus() != "Downloading · 25%" || !g.androidTransferBusy() {
+		t.Fatal(g.UpdateStatus())
+	}
+	g.SetUpdateProgress(1048576, -1)
+	if g.UpdateStatusDetail() != "1.0 MiB received · total size unknown" {
+		t.Fatal(g.UpdateStatusDetail())
+	}
+	g.SetUpdateStatus(UpdateStatusInstallerOpened)
+	if g.androidTransferBusy() {
+		t.Fatal("installer handoff kept the download active")
+	}
+}

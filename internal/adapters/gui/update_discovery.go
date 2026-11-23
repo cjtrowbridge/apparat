@@ -42,7 +42,7 @@ func (g *Game) pollUpdateDiscovery() {
 	default:
 	}
 	inside := g.shell.Snapshot().ActiveTab().ID() == hud.TabSettings
-	if inside && !d.inside && time.Since(d.checked) > time.Minute {
+	if inside && !d.inside && !g.androidTransferBusy() && time.Since(d.checked) > time.Minute {
 		if !g.discoverRelease() {
 			return
 		}
@@ -113,12 +113,15 @@ func readRelease(ctx context.Context, url, installed string) updateStatus {
 	return updateStatus{Label: "Up To Date!", Detail: detail, Reason: UpdateStatusUpToDate}
 }
 func (g *Game) requestUpdateAction() {
+	if g.androidTransferBusy() {
+		return
+	}
 	if g.discovery.installed != nil && !g.discovery.newer {
 		g.discoverRelease()
 		return
 	}
 	if g.desktopUpdates == nil {
-		g.SetUpdateStatus(UpdateStatusChecking)
+		g.SetUpdateStatus("connecting")
 	}
 	if g.onCheckForUpdate == nil || !g.onCheckForUpdate() {
 		g.SetUpdateStatus(UpdateStatusUnableBridge)

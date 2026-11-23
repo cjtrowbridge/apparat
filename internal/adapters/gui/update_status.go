@@ -4,6 +4,8 @@
 // Uses package-local contracts and Go standard-library types.
 package gui
 
+import "fmt"
+
 type UpdateStatusCode string
 
 const (
@@ -32,8 +34,16 @@ type updateStatus struct {
 
 func updateStatusFor(code UpdateStatusCode) updateStatus {
 	switch code {
+	case "connecting":
+		return updateStatus{"Connecting…", "Opening the APK download from GitHub.", code}
+	case "hashing":
+		return updateStatus{"Checking files…", "Comparing the downloaded APK with the installed package.", code}
+	case "verifying":
+		return updateStatus{"Verifying update…", "Checking the package name, signing certificate and version.", code}
+	case "installing":
+		return updateStatus{"Opening installer…", "Waiting for the Android package installer.", code}
 	case UpdateStatusChecking:
-		return updateStatus{Label: "Checking...", Detail: "Contacting the configured update service.", Reason: code}
+		return updateStatus{Label: "Checking...", Detail: "Reading the published Android version from GitHub.", Reason: code}
 	case UpdateStatusUpToDate:
 		return updateStatus{Label: "Up To Date!", Detail: "The downloaded APK matches the installed APK.", Reason: code}
 	case UpdateStatusAvailable:
@@ -71,4 +81,27 @@ func updateStatusFor(code UpdateStatusCode) updateStatus {
 	default:
 		return updateStatus{Label: "Unable to check for updates", Detail: "No update checker is configured in this build.", Reason: UpdateStatusUnableNoChecker}
 	}
+}
+
+func (g *Game) SetUpdateProgress(received, total int64) {
+	g.updateStatus.Store(downloadProgress(received, total))
+}
+
+func downloadProgress(received, total int64) updateStatus {
+	const mib = 1024 * 1024
+	status := updateStatus{Label: "Downloading…", Detail: fmt.Sprintf("%.1f MiB received · total size unknown", float64(received)/mib), Reason: "downloading"}
+	if total > 0 {
+		status.Label = fmt.Sprintf("Downloading · %d%%", min(100, 100*received/total))
+		status.Detail = fmt.Sprintf("%.1f of %.1f MiB received", float64(received)/mib, float64(total)/mib)
+	}
+	return status
+}
+
+func (g *Game) androidTransferBusy() bool {
+	status, _ := g.updateStatus.Load().(updateStatus)
+	switch status.Reason {
+	case "connecting", "downloading", "hashing", "verifying", "installing":
+		return true
+	}
+	return false
 }

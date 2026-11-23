@@ -157,10 +157,16 @@ func TestDeviceNameSetupPersists(t *testing.T) {
 		if attempts == 1 {
 			return `"LOCALHOST"`
 		}
-		return `"pixel-4a"`
+		return "null"
+	})
+	if ok || attempts != 2 {
+		t.Fatal("invalid input should produce one notice and leave setup")
+	}
+	ok = NewSession(root).SetupHostname(func(string) string {
+		return `"Pixel 10 XL"`
 	})
 	name, err := NewSession(root).Hostname()
-	if !ok || attempts != 2 || name != "pixel-4a" || err != nil {
+	if !ok || attempts != 2 || name != "Pixel-10-XL" || err != nil {
 		t.Fatal("name setup did not persist", err)
 	}
 	NewSession(root).SetupHostname(func(string) string {

@@ -78,7 +78,7 @@ func (g *Game) clusterLoad() {
 	if f == nil || g.cluster.pending != nil {
 		return
 	}
-	if f.route.Worker == "" {
+	if f.route.Worker == "" && f.route.Page == "settings" {
 		f.page = domain.ClusterPage{Title: "Cluster settings"}
 		for _, d := range g.serviceProjection.Devices {
 			if d.Admin {
@@ -131,7 +131,7 @@ func (g *Game) pollCluster() {
 		}
 		switch {
 		case response.err != nil:
-			f.notice = "Worker request failed. Refresh to check the current state. " + response.err.Error()
+			f.notice = response.err.Error()
 		case response.edited && f.page.SavePools != nil:
 			g.clusterBack()
 		case response.edited:
@@ -147,7 +147,7 @@ func (g *Game) pollCluster() {
 					f.selectedPools[pool] = true
 				}
 			}
-			if f.route.Page == "rename" && len(f.page.Options) == 1 {
+			if (f.route.Page == "rename" || f.route.Page == "rename-local") && len(f.page.Options) == 1 {
 				f.form = &f.page.Options[0]
 			}
 			f.notice = ""

@@ -13,6 +13,13 @@ public final class UpdateTransferTest {
     static final class Clock implements UpdateTransfer.State {
         long time;
         boolean cancelled;
+        long received;
+        int reports;
+        public void progress(long bytes) {
+            if (bytes < received) throw new AssertionError("progress regressed");
+            received = bytes;
+            reports++;
+        }
         public long now() {
             return time;
         }
@@ -69,7 +76,7 @@ public final class UpdateTransferTest {
         Clock slow = new Clock();
         Sink sink = new Sink();
         UpdateTransfer.copy(new Stream(slow, 256 * 1024, 40000), sink, slow);
-        if (sink.count != 256 * 1024 || slow.time <= 120000) {
+        if (sink.count != 256 * 1024 || slow.time <= 120000 || slow.received != sink.count || slow.reports < 3) {
             throw new AssertionError("Slow progressing transfer must finish");
         }
         Clock deadline = new Clock();

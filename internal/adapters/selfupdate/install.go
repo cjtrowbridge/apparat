@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Candidate struct {
@@ -15,6 +16,10 @@ type Candidate struct {
 }
 
 func (c *Client) Download(ctx context.Context, r Release, target string) (*Candidate, error) {
+	return c.DownloadWithProgress(ctx, r, target, nil)
+}
+
+func (c *Client) DownloadWithProgress(ctx context.Context, r Release, target string, report func(int64, int64)) (*Candidate, error) {
 	if !hexRevision.MatchString(r.Revision) || !hexDigest.MatchString(r.SHA256) || r.Path != "releases/linux/"+c.Arch+"/"+c.program()+"/latest" {
 		return nil, ErrMetadata
 	}
@@ -50,12 +55,20 @@ func (c *Client) Download(ctx context.Context, r Release, target string) (*Candi
 	if resp.ContentLength > MaxBinaryBytes {
 		return nil, ErrVerification
 	}
-	n, err := io.Copy(file, io.LimitReader(resp.Body, MaxBinaryBytes+1))
+	var dest io.Writer = file
+	if report != nil {
+		report(0, resp.ContentLength)
+		dest = &progressWriter{Writer: file, total: resp.ContentLength, report: report, last: time.Now()}
+	}
+	n, err := io.Copy(dest, io.LimitReader(resp.Body, MaxBinaryBytes+1))
 	if err != nil {
 		return nil, ErrDownload
 	}
 	if n == 0 || n > MaxBinaryBytes {
 		return nil, ErrVerification
+	}
+	if report != nil {
+		report(n, resp.ContentLength)
 	}
 	err = file.Chmod(0755)
 	if err != nil {
@@ -139,4 +152,21 @@ func (c *Candidate) Install(ctx context.Context) error {
 		_ = dir.Close()
 	}
 	return nil
+}
+
+type progressWriter struct {
+	io.Writer
+	received, total int64
+	report          func(int64, int64)
+	last            time.Time
+}
+
+func (w *progressWriter) Write(data []byte) (int, error) {
+	n, err := w.Writer.Write(data)
+	w.received += int64(n)
+	if time.Since(w.last) >= 250*time.Millisecond {
+		w.report(w.received, w.total)
+		w.last = time.Now()
+	}
+	return n, err
 }
