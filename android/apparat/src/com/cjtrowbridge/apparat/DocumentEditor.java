@@ -161,7 +161,7 @@ public final class DocumentEditor implements Editor {
         return "";
     }
 
-    @Override public String prompt(String title, String value) {
+    @Override public String prompt(String title, String value, boolean singleLine) {
         CountDownLatch done = new CountDownLatch(1);
         String[] answer = new String[1];
         answer[0] = "null";
@@ -172,6 +172,10 @@ public final class DocumentEditor implements Editor {
                     return;
                 }
                 EditText input = new EditText(activity);
+                if (singleLine) {
+                    input.setSingleLine(true);
+                    input.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
+                }
                 input.setText(value);
                 input.setSelection(input.length());
                 LinearLayout panel=new LinearLayout(activity);
@@ -180,8 +184,14 @@ public final class DocumentEditor implements Editor {
                 workspace.addView(input);
                 Button ptt=VoiceInput.floatingButton(workspace);
                 int space=ptt.getLayoutParams().height*3/2;
-                input.setMinHeight(space);
-                input.setPadding(input.getPaddingLeft(), input.getPaddingTop(),space,input.getPaddingBottom());
+                if (singleLine) {
+                    FrameLayout.LayoutParams field = new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER_VERTICAL);
+                    field.rightMargin=space;
+                    input.setLayoutParams(field);
+                } else {
+                    input.setMinHeight(space);
+                    input.setPadding(input.getPaddingLeft(), input.getPaddingTop(),space,input.getPaddingBottom());
+                }
                 panel.addView(workspace);
                 TextView preview=new TextView(activity);
                 panel.addView(preview);

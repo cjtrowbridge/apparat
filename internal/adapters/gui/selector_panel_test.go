@@ -322,15 +322,14 @@ func TestProjectLabelsBesideFields(t *testing.T) {
 		for _, native := range []bool{false, true} {
 			g.runtimeInfo.PromptValue = nil
 			if native {
-				g.runtimeInfo.PromptValue = func(string, string) (string, bool) {
+				g.runtimeInfo.PromptValue = func(string, string, bool) (string, bool) {
 					return "", false
 				}
 			}
 			form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))))
 			var value string
-			for _, label := range []string{"Search devices", "Destination parent folder (optional)"} {
-				g.projectField(form, label, &value)
-			}
+			g.deviceSearchField(form)
+			g.projectField(form, "Destination parent folder (optional)", &value)
 			form.GetWidget().SetTheme(g.theme)
 			form.Validate()
 			available := g.detailPanePreferredWidth() - 48
@@ -338,15 +337,27 @@ func TestProjectLabelsBesideFields(t *testing.T) {
 			form.SetLocation(image.Rect(0, 0, available, 320))
 			form.Render(screen)
 			screen.Deallocate()
-			for _, child := range form.Children() {
+			for i, child := range form.Children() {
 				row := child.(*widget.Container)
 				caption, control := row.Children()[0], row.Children()[1]
 				left, right := caption.GetWidget().Rect, control.GetWidget().Rect
+				if i == 0 {
+					if right.Dy() != p.Font+12 {
+						t.Fatal("search field should be one compact row", right)
+					}
+					input, ok := control.(*widget.TextInput)
+					if ok {
+						input.SetText("my\r\ntest\nphone")
+						if input.GetText() != "my test phone" {
+							t.Fatal("multiline query accepted")
+						}
+					}
+				}
 				bounds := row.GetWidget().Rect
 				if !strings.HasSuffix(caption.(*widget.Text).Label, ":") || min(left.Min.Y, right.Min.Y)-bounds.Min.Y != p.Font/2 || bounds.Max.Y-max(left.Max.Y, right.Max.Y) != p.Font/2 {
 					t.Fatalf("expected colon and half-em clearance at font size %d: row %v, label %v, field %v", p.Font, bounds, left, right)
 				}
-				if left.Dx() != g.formLabelWidth() || right.Min.X != left.Max.X+8 || right.Max.X > available || right.Dx() < 50 || left.Min.Y >= right.Max.Y || right.Min.Y >= left.Max.Y {
+				if left.Dx() != g.formLabelWidth() || right.Min.X != left.Max.X+4 || right.Max.X > available || right.Dx() < 50 || left.Min.Y >= right.Max.Y || right.Min.Y >= left.Max.Y {
 					t.Fatalf("width %d native %t: label %v and field %v outside row %v", width, native, left, right, row.GetWidget().Rect)
 				}
 			}

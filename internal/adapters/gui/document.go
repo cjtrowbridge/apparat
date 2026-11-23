@@ -142,29 +142,45 @@ func (g *Game) editDocument() {
 }
 
 func (g *Game) projectField(c *widget.Container, label string, value *string) {
-	prompt := g.runtimeInfo.PromptValue
-	if prompt == nil {
+	if g.runtimeInfo.PromptValue == nil {
 		g.projectInput(c, label, *value, func(text string) {
 			*value = text
 		})
 		return
 	}
+	g.nativeProjectField(c, label, value, false)
+}
+func (g *Game) nativeProjectField(c *widget.Container, label string, value *string, singleLine bool) {
+	prompt := g.runtimeInfo.PromptValue
 	row := g.formFieldRow(c, label)
 	caption := "Tap to enter…"
 	if *value != "" {
 		caption = *value
 	}
-	width := max(1, g.detailPanePreferredWidth()-56-g.formLabelWidth()-8-32)
+	width := max(1, g.detailPanePreferredWidth()-56-g.formLabelWidth()-4-32)
 	caption = wrapSelectorLabel(caption, *g.theme.ButtonTheme.TextFace, width)
-	g.projectButton(row, caption, func() {
+	if singleLine {
+		first, _, more := strings.Cut(caption, "\n")
+		if more {
+			caption = first + "…"
+		}
+	}
+	button := g.projectButton(row, caption, func() {
 		initial := *value
 		g.projectWork(func(ctx context.Context) projectResult {
-			text, ok := prompt(label, initial)
+			text, ok := prompt(label, initial, singleLine)
 			return projectResult{applyField: func() {
 				if ok {
+					if singleLine {
+						text = searchLine(text)
+					}
 					*value = text
 				}
 			}}
 		})
 	})
+	if singleLine {
+		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 8, Right: 8, Top: 2, Bottom: 2})(button)
+		compactSearchControl(button.GetWidget(), g.prefs.Font)
+	}
 }

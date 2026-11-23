@@ -99,16 +99,7 @@ func (g *Game) newProjectControls(c *widget.Container) {
 	w := &f.wizard
 	c.AddChild(g.formLabel("Choose a device"))
 	c.AddChild(g.formDescription("Work takes place on the selected device. With remote projects, it will be able to use the cluster’s online resources, and cluster devices will be able to browse its contents while the host is online."))
-	if g.runtimeInfo.PromptValue != nil {
-		g.projectField(c, "Search devices", &w.search)
-	} else {
-		g.projectInput(c, "Search devices", w.search, func(value string) {
-			if w.search != value {
-				w.search = value
-				g.layoutDirty = true
-			}
-		})
-	}
+	g.deviceSearchField(c)
 	choices := g.projectChoices()
 	step := "host"
 	for _, choice := range choices {
@@ -282,4 +273,42 @@ func (g *Game) startLocalProject() {
 		}
 		return projectResult{message: "Registered checkout could not be located in the refreshed list."}
 	})
+}
+
+var searchBreaks = strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ", "\u0085", " ", "\u2028", " ", "\u2029", " ")
+
+func searchLine(value string) string {
+	return searchBreaks.Replace(value)
+}
+func compactSearchControl(control *widget.Widget, font int) {
+	height := font + 12
+	control.MinHeight = height
+	control.LayoutData = widget.GridLayoutData{MaxHeight: height, VerticalPosition: widget.GridLayoutPositionCenter}
+}
+func (g *Game) deviceSearchField(c *widget.Container) {
+	const label = "Search devices"
+	w := &g.projects.wizard
+	if g.runtimeInfo.PromptValue != nil {
+		g.nativeProjectField(c, label, &w.search, true)
+		return
+	}
+	row := g.formFieldRow(c, label)
+	field := g.editorForLayout(label, func() *widget.TextInput {
+		input := g.newProjectInput(w.search, func(value string) {
+			if w.search != value {
+				w.search = value
+				g.layoutDirty = true
+			}
+		})
+		widget.TextInputOpts.Validation(func(value string) (bool, *string) {
+			line := searchLine(value)
+			if line != value {
+				return false, &line
+			}
+			return true, nil
+		})(input)
+		compactSearchControl(input.GetWidget(), g.prefs.Font)
+		return input
+	})
+	row.AddChild(field)
 }

@@ -203,4 +203,4 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 
 - `new_project.go`: Builds the host-first New Project form and runs local checkout setup with progress, registration refresh and workspace selection. Remote hosts and the unpublished template have preview-only controls.
 
-- `form_labels.go`: Project form headings and field labels use the bold face. Descriptions use the italic face. Inline inputs and native prompts share a wrapping left label column that scales with the detail pane.
+- `form_labels.go`: Project form headings and field labels use the bold face. Descriptions use the italic face. Inline inputs and native prompts share a wrapping, right-aligned label column with a four-unit gap before the field. Device search uses a single-line editor sized to the selected font.

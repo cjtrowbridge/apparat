@@ -24,7 +24,7 @@ type RuntimeInfo struct {
 	EditName        func()
 	SpeakChoice     func(string)
 	MicrophoneReady func() bool
-	PromptValue     func(string, string) (string, bool)
+	PromptValue     func(string, string, bool) (string, bool)
 	DocumentEditor  interface {
 		EditDocument(string, string, string, DocumentSession) error
 	}

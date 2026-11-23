@@ -46,3 +46,5 @@ Consolidate the three pinned entry points into a progressive host, source and te
 Use a consistent left column for bold project form labels and italic text for descriptions. Verify field and label bounds on narrow and wide layouts for native prompt controls and inline editing.
 
 End visible field and choice-group labels with a colon. Pad each field row above and below by half the selected font size. Verify spacing and punctuation in the rendered layout.
+
+Right-align field labels against their controls. Keep device search compact and single-line for inline entry, pastes and Android's native search prompt, while retaining multiline editing elsewhere.

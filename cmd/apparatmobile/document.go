@@ -15,7 +15,7 @@ type EditorSession interface {
 	Apply(action, text string) string
 }
 type Editor interface {
-	Prompt(title, value string) string
+	Prompt(title, value string, singleLine bool) string
 	Open(project, title, text string, session EditorSession) string
 }
 
@@ -43,7 +43,7 @@ func (projectDocuments) EditDocument(project, title, text string, session gui.Do
 	return nil
 }
 
-func promptValue(title, value string) (string, bool) {
+func promptValue(title, value string, singleLine bool) (string, bool) {
 	editor.RLock()
 	host := editor.host
 	editor.RUnlock()
@@ -51,7 +51,7 @@ func promptValue(title, value string) (string, bool) {
 		return "", false
 	}
 	var result *string
-	err := json.Unmarshal([]byte(host.Prompt(title, value)), &result)
+	err := json.Unmarshal([]byte(host.Prompt(title, value, singleLine)), &result)
 	if err != nil || result == nil {
 		return "", false
 	}
