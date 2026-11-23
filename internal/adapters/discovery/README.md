@@ -7,3 +7,4 @@ Linux API hosting uses the embedded linux.py helper invoked by linux_helper.go. 
 
 Headless responders notify the owner after a flushed API response wins the SQLite schedule claim. The existing supervisor forwards explicit local check requests. Only the daemon receives update events.
 - `resolve.go`: Resolves the selected worker's DNS-SD port on the interface used for browsing before authentication.
+- `reconnect.go`: Resolves a saved hostname on its previous local subnet when the last endpoint stops responding. The caller pins the existing worker fingerprint on every retry.

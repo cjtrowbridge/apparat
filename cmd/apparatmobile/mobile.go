@@ -45,6 +45,7 @@ func initialize(filesDir string) {
 		return
 	}
 	runtime.ResolvePeer = resolveWorker
+	runtime.ResolveSaved = resolveSaved
 	runtime.SetDrivers(mockprovider.Drivers())
 	node = runtime
 	nodeCache = cfg.CacheDir
@@ -135,6 +136,7 @@ func ReportUpdateStatus(code string) {
 
 type Updater interface {
 	ResolveWorker(string, string) string
+	ResolveSaved(string) string
 	BrowseLAN(bool) string
 	InstalledRelease() string
 	CheckForUpdate()
@@ -218,4 +220,17 @@ func resolveWorker(ctx context.Context, network, host string) (string, error) {
 		}
 	}
 	return "", errors.New("The host is no longer visible on the selected Wi-Fi network.")
+}
+
+func resolveSaved(ctx context.Context, host, previous string) (string, error) {
+	bridgeMu.Lock()
+	current := updater
+	bridgeMu.Unlock()
+	if current != nil && ctx.Err() == nil {
+		addr := current.ResolveSaved(host)
+		if addr != "" && ctx.Err() == nil {
+			return addr, nil
+		}
+	}
+	return "", errors.New("The saved worker is unavailable on this Wi-Fi network.")
 }

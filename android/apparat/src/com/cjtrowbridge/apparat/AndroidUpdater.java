@@ -12,6 +12,9 @@ final class AndroidUpdater implements Updater {
     AndroidUpdater(MainActivity activity) {
         this.activity = activity;
     }
+    public String resolveSaved(String host) {
+        return activity.lanBrowser.resolveSaved(host);
+    }
     public String resolveWorker(String network,String host) {
  return activity.lanBrowser.resolve(network,host);
  }

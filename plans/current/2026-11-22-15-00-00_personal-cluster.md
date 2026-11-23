@@ -33,3 +33,5 @@ Later phases add inference, routing optimization, remote project browsing, leade
 The Linux-to-personal-app path now exchanges both codes over TLS-bound OPAQUE, verifies the intended receiving device and copies the password-encrypted identity plus the signed worker directory. A saved worker offers a protected access check. Physical pairing and automatic policy and queue replication remain separate acceptance checks.
 
 Queue heads now hydrate at startup and update under the writer lock after commit. Checking an unchanged authorized reader cursor skips the event table. The physical pairing test reached the Pixel’s missing device-key prerequisite. The pairing action now invokes normal key setup there and resumes on success.
+
+Physical pairing verified on the Pixel 4a using a separate Android user. The same portable user and distinct device authorizations were verified in SQLite. With the desktop sender closed, the phone claimed a disposable worker, opened its saved row, and passed a protected admin check. The installed trashcan0 retained its real owner throughout this fixture test.

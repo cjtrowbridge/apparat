@@ -43,6 +43,34 @@ final class LanBrowser {
         network = null;
         names.clear();
     }
+    String resolveSaved(String host) {
+        if (Build.VERSION.SDK_INT < 33) return "";
+        synchronized (this) {
+            if (!foreground) return "";
+        }
+        LanBrowser search = new LanBrowser(activity);
+        search.foreground(true);
+        try {
+            for (int attempt=0; attempt<24; attempt++) {
+                synchronized (this) {
+                    if (!foreground) return "";
+                }
+                search.browse(true);
+                Network active = connectivity.getActiveNetwork();
+                android.net.LinkProperties link = connectivity.getLinkProperties(active);
+                if (link != null && link.getInterfaceName() != null) {
+                    String value = search.resolve(link.getInterfaceName(),host);
+                    if (!value.isEmpty()) return value;
+                }
+                Thread.sleep(200);
+            }
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+        } finally {
+            search.foreground(false);
+        }
+        return "";
+    }
     String resolve(String device, String name) {
         final Network expected;
         final NsdServiceInfo selected;

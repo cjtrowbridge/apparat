@@ -131,7 +131,7 @@ func (n *Runtime) CheckWorker(ctx context.Context, id string, dialog identity.Di
 		if worker.Fingerprint != id {
 			continue
 		}
-		client, err := httpapi.OpenWorker(ctx, worker.Address, id, n.Personal, n.Keys)
+		client, err := n.openSavedWorker(ctx, worker)
 		if err != nil {
 			nativeQuestion(dialog, "notice", worker.Host, "Could not authenticate at the saved address. Use discovery to reconnect if the worker moved.")
 			return
@@ -155,4 +155,36 @@ func (node *Runtime) resolvePeer(ctx context.Context, network, host string) (str
 		return node.ResolvePeer(ctx, network, host)
 	}
 	return discovery.ResolveWorker(ctx, network, host)
+}
+
+func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevice) (*httpapi.WorkerClient, error) {
+	client, err := httpapi.OpenWorker(ctx, worker.Address, worker.Fingerprint, n.Personal, n.Keys)
+	if err == nil {
+		return client, nil
+	}
+	resolver := n.ResolveSaved
+	if resolver == nil {
+		resolver = discovery.ResolveSaved
+	}
+	address, err := resolver(ctx, worker.Host, worker.Address)
+	if err != nil {
+		return nil, err
+	}
+	client, err = httpapi.OpenWorker(ctx, address, worker.Fingerprint, n.Personal, n.Keys)
+	if err != nil {
+		return nil, err
+	}
+	if client.Access.Cluster != worker.Cluster || client.Access.User != n.Personal.Fingerprint() {
+		return nil, errors.New("unexpected worker cluster or user")
+	}
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.database == nil {
+		return nil, domain.ErrUnavailable
+	}
+	err = n.database.SaveWorkerAccess(ctx, worker.Host, address, worker.Fingerprint, client.Access)
+	if err == nil && n.serviceManager != nil {
+		n.serviceManager.notify()
+	}
+	return client, err
 }

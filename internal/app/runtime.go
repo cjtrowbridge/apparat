@@ -32,6 +32,7 @@ const (
 type Runtime struct {
 	// WorkerEvents is set by the standalone daemon before initialization.
 	WorkerEvents     io.Writer
+	ResolveSaved     func(context.Context, string, string) (string, error)
 	ResolvePeer      func(context.Context, string, string) (string, error)
 	discoveryWorkers sync.WaitGroup
 	Keys             *identity.Session
