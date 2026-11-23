@@ -59,6 +59,12 @@ func applyEdit(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
 	var result sql.Result
 	var err error
 	switch e.Kind {
+	case "update_worker":
+		if e.Target == "" {
+			return errors.New("worker required")
+		}
+		result, err = tx.ExecContext(ctx, `INSERT INTO local_runtime(key,value,updated_at_ms)
+   SELECT k,'1',0 FROM (SELECT 'worker_update_drain_requested' AS k UNION ALL SELECT 'worker_update_manual') WHERE EXISTS(SELECT 1 FROM worker_cluster WHERE cluster=? AND worker=?) ON CONFLICT(key) DO UPDATE SET value='1'`, e.Cluster, e.Target)
 	case "poll_seconds":
 		seconds, parseErr := strconv.Atoi(e.Value)
 		if parseErr != nil || seconds < 1 || seconds > 86400 {
@@ -81,11 +87,19 @@ func applyEdit(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
 		}
 		result, err = tx.ExecContext(ctx, `UPDATE cluster_users SET admission=?,admin=? WHERE cluster=? AND user_id=?
 		 AND (admin=0 OR ? OR (SELECT count(*) FROM cluster_users WHERE cluster=? AND admin=1)>1)`, admission, admin, e.Cluster, e.Target, admin, e.Cluster)
-	case "order_on_worker":
+	case "order_on_worker", "recover_order":
 		result, err = tx.ExecContext(ctx, `UPDATE worker_cluster SET authority_device=worker WHERE cluster=? AND worker=? AND authority_device=? AND owner_user=?`, e.Cluster, e.Target, e.Service, e.Value)
 	case "revoke_device":
 		result, err = tx.ExecContext(ctx, `INSERT INTO revoked_devices(cluster,device) SELECT cluster,device_id FROM cluster_devices_authorized
 			WHERE cluster=? AND device_id=? AND device_id!=(SELECT authority_device FROM worker_cluster WHERE cluster=?) LIMIT 1`, e.Cluster, e.Target, e.Cluster)
+	case "pool_quota":
+		limit, parseErr := strconv.Atoi(e.Value)
+		if parseErr != nil || limit < 1 || limit > 4096 {
+			return errors.New("invalid pool quota")
+		}
+		result, err = tx.ExecContext(ctx, "INSERT INTO pool_limits VALUES(?,?,?) ON CONFLICT(cluster,pool) DO UPDATE SET max_active=excluded.max_active", e.Cluster, e.Pool, limit)
+	case "add_group", "group_member":
+		result, err = groupEdit(ctx, tx, e)
 	case "add_pool":
 		if e.Pool == "" {
 			return errors.New("pool required")
@@ -111,7 +125,11 @@ func applyEdit(ctx context.Context, tx *sql.Tx, e identity.PolicyEdit) error {
 		return err
 	}
 	count, err := result.RowsAffected()
-	if err != nil || count != 1 {
+	expected := int64(1)
+	if e.Kind == "update_worker" {
+		expected = 2
+	}
+	if err != nil || count != expected {
 		return errors.New("policy target missing or last admin protected")
 	}
 	return nil
@@ -142,13 +160,15 @@ func (db *DB) recordPolicy(ctx context.Context, event PolicyEvent, signer *ident
 		return empty, err
 	}
 	defer tx.Rollback()
-	var authority string
-	err = tx.QueryRowContext(ctx, "SELECT authority_device FROM worker_cluster WHERE cluster=?", p.Edit.Cluster).Scan(&authority)
-	if err != nil || len(key) != 32 || identity.Fingerprint(key) != authority {
-		return empty, errors.New("unknown policy authority")
+	var authority, worker, owner string
+	var epoch uint64
+	err = tx.QueryRowContext(ctx, "SELECT authority_device,worker,owner_user,authority_epoch FROM worker_cluster WHERE cluster=?", p.Edit.Cluster).Scan(&authority, &worker, &owner, &epoch)
+	if err != nil {
+		return empty, err
 	}
-	if signer == nil && !ed25519.Verify(key, event.message(), event.Signature) {
-		return empty, errors.New("invalid authority receipt")
+	err = authorizeEdit(ctx, tx, p)
+	if err != nil {
+		return empty, err
 	}
 	var prior []byte
 	err = tx.QueryRowContext(ctx, "SELECT body FROM policy_events WHERE cluster=? AND command_id=?", p.Edit.Cluster, p.Edit.ID).Scan(&prior)
@@ -165,9 +185,21 @@ func (db *DB) recordPolicy(ctx context.Context, event PolicyEvent, signer *ident
 	if !errors.Is(err, sql.ErrNoRows) {
 		return empty, err
 	}
-	err = authorizeEdit(ctx, tx, p)
-	if err != nil {
-		return empty, err
+	orderKey := authority
+	if p.Edit.Kind == "recover_order" {
+		if authority == worker || p.Edit.Target != worker || p.Edit.Service != authority || p.Edit.Value != owner || identity.Fingerprint(p.Device.Binding.User) != owner || p.Edit.Epoch == nil {
+			return empty, errors.New("owner recovery proof required")
+		}
+		orderKey = worker
+	}
+	if p.Edit.Epoch != nil && *p.Edit.Epoch != epoch {
+		return empty, errors.New("stale authority epoch")
+	}
+	if len(key) != ed25519.PublicKeySize || identity.Fingerprint(key) != orderKey {
+		return empty, errors.New("unknown policy authority")
+	}
+	if signer == nil && !ed25519.Verify(key, event.message(), event.Signature) {
+		return empty, errors.New("invalid authority receipt")
 	}
 	var revision uint64
 	var head string
@@ -197,7 +229,7 @@ func (db *DB) recordPolicy(ctx context.Context, event PolicyEvent, signer *ident
 	if err != nil {
 		return empty, err
 	}
-	err = tx.Commit()
+	err = db.commitView(ctx, tx)
 	if err != nil {
 		return empty, err
 	}

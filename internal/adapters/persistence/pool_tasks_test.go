@@ -77,6 +77,34 @@ func TestHashTaskFencing(t *testing.T) {
 	if err == nil || len(changes) != 0 {
 		t.Fatal("task history leaked", err)
 	}
+
+	err = db.CompleteHash(ctx, second, "w", hash, next)
+	if err != nil {
+		t.Fatal("exact result retry failed", err)
+	}
+	_, err = db.sql.ExecContext(ctx, "INSERT INTO pool_limits VALUES('c','p',1)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.SubmitHash(ctx, owner, "p", "quota-test", "first")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if db.SubmitHash(ctx, owner, "p", "too-many", "second") == nil {
+		t.Fatal("pool quota exceeded")
+	}
+	_, err = db.sql.ExecContext(ctx, "INSERT INTO local_runtime VALUES('worker_update_installing','1',0)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.SubmitHash(ctx, owner, "p", "quota-test", "first")
+	if err != nil {
+		t.Fatal("draining broke exact retry", err)
+	}
+	_, err = db.LeaseHash(ctx, "c", "p", "w", next)
+	if err == nil {
+		t.Fatal("new lease during worker update")
+	}
 	err = db.loadQueueHeads(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -85,7 +113,7 @@ func TestHashTaskFencing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	changes, err = db.QueueAfter(ctx, owner, "p", 4)
+	changes, err = db.QueueAfter(ctx, owner, "p", 5)
 	if err != nil || len(changes) != 0 {
 		t.Fatal("unchanged cursor read the event table", err)
 	}

@@ -69,6 +69,13 @@ def prompt(req):
         box.add(entry)
         dialog.add_button("Continue",1)
         dialog.set_default_response(1)
+    elif op == "choose" and len(req["Options"]) > 2:
+        choices = Gtk.ComboBoxText()
+        for item in req["Options"]:
+            choices.append_text(item)
+        choices.set_active(0)
+        box.add(choices)
+        dialog.add_button("Continue",1)
     else:
         for i, item in enumerate(req["Options"] or []):
             dialog.add_button(item,i+1)
@@ -76,6 +83,8 @@ def prompt(req):
     result = dialog.run()
     if result<1:
         return None
+    if op == "choose" and len(req["Options"]) > 2:
+        return choices.get_active_text()
     return entry.get_text() if op in ("password","text") else req["Options"][result-1]
 
 try:

@@ -54,7 +54,7 @@ func queueAccess(ctx context.Context, tx *sql.Tx, a Access, pool string) error {
 	WHERE u.cluster=? AND u.user_id=? AND d.device_id=? AND u.admission='approved'
 	AND NOT EXISTS(SELECT 1 FROM revoked_devices WHERE cluster=u.cluster AND device=d.device_id)
 	AND EXISTS(SELECT 1 FROM pool_services WHERE cluster=u.cluster AND pool=? AND service=?)
-	AND (u.admin=1 OR EXISTS(SELECT 1 FROM pool_grants WHERE cluster=u.cluster AND pool=? AND service=? AND principal IN(u.user_id,'public'))))`, a.Cluster, a.User, a.Device, pool, HashService, pool, HashService).Scan(&allowed)
+	AND (u.admin=1 OR EXISTS(SELECT 1 FROM effective_pool_grants WHERE cluster=u.cluster AND pool=? AND service=? AND principal IN(u.user_id,'public'))))`, a.Cluster, a.User, a.Device, pool, HashService, pool, HashService).Scan(&allowed)
 	if err != nil || !allowed {
 		return errors.New("pool service is unavailable")
 	}

@@ -110,3 +110,9 @@ All application responses, including 400, 401, 403, 404, 405, 406, busy and inte
 ### First-owner enrollment on a granted Linux worker
 
 On an explicitly enabled interface the selected worker issues a short-lived challenge at `GET /v1/auth/challenge`. The app posts the signed user profile, device binding and both signatures to `POST /v1/auth` over device-authenticated TLS. The first verified login atomically creates the owner and approved administrator. The response identifies current admission and role. The client saves the worker fingerprint for repeat connections. First contact trusts the selected LAN service. `GET /v1/public-key` exposes its public identity. A pending user receives no service token.
+
+### Pinned worker API
+
+On a granted interface, the headless worker also accepts a TLS 1.3 session authenticated by a device certificate and signed user login. The authenticated worker API is separate from the Phase 8 local diagnostics listener. JSON `GET /v1/admin/view` returns the currently authorized administrator view. Signed writes use `POST /v1/admin/propose`; the current owner device signs the explicit initial handoff through `POST /v1/admin/order-on-worker`.
+
+`POST /v1/sync` accepts a worker view revision and up to 32 pool cursors for the current reader. A changed view returns its signed snapshot first. Otherwise, each requested visible queue returns at most 64 transitions. An unchanged batch returns `{}`. The app verifies the snapshot’s worker signature, cluster, user and device, and verifies ordered administrator receipts against the original owner device through the handoff. Access changes invalidate hidden views. The hash-text task endpoints submit, cancel, read task history and retrieve a result by task ID. New results carry a worker-signed receipt binding the artifact digest to its creator, task, pool and fenced execution attempt.

@@ -238,6 +238,13 @@ func (game *Game) selectTab(index int, button *widget.Button) {
 		button.SetState(widget.WidgetChecked)
 	}
 	_ = game.shell.SelectTab(index)
+	active := game.shell.Snapshot().ActiveTab().ID()
+	if active == hud.TabCluster || active == hud.TabProjects {
+		q, ok := game.runtimeInfo.Queries.(interface{ RequestSync() })
+		if ok {
+			q.RequestSync()
+		}
+	}
 	game.requestActiveTabVisible()
 	game.rebuildUI(game.shell.Snapshot())
 }

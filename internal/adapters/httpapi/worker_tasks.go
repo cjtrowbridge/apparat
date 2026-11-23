@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
+	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
 type TaskRequest struct {
@@ -24,7 +25,8 @@ type TaskRequest struct {
 	After  int64
 }
 
-func (a *workerAuth) tasks(w http.ResponseWriter, r *http.Request, access persistence.Access, worker string) {
+func (a *workerAuth) tasks(w http.ResponseWriter, r *http.Request, access persistence.Access, keys *identity.Session) {
+	worker := identity.Fingerprint(keys.Public())
 	var q TaskRequest
 	if r.Method != http.MethodPost || !boundedJSON(w, r, &q) || q.Pool == "" || len(q.Pool) > 128 || a.artifacts == "" {
 		respond(w, 400, map[string]string{"error": "invalid_task_request"})
@@ -39,11 +41,11 @@ func (a *workerAuth) tasks(w http.ResponseWriter, r *http.Request, access persis
 		if err == nil {
 			// The first capability is bounded and local. Resume queued work when the
 			// submitter retries or checks its pool after a worker restart.
-			_ = a.runOne(ctx, access.Cluster, q.Pool, worker)
+			_ = a.runOne(ctx, access.Cluster, q.Pool, keys)
 		}
 	case "/v1/tasks/changes":
 		if a.db.MayDispatch(ctx, access, q.Pool, worker) {
-			_ = a.runOne(ctx, access.Cluster, q.Pool, worker)
+			_ = a.runOne(ctx, access.Cluster, q.Pool, keys)
 		}
 		result, err = a.db.QueueAfter(ctx, access, q.Pool, q.After)
 	case "/v1/tasks/cancel":
@@ -54,7 +56,13 @@ func (a *workerAuth) tasks(w http.ResponseWriter, r *http.Request, access persis
 		if err == nil {
 			var body []byte
 			body, err = a.readArtifact(digest)
-			result = map[string]string{"sha256": digest, "text": string(body)}
+			if err == nil {
+				receipt, receiptErr := a.db.ResultReceipt(ctx, access, q.Pool, q.ID, digest)
+				result = map[string]any{"sha256": digest, "text": string(body)}
+				if receiptErr == nil {
+					result.(map[string]any)["receipt"] = receipt
+				}
+			}
 		}
 	}
 	if err != nil {
@@ -64,7 +72,8 @@ func (a *workerAuth) tasks(w http.ResponseWriter, r *http.Request, access persis
 	respond(w, 200, result)
 }
 
-func (a *workerAuth) runOne(ctx context.Context, cluster, pool, worker string) error {
+func (a *workerAuth) runOne(ctx context.Context, cluster, pool string, keys *identity.Session) error {
+	worker := identity.Fingerprint(keys.Public())
 	task, err := a.db.LeaseHash(ctx, cluster, pool, worker, time.Now())
 	if err != nil {
 		return err
@@ -100,7 +109,7 @@ func (a *workerAuth) runOne(ctx context.Context, cluster, pool, worker string) e
 	if err != nil || !bytes.Equal(stored, body) {
 		return errors.New("worker result failed integrity check")
 	}
-	return a.db.CompleteHash(ctx, task, worker, digest, time.Now())
+	return a.db.CommitResult(ctx, task, keys, digest, time.Now())
 }
 
 func (a *workerAuth) readArtifact(digest string) ([]byte, error) {

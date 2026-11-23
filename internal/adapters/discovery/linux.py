@@ -110,9 +110,11 @@ def put(db, name, data):
     db.execute("INSERT OR REPLACE INTO local_runtime VALUES(?,?,0)", ("worker_update_"+name, str(data)))
 
 
-def worker_idle(db):
+def worker_idle(db, drain=False):
     if db.execute("SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='pool_tasks')").fetchone()[0]:
-        if db.execute("SELECT EXISTS(SELECT 1 FROM pool_tasks WHERE state IN ('queued','running'))").fetchone()[0]:
+        if db.execute("""SELECT EXISTS(SELECT 1 FROM pool_tasks WHERE
+            (state='running' AND (lease_until>? OR ?=0)) OR (state='queued' AND ?=0))""",
+            (int(time.time()*1000), int(drain), int(drain))).fetchone()[0]:
             return False
     return not db.execute("""SELECT EXISTS(SELECT 1 FROM project_entries WHERE kind='run'
         AND json_extract(body,'$.State') IN ('pending','queued','running','assigned'))""").fetchone()[0]
@@ -128,7 +130,7 @@ def claim_update(db, manual=False, now=None):
         return False
     with db:
         db.execute("BEGIN IMMEDIATE")
-        if not due() or not worker_idle(db):
+        if not due() or not worker_idle(db, manual and value(db, "drain_requested", "0") == "1"):
             return False
         put(db, "last", now)
         put(db, "due", now + 3600)
@@ -150,10 +152,17 @@ def update_command(db, action, args):
             put(db, "enabled", int(action == "enable"))
         elif action == "check":
             put(db, "manual", "1")
-        elif action == "eligible":
-            if not worker_idle(db) or (args != ["manual"] and value(db, "enabled", "1") != "1"):
+        elif action in ("eligible","drain"):
+            db.execute("BEGIN IMMEDIATE")
+            requested = args == ["manual"] and value(db, "drain_requested", "0") == "1"
+            if not worker_idle(db, requested) or (args != ["manual"] and value(db, "enabled", "1") != "1"):
                 sys.exit(1)
+            if action == "drain":
+                put(db, "installing", 1)
         elif action == "result":
+            if args[0] != "installed":
+                put(db, "installing", 0)
+            put(db, "drain_requested", 0)
             put(db, "result", args[0])
             if args[0] in ("current", "installed"):
                 put(db, "due", int(value(db, "last", "0")) + 86400)
@@ -186,7 +195,7 @@ def serve(db, rule, headless=False):
                     return
                 sockets = [self.connection, backend]
                 deadline = time.monotonic() + (8 if headless else 90)
-                remaining = 65536 if headless else 400000
+                remaining = (2 << 20) if headless else 400000
                 while remaining > 0 and time.monotonic() < deadline:
                     ready, _, _ = select.select(sockets, [], [], 0.5)
                     for src in ready:
@@ -249,6 +258,11 @@ def serve(db, rule, headless=False):
 
 
 def supervise(db, path, *options):
+    if options:
+        with db:
+            put(db, "installing", 0)
+            if value(db, "drain_requested", "0") == "1":
+                put(db, "manual", 1)
     workers = {}
     try:
         while True:

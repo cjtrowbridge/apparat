@@ -145,6 +145,16 @@ final class NodeKeys implements KeyDialogs {
                     answer.offer(response);
                 }
             });
+        } else if (op.equals("choose") && r.getJSONArray("Options").length()>2) {
+            JSONArray choices=r.getJSONArray("Options");
+            String[] labels=new String[choices.length()];
+            for (int i=0;i<labels.length;i++) labels[i]=choices.getString(i);
+            builder.setMessage(null);
+            builder.setItems(labels, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,int which) {
+                    answer.offer(JSONObject.quote(labels[which]));
+                }
+            });
         } else if (op.equals("choose")) {
             JSONArray items = r.getJSONArray("Options");
             String first = items.getString(0);

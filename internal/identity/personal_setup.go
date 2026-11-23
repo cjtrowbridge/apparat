@@ -28,6 +28,8 @@ func (p *Personal) Setup(dialog Dialog) {
 		password, ok := ui.ask("password", "Unlock personal identity", "Enter your personal identity password.", "")
 		if ok && p.Unlock([]byte(password)) != nil {
 			ui.ask("notice", "Personal identity locked", "Check your password and recovery copy.", "")
+		} else if ok && os.IsNotExist(readErr) {
+			p.offerSystemUnlock(ui, password)
 		}
 		return
 	}
@@ -106,4 +108,11 @@ func (p *Personal) offerSystemUnlock(ui setupUI, password string) {
 		ui.ask("remove", "", "", ref)
 	}
 	ui.ask("notice", "System unlock unavailable", "Use your personal identity password to unlock.", "")
+}
+
+func (p *Personal) OfferPairedUnlock(dialog Dialog, password string) {
+	_, err := os.Lstat(filepath.Join(filepath.Dir(p.path), "unlock.ref"))
+	if os.IsNotExist(err) {
+		p.offerSystemUnlock(setupUI{dialog}, password)
+	}
 }

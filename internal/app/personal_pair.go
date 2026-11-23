@@ -145,13 +145,18 @@ func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog
 		return err
 	}
 	n.mu.Lock()
-	defer n.mu.Unlock()
 	if n.database == nil {
+		n.mu.Unlock()
 		return errors.New("Local database unavailable.")
 	}
+	defer n.RequestSync()
 	err = n.database.RememberPairedDevice(localCtx, profile, binding, devices)
 	if err == nil && n.serviceManager != nil {
 		n.serviceManager.notify()
+	}
+	n.mu.Unlock()
+	if err == nil {
+		n.Personal.OfferPairedUnlock(dialog, password)
 	}
 	return err
 }

@@ -19,6 +19,8 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
+var ErrDenied = errors.New("worker denied current access")
+
 type WorkerClient struct {
 	http   *http.Client
 	base   string
@@ -113,6 +115,9 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 		return errors.New("could not verify or contact the worker")
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
+		return ErrDenied
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20+1))
 	if err != nil || len(body) > 1<<20 || resp.StatusCode != 200 {
 		return errors.New("worker denied the operation or returned an invalid response")
@@ -148,4 +153,13 @@ func (c *WorkerClient) ChangePolicy(ctx context.Context, p *identity.Personal, d
 	}
 	err = c.call(ctx, "POST", "/v1/admin/propose", proposal, &event)
 	return event, err
+}
+
+func (c *WorkerClient) Governance(ctx context.Context) (persistence.GovernanceView, error) {
+	var v persistence.GovernanceView
+	err := c.call(ctx, "GET", "/v1/admin/view", nil, &v)
+	if err == nil && (v.Worker != c.Worker || v.Cluster != c.Access.Cluster) {
+		err = errors.New("wrong worker governance view")
+	}
+	return v, err
 }

@@ -5,8 +5,11 @@ package httpapi
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"net"
+	"sort"
 	"testing"
+	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/identity"
@@ -111,6 +114,100 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	if err != nil || page.Head.Revision != 3 || len(page.Events) != 3 {
 		t.Fatal("missing policy history", err)
 	}
+	replicaDB, err := persistence.Open(ctx, t.TempDir()+"/replica.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer replicaDB.Close()
+	err = replicaDB.Migrate(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seconds, err := other.Sync(ctx, replicaDB)
+	if err != nil || seconds != 0 {
+		t.Fatal("initial replica snapshot", seconds, err)
+	}
+	seconds, err = other.Sync(ctx, replicaDB)
+	if err == nil && seconds == 0 {
+		seconds, err = other.Sync(ctx, replicaDB)
+	}
+	if err != nil || seconds != 240 {
+		t.Fatal("unchanged policy response", seconds, err)
+	}
+	cached, cursor, err := replicaDB.LocalReplica(ctx, other.Worker, other.Access)
+	if err != nil || !cached.Valid(other.Worker, other.Access) || cursor.Revision == 0 || cached.View.Governance.Head != page.Head {
+		t.Fatal("invalid restored governance", err)
+	}
+	cached.View.PollSeconds++
+	err = replicaDB.ApplyReplica(ctx, other.Worker, other.Access, cursor, persistence.SyncPage{Snapshot: &cached})
+	if err == nil {
+		t.Fatal("accepted altered snapshot")
+	}
+	for _, change := range []identity.PolicyEdit{
+		{Kind: "add_pool", Pool: "interactive"},
+		{Kind: "pool_service", Pool: "interactive", Target: session.Worker, Service: persistence.HashService, Value: "add"},
+	} {
+		change.Base = page.Head.Revision
+		change.Cluster = cluster
+		change.ID = "queue-" + change.Kind
+		event, err := session.ChangePolicy(ctx, owner, client, change, page.Head.Hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		page.Head = persistence.PolicyCursor{Revision: change.Base + 1, Hash: event.Hash()}
+	}
+	err = other.SubmitHash(ctx, "interactive", "sync-test", "Apparat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 3 {
+		_, err = other.Sync(ctx, replicaDB)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, cursor, err = replicaDB.LocalReplica(ctx, other.Worker, other.Access)
+	if err != nil || cursor.Queues["interactive"] != 3 {
+		t.Fatal("missing submit, lease and result transitions", err, cursor)
+	}
+	var reply map[string]json.RawMessage
+	err = other.call(ctx, "POST", "/v1/sync", cursor, &reply)
+	if err != nil || len(reply) != 0 {
+		t.Fatal("unchanged sync disclosed payload", err)
+	}
+	_, err = other.Result(ctx, "interactive", "sync-test")
+	if err != nil {
+		t.Fatal("artifact verification failed", err)
+	}
+	var timings []time.Duration
+	done := make(chan error, 1)
+	go func() {
+		for range 20 {
+			_, err := session.Policy(ctx, persistence.PolicyCursor{})
+			if err != nil {
+				done <- err
+				return
+			}
+		}
+		done <- nil
+	}()
+	for range 20 {
+		begin := time.Now()
+		err = other.call(ctx, "POST", "/v1/sync", cursor, &reply)
+		if err != nil || len(reply) != 0 {
+			t.Fatal("unchanged concurrent sync", err)
+		}
+		timings = append(timings, time.Since(begin))
+	}
+	err = <-done
+	if err != nil {
+		t.Fatal(err)
+	}
+	sort.Slice(timings, func(i, j int) bool {
+		return timings[i] < timings[j]
+	})
+	body, _ := json.Marshal(reply)
+	t.Logf("unchanged JSON object %d bytes before HTTP encoder newline, new TLS connection per request, concurrent full policy reads: median %v, p95 %v", len(body), timings[10], timings[18])
 	other.token = session.token
 	_, err = other.WhoAmI(ctx)
 	if err == nil {

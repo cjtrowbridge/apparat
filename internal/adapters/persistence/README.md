@@ -53,3 +53,9 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `pool_task_views.go`: Checks current admission and device authorization before returning a creator's task revisions or artifact reference.
 - `pool_tasks_test.go`: Covers denied pool access, duplicate submissions, expired leases, stale completion, result integrity and cross-user visibility.
 - `queue_heads.go`: Hydrates per-user pool cursors on startup and publishes new heads after commit. A synchronized reader checks its current grant and cached cursor without reading the event journal.
+- `governance_view.go`: Reads the current cluster authority, admission switch, signed user profiles and pool memberships for a currently approved administrator in a single read transaction.
+- `replica.go`: Builds reader-specific governance snapshots, checks device signatures, hydrates the in-memory view revision, and reads per-pool local cursors.
+- `replica_apply.go`: Applies signed snapshots and reader-specific queue pages in SQLite transactions. Cursors and data advance together. A changed role replaces the cached view and removes inaccessible pools.
+- `replica_policy.go`: Verifies proposal signatures, authority signatures, owner handoff, revision ordering, and chain hashes before committing a page of admin receipts locally.
+- `groups.go`: Applies signed group creation and membership changes. Pool access queries use the same expanded grants for individual and group principals.
+- `result_receipt.go`: Signs each completed hash result for its specific creator, pool, task and worker lease. Consumers can verify the receipt and artifact bytes independently.

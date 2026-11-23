@@ -62,6 +62,7 @@ func (node *Runtime) authenticateWorker(ctx context.Context, network, host strin
 		node.serviceManager.notify()
 	}
 	node.mu.Unlock()
+	node.RequestSync()
 	if client.Access.Admin {
 		return "Connected as a cluster administrator.", nil
 	}
@@ -119,7 +120,7 @@ func (node *Runtime) KnownWorkers(ctx context.Context) ([]domain.ClusterDevice, 
 	if node.Personal == nil {
 		return nil, nil
 	}
-	return node.database.KnownWorkers(ctx, node.Personal.Fingerprint())
+	return node.database.WorkerSummaries(ctx, node.Personal.Fingerprint(), identity.Fingerprint(node.Keys.Public()))
 }
 
 func (n *Runtime) CheckWorker(ctx context.Context, id string, dialog identity.Dialog) {
@@ -160,7 +161,13 @@ func (node *Runtime) resolvePeer(ctx context.Context, network, host string) (str
 func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevice) (*httpapi.WorkerClient, error) {
 	client, err := httpapi.OpenWorker(ctx, worker.Address, worker.Fingerprint, n.Personal, n.Keys)
 	if err == nil {
+		if client.Access.Cluster != worker.Cluster || client.Access.User != n.Personal.Fingerprint() {
+			return nil, errors.New("unexpected worker cluster or user")
+		}
 		return client, nil
+	}
+	if errors.Is(err, httpapi.ErrDenied) {
+		return nil, err
 	}
 	resolver := n.ResolveSaved
 	if resolver == nil {

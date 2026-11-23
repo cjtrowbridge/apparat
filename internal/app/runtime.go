@@ -34,6 +34,7 @@ type Runtime struct {
 	WorkerEvents     io.Writer
 	ResolveSaved     func(context.Context, string, string) (string, error)
 	ResolvePeer      func(context.Context, string, string) (string, error)
+	syncHint         chan struct{}
 	discoveryWorkers sync.WaitGroup
 	Keys             *identity.Session
 	Personal         *identity.Personal
@@ -80,7 +81,7 @@ func NewRuntimeWithConfig(cfg config.Config) (*Runtime, error) {
 	if mode == ModeGUI {
 		personal = identity.NewPersonal(filepath.Join(cfg.RootDir, "user-identity"))
 	}
-	return &Runtime{Personal: personal, Keys: identity.NewSession(cfg.IdentityDir), mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
+	return &Runtime{syncHint: make(chan struct{}, 1), Personal: personal, Keys: identity.NewSession(cfg.IdentityDir), mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
 }
 func (node *Runtime) SetDrivers(drivers map[string]Probe) {
 	node.mu.Lock()
@@ -237,6 +238,10 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 			_ = cmd.Run()
 		}()
 	}
+	if node.Personal != nil && !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
+		node.discoveryWorkers.Add(1)
+		go node.reconcile(workCtx, node.database)
+	}
 	node.stopped = make(chan struct{})
 	go node.supervise(workCtx, node.serviceManager, node.stopped)
 	result = node.stage("supervision")
@@ -296,7 +301,9 @@ func (node *Runtime) closeLocked() error {
 	if node.cancel != nil {
 		node.cancel()
 		<-node.stopped
+		node.mu.Unlock()
 		node.discoveryWorkers.Wait()
+		node.mu.Lock()
 		node.cancel = nil
 		result = errors.Join(result, node.stage("supervision_stopped"))
 	}
@@ -340,6 +347,7 @@ func MillisNow() int64 {
 }
 
 func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
+	defer node.RequestSync()
 	node.Keys.Setup(dialog)
 	if node.Personal != nil && node.Keys.State() == "unlocked" {
 		node.Personal.Setup(dialog)

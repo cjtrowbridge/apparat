@@ -88,7 +88,16 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 			sections = append(sections, s)
 			if s.ActionID == "add-new-device" {
 				for _, d := range game.serviceProjection.Devices {
-					sections = append(sections, hud.Section{ActionID: "worker-" + d.Fingerprint, Title: d.Host, SelectorColor: s.SelectorColor, ContentKind: hud.ContentStandard, Rows: []hud.Row{{Label: "Last known endpoint", Detail: d.Address}, {Label: "Worker fingerprint", Detail: d.Fingerprint}, {Label: "Cluster", Detail: d.Cluster}}})
+					rows := []hud.Row{{Label: "Last known endpoint", Detail: d.Address}, {Label: "Worker fingerprint", Detail: d.Fingerprint}, {Label: "Cluster", Detail: d.Cluster}}
+					if d.ReplicaRevision > 0 {
+						rows = append(rows, hud.Row{Label: "Last applied worker view", Detail: fmt.Sprintf("Revision %d · %d available pools · checks every %d seconds", d.ReplicaRevision, d.PoolCount, d.PollSeconds)})
+						if d.Admin {
+							rows = append(rows, hud.Row{Label: "Worker policy at last sync", Detail: fmt.Sprintf("Revision %d", d.PolicyRevision)})
+						}
+					} else {
+						rows = append(rows, hud.Row{Label: "Synchronization", Detail: "Awaiting first authorized worker view."})
+					}
+					sections = append(sections, hud.Section{ActionID: "worker-" + d.Fingerprint, Title: d.Host, SelectorColor: s.SelectorColor, ContentKind: hud.ContentStandard, Rows: rows})
 				}
 			}
 		}
@@ -97,12 +106,21 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 	return tab
 }
 
-func (g *Game) workerCheck(action string) func() {
+func (g *Game) workerAction(action string, callback func(string)) func() {
 	for _, d := range g.serviceProjection.Devices {
-		if g.runtimeInfo.CheckWorker != nil && action == "worker-"+d.Fingerprint {
+		if callback != nil && action == "worker-"+d.Fingerprint {
 			return func() {
-				go g.runtimeInfo.CheckWorker(d.Fingerprint)
+				go callback(d.Fingerprint)
 			}
+		}
+	}
+	return nil
+}
+
+func (g *Game) permittedWorkerAction(action string, admin bool, callback func(string)) func() {
+	for _, d := range g.serviceProjection.Devices {
+		if action == "worker-"+d.Fingerprint && d.ReplicaRevision > 0 && (admin && d.Admin || !admin && d.PoolCount > 0) {
+			return g.workerAction(action, callback)
 		}
 	}
 	return nil

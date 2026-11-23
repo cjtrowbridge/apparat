@@ -102,9 +102,17 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			kind = "project"
 		}
 		path := tab.Title() + " / " + s.Title
-		check := g.workerCheck(s.ActionID)
+		check := g.workerAction(s.ActionID, g.runtimeInfo.CheckWorker)
 		if tab.ID() == hud.TabCluster && check != nil {
 			add("check-worker-access", owner, s.ActionID, "Check my access to "+s.Title, path+" / Check my access", check)
+		}
+		pool := g.permittedWorkerAction(s.ActionID, false, g.runtimeInfo.PoolTasks)
+		if tab.ID() == hud.TabCluster && pool != nil {
+			add("worker-pool-tasks", owner, s.ActionID, "Pool tasks on "+s.Title, path+" / Pool tasks", pool)
+		}
+		manage := g.permittedWorkerAction(s.ActionID, true, g.runtimeInfo.ManageWorker)
+		if tab.ID() == hud.TabCluster && manage != nil {
+			add("manage-worker", owner, s.ActionID, "Manage "+s.Title, path+" / Worker administration", manage)
 		}
 		if s.ActionID == "add-new-device" {
 			if g.canOfferPair() {

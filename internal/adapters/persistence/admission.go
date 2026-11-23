@@ -3,6 +3,7 @@
 package persistence
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -28,6 +29,8 @@ func (db *DB) Login(ctx context.Context, l identity.Login) (Access, error) {
 	if !l.Valid() {
 		return a, errors.New("invalid login proof")
 	}
+	db.policyMu.Lock()
+	defer db.policyMu.Unlock()
 	tx, err := db.sql.BeginTx(ctx, nil)
 	if err != nil {
 		return a, err
@@ -71,12 +74,32 @@ func (db *DB) Login(ctx context.Context, l identity.Login) (Access, error) {
 	if err != nil || a.Admission == "blocked" {
 		return Access{}, errors.New("registration unavailable")
 	}
+	var previous []byte
+	err = tx.QueryRowContext(ctx, "SELECT public_profile FROM cluster_users WHERE cluster=? AND user_id=?", a.Cluster, a.User).Scan(&previous)
+	if err != nil {
+		return Access{}, err
+	}
+	var old identity.SignedProfile
+	err = json.Unmarshal(previous, &old)
+	if err != nil || !old.Valid() {
+		return Access{}, errors.New("invalid stored user profile")
+	}
+	current, _ := json.Marshal(l.Profile)
+	if old.Profile.Revision == l.Profile.Profile.Revision && !bytes.Equal(previous, current) {
+		return Access{}, errors.New("conflicting signed profile")
+	}
+	if old.Profile.Revision < l.Profile.Profile.Revision {
+		_, err = tx.ExecContext(ctx, "UPDATE cluster_users SET public_profile=? WHERE cluster=? AND user_id=?", current, a.Cluster, a.User)
+		if err != nil {
+			return Access{}, err
+		}
+	}
 	binding, _ := json.Marshal(l.Device)
 	_, err = tx.ExecContext(ctx, "INSERT INTO cluster_devices_authorized(cluster,user_id,device_id,public_binding,hostname) VALUES(?,?,?,?,?) ON CONFLICT(cluster,user_id,device_id) DO UPDATE SET hostname=excluded.hostname", a.Cluster, a.User, a.Device, binding, l.Hostname)
 	if err != nil {
 		return Access{}, err
 	}
-	return a, tx.Commit()
+	return a, db.commitView(ctx, tx)
 }
 
 func (db *DB) CurrentAccess(ctx context.Context, cluster, user, device string) (Access, error) {

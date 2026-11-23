@@ -46,3 +46,6 @@ workspace.go resolves every command by registered project ID and coordinates dra
 - `workspace_save.go`: Records file transaction identity, base, outcome and rejection before allowing a replay.
 - `claim.go`: Confirms the selected hostname and invited worker fingerprint in local dialogs, signs with both unlocked identities and records the acknowledged worker.
 - `personal_pair.go`: Opens or joins one explicitly approved two-code pairing session. The Linux sender selects an enabled API network grant. The receiver unlocks its portable identity locally and records the signed worker pins.
+- `governance.go`: Opens a verified worker administration view and submits revision-bound policy changes after local confirmation.
+- `reconcile.go`: Coalesces peer sync after local activity, refreshes on the worker-configured interval, retries unavailable workers, and invalidates denied reader views.
+- `pool_dialog.go`: Presents permitted pools and the current user’s task history, submission, cancellation and verified artifact retrieval.

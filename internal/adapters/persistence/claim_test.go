@@ -129,3 +129,89 @@ func verifyPolicy(ctx context.Context, t *testing.T, db *DB, p *identity.Persona
 		t.Fatal("allowed removal of last administrator")
 	}
 }
+
+func TestLostOrderingDeviceRecovery(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(ctx, t.TempDir()+"/worker.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	err = db.Migrate(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nodes := []*identity.Session{}
+	for range 3 {
+		keys := identity.NewSession(t.TempDir())
+		err = keys.Install(nil, "", "plain", "", "", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		nodes = append(nodes, keys)
+	}
+	owner := identity.NewPersonal(t.TempDir())
+	err = owner.Create("Owner", []byte("regression password"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var access Access
+	worker := identity.Fingerprint(nodes[0].Public())
+	for _, device := range nodes[1:] {
+		login, err := owner.SignLogin(device, worker, identity.ClaimDigest("challenge"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		access, err = db.Login(ctx, login)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	epoch := uint64(0)
+	edit := identity.PolicyEdit{ID: "recover", Kind: "recover_order", Cluster: access.Cluster, Epoch: &epoch, Value: access.User, Service: identity.Fingerprint(nodes[1].Public()), Target: worker}
+	proposal, err := owner.Propose(nodes[2], edit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	event, err := db.CommitPolicy(ctx, proposal, nodes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	view, err := db.Governance(ctx, access)
+	if err != nil || view.Epoch != 1 || view.Authority != worker || identity.Fingerprint(view.OriginalDevice.Binding.Device) != edit.Service || view.Head.Hash != event.Hash() {
+		t.Fatal("failed to fence old authority", err)
+	}
+	edit.ID = "stale"
+	edit.Kind = "poll_seconds"
+	edit.Value = "200"
+	edit.Base = 1
+	proposal, err = owner.Propose(nodes[1], edit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.CommitPolicy(ctx, proposal, nodes[1])
+	if err == nil {
+		t.Fatal("retired authority accepted")
+	}
+	_, err = db.CommitPolicy(ctx, proposal, nodes[0])
+	if err == nil {
+		t.Fatal("stale epoch accepted")
+	}
+	epoch = 1
+	edit.Kind = "revoke_device"
+	edit.ID = "revoke-retired-device"
+	edit.Target = identity.Fingerprint(nodes[1].Public())
+	proposal, err = owner.Propose(nodes[2], edit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.CommitPolicy(ctx, proposal, nodes[0])
+	if err != nil {
+		t.Fatal("revoking retired device", err)
+	}
+	_, err = db.CurrentAccess(ctx, access.Cluster, access.User, edit.Target)
+	if err == nil {
+		t.Fatal("revoked device retained access")
+	}
+
+}

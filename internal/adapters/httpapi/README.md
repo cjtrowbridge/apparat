@@ -16,3 +16,5 @@ Loopback-only read-only JSON mappings over the application query boundary. Numer
 - `worker_tasks.go`: Accepts and leases a local hash-text job, writes and verifies its result in the private pool artifact store, and serves the result by authorized job ID. Polling can resume interrupted work.
 - `personal_pair.go`: Implements single-attempt personal-device confirmation. Both devices contribute an eight-digit code. RFC 9807 OPAQUE authenticates both ends with its context bound to the TLS 1.3 exporter. The sender opens the protected transfer only after confirming the receiver. Expiry, cancellation, an invalid message or a mismatched code closes the connection.
 - `personal_pair_test.go`: Verifies successful mutual authentication and rejects mistyped codes before releasing any payload.
+- `replication.go`: Serves the protected batch sync route and catches a reader up using snapshots and per-pool queue cursors.
+- `queue_client.go`: Submits, cancels and reads the user’s hash tasks. Result retrieval checks the artifact digest.

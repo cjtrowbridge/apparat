@@ -144,9 +144,17 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 			game.discoveryContent(detailContainer)
 		} else {
 			detailContainer.AddChild(game.buildSectionContainer(section))
-			check := game.workerCheck(section.ActionID)
+			check := game.workerAction(section.ActionID, game.runtimeInfo.CheckWorker)
 			if tabData.ID() == hud.TabCluster && check != nil {
 				game.projectButton(detailContainer, "Check my access", check)
+			}
+			pool := game.permittedWorkerAction(section.ActionID, false, game.runtimeInfo.PoolTasks)
+			if tabData.ID() == hud.TabCluster && pool != nil {
+				game.projectButton(detailContainer, "Pool tasks", pool)
+			}
+			manage := game.permittedWorkerAction(section.ActionID, true, game.runtimeInfo.ManageWorker)
+			if tabData.ID() == hud.TabCluster && manage != nil {
+				game.projectButton(detailContainer, "Worker administration", manage)
 			}
 		}
 	}

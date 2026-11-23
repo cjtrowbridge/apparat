@@ -29,7 +29,15 @@ func (db *DB) SaveWorkerAccess(ctx context.Context, host, address, worker string
 }
 
 func (db *DB) KnownWorkers(ctx context.Context, user string) ([]domain.ClusterDevice, error) {
-	rows, err := db.sql.QueryContext(ctx, "SELECT worker,host,address,cluster FROM claimed_workers WHERE owner=? ORDER BY host COLLATE NOCASE,worker", user)
+	return db.WorkerSummaries(ctx, user, "")
+}
+
+func (db *DB) WorkerSummaries(ctx context.Context, user, device string) ([]domain.ClusterDevice, error) {
+	rows, err := db.sql.QueryContext(ctx, `SELECT w.worker,w.host,w.address,w.cluster,coalesce(r.revision,0),
+ coalesce(json_extract(r.body,'$.View.Governance.Head.Revision'),0),coalesce(json_extract(r.body,'$.View.Admin'),0),
+ coalesce(json_array_length(r.body,'$.View.Pools'),0),coalesce(json_extract(r.body,'$.View.PollSeconds'),0)
+ FROM claimed_workers w LEFT JOIN worker_replicas r ON r.worker=w.worker AND r.user=w.owner AND r.device=?
+ WHERE w.owner=? ORDER BY host COLLATE NOCASE,w.worker`, device, user)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +45,7 @@ func (db *DB) KnownWorkers(ctx context.Context, user string) ([]domain.ClusterDe
 	var devices []domain.ClusterDevice
 	for rows.Next() {
 		var d domain.ClusterDevice
-		err = rows.Scan(&d.Fingerprint, &d.Host, &d.Address, &d.Cluster)
+		err = rows.Scan(&d.Fingerprint, &d.Host, &d.Address, &d.Cluster, &d.ReplicaRevision, &d.PolicyRevision, &d.Admin, &d.PoolCount, &d.PollSeconds)
 		if err != nil {
 			return nil, err
 		}

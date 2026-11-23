@@ -9,6 +9,7 @@ import (
 )
 
 type PolicyEdit struct {
+	Epoch   *uint64 `json:",omitempty"`
 	Cluster string
 	ID      string
 	Base    uint64

@@ -46,8 +46,8 @@ func (events *updateEvents) run(ctx context.Context, node *app.Runtime) int {
 		case <-events.auto:
 		}
 		path := node.Config().DatabasePath
-		result, err := checkWorker(ctx, func() bool {
-			return discovery.Command(ctx, "updates-eligible", path, mode).Run() == nil
+		result, err := checkWorker(ctx, func(stage string) bool {
+			return discovery.Command(ctx, "updates-"+stage, path, mode).Run() == nil
 		})
 		level := "info"
 		if err != nil {
@@ -65,8 +65,8 @@ func (events *updateEvents) run(ctx context.Context, node *app.Runtime) int {
 	}
 }
 
-func checkWorker(ctx context.Context, eligible func() bool) (string, error) {
-	if !eligible() {
+func checkWorker(ctx context.Context, eligible func(string) bool) (string, error) {
+	if !eligible("eligible") {
 		return "deferred", nil
 	}
 	client := selfupdate.NewWorkerClient()
@@ -106,7 +106,7 @@ func checkWorker(ctx context.Context, eligible func() bool) (string, error) {
 	if candidate.Original != digest {
 		return "", selfupdate.ErrVerification
 	}
-	if !eligible() {
+	if !eligible("drain") {
 		return "deferred", nil
 	}
 	err = candidate.Install(ctx)
