@@ -62,3 +62,5 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `device_directory.go`: adds platform metadata and revision triggers, stores signed GUI pool assignments and constructs the admission-filtered roster. Worker membership reflects its hash-text service policy. The pinned worker test checks assignment and removal through sync.
 
 - `remote_workspace.go`: Stores per-project host permissions, client drafts and bounded save receipts.
+
+- `catalog_page.go`: Pages registered checkouts by insertion order without inspecting their trees.

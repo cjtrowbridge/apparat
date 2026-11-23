@@ -5,6 +5,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/adapters/projectgit"
@@ -94,5 +95,47 @@ func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	_, err = n.serveWorkspace(ctx, caller, q)
 	if !errors.Is(err, httpapi.ErrDenied) {
 		t.Fatal("revoked reader retained write")
+	}
+}
+
+func TestRegistryPagesAndReaderVisibility(t *testing.T) {
+	ctx := context.Background()
+	db, err := persistence.Open(ctx, filepath.Join(t.TempDir(), "node.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	err = db.Migrate(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 70; i++ {
+		id := fmt.Sprintf("remote-%03d", i)
+		err = db.RegisterProject(ctx, domain.Project{ID: id, Name: id, Location: id})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	before := ""
+	seen := map[string]bool{}
+	for {
+		page, err := db.RegistryPage(ctx, before, true, "owner", true)
+		if err != nil || len(page) == 0 || len(page) > 32 {
+			t.Fatal(len(page), err)
+		}
+		for _, p := range page {
+			if seen[p.ID] {
+				t.Fatal("duplicate cursor result")
+			}
+			seen[p.ID] = true
+		}
+		before = page[len(page)-1].NextCursor
+		if before == "" {
+			break
+		}
+	}
+	hidden, err := db.RegistryPage(ctx, "", true, "other", false)
+	if err != nil || len(hidden) != 0 || len(seen) != 70 {
+		t.Fatal("incorrect catalog isolation or continuation")
 	}
 }

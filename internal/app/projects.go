@@ -27,16 +27,25 @@ func (n *Runtime) inspectProject(path string) (domain.Project, error) {
 	return projectgit.Inspect(path)
 }
 func (n *Runtime) Projects(ctx context.Context) ([]domain.Project, error) {
-	projects, err := n.database.Projects(ctx)
+	projects, err := n.ProjectPage(ctx, "local", "")
 	if err != nil {
 		return nil, err
 	}
-	threads, err := n.database.RegisteredThreads(ctx)
+	return append(projects, n.remoteProjects(ctx)...), nil
+}
+func (n *Runtime) ProjectPage(ctx context.Context, host, before string) ([]domain.Project, error) {
+	if host != "local" {
+		return n.remoteProjectPage(ctx, host, before)
+	}
+	projects, err := n.database.RegistryPage(ctx, before, false, "", true)
 	if err != nil {
 		return nil, err
 	}
 	for i, p := range projects {
-		projects[i].Threads = threads[p.ID]
+		projects[i].Threads, err = n.database.ChatThreads(ctx, p.ID)
+		if err != nil {
+			return nil, err
+		}
 		current, err := n.inspectProject(p.Location)
 		if err == nil {
 			projects[i].Actions = current.Actions
@@ -46,7 +55,7 @@ func (n *Runtime) Projects(ctx context.Context) ([]domain.Project, error) {
 			projects[i].Available = true
 		}
 	}
-	return append(projects, n.remoteProjects(ctx)...), nil
+	return projects, nil
 }
 func (n *Runtime) StoreProject(ctx context.Context, id, location, account string) error {
 	n.workspaceMu.Lock()

@@ -5,8 +5,10 @@ package httpapi
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/adapters/projectgit"
+	"github.com/cjtrowbridge/apparat/internal/adapters/telemetry"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/fsnotify/fsnotify"
 	"golang.org/x/net/websocket"
@@ -102,7 +104,16 @@ func (a *workerAuth) live(w http.ResponseWriter, r *http.Request, record credent
 			}
 			sequence++
 			_ = ws.SetWriteDeadline(time.Now().Add(2 * time.Second))
-			return websocket.JSON.Send(ws, Notice{sub, sequence, reset, screen}) == nil
+			payload, err := json.Marshal(Notice{sub, sequence, reset, screen})
+			if err != nil {
+				return false
+			}
+			start := time.Now()
+			err = websocket.Message.Send(ws, string(payload))
+			if a.metrics != nil {
+				a.metrics.Observe(telemetry.Event{Operation: "subscribe", Elapsed: time.Since(start).Microseconds(), Sent: len(payload), Rows: 1, Failed: err != nil})
+			}
+			return err == nil
 		}
 		for _, sub := range subs {
 			if !send(sub, true) {

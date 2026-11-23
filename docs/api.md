@@ -14,6 +14,8 @@ OpenAPI source: [`openapi/apparat-v1.yaml`](./openapi/apparat-v1.yaml).
 
 ## Worker workspace transport
 
+`GET /v1/workspace/catalog?before=REGISTRATION_ID` returns up to 32 worker registrations. Use the last row’s NextCursor for the next page. Administrators see remote-created registrations. Other approved users see remote-created registrations with an explicit read grant. Responses omit account names.
+
 `POST /v1/workspace` accepts a single JSON command with a registered ProjectID, Action and checkout-relative Path. Authentication uses the existing pinned TLS listener and device-bound worker session. A write includes Text, the last-read Base digest and a stable operation ID. Success returns a WorkspaceView, including entries, choices, a revision or a continuation cursor as appropriate. A stale base returns 412. An absent grant returns 403. Detailed failure text and project contents stay out of transport telemetry.
 
 `GET /v1/workspace/live` upgrades the same authenticated TLS connection to WebSocket. Its first frame selects up to sixteen authorized project directory or terminal watches. The server returns a reset on subscription, then sequenced invalidations or screens. A client reconnects by requesting a fresh snapshot. [Workspace operation and diagnostics guide](workspaces.md)
@@ -135,7 +137,7 @@ The confirmed worker’s TLS admin route `GET /v1/admin/git/providers` reports t
 
 `POST /v1/admin/git/operation` accepts a provider ID, a client-generated ULID, and install, enroll, clone, status, or cancel. A clone also takes a GitHub owner/repo and optional account. The worker selects executable, arguments, source hostname and destination. Status is bound to the initiating admin user and device. Active work periodically rechecks authorization. One worker operation runs at a time. Completed status expires after fifteen minutes. Repeating a clone uses its checkout receipt and registration to recover across worker restarts. Enrollment codes are ephemeral and only the initiating device sees them. Linux enrollment stages CLI files in a private tmpfs directory and requires an unlocked default Secret Service collection. Confirm on the GitHub verification page; the host saves its account through the system CLI. An interrupted machine can leave temporary files in its private tmpfs directory until reboot.
 
-`GET /v1/admin/git/projects` lists remote-created checkout summaries from this worker. The app presents the worker hostname and revision in Projects. Remote registrations point to the authoritative worker; the client offers read-only metadata. Later work includes remote editing and additional explicitly configured destination roots.
+`GET /v1/admin/git/projects` lists remote-created checkout summaries from this worker. The app presents the worker hostname and revision in Projects. This compatibility route returns read-only metadata. The GUI uses the paged workspace catalog and the scoped workspace routes for project operations. Additional destination roots remain future work.
 
 #### Client operation sequence
 

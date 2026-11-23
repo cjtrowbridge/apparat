@@ -53,7 +53,10 @@ func ReadText(root *os.Root, path string) (string, error) {
 }
 func readLeaf(root *os.Root, path string) (string, error) {
 	info, err := root.Lstat(path)
-	if err != nil || !info.Mode().IsRegular() || info.Size() > domain.WorkspaceTextLimit {
+	if err != nil {
+		return "", err
+	}
+	if !info.Mode().IsRegular() || info.Size() > domain.WorkspaceTextLimit {
 		return "", errors.New("choose a regular text file of at most 64 KiB")
 	}
 	file, err := root.Open(path)

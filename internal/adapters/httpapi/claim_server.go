@@ -20,6 +20,7 @@ func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string, 
 	auth.gitContext = ctx
 	if len(handlers) > 0 {
 		auth.workspace = handlers[0].Workspace
+		auth.metrics = handlers[0].Metrics
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if len(handlers) > 0 && handlers[0].Metrics != nil && r.URL.Path != "/v1/workspace/live" {

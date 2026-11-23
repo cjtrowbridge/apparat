@@ -1919,7 +1919,7 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 - [x] Use owner-qualified project labels and expose Chat, Files, Editor, Terminal and Tasks destinations. Keep remote Chat reserved.
 - [x] Gate worker directory, file, conditional save, built-in task and isolated terminal operations on device-bound sessions and project-specific grants.
-- [x] Bound directory pages, text reads, run-history pages and retained terminal output. Keep editable drafts on the client and save receipts on the owner.
+- [x] Page project registrations per host, directory entries, terminal sessions, task choices and run history. Bound text reads and retained terminal output. Keep editable drafts on the client and save receipts on the owner.
 - [x] Coalesce foreground filesystem changes on an authenticated WebSocket. Refresh from a snapshot after reconnect.
 - [x] Capture workspace and transport measurements in bounded memory and export private NDJSON on demand. Support capped background recording, historical inspection and paired captures.
 - [ ] Validate the complete cross-device workflow under load. Measure catalog lookup, large Git status, missed-event recovery, and terminal fan-out before setting larger deployment targets.

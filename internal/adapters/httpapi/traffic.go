@@ -7,6 +7,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -44,6 +45,7 @@ func traffic(ring *telemetry.Ring, start time.Time, route, id string, in, out in
 		return
 	}
 	op := "http-other"
+	route, _, _ = strings.Cut(route, "?")
 	switch route {
 	case "/v1/workspace":
 		op = "http-workspace"
@@ -51,7 +53,7 @@ func traffic(ring *telemetry.Ring, start time.Time, route, id string, in, out in
 		op = "http-sync"
 	case "/v1/auth", "/v1/auth/challenge":
 		op = "http-auth"
-	case "/v1/admin/git/projects":
+	case "/v1/admin/git/projects", "/v1/workspace/catalog":
 		op = "http-catalog"
 	}
 	if !domain.ValidID(id) {

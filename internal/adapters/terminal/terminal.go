@@ -7,13 +7,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/cjtrowbridge/apparat/internal/adapters/projectgit"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/hinshun/vt10x"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
 
 	"sync"
@@ -32,6 +32,7 @@ type Session struct {
 	bytes                            int64
 }
 type Host struct {
+	pages    projectgit.DirectoryPages
 	mu       sync.Mutex
 	sessions map[string]*Session
 	workers  sync.WaitGroup
@@ -41,6 +42,7 @@ type Host struct {
 func (h *Host) Close() {
 	h.mu.Lock()
 	h.closing = true
+	h.pages.Close()
 	for _, s := range h.sessions {
 		s.stop()
 	}
@@ -63,30 +65,23 @@ func (h *Host) Do(ctx context.Context, dir, location, user, device string, q dom
 	dir = filepath.Join(dir, q.ProjectID, user)
 	if q.Action == "terminal-list" {
 		v.Report = prerequisite()
-		entries, e := os.ReadDir(dir)
+		page, e := h.pages.Page(user+"/"+device+"/"+q.ProjectID, dir, ".", q.Argument)
 		if os.IsNotExist(e) {
 			return v, nil
 		}
 		if e != nil {
 			return v, e
 		}
-		start := sort.Search(len(entries), func(i int) bool {
-			return entries[i].Name() > q.Argument
-		})
-		for _, item := range entries[start:] {
-			if !item.IsDir() || !domain.ValidID(item.Name()) {
+		v.Cursor = page.Cursor
+		for _, item := range page.Entries {
+			if !item.Directory || !domain.ValidID(item.Name) {
 				continue
 			}
 			state := "Ended"
-			active := h.sessions[item.Name()]
-			if active != nil {
+			if h.sessions[item.Name] != nil {
 				state = "Running"
 			}
-			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: item.Name(), Label: item.Name() + " · " + state, State: state})
-			if len(v.Choices) == 32 {
-				v.Cursor = item.Name()
-				break
-			}
+			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: item.Name, Label: item.Name + " · " + state, State: state})
 		}
 		return v, nil
 	}

@@ -94,7 +94,7 @@ func (g *Game) workspaceRequest(action string) {
 		result := projectResult{workspace: &workspaceReply{q, view, err}}
 		switch q.Action {
 		case "commit", "switch", "save", "create", "delete", "move":
-			if err == nil && g.projects.store != nil {
+			if err == nil && g.projects.store != nil && (q.Action == "switch" || q.Action == "commit") {
 				result.rows, err = g.projects.store.Projects(ctx)
 				result.reload = err == nil
 				result.defaultAccount, _ = g.projects.store.ProjectDefault(ctx)

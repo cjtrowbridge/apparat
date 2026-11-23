@@ -94,7 +94,7 @@ In Projects, focus the pinned ➕ New Project and activate it to focus device se
 
 In New Project, Use no credentials, Use GitHub as @username, Refresh credential providers and available install or add-account actions follow the same focus order on keyboard and D-pad. Worker identity review is a native modal that owns input. Dismissal keeps the worker disconnected.
 
-New Project exposes the selected host’s provider choices, install, enroll, and remote clone with the normal button focus route. A pending remote operation owns its form; device authorization offers Copy code and open GitHub and Cancel. A completed worker project opens its host-scoped summary.
+New Project exposes the selected host’s provider choices, install, enroll, and remote clone with the normal button focus route. A pending remote operation owns its form; device authorization offers Copy code and open GitHub and Cancel. A completed worker clone opens its host-qualified workspace. Older projects and Newest projects use the normal selector focus route.
 
 
 ### Owner workspaces

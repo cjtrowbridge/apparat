@@ -1,5 +1,5 @@
 // Resolves selected worker fingerprints before provider operations and catalog reads.
-// A remote project remains a display-only, host-scoped entry on the client.
+// Remote registrations retain their host fingerprint across catalog pages.
 package app
 
 import (
@@ -62,19 +62,9 @@ func (n *Runtime) remoteProjects(ctx context.Context) []domain.Project {
 		if ctx.Err() != nil {
 			break
 		}
-		if !w.Admin {
-			continue
-		}
-		c, err := n.openSavedWorker(ctx, w)
-		if err != nil {
-			continue
-		}
-		rows, err := c.RemoteProjects(ctx)
-		if err != nil {
-			continue
-		}
-		for _, p := range rows {
-			out = append(out, domain.Project{ID: "worker-" + w.Fingerprint + "/" + p.ID, RemoteHost: w.DisplayName(), Name: p.Name, Location: p.Location, Branch: p.Branch, Revision: p.Revision, Available: p.Available})
+		rows, err := n.remoteProjectPage(ctx, "worker-"+w.Fingerprint, "")
+		if err == nil {
+			out = append(out, rows...)
 		}
 	}
 	return out
@@ -103,4 +93,30 @@ func (n *Runtime) GitSession(ctx context.Context, host string) (func(context.Con
 		}
 		return client.GitOperation(ctx, req)
 	}, nil
+}
+
+func (n *Runtime) remoteProjectPage(ctx context.Context, host, before string) ([]domain.Project, error) {
+	workers, err := n.KnownWorkers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, w := range workers {
+		if host != "worker-"+w.Fingerprint {
+			continue
+		}
+		client, err := n.workspaceClient(ctx, host)
+		if err != nil {
+			return nil, err
+		}
+		rows, err := client.CatalogPage(ctx, before)
+		if err != nil {
+			return nil, err
+		}
+		for i := range rows {
+			rows[i].ID = host + "/" + rows[i].ID
+			rows[i].RemoteHost = w.DisplayName()
+		}
+		return rows, nil
+	}
+	return nil, errors.New("unknown project host")
 }

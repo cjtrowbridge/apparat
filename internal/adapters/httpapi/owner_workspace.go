@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
+	"github.com/cjtrowbridge/apparat/internal/adapters/projectgit"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type OwnerWorkspace func(context.Context, persistence.Access, domain.WorkspaceRequest) (domain.WorkspaceView, error)
@@ -48,4 +50,31 @@ func (c *WorkerClient) Workspace(ctx context.Context, q domain.WorkspaceRequest)
 	var v domain.WorkspaceView
 	err := c.call(ctx, "POST", "/v1/workspace", q, &v)
 	return v, err
+}
+
+// The scoped catalog exposes only display data and never sends provider accounts.
+func (a *workerAuth) catalog(w http.ResponseWriter, r *http.Request, access persistence.Access, worker string) {
+	if !a.db.OwnerConfirmed(r.Context(), worker) {
+		respond(w, 403, map[string]string{"error": "access_denied"})
+		return
+	}
+	if r.Method != "GET" {
+		respond(w, 405, map[string]string{"error": "method_not_allowed"})
+		return
+	}
+	rows, err := a.db.RegistryPage(r.Context(), r.URL.Query().Get("before"), true, access.User, access.Admin)
+	if err != nil {
+		respond(w, 503, map[string]string{"error": "unavailable"})
+		return
+	}
+	for i, p := range rows {
+		obs, _ := projectgit.Inspect(p.Location)
+		rows[i] = domain.Project{ID: p.ID, Name: p.Name, Location: p.Location, Branch: obs.Branch, Revision: obs.Revision, Available: obs.Available, NextCursor: p.NextCursor}
+	}
+	respond(w, 200, rows)
+}
+func (c *WorkerClient) CatalogPage(ctx context.Context, before string) ([]domain.Project, error) {
+	var out []domain.Project
+	err := c.call(ctx, "GET", "/v1/workspace/catalog?before="+url.QueryEscape(before), nil, &out)
+	return out, err
 }

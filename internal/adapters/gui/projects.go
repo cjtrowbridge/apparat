@@ -8,7 +8,6 @@ import (
 	"context"
 	"image/color"
 	"net/url"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -36,6 +35,7 @@ type projectResult struct {
 	reload                  bool
 }
 type projectForm struct {
+	olderPages                                                 map[string]bool
 	live                                                       liveDirectory
 	wizard                                                     newProjectState
 	directoryStatus                                            chan workspaceReply
@@ -143,6 +143,7 @@ func (g *Game) pollProjects() {
 		if r.reload {
 			f.catalogLoaded = true
 			f.rows = r.rows
+			f.olderPages = nil
 
 			f.defaultAccount = r.defaultAccount
 		}
@@ -164,17 +165,7 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 			tint = hud.SelectorPalette[1]
 		}
 		status := projectCheckoutStatus(p)
-		host := p.RemoteHost
-		if host == "" {
-			host = g.serviceProjection.LocalDevice.DisplayName("")
-			if g.serviceProjection.LocalDevice.ID == "" {
-				host, _ = os.Hostname()
-				if !domain.ValidDeviceName(host) {
-					host = "local"
-				}
-			}
-		}
-		section := hud.Section{Title: host + "://" + p.Name, SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, HasConfiguredActions: configured, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
+		section := hud.Section{Title: g.projectTitle(p), SelectorSubtitle: projectListLocation(p, g.projects.dataRoot) + "\n" + status, Description: g.projectText(projectLocation(p.Location)), ContentKind: kind, ProjectID: p.ID, HasConfiguredActions: configured, SelectorColor: tint, Rows: []hud.Row{{Label: "Checkout", Detail: status}}}
 		for _, task := range p.Entrypoints {
 			section.Rows = append(section.Rows, hud.Row{Label: "Manual Task", Detail: task})
 		}
@@ -182,6 +173,9 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 			section.Rows = append(section.Rows, hud.Row{Label: "VS Code task label", Detail: action})
 		}
 		t.Sections = append(t.Sections, section)
+	}
+	for _, turn := range g.projects.pageTurns() {
+		t.Sections = append(t.Sections, hud.Section{Title: turn.label, ActionID: "catalog-page/" + turn.host + "/" + turn.cursor, ContentKind: hud.ContentStandard})
 	}
 	return t
 }
@@ -366,6 +360,14 @@ func (g *Game) selectProjectEntry(index int) bool {
 		f.message = ""
 	}
 	row := index - len(projectEntrySections)
+	if f.store != nil && row >= len(f.rows) {
+		turns := f.pageTurns()
+		i := row - len(f.rows)
+		if i < len(turns) {
+			g.turnProjectPage(turns[i])
+		}
+		return false
+	}
 	if row >= 0 && row < len(f.rows) {
 		p := f.rows[row]
 		if p.Available && f.workspace.id != p.ID {

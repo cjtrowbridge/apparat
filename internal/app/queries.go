@@ -137,3 +137,9 @@ func (n *Runtime) LocalClusterDevice() domain.PoolDevice {
 	name, _ := n.Keys.Hostname()
 	return domain.PoolDevice{ID: identity.Fingerprint(key), Host: name, OS: runtime.GOOS}
 }
+
+// ProjectHostname returns the installation label even while its signing keys are locked.
+func (n *Runtime) ProjectHostname() string {
+	name, _ := n.Keys.Hostname()
+	return name
+}

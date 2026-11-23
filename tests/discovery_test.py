@@ -9,6 +9,7 @@ import json
 import queue
 import socket
 import sqlite3
+import tempfile
 import threading
 import unittest
 from pathlib import Path
@@ -25,13 +26,15 @@ class BootstrapTest(unittest.TestCase):
     def test_scoped_responder_and_revocation(self):
         rule = "lo/loopback/local/127.0.0.1"
         ready = queue.Queue()
-        db = sqlite3.connect(":memory:", check_same_thread=False)
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        db = sqlite3.connect(Path(directory.name) / "node.sqlite", check_same_thread=False)
         self.addCleanup(db.close)
         db.execute("create table local_runtime(key text primary key, value text, rev integer)")
         db.execute("create table project_entries(kind text, body text)")
         self.assertEqual(discovery.grants(db), [])
         discovery.save(db, [rule])
-        base = discovery.http.server.HTTPServer
+        base = discovery.http.server.ThreadingHTTPServer
 
         class ObservedServer(base):
             def server_activate(self):
@@ -39,7 +42,7 @@ class BootstrapTest(unittest.TestCase):
                 ready.put(self.server_port)
 
         with patch.object(discovery, "profiles", return_value={rule: ("lo", "127.0.0.1")}), \
-             patch.object(discovery.http.server, "HTTPServer", ObservedServer), contextlib.redirect_stdout(io.StringIO()) as signals:
+             patch.object(discovery.http.server, "ThreadingHTTPServer", ObservedServer), contextlib.redirect_stdout(io.StringIO()) as signals:
             worker = threading.Thread(target=discovery.serve, args=(db, rule, True), daemon=True)
             worker.start()
             try:

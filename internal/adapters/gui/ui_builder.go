@@ -44,7 +44,7 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	if game.inWorkspace() {
 		i := game.selectedSections[hud.TabProjects] - len(projectEntrySections)
 		p := game.projects.rows[i]
-		title = p.Name + " · " + p.Branch
+		title = game.projectTitle(p) + " · " + p.Branch
 		if !game.debugOverlayOpen {
 			bottomInset = windowMargin
 		}

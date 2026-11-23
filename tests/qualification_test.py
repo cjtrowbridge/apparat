@@ -2,6 +2,7 @@
 Use disposable files and injected build/test outcomes, never an actual phone.
 """
 from pathlib import Path
+import json
 import tempfile
 import os
 import unittest
@@ -14,6 +15,8 @@ class QualificationTest(unittest.TestCase):
     def test_xvfb_uses_x11_without_changing_host_environment(self):
         plan = BuildPlan('linux/amd64/apparat', 'linux', 'amd64', 'apparat', Path('latest'), True)
         with patch.dict(os.environ, {'EGL_PLATFORM': 'wayland'}), patch.object(evidence.artifact_acceptance, 'run') as run:
+            version = Path('internal/domain/release.txt').read_text().strip()
+            run.return_value = json.dumps({'Version': version})
             evidence.artifact_acceptance.validate(plan, Path('latest'), Path('evidence'), 'digest')
             self.assertEqual(run.call_args.kwargs['env']['EGL_PLATFORM'], 'x11')
             self.assertEqual(os.environ['EGL_PLATFORM'], 'wayland')

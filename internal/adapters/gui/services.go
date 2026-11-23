@@ -14,13 +14,14 @@ type ServiceQueries interface {
 	Changed() <-chan struct{}
 }
 type ServiceProjection struct {
-	Devices     []domain.ClusterDevice
-	Peers       []domain.PoolDevice
-	LocalDevice domain.PoolDevice
-	ScreenName  string
-	DeviceError bool
-	Services    []domain.Service
-	State       string
+	Devices         []domain.ClusterDevice
+	Peers           []domain.PoolDevice
+	LocalDevice     domain.PoolDevice
+	ScreenName      string
+	ProjectHostname string
+	DeviceError     bool
+	Services        []domain.Service
+	State           string
 }
 
 func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServiceProjection {
@@ -68,6 +69,10 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 			}
 
 			projection := ServiceProjection{Devices: devices, Peers: peers, DeviceError: deviceErr != nil || peerErr != nil, Services: list, State: state}
+			names, hasName := queries.(interface{ ProjectHostname() string })
+			if hasName {
+				projection.ProjectHostname = names.ProjectHostname()
+			}
 			local, hasLocal := queries.(interface{ LocalClusterDevice() domain.PoolDevice })
 			if hasLocal {
 				projection.LocalDevice = local.LocalClusterDevice()

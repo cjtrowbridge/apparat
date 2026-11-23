@@ -57,3 +57,28 @@ func TestDirectoryItemsIncludeDirectChangesAndMissingSubtrees(t *testing.T) {
 		t.Fatal(nested)
 	}
 }
+
+func TestOwnerTitleAndCatalogNavigation(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	g.serviceProjection.ProjectHostname = "pixel-4a"
+	local := domain.Project{ID: "a", Name: "sample"}
+	peer := domain.Project{ID: "worker-test/r", Name: "sample", RemoteHost: "trashcan0", NextCursor: "r"}
+	if g.projectTitle(local) != "pixel-4a://sample" || g.projectTitle(peer) != "trashcan0://sample" {
+		t.Fatal("incorrect title while identity is locked")
+	}
+	g.projects.rows = []domain.Project{local, peer}
+	turns := g.projects.pageTurns()
+	if len(turns) != 1 || turns[0].host != "worker-test" || turns[0].cursor != "r" {
+		t.Fatal(turns)
+	}
+	for _, width := range []int{360, 1200} {
+		g.Layout(width, 640)
+		for _, dst := range workspaceDestinations {
+			g.openWorkspaceTab(dst.mode, "")
+			if g.projects.workspace.mode != dst.mode || emojiIcon(dst.icon) == nil {
+				t.Fatal(dst)
+			}
+		}
+	}
+}

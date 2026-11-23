@@ -214,3 +214,5 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `workspace_tasks.go`: Presents project tasks, artifacts and local chat in the workspace detail pane.
 
 - `workspace_live.go`: Releases directory watches when the Projects view loses focus or changes owner.
+
+- `project_pages.go`: Keeps one registry page per host and exposes continuations through the selector.

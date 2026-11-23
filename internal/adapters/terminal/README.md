@@ -1,6 +1,6 @@
 # Owner terminal sessions
 
-Linux hosts run an isolated PTY with a read-only project, private temporary storage and no network. A worker requires explicit per-project terminal grants. One device controls each running session. Private screen history retains at most 256 checkpoints per session. An ended process can be inspected after restart.
+Linux hosts run an isolated PTY with a read-only project, private temporary storage and no network. A worker requires explicit per-project terminal grants. One device controls each running session. Private history retains the last screen and up to 256 output chunks of 32 KiB each per session. An ended process can be inspected after restart.
 
 - `pty_linux.go`: Starts the interactive shell inside a private Linux namespace with a read-only checkout.
 
