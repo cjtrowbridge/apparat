@@ -20,3 +20,6 @@ Loopback-only read-only JSON mappings over the application query boundary. Numer
 - `queue_client.go`: Submits, cancels and reads the user’s hash tasks. Result retrieval checks the artifact digest.
 
 Worker clients probe TLS without client credentials and require an approved device fingerprint for login. The authenticated GitHub username directory also requires current admin access and host-local owner confirmation. Exercise the positive and denial paths with TestPinnedWorkerClaim.
+
+- `git_jobs.go`: Executes and tracks device-bound administrator provider and clone operations.
+- `git_jobs_test.go`: Runs private HTTP Git clones against a local fixture through the real worker admin API, including anonymous and wrong-account failures.

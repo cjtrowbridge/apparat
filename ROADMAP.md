@@ -1592,7 +1592,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 - [x] Persist a stable project ID independent of path, local owner ID and reopening information in SQLite. Read Git state and configured actions from the checkout. Keep the existing blue/purple outlines and right-aligned 🧠 for repos with actions.
 - [x] Show lost access or a moved checkout and support reconnecting the same registration. Removing a registration preserves the working tree.
 - [x] Create a named local repo offline under the default or chosen parent and open its Files workspace on an unborn main branch.
-- [x] Offer import, init and clone through one host-first New Project form. Remote hosts support preview until remote projects ship. The Agentic Pipelines starter awaits publication of its template. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
+- [x] Offer import, init and clone through one host-first New Project form. Confirmed workers support GitHub clones into their default repo directory. Remote init and import remain previews. The Agentic Pipelines starter awaits publication of its template. Preview the default `<node-root>/data/repos/<owner>/<repo>` or a user-selected destination. Use platform folder choosers and Linux path entry.
 - [x] Use the system GitHub CLI on Linux, with a device default account and per-repo overrides. Keep account credentials outside project metadata.
 
 **Exit criteria**
@@ -2597,3 +2597,5 @@ Worker claiming uses the existing unlocked credentials directly from discovery. 
 Personal pairing now has a Linux sender and a recipient path for Android or Linux. Hardware acceptance requires the owner's real identity in the primary Pixel profile and a protected operation on the already-claimed trashcan0.
 
 Phase 10 worker trust includes host-confirmed owner enrollment, manual approval of signing-key changes, and administrator-only retrieval of GitHub usernames for the Phase 9 picker. Cluster-wide signed key succession and ordering-authority recovery remain separate from local certificate approval.
+
+Phase 9/11 bridge: New Project can provision a named credential provider and register a GitHub clone on a confirmed worker. Remote file editing, arbitrary filesystem browsing, and task execution remain later Phase 11 work.

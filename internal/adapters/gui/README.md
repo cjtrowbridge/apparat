@@ -206,3 +206,5 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `form_labels.go`: Project form headings and field labels use the bold face. Descriptions use the italic face. Inline inputs and native prompts share a wrapping, right-aligned label column with a four-unit gap before the field. Device search uses a single-line editor sized to the selected font.
 
 - `new_project_test.go`: Checks search entry focus, one-match selection, source and template traversal, and the native search control on the shared HUD navigation path.
+
+- `provider_jobs.go`: Polls host setup jobs, presents device codes, and selects registered remote checkouts.

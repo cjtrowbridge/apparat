@@ -16,6 +16,7 @@ import (
 )
 
 type Documents interface {
+	GitHubLogin(string)
 	ChooseFolder() string
 	Inspect(string) string
 	Access(string, string, string, string) string
@@ -46,6 +47,12 @@ func currentDocuments() Documents {
 	documents.RLock()
 	defer documents.RUnlock()
 	return documents.host
+}
+func (projectDocuments) GitHubLogin(code string) {
+	host := currentDocuments()
+	if host != nil {
+		host.GitHubLogin(code)
+	}
 }
 func (projectDocuments) ChooseFolder() string {
 	host := currentDocuments()

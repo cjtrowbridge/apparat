@@ -31,3 +31,5 @@ project.go also defines the project-scoped workspace request and bounded text vi
 - `device_name.go`: validates Apparat host labels and resolves display names without changing endpoint selection.
 
 The canonical delivery allocates the number in release.txt before compilation. ReleaseVersion returns that embedded number for the running process, including offline node health and Linux Settings.
+
+- `git_provider.go`: Defines authenticated provider capabilities and host operation progress.

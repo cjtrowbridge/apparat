@@ -14,7 +14,7 @@ import (
 	"sort"
 )
 
-func SavedAccounts() ([]string, error) {
+func configDir() (string, error) {
 	dir := os.Getenv("GH_CONFIG_DIR")
 	if dir == "" {
 		dir = os.Getenv("XDG_CONFIG_HOME")
@@ -24,11 +24,19 @@ func SavedAccounts() ([]string, error) {
 		if dir == "" {
 			home, err := os.UserHomeDir()
 			if err != nil {
-				return nil, errors.New("GitHub CLI configuration unavailable")
+				return "", errors.New("GitHub CLI configuration unavailable")
 			}
 			dir = filepath.Join(home, ".config")
 		}
 		dir = filepath.Join(dir, "gh")
+	}
+	return dir, nil
+}
+
+func SavedAccounts() ([]string, error) {
+	dir, err := configDir()
+	if err != nil {
+		return nil, err
 	}
 	f, err := os.Open(filepath.Join(dir, "hosts.yml"))
 	if os.IsNotExist(err) {
@@ -45,7 +53,7 @@ func SavedAccounts() ([]string, error) {
 	var hosts struct {
 		GitHub struct {
 			User  string
-			Users map[string]struct{}
+			Users map[string]yaml.Node
 		} `yaml:"github.com"`
 	}
 	body, err := io.ReadAll(io.LimitReader(f, 1<<20+1))
@@ -54,9 +62,9 @@ func SavedAccounts() ([]string, error) {
 	}
 	users := hosts.GitHub.Users
 	if users == nil {
-		users = map[string]struct{}{}
+		users = map[string]yaml.Node{}
 	}
-	users[hosts.GitHub.User] = struct{}{}
+	users[hosts.GitHub.User] = yaml.Node{}
 	names := []string{}
 	for name := range users {
 		if name != "" && len(name) <= 39 && ValidAccount(name) {

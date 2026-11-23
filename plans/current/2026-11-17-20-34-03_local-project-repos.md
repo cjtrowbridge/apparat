@@ -50,3 +50,6 @@ End visible field and choice-group labels with a colon. Pad each field row above
 Right-align field labels against their controls. Keep device search compact and single-line for inline entry, pastes and Android's native search prompt, while retaining multiline editing elsewhere.
 
 - [x] Focus device search on New Project entry and advance to the next enabled group after a selection. A nonempty query with one matching host selects it. Verify keyboard and controller traversal, empty and ambiguous searches, and Android prompt behavior. Record the shared form contract in the HUD playbook.
+
+### Host credential providers and worker clones (Phases 9, 10 and 11)
+Probe the selected host for named provider capabilities. Default to anonymous checkout. Offer a fixed GitHub CLI installer where the worker account can use it, explain unavailable actions, and refresh after verification. Bind installation, enrollment, and clone jobs to an administrator and device on pinned TLS. Keep account secrets and the authoritative checkout on the worker. Validate no-op installs, denied requests, host isolation, and the full host release matrix.

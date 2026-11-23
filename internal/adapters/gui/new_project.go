@@ -17,7 +17,11 @@ import (
 type newProjectState struct {
 	search, host, source, mode, remoteAccount string
 	accountHost                               string
-	accounts                                  []string
+	providers                                 []domain.GitProvider
+	providerError                             string
+	jobUpdates                                chan domain.GitStatus
+	jobStatus                                 domain.GitStatus
+	retryRequest                              domain.GitRequest
 	preview                                   domain.LocalProjectSetup
 	progress                                  chan string
 	output                                    []string
@@ -78,7 +82,9 @@ func (g *Game) chooseProject(c setupChoice) {
 		w.focusStep = "source"
 		w.host = c.id
 		w.remoteAccount = ""
-		w.accounts = nil
+		w.providers = nil
+		w.retryRequest = domain.GitRequest{}
+		w.providerError = ""
 		w.accountHost = ""
 		f.account = ""
 		f.cloneParent, f.initParent, f.importPath = "", "", ""
@@ -140,7 +146,7 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		return
 	}
 	local := w.host == "local"
-	if !local {
+	if !local && (w.mode != "clone" || !strings.HasPrefix(w.host, "worker-")) {
 		c.AddChild(g.formDescription("Remote project setup is a preview. Execution on this host is not available yet."))
 	}
 	if w.mode == "starter" {
@@ -161,11 +167,16 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		g.projectFocusControl("details", folder("Existing repo folder", &f.importPath, false))
 	case "clone":
 		g.projectFocusControl("details", g.projectField(c, "GitHub owner/repo or URL", &f.repo))
-		folder("Destination parent folder (optional)", &f.cloneParent, true)
+		repo, repoErr := projectgit.RepoName(f.repo)
+		if local {
+			folder("Destination parent folder (optional)", &f.cloneParent, true)
+		} else if repoErr == nil {
+			c.AddChild(g.formDescription("Worker destination: apparat/data/repos/" + repo))
+		}
 		if local && runtime.GOOS != "android" {
 			g.projectAccount(c, &f.account)
 		} else if local {
-			c.AddChild(g.formDescription("Public GitHub repositories only on Android."))
+			g.hostAccountPicker(c, "local", &f.account)
 		} else {
 			if strings.HasPrefix(w.host, "worker-") {
 				g.hostAccountPicker(c, w.host, &w.remoteAccount)
@@ -177,6 +188,10 @@ func (g *Game) newProjectControls(c *widget.Container) {
 		return
 	}
 	if !local {
+		action := g.remoteCloneOption()
+		if action != nil {
+			g.projectButton(c, action.label, action.run)
+		}
 		return
 	}
 	if w.mode == "clone" {
@@ -291,14 +306,6 @@ func (g *Game) startLocalProject() {
 
 var searchBreaks = strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ", "\u0085", " ", "\u2028", " ", "\u2029", " ")
 
-func searchLine(value string) string {
-	return searchBreaks.Replace(value)
-}
-func compactSearchControl(control *widget.Widget, font int) {
-	height := font + 12
-	control.MinHeight = height
-	control.LayoutData = widget.GridLayoutData{MaxHeight: height, VerticalPosition: widget.GridLayoutPositionCenter}
-}
 func (g *Game) deviceSearchField(c *widget.Container) {
 	const label = "Search devices"
 	w := &g.projects.wizard
@@ -322,10 +329,6 @@ func (g *Game) deviceSearchField(c *widget.Container) {
 	})
 	row.AddChild(field)
 	g.projectFocusControl("search", field)
-}
-
-func matchesProjectHost(host setupChoice, query string) bool {
-	return strings.Contains(strings.ToLower(host.label), strings.ToLower(strings.TrimSpace(query)))
 }
 
 func (g *Game) filterProjectHosts(value string) {

@@ -130,6 +130,10 @@ func Clone(ctx context.Context, base, parent, input, account string) (domain.Pro
 }
 
 func CloneWithProgress(ctx context.Context, base, parent, input, account string, report func(string)) (domain.Project, error) {
+	return cloneCheckout(ctx, base, parent, input, account, "", report)
+}
+
+func cloneCheckout(ctx context.Context, base, parent, input, account, receipt string, report func(string)) (domain.Project, error) {
 	var p domain.Project
 	name, err := RepoName(input)
 	if err != nil {
@@ -139,9 +143,17 @@ func CloneWithProgress(ctx context.Context, base, parent, input, account string,
 	if err != nil {
 		return p, err
 	}
+	if receipt != "" {
+		data, err := os.ReadFile(filepath.Join(dest, ".git", "apparat-clone-receipt"))
+		if err == nil && string(data) == receipt {
+			p, err = Inspect(dest)
+			p.Account = account
+			return p, err
+		}
+	}
 	opts := &git.CloneOptions{URL: "https://github.com/" + name + ".git", Depth: 1}
 	if account != "" {
-		if runtime.GOOS == "android" || !ValidAccount(account) {
+		if runtime.GOOS == "android" && !termux() || !ValidAccount(account) {
 			return p, errors.New("account unavailable on this device")
 		}
 		if report != nil {
@@ -178,6 +190,15 @@ func CloneWithProgress(ctx context.Context, base, parent, input, account string,
 	}
 	if report != nil {
 		report("Moving the completed checkout into its destination and reading repository metadata…")
+	}
+	if receipt != "" {
+		err = os.WriteFile(filepath.Join(stage, ".git", "apparat-clone-receipt"), []byte(receipt), 0600)
+		if err != nil {
+			return p, errors.New("cannot save worker checkout receipt")
+		}
+	}
+	if ctx.Err() != nil {
+		return p, ctx.Err()
 	}
 	err = installClone(stage, dest)
 	if err != nil {

@@ -55,3 +55,5 @@ workspace.go resolves every command by registered project ID and coordinates dra
 
 - `worker_trust.go`: Reviews worker identity changes before login and resolves host account directories through authenticated worker sessions.
 - `worker_trust_test.go`: Verifies explicit consent and default rejection for the fingerprint comparison dialog.
+
+- `project_hosts.go`: Resolves provider requests on their owning worker and retrieves remote checkout metadata.

@@ -46,7 +46,7 @@ func (n *Runtime) Projects(ctx context.Context) ([]domain.Project, error) {
 			projects[i].Available = true
 		}
 	}
-	return projects, nil
+	return append(projects, n.remoteProjects(ctx)...), nil
 }
 func (n *Runtime) StoreProject(ctx context.Context, id, location, account string) error {
 	n.workspaceMu.Lock()

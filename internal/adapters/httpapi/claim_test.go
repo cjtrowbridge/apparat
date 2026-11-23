@@ -53,7 +53,7 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := serveWorkerClaims(listener, &tls.Config{MinVersion: tls.VersionTLS13, ClientAuth: tls.RequestClientCert, Certificates: []tls.Certificate{cert}}, db, worker, t.TempDir())
+	server := serveWorkerClaims(listener, &tls.Config{MinVersion: tls.VersionTLS13, ClientAuth: tls.RequestClientCert, Certificates: []tls.Certificate{cert}}, db, worker, filepath.Join(t.TempDir(), "artifacts", "pool"))
 	defer server.Close()
 	address := listener.Addr().String()
 	pin := identity.Fingerprint(worker.Public())
@@ -128,6 +128,7 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	if !errors.Is(err, ErrDenied) {
 		t.Fatal("pending user could enumerate accounts")
 	}
+	exerciseWorkerGit(t, session, other, unapproved)
 	unapproved.token = session.token
 	_, err = unapproved.GitAccounts(ctx)
 	if !errors.Is(err, ErrDenied) {

@@ -103,7 +103,21 @@ func (g *Game) editProjectControls(c *widget.Container) {
 }
 
 func (g *Game) hostAccountPicker(c *widget.Container, host string, value *string) {
-	c.AddChild(g.formLabel("GitHub account"))
+	c.AddChild(g.formLabel("Credentials"))
+	w := &g.projects.wizard
+	if w.accountHost == host {
+		if w.providerError != "" {
+			c.AddChild(g.formDescription(w.providerError))
+		}
+		for _, p := range w.providers {
+			if host != "local" && p.CanEnroll {
+				c.AddChild(g.formDescription("Administrators of " + g.projectHostName(host) + " can use accounts added here to clone private repositories."))
+			}
+			if p.Reason != "" {
+				c.AddChild(g.formDescription(p.Name + " · " + p.Reason))
+			}
+		}
+	}
 	for _, option := range g.accountOptions(host, value) {
 		g.projectButton(c, option.label, option.run)
 	}
@@ -120,29 +134,15 @@ func (g *Game) accountOptions(host string, value *string) []accountOption {
 		options = append(options, accountOption{id, label, run})
 	}
 	w := &g.projects.wizard
-	current := *value
-	if current == "" {
-		current = "Public access"
+	current := "Use no credentials"
+	if *value != "" {
+		current = "Use GitHub as @" + *value
 	}
-	add("choose", current+" · Choose account", func() {
-		source, ok := g.runtimeInfo.Queries.(interface {
-			GitAccounts(context.Context, string) ([]string, error)
-		})
-		if !ok {
-			return
-		}
-		w.accounts = nil
-		w.accountHost = ""
-		g.projectWork(func(ctx context.Context) projectResult {
-			names, err := source.GitAccounts(ctx, host)
-			if err != nil {
-				return projectResult{message: "Accounts unavailable. Verify host trust and administrator access."}
-			}
-			return projectResult{applyField: func() {
-				w.accounts = names
-				w.accountHost = host
-			}}
-		})
+	if w.accountHost == host {
+		current = "Refresh credential providers"
+	}
+	add("choose", current, func() {
+		g.refreshProviders(host)
 	})
 	if w.accountHost != host {
 		return options
@@ -150,31 +150,39 @@ func (g *Game) accountOptions(host string, value *string) []accountOption {
 	selectAccount := func(name string) {
 		*value = name
 		w.accountHost = ""
-		w.accounts = nil
+		w.providers = nil
 		w.preview = domain.LocalProjectSetup{}
 		g.layoutDirty = true
 	}
-	add("public", "Public access", func() {
+	add("public", "Use no credentials", func() {
 		selectAccount("")
 	})
-	for _, name := range w.accounts {
-		add("user-"+name, name, func() {
-			selectAccount(name)
-		})
-	}
-	add("add", "➕ Add account on host", func() {
-		if host == "local" {
-			g.projectWork(func(ctx context.Context) projectResult {
-				err := projectgit.AddLocalAccount(ctx)
-				if err != nil {
-					return projectResult{message: "Open a host terminal, run gh auth login --hostname github.com, then refresh the account list."}
-				}
-				return projectResult{message: "Choose account again to refresh the list."}
+	for _, p := range w.providers {
+		for _, name := range p.Accounts {
+			add(p.ID+"-"+name, "Use "+p.Name+" as @"+name, func() {
+				selectAccount(name)
 			})
-			return
 		}
-		g.projects.message = "Run gh auth login --hostname github.com in a terminal as the host account running Apparat. Then choose an account again."
-		g.layoutDirty = true
-	})
+		if p.CanInstall {
+			add("install-"+p.ID, "Install "+p.Tool+" on "+g.projectHostName(host), func() {
+				g.startHostOperation(host, domain.GitRequest{Provider: p.ID, Operation: "install"}, value)
+			})
+		}
+		if p.Installed && (p.CanEnroll || host == "local" && runtime.GOOS != "android" && runtime.GOOS != "ios") {
+			add("add-"+p.ID, "➕ Add "+p.Name+" account on "+g.projectHostName(host), func() {
+				if host == "local" {
+					g.projectWork(func(ctx context.Context) projectResult {
+						err := projectgit.AddLocalAccount(ctx)
+						if err != nil {
+							return projectResult{message: "Use gh auth login on this device, then refresh."}
+						}
+						return projectResult{message: "Refresh to see saved accounts."}
+					})
+					return
+				}
+				g.startHostOperation(host, domain.GitRequest{Provider: p.ID, Operation: "enroll"}, value)
+			})
+		}
+	}
 	return options
 }

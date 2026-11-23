@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"io"
 	"net/http"
 	"net/netip"
@@ -164,4 +165,21 @@ func (c *WorkerClient) GitAccounts(ctx context.Context) ([]string, error) {
 	var data struct{ Usernames []string }
 	err := c.call(ctx, "GET", "/v1/admin/git/accounts", nil, &data)
 	return data.Usernames, err
+}
+
+func (c *WorkerClient) Providers(ctx context.Context) ([]domain.GitProvider, error) {
+	var out []domain.GitProvider
+	err := c.call(ctx, "GET", "/v1/admin/git/providers", nil, &out)
+	return out, err
+}
+func (c *WorkerClient) GitOperation(ctx context.Context, req domain.GitRequest) (domain.GitStatus, error) {
+	var out domain.GitStatus
+	err := c.call(ctx, "POST", "/v1/admin/git/operation", req, &out)
+	return out, err
+}
+
+func (c *WorkerClient) RemoteProjects(ctx context.Context) ([]domain.Project, error) {
+	var rows []domain.Project
+	err := c.call(ctx, "GET", "/v1/admin/git/projects", nil, &rows)
+	return rows, err
 }

@@ -6,6 +6,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"testing"
 )
 
@@ -89,5 +91,55 @@ func TestAccountLookupIsScopedToEachTransfer(t *testing.T) {
 	_, err = accountAuth(context.Background(), "unavailable")
 	if err == nil {
 		t.Fatal("missing account accepted")
+	}
+}
+
+func TestProviderInstallerAndCredentialLabels(t *testing.T) {
+	ctx := context.Background()
+	bin := t.TempDir()
+	t.Setenv("PATH", bin)
+	t.Setenv("PREFIX", "")
+	p := Providers(ctx)[0]
+	if p.ID != "github" || p.Installed || p.CanInstall || p.Reason == "" {
+		t.Fatal("missing provider explanation", p)
+	}
+	err := InstallProvider(ctx, "invalid")
+	if err == nil {
+		t.Fatal("accepted an unknown installation target")
+	}
+	if runtime.GOOS != "linux" {
+		return
+	}
+	// The stub package manager installs a CLI double in the isolated path only.
+	marker := filepath.Join(bin, "invocations")
+	installer := "#!/bin/sh\n[ \"$*\" = 'install -y gh' ] || exit 1\necho install >> " + marker + "\n/bin/cp " + bin + "/candidate " + bin + "/gh\n"
+	for name, body := range map[string]string{"apt-get": installer, "sudo": "#!/bin/sh\ncase \"$2\" in -l) exit 0;; --) shift 2; exec \"$@\";; esac\n", "candidate": "#!/bin/sh\necho --user\n"} {
+		err = os.WriteFile(filepath.Join(bin, name), []byte(body), 0700)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	config := t.TempDir()
+	t.Setenv("GH_CONFIG_DIR", config)
+	err = os.WriteFile(filepath.Join(config, "hosts.yml"), []byte("github.com:\n  user: a\n  users:\n    b: ''\n"), 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !Providers(ctx)[0].CanInstall {
+		t.Fatal("missing install option")
+	}
+	for range 2 {
+		err = InstallProvider(ctx, "github")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	body, err := os.ReadFile(marker)
+	if err != nil || string(body) != "install\n" {
+		t.Fatal("installation was repeated")
+	}
+	p = Providers(ctx)[0]
+	if !p.Installed || !slices.Equal(p.Accounts, []string{"a", "b"}) {
+		t.Fatal("installed provider not refreshed", p)
 	}
 }

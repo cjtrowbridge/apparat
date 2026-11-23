@@ -118,8 +118,16 @@ func (g *Game) pollProjects() {
 	f.active = active
 	g.receiveProjectProgress()
 	select {
+	case status := <-f.wizard.jobUpdates:
+		f.wizard.jobStatus = status
+		g.layoutDirty = true
+	default:
+	}
+	select {
 	case r := <-f.pending:
 		f.pending = nil
+		f.wizard.jobUpdates = nil
+		f.wizard.jobStatus = domain.GitStatus{}
 		g.receiveProjectProgress()
 		f.wizard.progress = nil
 		f.message = r.message
@@ -132,9 +140,7 @@ func (g *Game) pollProjects() {
 		if r.reload {
 			f.catalogLoaded = true
 			f.rows = r.rows
-			if f.account == f.defaultAccount {
-				f.account = r.defaultAccount
-			}
+
 			f.defaultAccount = r.defaultAccount
 		}
 		g.layoutDirty = true
@@ -200,6 +206,13 @@ func (g *Game) projectControls(c *widget.Container, s hud.Section) {
 	}
 	if f.message != "" {
 		c.AddChild(g.detailText(g.projectText(f.message)))
+	}
+	if strings.HasPrefix(s.ProjectID, "worker-") {
+		return
+	}
+	if f.pending != nil && f.wizard.jobUpdates != nil {
+		g.hostJobControls(c)
+		return
 	}
 	if s.ProjectID != "" && f.workspace.id == s.ProjectID && f.workspace.mode != "registration" {
 		g.workspaceControlsFor(c, s.ProjectID)
@@ -279,6 +292,9 @@ func projectLocation(value string) string {
 // Registrations currently belong to this device. Provider document IDs can
 // be opaque, so retain the provider and include the registered folder name.
 func projectListLocation(p domain.Project, dataRoot string) string {
+	if p.RemoteHost != "" {
+		return p.RemoteHost + "://" + p.Location
+	}
 	location := p.Location
 	if strings.HasPrefix(location, "content://") {
 		id := projectLocation(location)
@@ -341,7 +357,7 @@ func (g *Game) selectProjectEntry(index int) bool {
 	row := index - len(projectEntrySections)
 	if row >= 0 && row < len(f.rows) {
 		p := f.rows[row]
-		if p.Available && f.workspace.id != p.ID {
+		if p.RemoteHost == "" && p.Available && f.workspace.id != p.ID {
 			f.workspace = workspacePanel{id: p.ID, dir: ".", mode: "files"}
 			g.detailOpen[hud.TabProjects] = true
 			g.workspaceRequest("list")

@@ -24,6 +24,26 @@ final class ProjectDocuments implements Documents {
         this.activity = activity;
         resolver = activity.getContentResolver();
     }
+    public void gitHubLogin(final String code) {
+        if (!code.matches("[A-Z0-9]{4}-[A-Z0-9]{4}")) return;
+        activity.runOnUiThread(new Runnable() {
+            @Override public void run() {
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) activity.getSystemService(Activity.CLIPBOARD_SERVICE);
+            android.content.ClipData clip = android.content.ClipData.newPlainText("GitHub code",code);
+            if (android.os.Build.VERSION.SDK_INT >= 24) {
+                android.os.PersistableBundle flags = new android.os.PersistableBundle();
+                flags.putBoolean("android.content.extra.IS_SENSITIVE",true);
+                clip.getDescription().setExtras(flags);
+            }
+            clipboard.setPrimaryClip(clip);
+            try {
+                activity.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/login/device")));
+            } catch (android.content.ActivityNotFoundException unavailable) {
+                android.widget.Toast.makeText(activity,"Code copied. Open github.com/login/device in a browser.",android.widget.Toast.LENGTH_LONG).show();
+            }
+            }
+        });
+    }
     public String chooseFolder() {
         selection.clear();
         activity.runOnUiThread(new Runnable() {

@@ -110,7 +110,7 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 	}
 	if tab.ID() == hud.TabProjects && g.projects.store != nil && g.projects.pending == nil && g.selectedSections[hud.TabProjects] == 1 {
 		w := &g.projects.wizard
-		if w.mode == "clone" && (strings.HasPrefix(w.host, "worker-") || w.host == "local" && runtime.GOOS != "android") {
+		if w.mode == "clone" && (strings.HasPrefix(w.host, "worker-") || w.host == "local") {
 			value := &w.remoteAccount
 			if w.host == "local" {
 				value = &g.projects.account
@@ -121,6 +121,10 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 					o.run()
 				})
 			}
+		}
+		action := g.remoteCloneOption()
+		if action != nil {
+			add("project-host-clone", w.host, g.projects.repo, action.label, "Projects / New Project / "+action.label, action.run)
 		}
 		for _, choice := range g.projectChoices() {
 			add("project-setup-"+choice.step, g.projects.wizard.host, choice.id, choice.label, "Projects / New Project / "+choice.label, func() {
@@ -211,7 +215,7 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			if counts[hud.CommandWords(p.Name)] > 1 {
 				path += " (" + p.Location + ")"
 			}
-			if p.Available {
+			if p.Available && p.RemoteHost == "" {
 				g.registerWorkspaceActions(add, index, i, p, path)
 			}
 		}

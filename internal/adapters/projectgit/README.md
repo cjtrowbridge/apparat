@@ -28,3 +28,14 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 - `create.go`: Initializes a named, empty local working tree on main and publishes it without replacing an existing folder.
 
 - `accounts.go`: Enumerates GitHub CLI account labels in the host service account’s local configuration. Only validated usernames leave the adapter.
+
+- `providers.go`: Reports provider readiness and runs fixed host package installations.
+
+- `enroll.go`: Runs GitHub device authorization and stages account configuration on private Linux tmpfs.
+
+- `install_windows.go`: Uses exclusive Windows checkout rename.
+
+- `install_darwin.go`: Uses exclusive macOS checkout rename.
+
+- `install_unsupported.go`: Rejects clone publication on unsupported targets.
+- `enroll_test.go`: Validates code relay, active account preservation, cleanup, revoked enrollment and plaintext fallback rejection with a CLI fixture.

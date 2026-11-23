@@ -3,6 +3,7 @@
 package httpapi
 
 import (
+	"context"
 	"crypto/tls"
 
 	"net"
@@ -14,8 +15,11 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
-func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string) http.Handler {
+func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string, contexts ...context.Context) http.Handler {
 	auth := newWorkerAuth(db, artifacts)
+	if len(contexts) > 0 {
+		auth.gitContext = contexts[0]
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
@@ -60,7 +64,9 @@ func ListenWorkerClaims(path, artifacts string, db *persistence.DB, keys *identi
 }
 
 func serveWorkerClaims(l net.Listener, config *tls.Config, db *persistence.DB, keys *identity.Session, artifacts string) *Server {
-	server := &http.Server{Handler: workerClaims(db, keys, artifacts), ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, MaxHeaderBytes: 8192}
+	ctx, cancel := context.WithCancel(context.Background())
+	server := &http.Server{Handler: workerClaims(db, keys, artifacts, ctx), ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, MaxHeaderBytes: 8192}
+	server.RegisterOnShutdown(cancel)
 	server.SetKeepAlivesEnabled(false)
 	s := &Server{server: server, listener: l, done: make(chan error, 1)}
 	go func() {
