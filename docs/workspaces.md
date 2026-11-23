@@ -4,24 +4,15 @@ A project keeps its stable registration ID when its display name changes. The se
 
 ## Access
 
-Approved cluster administrators have full access to registered workspaces on confirmed workers through their enrolled devices. Other approved users need checkout-specific permissions.
+Every approved cluster member using an enrolled device can browse registered repositories and open files. Only a current cluster administrator can save files on another node. File permissions follow the cluster role across checkouts, including existing ones. Pending or blocked users and revoked devices cannot use the workspace API.
 
-Run the following on the owning worker using its service account and normal node root. Read the project ID from its registration and use the approved personal identity fingerprint. Repeat for each permission required.
+On the owning worker, the service account can inspect effective permissions with `apparatd workspace-access status PROJECT_ID USER_FINGERPRINT`. For a missing repository, check its registration and the user’s admission. For a denied save, check the current administrator role. Reopen Files after correcting the registration or membership.
 
-```sh
-apparatd workspace-access status PROJECT_ID USER_FINGERPRINT
-apparatd workspace-access grant PROJECT_ID USER_FINGERPRINT read
-apparatd workspace-access grant PROJECT_ID USER_FINGERPRINT write
-apparatd workspace-access revoke PROJECT_ID USER_FINGERPRINT write
-```
-
-If a worker project appears but Files cannot list it, check the account’s grants with the status command above. Status lists effective permissions using the same access check as the API. An administrator inherits all five permissions from the current cluster role. Use the project ID and personal fingerprint from the denial message. After the operator grants the missing scope, reopen the folder or repeat the failed operation. A sign-in or owner-confirmation error has separate recovery instructions.
-
-Read permits directory listings, text, task definitions and verified run results. Write and tasks also require read. Terminal access uses terminal-view, with terminal-control additionally required to start, send input, take over, resize or stop. Access to GitHub credentials and permission to clone are separate from checkout grants.
+Task execution and terminal use have separate permissions for ordinary members. Grant or revoke `tasks`, `terminal-view` or `terminal-control` with `apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT SCOPE`. Terminal control also requires terminal view.
 
 ## Files, tasks and sessions
 
-The selector loads up to 32 registrations per host, newest first. Older projects and Newest projects replace the visible page on that host. An approved non-admin sees worker checkouts explicitly shared for reading. Directory browsing remains independent of catalog size. Directories stream in pages of 64 raw entries. Continue before the cursor expires after one minute, or reopen the directory. The worker retains up to 64 directory handles. Text and task definition files have a 64 KiB limit. Conditional reads can reuse recent client cache entries after authorization. A remote save carries its base SHA-256 and stable request ID. Leave the draft intact after a disconnect and retry. If another edit wins, compare against the current owner file before rebasing and saving. External tools writing a file concurrently do not participate in Apparat's save lock.
+The selector loads up to 32 registrations per host, newest first. Older projects and Newest projects replace the visible page on that host. Members see the same registered repositories as administrators. Opening a file as a member shows a read-only view. Directory browsing remains independent of catalog size. Directories stream in pages of 64 raw entries. Continue before the cursor expires after one minute, or reopen the directory. The worker retains up to 64 directory handles. Text and task definition files have a 64 KiB limit. Conditional reads can reuse recent client cache entries after authorization. A remote save carries its base SHA-256 and stable request ID. Leave the draft intact after a disconnect and retry. If another edit wins, compare against the current owner file before rebasing and saving. External tools writing a file concurrently do not participate in Apparat's save lock.
 
 Tasks lists built-in Apparat actions and definitions from VS Code JSONC tasks.json and launch.json. Built-in actions can be run and their text artifacts checked against SHA-256. VS Code definitions show their executor requirements. Task choices page by 32 and run history by 30.
 

@@ -37,7 +37,7 @@ func (n *Runtime) ProjectPage(ctx context.Context, host, before string) ([]domai
 	if host != "local" {
 		return n.remoteProjectPage(ctx, host, before)
 	}
-	projects, err := n.database.RegistryPage(ctx, before, false, "", true)
+	projects, err := n.database.RegistryPage(ctx, before)
 	if err != nil {
 		return nil, err
 	}

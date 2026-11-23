@@ -180,7 +180,11 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 		})
 	case "file":
 		c.AddChild(g.detailText(w.path))
-		btn("Edit document", g.editDocument)
+		if w.readOnly {
+			c.AddChild(g.detailText("Read-only · Cluster administrators can edit this file."))
+		} else {
+			btn("Edit document", g.editDocument)
+		}
 		if !remote {
 			goTo("Changes", "changes", "changes")
 			goTo("File options", "file-options", "")

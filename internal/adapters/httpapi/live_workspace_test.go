@@ -1,5 +1,5 @@
 // Exercises real notifications over the pinned TLS worker with two subscriptions.
-// Demoting an admin without a checkout grant closes the socket before another directory event can be disclosed.
+// Blocking an active member closes the socket before another directory event can be disclosed.
 package httpapi
 
 import (
@@ -60,9 +60,29 @@ func exerciseWorkspaceWatch(t *testing.T, c *WorkerClient, db *persistence.DB, d
 	_, err = fixture.Exec("UPDATE cluster_users SET admin=0 WHERE user_id=?", c.Access.User)
 	check(err)
 	defer func() {
-		_, restoreErr := fixture.Exec("UPDATE cluster_users SET admin=1 WHERE user_id=?", c.Access.User)
+		_, restoreErr := fixture.Exec("UPDATE cluster_users SET admin=1,admission='approved' WHERE user_id=?", c.Access.User)
 		check(restoreErr)
 	}()
+
+	page, err := c.CatalogPage(ctx, "")
+	check(err)
+	visible := false
+	for _, item := range page {
+		if item.ID == p {
+			visible = true
+		}
+	}
+	if !visible {
+		t.Fatal("approved member missing registered checkout")
+	}
+	check(os.WriteFile(filepath.Join(dir, "sub", "new"), []byte("member can watch"), 0600))
+	_ = next()
+	_, err = fixture.Exec("UPDATE cluster_users SET admission='blocked' WHERE user_id=?", c.Access.User)
+	check(err)
+	_, err = c.CatalogPage(ctx, "")
+	if err == nil {
+		t.Fatal("blocked member retained catalog access")
+	}
 
 	check(os.WriteFile(filepath.Join(dir, "sub", "new"), []byte("changed"), 0600))
 	select {

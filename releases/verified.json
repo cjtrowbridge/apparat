@@ -1,8 +1,8 @@
 {
   "edition": "ordinary",
   "ref": "refs/heads/main",
-  "head": "65cd79db004566261278e3ce27c196d48428bd33",
-  "inputs": "7f6e8b972ebef91763af60a10c194b2c7813ffbdbfe57b8e865bfbd11cf00178",
+  "head": "5e71b08aa25cb7a03aab8a36c50bc7ceb4cfc835",
+  "inputs": "7cb35edae5187eeac7aac957da2b691dfe13e7585838bf882e17f8ab7026b841",
   "go": "go version go1.26.11 linux/amd64",
   "targets": [
     {
@@ -10,18 +10,18 @@
       "output": "releases/linux/amd64/apparat/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "831b9f1e8c3dc183f8626c8988d68303a4895ebc0a8d6c6f11fe3ffb1755c22b",
-      "inputs": "7f6e8b972ebef91763af60a10c194b2c7813ffbdbfe57b8e865bfbd11cf00178",
-      "version": "0.1.78"
+      "sha256": "baa91709c2010809be75ecb6bd0426c588974de7f8eb18c2833abbc31e8c9537",
+      "inputs": "7cb35edae5187eeac7aac957da2b691dfe13e7585838bf882e17f8ab7026b841",
+      "version": "0.1.79"
     },
     {
       "name": "linux/amd64/apparatd",
       "output": "releases/linux/amd64/apparatd/latest",
       "state": "passed",
       "reasons": [],
-      "sha256": "91af8ae71abe19106e50db7ef68c891ac92963d565c3325f596fa372b492eb48",
-      "inputs": "7f6e8b972ebef91763af60a10c194b2c7813ffbdbfe57b8e865bfbd11cf00178",
-      "version": "0.1.78",
+      "sha256": "b467ad0e89531e13e3761e17bb918062e6bcfb3b2fe82bae9c5b6f339171fc6c",
+      "inputs": "7cb35edae5187eeac7aac957da2b691dfe13e7585838bf882e17f8ab7026b841",
+      "version": "0.1.79",
       "device_test": {
         "state": "passed",
         "device": "trashcan0"
@@ -32,13 +32,13 @@
       "output": "releases/android/arm64/apparat/latest.apk",
       "state": "passed",
       "reasons": [],
-      "sha256": "8307daa0656aa196468caaa2ba80f6dff016974b443b8a44fdf2304f8c7c7168",
+      "sha256": "f4da80715c2dc2c0dabecabdd117939bc084984dd4c1830dcdbdad92c9aed11c",
       "device_test": {
         "state": "passed",
         "device": "Pixel 4a"
       },
-      "inputs": "7f6e8b972ebef91763af60a10c194b2c7813ffbdbfe57b8e865bfbd11cf00178",
-      "version": "0.1.78"
+      "inputs": "7cb35edae5187eeac7aac957da2b691dfe13e7585838bf882e17f8ab7026b841",
+      "version": "0.1.79"
     },
     {
       "name": "android/arm64/apparatd",

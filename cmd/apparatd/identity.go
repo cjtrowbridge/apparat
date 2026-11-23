@@ -130,7 +130,7 @@ func workspaceAccess(args []string) int {
 	status := len(args) == 3 && args[0] == "status"
 	if !status && (len(args) != 4 || (args[0] != "grant" && args[0] != "revoke")) {
 		fmt.Fprintln(os.Stderr, "Usage: apparatd workspace-access status PROJECT_ID USER_FINGERPRINT")
-		fmt.Fprintln(os.Stderr, "Usage: apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT read|write|tasks|terminal-view|terminal-control")
+		fmt.Fprintln(os.Stderr, "Usage: apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT tasks|terminal-view|terminal-control")
 		return 2
 	}
 	cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})

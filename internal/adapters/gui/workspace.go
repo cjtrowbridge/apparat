@@ -35,7 +35,7 @@ type workspacePanel struct {
 	choiceAction                                 string
 	selected                                     domain.WorkspaceChoice
 	attachment, attachmentLabel, message         string
-	autoEdit                                     bool
+	readOnly, autoEdit                           bool
 	change                                       domain.WorkspaceChange
 	changes                                      []domain.WorkspaceChange
 	id, dir, path, base, report, argument, runID string
@@ -116,6 +116,13 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 			w.entries = nil
 			w.changes = nil
 			w.cursor = ""
+			if errors.Is(r.err, httpapi.ErrDenied) {
+				w.lines = nil
+				w.base = ""
+				w.path = ""
+				w.mode = "files"
+				w.readOnly = true
+			}
 		}
 		w.autoEdit = false
 		w.report = r.err.Error()
@@ -124,6 +131,7 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	q, v := r.request, r.view
 	w.report = v.Report
 	if v.Editing {
+		w.readOnly = v.ReadOnly
 		w.lines = strings.Split(v.Text, "\n")
 		w.path = q.Path
 		w.base = v.Base

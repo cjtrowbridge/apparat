@@ -148,7 +148,7 @@ func (a *workerAuth) route(w http.ResponseWriter, r *http.Request, keys *identit
 			return true
 		}
 		if r.URL.Path == "/v1/workspace/catalog" {
-			a.catalog(w, r, access, worker)
+			a.catalog(w, r, worker)
 			return true
 		}
 		if r.URL.Path == "/v1/workspace/live" {

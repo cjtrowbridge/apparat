@@ -39,3 +39,5 @@ Verify intact workspace tab icons, page-colored file rows, leading file or folde
 For the owner-hosted Files, Editor, Tasks and Terminal milestone, distinguish an unavailable login, unconfirmed owner and unmatched checkout permission. Explain the failed action and the next step in the active pane. Verify that older workers remain diagnosable and that denial still clears protected content.
 
 Verify full registered checkout access for approved cluster admins with zero explicit grants. Recheck the current role for every request, watched update and running terminal. Demoting an admin must restore the explicit grant requirements.
+
+Correct Phase 11C file access across all registered repositories. Approved members browse and read. Current administrators save. Test legacy grant rows, demotion, blocking, live watches and read-only presentation.

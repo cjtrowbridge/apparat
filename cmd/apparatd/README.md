@@ -27,4 +27,4 @@ A returning headless installation with an existing database and missing key wait
 
 Run `apparatd trust-host` in the service account’s environment to inspect the active public device fingerprint. With one personal fingerprint argument it confirms the intended owner in the worker database. On a claimed worker it only accepts the original owner and worker key. Use the same APPARAT_RUNTIME_DIR as the service. A mismatch or missing active manifest fails without changing ownership.
 
-Use `apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT SCOPE` on the owner to manage checkout grants. It can run alongside the service. Scopes and required combinations are described in the [workspace guide](../../docs/workspaces.md).
+Use `apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT SCOPE` on the owner to manage task and terminal grants. Approved membership supplies file reads and cluster administration supplies file writes. Use `workspace-access status PROJECT_ID USER_FINGERPRINT` to inspect effective access. It can run alongside the service. Scopes and required combinations are described in the [workspace guide](../../docs/workspaces.md).

@@ -1,5 +1,5 @@
 // Routes remote project operations to their registered owner and keeps drafts on the editing device.
-// An explicit per-user grant gates each worker read, write and task invocation.
+// Cluster membership permits browsing and the current admin role permits file writes.
 package app
 
 import (
@@ -72,7 +72,9 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 		return conditional(q, v, err)
 	case "read":
 		v, err = n.workspaceFile(ctx, location, q)
-		return conditional(q, v, err)
+		v, err = conditional(q, v, err)
+		v.ReadOnly = !caller.Admin
+		return v, err
 	case "tasks":
 		return n.workspaceCatalog(ctx, location, q)
 	case "directory-status":
@@ -181,6 +183,7 @@ func (n *Runtime) remoteWorkspace(ctx context.Context, q domain.WorkspaceRequest
 	}
 	if cacheable {
 		if v.Unchanged {
+			cached.ReadOnly = v.ReadOnly
 			v = cached
 		} else if v.Cursor == "" {
 			n.workspaceCache.put(key, v)
@@ -190,7 +193,7 @@ func (n *Runtime) remoteWorkspace(ctx context.Context, q domain.WorkspaceRequest
 	case "save":
 		err = n.database.ClearRemoteDraft(ctx, user, full, q.Path, q.Base, draftText)
 	case "read":
-		if found {
+		if found && !v.ReadOnly {
 			v.Report = "Recovered local draft"
 			if base != v.Base {
 				v.Report = "Owner file changed. Compare before saving."

@@ -99,3 +99,15 @@ func TestFailedFolderReplacesPreviousListing(t *testing.T) {
 		t.Fatal("failed navigation retained the previous directory")
 	}
 }
+
+func TestMemberOpensRemoteFileReadOnly(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	w := &g.projects.workspace
+	w.id = "worker-fixture/project"
+	w.autoEdit = true
+	g.applyWorkspace(&workspaceReply{request: domain.WorkspaceRequest{ProjectID: w.id, Action: "read", Path: "README.md"}, view: domain.WorkspaceView{ReadOnly: true, Editing: true, Text: "welcome"}})
+	if w.mode != "file" || !w.readOnly || w.autoEdit || len(w.lines) != 1 || w.lines[0] != "welcome" || g.projects.pending != nil {
+		t.Fatal("member did not open the file in read-only mode")
+	}
+}

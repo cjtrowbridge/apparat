@@ -36,7 +36,7 @@ type WorkspaceChange struct {
 	Directory                  bool `json:",omitempty"`
 }
 type WorkspaceView struct {
-	Unchanged                                bool
+	ReadOnly, Unchanged                      bool
 	Changes                                  []WorkspaceChange
 	Choices                                  []WorkspaceChoice
 	Entries                                  []WorkspaceEntry

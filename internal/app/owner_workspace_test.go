@@ -61,18 +61,20 @@ func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	defer fixture.Close()
 	_, err = fixture.Exec("UPDATE cluster_users SET admin=0 WHERE user_id=?", caller.User)
 	check(err)
-	_, err = n.serveWorkspace(ctx, caller, q)
-	var missing httpapi.WorkspaceGrantNeeded
-	if !errors.Is(err, httpapi.ErrDenied) || !errors.As(err, &missing) || missing.Scope != "read" {
-		t.Fatal("demoted account retained access without a grant")
-	}
-	check(db.WorkspaceGrant(ctx, project, caller.User, "read", true))
+	// Legacy checkout write grants must never override the current cluster role.
+	_, err = fixture.Exec("INSERT INTO workspace_grants VALUES(?,?,?)", project, caller.User, "write")
+	check(err)
+	caller, err = db.CurrentAccess(ctx, caller.Cluster, caller.User, caller.Device)
+	check(err)
 	v, err := n.serveWorkspace(ctx, caller, q)
 	check(err)
+	if !v.ReadOnly {
+		t.Fatal("member received editable file")
+	}
 	q.Known = v.Base
 	v, err = n.serveWorkspace(ctx, caller, q)
 	check(err)
-	if !v.Unchanged || v.Text != "" {
+	if !v.ReadOnly || !v.Unchanged || v.Text != "" {
 		t.Fatal("warm read sent redundant content")
 	}
 	q.Known = ""
@@ -90,7 +92,9 @@ func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	if len(scopes) != 1 || scopes[0] != "read" {
 		t.Fatal(scopes)
 	}
-	check(db.WorkspaceGrant(ctx, project, caller.User, "write", true))
+	check(db.WorkspaceGrant(ctx, project, caller.User, "write", false))
+	_, err = fixture.Exec("UPDATE cluster_users SET admin=1 WHERE user_id=?", caller.User)
+	check(err)
 	check(os.WriteFile(file, []byte("external"), 0600))
 	_, err = n.serveWorkspace(ctx, caller, q)
 	if !errors.Is(err, httpapi.ErrWorkspaceConflict) {
@@ -109,7 +113,8 @@ func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	if string(body) != "later" {
 		t.Fatal("retry overwrote a later edit")
 	}
-	check(db.WorkspaceGrant(ctx, project, caller.User, "read", false))
+	_, err = fixture.Exec("UPDATE cluster_users SET admin=0,admission='blocked' WHERE user_id=?", caller.User)
+	check(err)
 	_, err = n.serveWorkspace(ctx, caller, q)
 	if !errors.Is(err, httpapi.ErrDenied) {
 		t.Fatal("revoked reader retained write")
@@ -137,7 +142,7 @@ func TestRegistryPagesAndReaderVisibility(t *testing.T) {
 	before := ""
 	seen := map[string]bool{}
 	for {
-		page, err := db.RegistryPage(ctx, before, true, "owner", true)
+		page, err := db.RegistryPage(ctx, before)
 		if err != nil || len(page) == 0 || len(page) > 32 {
 			t.Fatal(len(page), err)
 		}
@@ -152,8 +157,7 @@ func TestRegistryPagesAndReaderVisibility(t *testing.T) {
 			break
 		}
 	}
-	hidden, err := db.RegistryPage(ctx, "", true, "other", false)
-	if err != nil || len(hidden) != 0 || len(seen) != 70 {
-		t.Fatal("incorrect catalog isolation or continuation")
+	if len(seen) != 70 {
+		t.Fatal("incomplete catalog")
 	}
 }

@@ -72,7 +72,11 @@ func workspaceDenial(status int, body io.Reader, q domain.WorkspaceRequest, acce
 		advice = "Ask a cluster admin to check approval for this user and device on the worker, then retry."
 	case reason.Error == "workspace_grant_required":
 		switch reason.Scope {
-		case "read", "write", "tasks", "terminal-view", "terminal-control":
+		case "read":
+			advice = "Check that the project is still registered on the worker and your account is an approved cluster member, then reopen Files."
+		case "write":
+			advice = "Only a current cluster administrator can save files on this node. Ask an administrator to make the change or verify your cluster role, then reopen the file."
+		case "tasks", "terminal-view", "terminal-control":
 			project := q.ProjectID
 			if !commandID.MatchString(project) {
 				project = "PROJECT_ID"

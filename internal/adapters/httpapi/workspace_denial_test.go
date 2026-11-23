@@ -19,7 +19,7 @@ func TestWorkspaceDenialGuidance(t *testing.T) {
 		status     int
 		body, want string
 	}{
-		{403, `{"error":"workspace_grant_required","scope":"read"}`, "grant remote-test user read"},
+		{403, `{"error":"workspace_grant_required","scope":"read"}`, "approved cluster member"},
 		{403, `{"error":"owner_confirmation_required"}`, "trust-host"},
 		{403, `{"error":"membership_required"}`, "check approval"},
 		{401, `{}`, "authenticated session"},

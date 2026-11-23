@@ -60,7 +60,7 @@ func (c *WorkerClient) Workspace(ctx context.Context, q domain.WorkspaceRequest)
 }
 
 // The scoped catalog exposes only display data and never sends provider accounts.
-func (a *workerAuth) catalog(w http.ResponseWriter, r *http.Request, access persistence.Access, worker string) {
+func (a *workerAuth) catalog(w http.ResponseWriter, r *http.Request, worker string) {
 	if !a.db.OwnerConfirmed(r.Context(), worker) {
 		respond(w, 403, map[string]string{"error": "access_denied"})
 		return
@@ -69,7 +69,7 @@ func (a *workerAuth) catalog(w http.ResponseWriter, r *http.Request, access pers
 		respond(w, 405, map[string]string{"error": "method_not_allowed"})
 		return
 	}
-	rows, err := a.db.RegistryPage(r.Context(), r.URL.Query().Get("before"), true, access.User, access.Admin)
+	rows, err := a.db.RegistryPage(r.Context(), r.URL.Query().Get("before"))
 	if err != nil {
 		respond(w, 503, map[string]string{"error": "unavailable"})
 		return

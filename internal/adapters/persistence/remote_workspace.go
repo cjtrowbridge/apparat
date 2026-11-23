@@ -16,7 +16,11 @@ CREATE TABLE remote_saves(project TEXT REFERENCES project_registry(id) ON DELETE
 
 func (db *DB) WorkspaceGrant(ctx context.Context, project, user, scope string, enable bool) error {
 	switch scope {
-	case "read", "write", "tasks", "terminal-view", "terminal-control":
+	case "read", "write":
+		if enable {
+			return errors.New("cluster membership controls file access: approved members read, administrators edit")
+		}
+	case "tasks", "terminal-view", "terminal-control":
 	default:
 		return errors.New("choose read, write, tasks, terminal-view or terminal-control")
 	}
@@ -30,8 +34,8 @@ func (db *DB) WorkspaceGrant(ctx context.Context, project, user, scope string, e
 func (db *DB) WorkspaceLocation(ctx context.Context, project, user, scope string) (string, error) {
 	var location string
 	err := db.sql.QueryRowContext(ctx, `SELECT p.location FROM project_registry p JOIN cluster_users u ON u.user_id=?
- WHERE p.id=? AND u.admission='approved' AND (u.admin=1 OR EXISTS
- (SELECT 1 FROM workspace_grants g WHERE g.project=p.id AND g.user=u.user_id AND g.scope=?))`, user, project, scope).Scan(&location)
+ WHERE p.id=? AND u.admission='approved' AND (u.admin=1 OR ?='read' OR (? IN ('tasks','terminal-view','terminal-control') AND EXISTS
+ (SELECT 1 FROM workspace_grants g WHERE g.project=p.id AND g.user=u.user_id AND g.scope=?)))`, user, project, scope, scope, scope).Scan(&location)
 	return location, err
 }
 func (db *DB) ProjectLocation(ctx context.Context, id string) (string, error) {

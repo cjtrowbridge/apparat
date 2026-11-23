@@ -109,6 +109,9 @@ func openDesktopDocument(ctx context.Context, title, body string, bookmark *[3]i
 }
 func (g *Game) editDocument() {
 	w := &g.projects.workspace
+	if w.readOnly {
+		return
+	}
 	store, ok := g.runtimeInfo.Queries.(workspaceStore)
 	if !ok {
 		return
