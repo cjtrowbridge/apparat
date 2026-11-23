@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -38,6 +39,7 @@ type Runtime struct {
 	discoveryWorkers sync.WaitGroup
 	Keys             *identity.Session
 	Personal         *identity.Personal
+	openDiscovery    atomic.Bool
 	claimMu          sync.Mutex
 	workspaceMu      sync.Mutex
 	documents        ProjectDocuments
@@ -350,7 +352,10 @@ func (node *Runtime) SetupIdentities(dialog identity.Dialog) {
 	defer node.RequestSync()
 	node.Keys.Setup(dialog)
 	if node.Personal != nil && node.Keys.State() == "unlocked" {
-		node.Personal.Setup(dialog)
+		if node.Personal.Setup(dialog) {
+			node.openDiscovery.Store(true)
+			return
+		}
 		pub, binding, err := node.Personal.Credentials(node.Keys.Public())
 		if err == nil {
 			node.mu.Lock()
@@ -371,4 +376,8 @@ func (node *Runtime) LockIdentities() {
 	if node.Personal != nil {
 		node.Personal.Lock()
 	}
+}
+
+func (node *Runtime) TakePairingDiscoveryRequest() bool {
+	return node.openDiscovery.Swap(false)
 }

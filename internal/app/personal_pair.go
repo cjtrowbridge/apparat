@@ -79,12 +79,12 @@ func (n *Runtime) personalPair(ctx context.Context, network, host string, dialog
 	if err != nil {
 		return err
 	}
-	other, ok := nativeQuestion(dialog, "text", "Pair personal devices", "Your code is "+code+". Enter the eight-digit code shown on the other device to authorize pairing.")
+	other, ok := nativeQuestion(dialog, "text", "Pair personal devices", "Your code is "+code+". Enter the four-digit code shown on the other device to authorize pairing.")
 	if !ok {
 		return nil
 	}
-	if len(other) != 8 {
-		return errors.New("Enter all eight digits from the other device.")
+	if !httpapi.ValidPairCode(other) {
+		return errors.New("Enter all four digits from the other device.")
 	}
 	if listener != nil {
 		deadline, _ := ctx.Deadline()

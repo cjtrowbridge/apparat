@@ -66,7 +66,7 @@ Selecting a discovered worker authenticates the already configured user and devi
 
 ## Personal device pairing
 
-The Linux sender accepts one attempt on a private Unix socket associated with the selected API grant. The network listener checks the exact grant while forwarding traffic. Both screens display a random eight-digit code and require the other device’s code. RFC 9807 OPAQUE uses both codes and the TLS 1.3 exporter. After mutual confirmation the sender signs the encrypted portable bundle and saved worker pins for the certified receiving device key. The receiving app verifies the signature and password locally. Cancellation or mismatch requires a fresh attempt. Existing unrelated user keys are preserved. The recovery password and OS unlock references stay local. A saved fingerprint remains the trust anchor for subsequent protected worker requests.
+The Linux sender accepts one attempt on a private Unix socket associated with the selected API grant. The network listener checks the exact grant while forwarding traffic. Both screens display a random four-digit code and require the other device’s code. RFC 9807 OPAQUE uses both codes and the TLS 1.3 exporter. After mutual confirmation the sender signs the encrypted portable bundle and saved worker pins for the certified receiving device key. The receiving app verifies the signature and password locally. Cancellation or mismatch requires a fresh attempt. Existing unrelated user keys are preserved. The recovery password and OS unlock references stay local. A saved fingerprint remains the trust anchor for subsequent protected worker requests.
 
 ## Worker administration and app replicas
 

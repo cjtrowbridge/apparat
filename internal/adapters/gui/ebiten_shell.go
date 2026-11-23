@@ -168,6 +168,7 @@ func (game *Game) Update() error {
 	game.receivePreferences()
 	game.pollProjects()
 	game.pollUpdateDiscovery()
+	game.openRequestedDiscovery()
 	game.pollLAN()
 	game.pollCluster()
 	clusterOpen := game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster && game.clusterTop() != nil

@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 	"math/big"
 	"net"
@@ -23,11 +24,11 @@ import (
 var errPair = errors.New("personal pairing expired or could not be verified")
 
 func PairCode() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(100000000))
+	n, err := rand.Int(rand.Reader, big.NewInt(10000))
 	if err != nil {
 		return "", err
 	}
-	return ("00000000" + n.String())[len(n.String()):], nil
+	return fmt.Sprintf("%04d", n.Int64()), nil
 }
 
 type pairWire struct {
@@ -37,16 +38,21 @@ type pairWire struct {
 	password []byte
 }
 
+func ValidPairCode(code string) bool {
+	if len(code) != 4 {
+		return false
+	}
+	for _, digit := range code {
+		if digit < '0' || digit > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 func startPair(ctx context.Context, conn *tls.Conn, sender, receiver string) (*pairWire, error) {
-	for _, code := range []string{sender, receiver} {
-		if len(code) != 8 {
-			return nil, errPair
-		}
-		for _, digit := range code {
-			if digit < '0' || digit > '9' {
-				return nil, errPair
-			}
-		}
+	if !ValidPairCode(sender) || !ValidPairCode(receiver) {
+		return nil, errPair
 	}
 	deadline := time.Now().Add(90 * time.Second)
 	d, ok := ctx.Deadline()

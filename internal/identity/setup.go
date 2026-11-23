@@ -115,20 +115,15 @@ func (s *Session) Setup(dialog Dialog) {
 }
 
 func (s *Session) protect(ui setupUI, backup []byte, old string, generate bool) error {
-	options := []string{"Create a password"}
-	native, available := ui.ask("available", "", "", "")
-	if available && native != "" {
-		options = append(options, native)
-	}
-	choice, ok := ui.ask("choose", "Protect your node key", "Choose how to unlock this identity on this device.", "", options...)
+	useSystem, ok := ui.systemUnlockChoice("Protect your device identity")
 	if !ok {
 		return nil
 	}
 	mode := "password"
 	var reference, secret string
-	if choice == "Create a password" {
+	if !useSystem {
 		secret, ok = ui.password("Protect node key")
-	} else if available && choice == native {
+	} else {
 		mode = "system"
 		var random [32]byte
 		_, err := rand.Read(random[:])
@@ -141,8 +136,6 @@ func (s *Session) protect(ui setupUI, backup []byte, old string, generate bool) 
 		if !ok || reference == "" {
 			return errors.New("system credential enrollment was cancelled or unavailable")
 		}
-	} else {
-		return errors.New("unknown protection choice")
 	}
 	if !ok {
 		return nil
@@ -154,7 +147,7 @@ func (s *Session) protect(ui setupUI, backup []byte, old string, generate bool) 
 		}
 		return err
 	}
-	choice, ok = ui.ask("choose", "Node identity ready", "Save a portable, password-protected backup to restore your cluster connections if you lose this device or its system credentials.", "", "Save recovery copy", "Finish")
+	choice, ok := ui.ask("choose", "Node identity ready", "Save a portable, password-protected backup to restore your cluster connections if you lose this device or its system credentials.", "", "Save recovery copy", "Finish")
 	if ok && choice == "Save recovery copy" {
 		return s.Backup(ui.dialog)
 	}
@@ -178,4 +171,14 @@ func (s *Session) Backup(dialog Dialog) error {
 		return errors.New("recovery copy was not saved")
 	}
 	return nil
+}
+
+func (ui setupUI) systemUnlockChoice(title string) (useSystem, proceed bool) {
+	provider, available := ui.ask("available", "", "", "")
+	if !available || provider == "" {
+		return false, true
+	}
+	const password = "No, I want to type my password every time"
+	choice, ok := ui.ask("choose", title, "Use system unlock or biometrics on this device?", "", "Yes", password)
+	return choice == "Yes", ok && (choice == "Yes" || choice == password)
 }

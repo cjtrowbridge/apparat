@@ -5,6 +5,7 @@ package identity
 import (
 	"bytes"
 	"encoding/json"
+	"slices"
 	"testing"
 )
 
@@ -52,5 +53,22 @@ func TestPortableUserProfile(t *testing.T) {
 	bundle.Profile.Profile.Name = "Forged"
 	if bundle.Profile.Valid() {
 		t.Fatal("accepted a forged profile")
+	}
+}
+
+func TestJoiningFromAnotherDeviceRequestsDiscovery(t *testing.T) {
+	personal := NewPersonal(t.TempDir())
+	answers := []string{"Join my existing cluster", "Pair with another device"}
+	openDiscovery := personal.Setup(func(raw string) string {
+		var r request
+		if json.Unmarshal([]byte(raw), &r) != nil || r.Op != "choose" || len(answers) == 0 || !slices.Contains(r.Options, answers[0]) {
+			t.Fatal("unexpected join setup step")
+		}
+		answer, _ := json.Marshal(answers[0])
+		answers = answers[1:]
+		return string(answer)
+	})
+	if !openDiscovery || len(answers) != 0 || personal.Fingerprint() != "" {
+		t.Fatal("joining should open discovery with no new personal key")
 	}
 }

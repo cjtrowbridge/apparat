@@ -243,3 +243,23 @@ func (g *Game) pairFrom(host string) {
 		go g.runtimeInfo.PairPersonal(g.lan.device, host)
 	}
 }
+
+// Enter the normal receiver workflow after the missing-user setup dialog closes.
+func (g *Game) openRequestedDiscovery() {
+	source, ok := g.runtimeInfo.Queries.(interface{ TakePairingDiscoveryRequest() bool })
+	if !ok || !source.TakePairingDiscoveryRequest() {
+		return
+	}
+	for index, tab := range g.shell.Snapshot().Tabs {
+		if tab.ID() != hud.TabCluster {
+			continue
+		}
+		g.selectTab(index, nil)
+		for i, section := range g.presentedTab(tab).Sections {
+			if section.ActionID == "add-new-device" {
+				g.selectSection(tab.ID(), i)
+				return
+			}
+		}
+	}
+}

@@ -27,16 +27,16 @@ func TestPersonalPairCodes(t *testing.T) {
 		called := false
 		done := make(chan error, 1)
 		go func() {
-			done <- SendPersonalPair(ctx, send, "01234567", "00222222", func() ([]byte, error) {
+			done <- SendPersonalPair(ctx, send, "0123", "0022", func() ([]byte, error) {
 				called = true
 				return []byte("fixture"), nil
 			})
 		}()
-		code := "00222222"
+		code := "0022"
 		if !same {
-			code = "00222223"
+			code = "0023"
 		}
-		value, err := ReceivePersonalPair(ctx, recv, "01234567", code)
+		value, err := ReceivePersonalPair(ctx, recv, "0123", code)
 		senderErr := <-done
 		cancel()
 		if same && (err != nil || senderErr != nil || string(value) != "fixture") {
@@ -77,11 +77,11 @@ func TestTransferPortableIdentityAndWorkerPin(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func() {
-		done <- SendPersonalPair(ctx, send, "00000004", "10000000", func() ([]byte, error) {
+		done <- SendPersonalPair(ctx, send, "0004", "1000", func() ([]byte, error) {
 			return source.PairOffer(PairDeviceKey(send), []domain.ClusterDevice{want})
 		})
 	}()
-	packet, err := ReceivePersonalPair(ctx, recv, "00000004", "10000000")
+	packet, err := ReceivePersonalPair(ctx, recv, "0004", "1000")
 	sendErr := <-done
 	if err != nil || sendErr != nil {
 		t.Fatal(err, sendErr)
@@ -97,5 +97,17 @@ func TestTransferPortableIdentityAndWorkerPin(t *testing.T) {
 	peers, err := receiver.AcceptPair(packet, []byte("fixture password"), deviceB.Public())
 	if err != nil || source.Fingerprint() != receiver.Fingerprint() || len(peers) != 1 || peers[0] != want {
 		t.Fatal("failed to restore user and worker", err)
+	}
+}
+
+func TestPairCodeFormat(t *testing.T) {
+	code, err := PairCode()
+	if err != nil || !ValidPairCode(code) || !ValidPairCode("0000") {
+		t.Fatal("invalid generated code format")
+	}
+	for _, bad := range []string{"123", "12345", "12345678", "12a4", "１２３４"} {
+		if ValidPairCode(bad) {
+			t.Fatal("accepted invalid pairing code")
+		}
 	}
 }
