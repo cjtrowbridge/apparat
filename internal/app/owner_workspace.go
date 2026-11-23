@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
@@ -20,6 +21,13 @@ func (n *Runtime) observeWorkspace(start time.Time, q domain.WorkspaceRequest, v
 		correlation = ""
 	}
 	n.observations.Observe(telemetry.Event{Operation: q.Action, Elapsed: time.Since(start).Microseconds(), Received: len(q.Text), Sent: len(v.Text) + len(v.Report), Rows: len(v.Entries) + len(v.Choices), Failed: err != nil, Correlation: correlation})
+}
+func (n *Runtime) grantedLocation(ctx context.Context, project, user, scope string) (string, error) {
+	location, err := n.database.WorkspaceLocation(ctx, project, user, scope)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", httpapi.WorkspaceGrantNeeded{Scope: scope}
+	}
+	return location, err
 }
 func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
 	start := time.Now()
@@ -48,14 +56,14 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 	default:
 		return v, httpapi.ErrDenied
 	}
-	location, err := n.database.WorkspaceLocation(ctx, q.ProjectID, caller.User, scope)
+	location, err := n.grantedLocation(ctx, q.ProjectID, caller.User, scope)
 	if err != nil {
-		return v, httpapi.ErrDenied
+		return v, err
 	}
 	if scope != "read" {
-		_, err = n.database.WorkspaceLocation(ctx, q.ProjectID, caller.User, "read")
+		_, err = n.grantedLocation(ctx, q.ProjectID, caller.User, "read")
 		if err != nil {
-			return v, httpapi.ErrDenied
+			return v, err
 		}
 	}
 	switch q.Action {
@@ -108,12 +116,15 @@ func (n *Runtime) remoteSave(ctx context.Context, user, location string, q domai
 }
 func (n *Runtime) remoteWorkspace(ctx context.Context, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
 	host, id, ok := strings.Cut(q.ProjectID, "/")
-	if !ok || n.Personal == nil || !projectgit.WorkspacePath(q.Path) || !projectgit.ValidText(q.Text) {
+	if !ok || !projectgit.WorkspacePath(q.Path) || !projectgit.ValidText(q.Text) {
 		return v, httpapi.ErrDenied
+	}
+	if n.Personal == nil {
+		return v, httpapi.ErrWorkspaceLocked
 	}
 	user := n.Personal.Fingerprint()
 	if user == "" {
-		return v, httpapi.ErrDenied
+		return v, httpapi.ErrWorkspaceLocked
 	}
 	full := q.ProjectID
 	if q.Action == "draft" {
@@ -157,6 +168,14 @@ func (n *Runtime) remoteWorkspace(ctx context.Context, q domain.WorkspaceRequest
 		q.Known = cached.Base
 	}
 	v, err = c.Workspace(ctx, q)
+	if errors.Is(err, httpapi.ErrDenied) {
+		connection := &n.workspaceConnection
+		connection.mu.Lock()
+		if connection.client == c {
+			connection.client = nil
+		}
+		connection.mu.Unlock()
+	}
 	if err != nil {
 		return v, err
 	}

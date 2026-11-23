@@ -127,7 +127,9 @@ func trustHost(args []string) int {
 }
 
 func workspaceAccess(args []string) int {
-	if len(args) != 4 || (args[0] != "grant" && args[0] != "revoke") {
+	status := len(args) == 3 && args[0] == "status"
+	if !status && (len(args) != 4 || (args[0] != "grant" && args[0] != "revoke")) {
+		fmt.Fprintln(os.Stderr, "Usage: apparatd workspace-access status PROJECT_ID USER_FINGERPRINT")
 		fmt.Fprintln(os.Stderr, "Usage: apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT read|write|tasks|terminal-view|terminal-control")
 		return 2
 	}
@@ -139,7 +141,20 @@ func workspaceAccess(args []string) int {
 	db, err := persistence.Open(ctx, cfg.DatabasePath)
 	if err == nil {
 		defer db.Close()
-		err = db.WorkspaceGrant(ctx, args[1], args[2], args[3], args[0] == "grant")
+		if status {
+			var scopes []string
+			scopes, err = db.WorkspaceScopes(ctx, args[1], args[2])
+			if err == nil {
+				if len(scopes) == 0 {
+					fmt.Println("Registered checkout. No permissions for this user.")
+				} else {
+					fmt.Println("Checkout permissions:", strings.Join(scopes, ", "))
+				}
+				return 0
+			}
+		} else {
+			err = db.WorkspaceGrant(ctx, args[1], args[2], args[3], args[0] == "grant")
+		}
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

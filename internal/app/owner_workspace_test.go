@@ -50,7 +50,8 @@ func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	defer n.pages.Close()
 	q := domain.WorkspaceRequest{Action: "read", ProjectID: project, Path: "file"}
 	_, err = n.serveWorkspace(ctx, caller, q)
-	if !errors.Is(err, httpapi.ErrDenied) {
+	var missing httpapi.WorkspaceGrantNeeded
+	if !errors.Is(err, httpapi.ErrDenied) || !errors.As(err, &missing) || missing.Scope != "read" {
 		t.Fatal("admin obtained file access without grant")
 	}
 	check(db.WorkspaceGrant(ctx, project, caller.User, "read", true))
@@ -71,6 +72,11 @@ func TestOwnerWorkspaceLifecycle(t *testing.T) {
 	_, err = n.serveWorkspace(ctx, caller, q)
 	if !errors.Is(err, httpapi.ErrDenied) {
 		t.Fatal("read grant allowed write")
+	}
+	scopes, err := db.WorkspaceScopes(ctx, project, caller.User)
+	check(err)
+	if len(scopes) != 1 || scopes[0] != "read" {
+		t.Fatal(scopes)
 	}
 	check(db.WorkspaceGrant(ctx, project, caller.User, "write", true))
 	check(os.WriteFile(file, []byte("external"), 0600))

@@ -68,3 +68,29 @@ func (db *DB) FinishRemoteSave(ctx context.Context, project, user, op string) er
 	_, err := db.sql.ExecContext(ctx, "UPDATE remote_saves SET done=1 WHERE project=? AND user=? AND op=?", project, user, op)
 	return err
 }
+
+// WorkspaceScopes reports host-local grants and distinguishes an unknown registration.
+func (db *DB) WorkspaceScopes(ctx context.Context, project, user string) ([]string, error) {
+	_, err := db.ProjectLocation(ctx, project)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("unknown checkout registration; verify the project ID and node root")
+		}
+		return nil, err
+	}
+	rows, err := db.sql.QueryContext(ctx, "SELECT scope FROM workspace_grants WHERE project=? AND user=? ORDER BY scope", project, user)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var scopes []string
+	for rows.Next() {
+		var scope string
+		err = rows.Scan(&scope)
+		if err != nil {
+			return nil, err
+		}
+		scopes = append(scopes, scope)
+	}
+	return scopes, rows.Err()
+}

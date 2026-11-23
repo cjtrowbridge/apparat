@@ -33,3 +33,7 @@ Using the saved identity on the Pixel 4a and the existing main checkout on trash
 ### Files list presentation and activation
 
 Verify intact workspace tab icons, page-colored file rows, leading file or folder artwork, Git markers and one-activation navigation. Keep background refresh independent of foreground operations. Surface read failures above the listing and clear unavailable rows.
+
+### Diagnose a denied workspace operation
+
+For the owner-hosted Files, Editor, Tasks and Terminal milestone, distinguish an unavailable login, unconfirmed owner and unmatched checkout permission. Explain the failed action and the next step in the active pane. Verify that older workers remain diagnosable and that denial still clears protected content.

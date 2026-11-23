@@ -31,3 +31,7 @@ Worker clients probe TLS without client credentials and require an approved devi
 - `live_workspace_test.go`: Exercises real notifications over the pinned TLS worker with two subscriptions.
 
 - `traffic.go`: Counts application-layer HTTP traffic on both ends with a monotonic timer.
+
+- `workspace_denial.go`: Translates recognized authorization codes and scope names into local recovery instructions. Legacy workers receive general investigation guidance.
+
+- `workspace_denial_test.go`: Checks permission guidance through the worker client.

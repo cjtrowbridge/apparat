@@ -23,8 +23,12 @@ func (a *workerAuth) ownerWorkspace(w http.ResponseWriter, r *http.Request, acce
 		respond(w, 405, map[string]string{"error": "method_not_allowed"})
 		return
 	}
-	if a.workspace == nil || !a.db.OwnerConfirmed(r.Context(), worker) {
-		respond(w, 403, map[string]string{"error": "access_denied"})
+	if a.workspace == nil {
+		respond(w, 503, map[string]string{"error": "unavailable"})
+		return
+	}
+	if !a.db.OwnerConfirmed(r.Context(), worker) {
+		respond(w, 403, map[string]string{"error": "owner_confirmation_required"})
 		return
 	}
 	var q domain.WorkspaceRequest
@@ -35,7 +39,10 @@ func (a *workerAuth) ownerWorkspace(w http.ResponseWriter, r *http.Request, acce
 		return
 	}
 	v, err := a.workspace(r.Context(), access, q)
+	var grant WorkspaceGrantNeeded
 	switch {
+	case errors.As(err, &grant):
+		respond(w, 403, map[string]string{"error": "workspace_grant_required", "scope": grant.Scope})
 	case errors.Is(err, ErrDenied):
 		respond(w, 403, map[string]string{"error": "access_denied"})
 	case errors.Is(err, ErrWorkspaceConflict):

@@ -144,7 +144,7 @@ func (a *workerAuth) route(w http.ResponseWriter, r *http.Request, keys *identit
 		}
 		access, err := a.db.CurrentAccess(r.Context(), record.access.Cluster, record.access.User, record.access.Device)
 		if err != nil {
-			respond(w, 403, map[string]string{"error": "access_denied"})
+			respond(w, 403, map[string]string{"error": "membership_required"})
 			return true
 		}
 		if r.URL.Path == "/v1/workspace/catalog" {

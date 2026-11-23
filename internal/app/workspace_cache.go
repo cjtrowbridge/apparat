@@ -83,7 +83,7 @@ func (n *Runtime) workspaceClient(ctx context.Context, host string) (*httpapi.Wo
 	defer c.mu.Unlock()
 	user := n.Personal.Fingerprint()
 	if user == "" || n.Keys.State() != "unlocked" {
-		return nil, httpapi.ErrDenied
+		return nil, httpapi.ErrWorkspaceLocked
 	}
 	if c.client != nil && "worker-"+c.client.Worker == host && c.client.Access.User == user && c.client.Access.Device == identity.Fingerprint(n.Keys.Public()) && time.Now().Before(c.until) {
 		return c.client, nil

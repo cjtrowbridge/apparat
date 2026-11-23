@@ -26,13 +26,13 @@ func (n *Runtime) ownerTerminal(ctx context.Context, caller persistence.Access, 
 	if scope == "" {
 		return domain.WorkspaceView{}, httpapi.ErrDenied
 	}
-	location, err := n.database.WorkspaceLocation(ctx, q.ProjectID, caller.User, scope)
+	location, err := n.grantedLocation(ctx, q.ProjectID, caller.User, scope)
 	if err != nil {
-		return domain.WorkspaceView{}, httpapi.ErrDenied
+		return domain.WorkspaceView{}, err
 	}
-	_, err = n.database.WorkspaceLocation(ctx, q.ProjectID, caller.User, "terminal-view")
+	_, err = n.grantedLocation(ctx, q.ProjectID, caller.User, "terminal-view")
 	if err != nil {
-		return domain.WorkspaceView{}, httpapi.ErrDenied
+		return domain.WorkspaceView{}, err
 	}
 	db := n.database
 	return n.terminals.Do(ctx, filepath.Join(n.config.RootDir, "terminal"), location, caller.User, caller.Device, q, func() bool {

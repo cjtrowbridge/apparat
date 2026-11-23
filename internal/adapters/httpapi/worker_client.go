@@ -130,6 +130,12 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
+		if path == "/v1/auth" {
+			return accessExplanation("The worker rejected sign-in. Unlock both identities and ask a cluster admin to check this user and device before reconnecting.")
+		}
+		if ok {
+			return workspaceDenial(resp.StatusCode, resp.Body, q, c.Access)
+		}
 		return ErrDenied
 	}
 	if resp.StatusCode == http.StatusPreconditionFailed {
