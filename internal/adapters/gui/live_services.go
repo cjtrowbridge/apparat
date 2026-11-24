@@ -7,10 +7,14 @@ package gui
 import (
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"os"
 	"slices"
 )
 
 func (game *Game) Close() {
+	for _, copy := range game.projects.externalCopies {
+		os.RemoveAll(copy.dir)
+	}
 	game.stopLAN()
 	game.closeDesktopUpdates()
 	if game.projects.close != nil {

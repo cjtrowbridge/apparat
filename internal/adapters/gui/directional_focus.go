@@ -142,13 +142,13 @@ func (g *Game) ownsFocus(f widget.Focuser) bool {
 		return true
 	}
 	return slices.ContainsFunc(g.bodyTargets(), func(t focusTarget) bool {
-		return t.w == f
+		return t.w.GetWidget() == f.GetWidget()
 	})
 }
 func (g *Game) setNavTarget(f widget.Focuser) {
 	targets := g.bodyTargets()
 	for i, t := range targets {
-		if t.w == f {
+		if t.w.GetWidget() == f.GetWidget() {
 			g.focusBody(targets, i)
 			return
 		}
@@ -261,6 +261,8 @@ func (g *Game) activateFocus() {
 		return
 	}
 	switch w := g.nav.target.w.(type) {
+	case *documentSurface:
+		g.ui.SetFocusedWidget(w.TextInput)
 	case *widget.TextInput:
 		g.ui.SetFocusedWidget(w)
 	case interface{ Click() }:
@@ -320,7 +322,7 @@ func (g *Game) restoreEditing(old widget.Focuser) {
 		return
 	}
 	for _, target := range g.bodyTargets() {
-		if target.w == field {
+		if target.w.GetWidget() == field.GetWidget() {
 			g.ui.SetFocusedWidget(field)
 			g.nav.target = target
 			return

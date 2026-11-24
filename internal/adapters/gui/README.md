@@ -149,8 +149,7 @@ workspace.go renders Files, Git, Tasks and Chat for the selected registration. O
 - `workspace_layout.go`: Keeps the active file's text input attached across layout rebuilds so its focus, caret and selection survive a window resize. The detail viewport retains its proportional scroll position within the same workspace view.
 - `workspace_layout_test.go`: Exercises the split and single-pane layouts with a selected draft and a conflict report, and checks that a different file starts with fresh presentation state.
 
-- `document.go`: Routes scoped edit sessions through the Android or Linux multiline editor, including draft persistence and explicit save.
-- `document_gtk.py`: Embedded GTK 4 text editor, using Python 3 with PyGObject on Linux. Exchanges document text over process pipes.
+- `document.go`: Builds labeled project fields and platform prompt controls.
 - `workspace_screens.go`: Renders Files, Changes, Tasks and Chat and maps Back to each screen’s parent.
 
 - `workspace_directory.go`: Shows one folder at a time, combines its files with Git status, and opens missing tracked files in deletion review.
@@ -216,3 +215,8 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `workspace_live.go`: Releases directory watches when the Projects view loses focus or changes owner.
 
 - `project_pages.go`: Keeps one registry page per host and exposes continuations through the selector.
+
+- `file_document.go`: Owns view, edit, cancel and save controls for the selected document.
+- `document_surface.go`: Renders multiline UTF-8 text, selection and caret and receives keyboard, touch and IME edits inside the workspace.
+- `document_exchange.go`: Exchanges text with the clipboard and imports optional Linux external working copies as scoped drafts.
+- `file_document_test.go`: Verifies view-first opening, draft cancellation and undo, checkout-bound saves and external text validation.

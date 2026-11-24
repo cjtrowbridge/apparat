@@ -129,13 +129,17 @@ func (n *Runtime) remoteWorkspace(ctx context.Context, q domain.WorkspaceRequest
 		return v, httpapi.ErrWorkspaceLocked
 	}
 	full := q.ProjectID
-	if q.Action == "draft" {
-		err = n.database.PutRemoteDraft(ctx, user, full, q.Path, q.Base, q.Text, "")
-		return domain.WorkspaceView{Editing: true, Base: q.Base, Text: q.Text}, err
-	}
 	base, body, op, found, err := n.database.RemoteDraft(ctx, user, full, q.Path)
 	if err != nil {
 		return v, err
+	}
+	if q.Action == "draft" {
+		if projectgit.Digest(q.Text) == q.Base {
+			err = n.database.ClearRemoteDraft(ctx, user, full, q.Path, base, body)
+		} else {
+			err = n.database.PutRemoteDraft(ctx, user, full, q.Path, q.Base, q.Text, "")
+		}
+		return domain.WorkspaceView{Editing: true, Base: q.Base, Text: q.Text}, err
 	}
 	draftText := q.Text
 	original := q.Action

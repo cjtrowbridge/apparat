@@ -11,11 +11,6 @@ import (
 )
 
 type workspaceLayout struct {
-	editor     *widget.TextInput
-	file       string
-	line       int
-	visible    bool
-	theme      *widget.Theme
 	viewport   *widget.ScrollContainer
 	top        float64
 	mode, path string
@@ -23,7 +18,6 @@ type workspaceLayout struct {
 }
 
 func (l *workspaceLayout) begin() {
-	l.visible = false
 	if l.viewport != nil {
 		l.top = l.viewport.ScrollTop
 		if l.mode == "files" {
@@ -54,25 +48,10 @@ func (g *Game) restoreWorkspaceScroll(scroll *widget.ScrollContainer, tab hud.Ta
 	l.mode, l.path = w.mode, key
 }
 
-func (g *Game) workspaceLineInput(c *widget.Container, w *workspacePanel, changed func(string)) {
-	l := &w.layout
-	text := w.lines[w.line]
-	if l.editor == nil || l.file != w.path || l.line != w.line || l.theme != g.theme || l.editor.GetText() != text {
-		l.editor = g.newProjectInput(text, changed)
-		l.file, l.line, l.theme = w.path, w.line, g.theme
-	} else {
-		reattachEditor(l.editor)
-	}
-	l.visible = true
-	c.AddChild(g.detailText("Edit line"), l.editor)
-}
-
 func (g *Game) finishWorkspaceLayout() {
-	l := &g.projects.workspace.layout
-	if !l.visible {
-		l.editor = nil
-	} else if l.editor.IsFocused() {
-		g.ui.SetFocusedWidget(l.editor)
+	w := &g.projects.workspace
+	if w.surface != nil && (!g.inWorkspace() || w.mode != "file") {
+		w.surface.ime.Cancel()
 	}
 }
 

@@ -19,7 +19,7 @@ Regression verification: compile this helper with `tests/UpdateTransferTest.java
 
 - `WorkspaceDocuments.java`: Resolves relative document names beneath the registered tree, queries children, and provides bounded-scope file descriptors and document operations. The host must support the requested operation.
 
-- `DocumentEditor.java`: Full-window Android multiline text editing, IME, selection and explicit save.
+- `DocumentEditor.java`: Implements Android field prompts and the clipboard bridge for the workspace.
 
 - `VoiceInput.java`: Holds, cancels and finalizes local dictation in the original Android editor selection. Requests microphone permission on the first press.
 

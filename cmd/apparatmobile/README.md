@@ -17,7 +17,7 @@ Android safe-area color comes from the GUI renderer through `BackgroundARGB` in 
 - `workspace.go`: Opens, lists and updates bounded text documents under an existing persisted grant and supplies the tree to the Git adapter. A failed provider replacement retains the previous document or identifies its recovery file.
 - `workspace_fs.go`: Adapts Android document operations and seekable file descriptors to go-git's filesystem interface. Provider errors propagate to the selected project.
 
-- `document.go`: Binds the Android document editor to the selected file and draft session.
+- `document.go`: Connects Android field prompts and system clipboard operations to Apparat.
 - `identity.go`: Bridges the local node identity workflow to private Android prompts and locks the signing session on background.
 
 The Activity supplies its current Android user's files directory before the Go runtime registers the game. Recreating the Activity within one process reuses the same initialized runtime. Each Android profile has its own device identity, database and private storage.

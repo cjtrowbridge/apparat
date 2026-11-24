@@ -102,8 +102,6 @@ func (g *Game) directoryListing(c *widget.Container, w *workspacePanel) {
 			default:
 				w.path = dest
 				w.base = ""
-				w.line = 0
-				w.autoEdit = true
 				g.workspaceRequest("read")
 			}
 		})

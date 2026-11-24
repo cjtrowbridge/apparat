@@ -33,3 +33,9 @@ The owner tests exercise denied grants, base conflicts, retry after a lost ackno
 In Files, each row starts with 📁 or 📄, followed by its Git marker when available and its name. Select anywhere on the row to enter the folder or open the file in the editor. An owner read failure appears above the listing.
 
 Release acceptance exercises both roles against two isolated worker APIs, including signed changes on existing sessions, paged catalogs, nested file reads, legacy write grants and file bytes after a save or denial. A separate handler test verifies the exact anonymous JSON response across catalog, file operations and subscription requests with absent, expired and incorrectly bound credentials.
+
+### Viewing and editing a file
+
+Selecting a file opens a selectable document in the Editor tab. Writers can choose Edit to modify it in place. Cancel returns to viewing and asks for confirmation when the draft has changed. Save checks the opening revision on the owning node and returns to Files after success. A failed save retains the draft. Compare with saved file before rebasing a conflicting draft.
+
+On Linux with xdg-open, Edit externally opens a private UTF-8 working copy. Save that copy in the external application, then choose Import external edits in Apparat. Inspect the draft and save it to the original host. Temporary copies are removed after import or an orderly Apparat exit. Android supports the in-app workflow with the system keyboard.

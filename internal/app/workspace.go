@@ -110,7 +110,11 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 		if q.Action == "save" {
 			return n.saveWorkspaceFile(ctx, location, q)
 		}
-		err = n.database.SaveDraft(ctx, q.ProjectID, q.Path, q.Base, q.Text)
+		if q.Action == "draft" && projectgit.Digest(q.Text) == q.Base {
+			err = n.database.ClearDraft(ctx, q.ProjectID, q.Path)
+		} else {
+			err = n.database.SaveDraft(ctx, q.ProjectID, q.Path, q.Base, q.Text)
+		}
 		if err != nil {
 			return v, err
 		}

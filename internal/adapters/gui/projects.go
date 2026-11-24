@@ -40,7 +40,8 @@ type projectForm struct {
 	wizard                                                     newProjectState
 	directoryStatus                                            chan workspaceReply
 	stopDirectoryStatus                                        context.CancelFunc
-	bookmarks                                                  map[[2]string][3]int
+	externalCopies                                             map[[2]string]externalCopy
+	copiedText                                                 string
 	workspace                                                  workspacePanel
 	dataRoot                                                   string
 	removeID                                                   string

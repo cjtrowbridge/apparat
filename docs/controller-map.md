@@ -100,3 +100,5 @@ New Project exposes the selected host’s provider choices, install, enroll, and
 ### Owner workspaces
 
 Select a host-qualified project, then navigate the five emoji buttons in order: Chat, Files, Editor, Terminal and Tasks. Files opens one directory at a time. Back returns to its parent. Save returns to Files after owner acknowledgement. Terminal input belongs to the text field until Send is activated. Take control transfers input between the same user's devices. Task history and retained terminal output each have explicit continuation controls.
+
+The Projects Editor opens in view mode. Focus Edit to enable text input in the same pane. Within the document, arrow keys move the caret and Shift extends the selection. Tab leaves the document for its controls. Save and Cancel are available to writers.

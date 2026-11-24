@@ -6,17 +6,13 @@ package apparatmobile
 
 import (
 	"encoding/json"
-	"errors"
-	"github.com/cjtrowbridge/apparat/internal/adapters/gui"
 	"sync"
 )
 
-type EditorSession interface {
-	Apply(action, text string) string
-}
 type Editor interface {
+	CopyText(value string)
+	PasteText() string
 	Prompt(title, value string, singleLine bool) string
-	Open(project, title, text string, session EditorSession) string
 }
 
 var editor struct {
@@ -29,20 +25,6 @@ func RegisterEditor(host Editor) {
 	defer editor.Unlock()
 	editor.host = host
 }
-func (projectDocuments) EditDocument(project, title, text string, session gui.DocumentSession) error {
-	editor.RLock()
-	host := editor.host
-	editor.RUnlock()
-	if host == nil {
-		return errors.New("Android editor unavailable")
-	}
-	reason := host.Open(project, title, text, session)
-	if reason != "" {
-		return errors.New(reason)
-	}
-	return nil
-}
-
 func promptValue(title, value string, singleLine bool) (string, bool) {
 	editor.RLock()
 	host := editor.host
@@ -56,4 +38,20 @@ func promptValue(title, value string, singleLine bool) (string, bool) {
 		return "", false
 	}
 	return *result, true
+}
+
+func copyText(text string) {
+	editor.RLock()
+	defer editor.RUnlock()
+	if editor.host != nil {
+		editor.host.CopyText(text)
+	}
+}
+func pasteText() string {
+	editor.RLock()
+	defer editor.RUnlock()
+	if editor.host != nil {
+		return editor.host.PasteText()
+	}
+	return ""
 }

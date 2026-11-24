@@ -250,6 +250,13 @@ func (g *Game) registerWorkspaceActions(add registerAction, index, i int, p doma
 			g.openWorkspaceTab(dest.mode, dest.action)
 		})
 	}
+	file := &g.projects.workspace
+	if file.id == p.ID && file.mode == "file" && !file.readOnly && !file.editing && g.projects.pending == nil {
+		add("workspace-edit", p.ID, file.path, "Edit "+file.path, path+" / Editor / "+file.path, func() {
+			selectWorkspace()
+			g.beginDocumentEdit(file)
+		})
+	}
 	if p.RemoteHost != "" {
 		return
 	}

@@ -33,12 +33,14 @@ func (g *Game) workspaceGo(mode, action string) {
 	if mode == "changes" {
 		w.changes = nil
 	}
+	if w.surface != nil && mode != "file" {
+		w.surface.ime.Cancel()
+	}
 	w.mode = mode
 	w.report = ""
 	w.confirmation = ""
 	w.argument = ""
 	w.choices = nil
-	w.autoEdit = false
 	g.layoutDirty = true
 	if action != "" {
 		g.workspaceRequest(action)
@@ -82,7 +84,7 @@ func (g *Game) workspaceBack() {
 		g.workspaceGo("chat", "threads")
 	case "attachments":
 		g.workspaceGo("conversation", "chat")
-	case "move", "file-options", "inline":
+	case "move", "file-options":
 		g.workspaceGo("file", "read")
 	default:
 		g.workspaceGo("files", "list")
@@ -173,29 +175,17 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 		}
 		g.projectField(c, label, &w.argument)
 		btn("Apply", func() {
-			if w.mode == "create" {
-				w.autoEdit = true
-			}
 			g.workspaceRequest(w.mode)
 		})
 	case "file":
-		c.AddChild(g.detailText(w.path))
-		if w.readOnly {
-			c.AddChild(g.detailText("Read-only · Cluster administrators can edit this file."))
-		} else {
-			btn("Edit document", g.editDocument)
-		}
-		if !remote {
-			goTo("Changes", "changes", "changes")
+		g.fileDocument(c, w)
+		if !remote && !w.editing {
 			goTo("File options", "file-options", "")
 		}
-		c.AddChild(g.detailText(strings.Join(w.lines, "\n")))
+
 	case "file-options":
 		goTo("Rename or move", "move", "")
 		g.workspaceActions(c, "Delete "+w.path, "delete", "Discard draft", "discard")
-		goTo("Line editor fallback", "inline", "")
-	case "inline":
-		g.workspaceEditor(c, w)
 	case "changes", "review", "commit", "history", "branches", "branch", "commit-detail", "transactions", "conflict":
 		g.changesScreen(c, w)
 		return

@@ -192,6 +192,11 @@ func (g *Game) finishUtterance(field *widget.TextInput, text string) {
 		return
 	}
 	if field != nil {
+		w := &g.projects.workspace
+		if w.surface != nil && w.surface.TextInput == field {
+			w.surface.insert(text)
+			return
+		}
 		field.Insert(text)
 		return
 	}

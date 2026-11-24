@@ -43,3 +43,7 @@ Verify full registered checkout access for approved cluster admins with zero exp
 Correct Phase 11C file access across all registered repositories. Approved members browse and read. Current administrators save. Test legacy grant rows, demotion, blocking, live watches and read-only presentation.
 
 Gate Phase 11C delivery on two independent owner APIs with paged registrations, signed role changes, persisted file contents and denial of all project routes to anonymous, expired and incorrectly bound sessions. Run the suite on every canonical build, including delivery retries.
+
+### View-first workspace editor
+
+Phase 9A and 11C require a selectable document in the Editor tab. Explicit Edit enables in-place input for writers. Save uses the existing scoped base-checked operation. Cancel restores the entry draft after confirmation. Offer an external working copy only where explicit import can safely bind its contents to the original checkout and revision.

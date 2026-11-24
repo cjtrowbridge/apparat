@@ -21,27 +21,27 @@ func TestWorkspaceResizePreservesPresentation(t *testing.T) {
 	g.projects.rows = []domain.Project{{ID: "p", Name: "workspace", Available: true}}
 	selectTabThroughStrip(t, g, hud.TabProjects)
 	w := &g.projects.workspace
-	*w = workspacePanel{id: "p", mode: "inline", path: "sample.txt", lines: []string{"draft text"}, report: "Conflict: file changed"}
+	*w = workspacePanel{id: "p", mode: "file", editing: true, path: "sample.txt", lines: []string{"draft text"}, report: "Conflict: file changed"}
 	g.detailOpen[hud.TabProjects] = true
 	g.selectSection(hud.TabProjects, len(projectEntrySections))
 	l := &w.layout
-	editor := l.editor
+	editor := w.surface.TextInput
 	g.ui.SetFocusedWidget(editor)
-	editor.SelectAll()
+	w.surface.caret = len(w.surface.body)
 	l.viewport.ScrollTop = 0.45
 	for _, width := range []int{640, 1024, 720} {
 		g.Layout(width, 600)
 		g.rebuildUI(g.shell.Snapshot())
-		if g.ui.GetFocusedWidget() != editor || editor.SelectedText() != "draft text" || l.viewport == nil || l.viewport.ScrollTop != 0.45 {
+		if g.ui.GetFocusedWidget() != editor || w.surface.body[w.surface.anchor:w.surface.caret] != "draft text" || l.viewport == nil || l.viewport.ScrollTop != 0.45 {
 			t.Fatalf("lost editor selection, focus or detail scroll at width %d", width)
 		}
 		if w.path != "sample.txt" || w.report != "Conflict: file changed" || w.lines[0] != "draft text" {
 			t.Fatalf("resize changed draft or conflict state at width %d", width)
 		}
 	}
-	w.path = "another.txt"
+	g.applyWorkspace(&workspaceReply{request: domain.WorkspaceRequest{ProjectID: w.id, Action: "read", Path: "another.txt"}, view: domain.WorkspaceView{Editing: true, Text: "next"}})
 	g.rebuildUI(g.shell.Snapshot())
-	if l.editor == editor || l.viewport.ScrollTop != 0 || g.ui.GetFocusedWidget() != nil {
+	if w.surface.TextInput == editor || l.viewport.ScrollTop != 0 || g.ui.GetFocusedWidget() != nil {
 		t.Fatal("new file inherited presentation from a different file")
 	}
 }
@@ -105,9 +105,8 @@ func TestMemberOpensRemoteFileReadOnly(t *testing.T) {
 	defer g.Close()
 	w := &g.projects.workspace
 	w.id = "worker-fixture/project"
-	w.autoEdit = true
 	g.applyWorkspace(&workspaceReply{request: domain.WorkspaceRequest{ProjectID: w.id, Action: "read", Path: "README.md"}, view: domain.WorkspaceView{ReadOnly: true, Editing: true, Text: "welcome"}})
-	if w.mode != "file" || !w.readOnly || w.autoEdit || len(w.lines) != 1 || w.lines[0] != "welcome" || g.projects.pending != nil {
+	if w.mode != "file" || !w.readOnly || w.editing || len(w.lines) != 1 || w.lines[0] != "welcome" || g.projects.pending != nil {
 		t.Fatal("member did not open the file in read-only mode")
 	}
 }

@@ -87,12 +87,12 @@ func initialize(filesDir string) {
 		},
 		ProjectPicker: projectDocuments{},
 		SpeakChoice:   sayChoice, MicrophoneReady: microphoneReady,
-		DocumentEditor: projectDocuments{},
-		PromptValue:    promptValue,
-		WorkingDir:     workingDir,
-		RuntimePath:    cfg.RootDir,
-		BinaryPath:     binaryPath,
-		Queries:        runtime,
+		CopyText: copyText, PasteText: pasteText,
+		PromptValue: promptValue,
+		WorkingDir:  workingDir,
+		RuntimePath: cfg.RootDir,
+		BinaryPath:  binaryPath,
+		Queries:     runtime,
 	})
 	game.SetOnCheckForUpdate(func() bool {
 		bridgeMu.Lock()

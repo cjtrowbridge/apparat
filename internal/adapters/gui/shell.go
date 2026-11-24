@@ -13,10 +13,9 @@ type Adapter struct {
 	shell hud.Shell
 }
 
-type DocumentSession interface {
-	Apply(action, text string) string
-}
 type RuntimeInfo struct {
+	CopyText        func(string)
+	PasteText       func() string
 	DeviceName      string
 	BrowseLAN       func(bool) string
 	CheckWorker     func(string)
@@ -26,14 +25,11 @@ type RuntimeInfo struct {
 	SpeakChoice     func(string)
 	MicrophoneReady func() bool
 	PromptValue     func(string, string, bool) (string, bool)
-	DocumentEditor  interface {
-		EditDocument(string, string, string, DocumentSession) error
-	}
-	ProjectPicker interface{ ChooseFolder() string }
-	WorkingDir    string
-	RuntimePath   string
-	BinaryPath    string
-	Queries       ServiceQueries
+	ProjectPicker   interface{ ChooseFolder() string }
+	WorkingDir      string
+	RuntimePath     string
+	BinaryPath      string
+	Queries         ServiceQueries
 }
 
 func NewAdapter() Adapter {

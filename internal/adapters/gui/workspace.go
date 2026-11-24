@@ -35,14 +35,16 @@ type workspacePanel struct {
 	choiceAction                                 string
 	selected                                     domain.WorkspaceChoice
 	attachment, attachmentLabel, message         string
-	readOnly, autoEdit                           bool
+	readOnly, editing                            bool
 	change                                       domain.WorkspaceChange
 	changes                                      []domain.WorkspaceChange
 	id, dir, path, base, report, argument, runID string
 	mode, confirmation                           string
 	entries                                      []domain.WorkspaceEntry
 	lines                                        []string
-	line, page                                   int
+	page                                         int
+	originalBase, original, compared             string
+	surface                                      *documentSurface
 }
 
 func (g *Game) workspaceRequest(action string) {
@@ -64,6 +66,8 @@ func (g *Game) workspaceRequest(action string) {
 	case "list":
 		q.Argument = ""
 		q.Path = w.dir
+	case "rebase":
+		q.Argument = w.compared
 	case "create", "mkdir":
 		q.Path = path.Join(w.dir, w.argument)
 	case "save", "post", "post-with-run", "run":
@@ -124,7 +128,6 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 				w.readOnly = true
 			}
 		}
-		w.autoEdit = false
 		w.report = r.err.Error()
 		return
 	}
@@ -135,7 +138,6 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.lines = strings.Split(v.Text, "\n")
 		w.path = q.Path
 		w.base = v.Base
-		w.line = min(w.line, len(w.lines)-1)
 		w.mode = "file"
 	}
 	switch q.Action {
@@ -152,11 +154,17 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.changes = v.Changes
 	case "review":
 		w.base = v.Base
-	case "read", "create":
-		if w.autoEdit && v.Editing {
-			w.autoEdit = false
-			g.editDocument()
+	case "read", "create", "discard":
+		if w.surface != nil {
+			w.surface.ime.Cancel()
 		}
+		w.editing = false
+		w.compared = ""
+		w.surface = nil
+	case "compare":
+		w.compared = v.ComparedBase
+	case "rebase":
+		w.compared = ""
 	case "stage", "stage-deletion", "unstage", "commit", "switch", "resolve", "delete":
 		g.workspaceGo("changes", "changes")
 	case "threads", "tasks", "runs":
@@ -186,6 +194,11 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	case "delete-artifact":
 		g.workspaceGo("runs", "runs")
 	case "save":
+		w.editing = false
+		if w.surface != nil {
+			w.surface.ime.Cancel()
+		}
+		w.surface = nil
 		w.dir = path.Dir(q.Path)
 		g.workspaceGo("files", "list")
 	case "list":
@@ -246,53 +259,10 @@ func (g *Game) workspaceActions(c *widget.Container, labels ...string) {
 func (g *Game) workspaceBrowser(c *widget.Container, w *workspacePanel) {
 	g.directoryListing(c, w)
 }
-func (g *Game) workspaceEditor(c *widget.Container, w *workspacePanel) {
-	c.AddChild(g.detailText(w.path))
-	id, file, line := w.id, w.path, w.line
-	g.workspaceLineInput(c, w, func(text string) {
-		if w.id != id || w.path != file || w.mode != "inline" || w.line != line || w.lines[line] == text {
-			return
-		}
-		w.lines[line] = text
-		g.keepEditingDraft(w)
-	})
-	if w.line > 0 {
-		g.projectButton(c, "Previous line", func() {
-			w.line--
-			g.layoutDirty = true
-		})
-	}
-	if w.line+1 < len(w.lines) {
-		g.projectButton(c, "Next line", func() {
-			w.line++
-			g.layoutDirty = true
-		})
-	}
-	g.projectButton(c, "Insert line below", func() {
-		w.line++
-		w.lines = append(w.lines, "")
-		copy(w.lines[w.line+1:], w.lines[w.line:])
-		w.lines[w.line] = ""
-		g.keepEditingDraft(w)
-		g.layoutDirty = true
-	})
-	g.projectButton(c, "Remove line from draft", func() {
-		w.lines = append(w.lines[:w.line], w.lines[w.line+1:]...)
-		if len(w.lines) == 0 {
-			w.lines = []string{""}
-		}
-		w.line = min(w.line, len(w.lines)-1)
-		g.keepEditingDraft(w)
-		g.layoutDirty = true
-	})
-	g.workspaceActions(c, "Save", "save")
-	c.AddChild(g.detailText(strings.Join(w.lines, "\n")))
-}
-
-func (g *Game) keepEditingDraft(w *workspacePanel) {
+func (g *Game) keepEditingDraft(w *workspacePanel) bool {
 	store, ok := g.runtimeInfo.Queries.(workspaceStore)
 	if !ok {
-		return
+		return false
 	}
 	q := domain.WorkspaceRequest{ProjectID: w.id, Action: "draft", Path: w.path, Base: w.base, Thread: w.thread, Text: strings.Join(w.lines, "\n")}
 	_, err := store.Workspace(g.projects.ctx, q)
@@ -300,4 +270,5 @@ func (g *Game) keepEditingDraft(w *workspacePanel) {
 		w.report = "Draft could not be saved: " + err.Error()
 		g.layoutDirty = true
 	}
+	return err == nil
 }
