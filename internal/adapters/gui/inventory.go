@@ -170,3 +170,19 @@ func (g *Game) applyInventoryFocus() {
 		}
 	}
 }
+
+// The scroll pane owns each card so its background and gutters span the same width.
+func (g *Game) addInventoryCards(pane *widget.Container, sections []hud.Section) {
+	for _, s := range sections {
+		card := g.detailCard()
+		card.AddChild(widget.NewText(widget.TextOpts.Text(s.Title, g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle)))
+		card.AddChild(g.detailText(s.Description))
+		g.addInventoryControl(card, s.ActionID)
+		for _, row := range s.Rows {
+			label := wrapSelectorLabel(row.Label, *g.formLabelFace, int(g.detailTextMaxWidth()))
+			card.AddChild(widget.NewText(widget.TextOpts.Text(label, g.formLabelFace, g.theme.ButtonTheme.TextColor.Idle)))
+			card.AddChild(widget.NewText(widget.TextOpts.Text(row.Detail, g.theme.ButtonTheme.TextFace, mutedTextColor), widget.TextOpts.MaxWidth(g.detailTextMaxWidth())))
+		}
+		pane.AddChild(card)
+	}
+}

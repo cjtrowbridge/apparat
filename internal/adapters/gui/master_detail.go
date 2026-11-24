@@ -149,7 +149,7 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		if withBack && !peer && selected >= 0 && !(tabData.ID() == hud.TabProjects && game.projects.workspace.id != "" && tabData.Sections[selected].ProjectID == game.projects.workspace.id && game.projects.workspace.mode != "registration") {
 			detailContainer.AddChild(game.backButton(tabData.ID()))
 		}
-		if selected >= 0 && tabData.Summary != "" && !peer {
+		if selected >= 0 && tabData.Summary != "" && !peer && len(tabData.Sections[selected].DetailSections) == 0 {
 			detailContainer.AddChild(game.detailText(tabData.Summary))
 		}
 		for _, section := range game.detailSections(tabData) {
@@ -203,8 +203,8 @@ func (game *Game) detailLayoutData() interface{} {
 	return widget.GridLayoutData{MaxHeight: 0}
 }
 
-func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
-	sectionContainer := widget.NewContainer(
+func (game *Game) detailCard() *widget.Container {
+	return widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(game.theme.PanelTheme.BackgroundImage),
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
@@ -213,6 +213,10 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 		)),
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})),
 	)
+}
+
+func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
+	sectionContainer := game.detailCard()
 	if section.ProjectID != "" && game.projects.workspace.id == section.ProjectID && game.projects.workspace.mode != "registration" {
 		game.projectControls(sectionContainer, section)
 		return sectionContainer
@@ -230,10 +234,6 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	}
 	if section.ContentKind == hud.ContentResearchContribution {
 		sectionContainer.AddChild(game.researchContributionTable(section))
-	}
-	game.addInventoryControl(sectionContainer, section.ActionID)
-	for _, detail := range section.DetailSections {
-		sectionContainer.AddChild(game.buildSectionContainer(detail))
 	}
 	if section.ProjectID != "" || projectEntryAction(section.ContentKind) {
 		game.projectControls(sectionContainer, section)
@@ -376,6 +376,7 @@ func (game *Game) selectedSectionIndex(tabData hud.Tab) int {
 
 func (game *Game) sectionDetail(detailContainer *widget.Container, tabID hud.TabID, section hud.Section) {
 	detailContainer.AddChild(game.buildSectionContainer(section))
+	game.addInventoryCards(detailContainer, section.DetailSections)
 	for _, opt := range game.deviceManagementLinks(section.ActionID) {
 		if opt.Route.Page == "ollama" {
 			continue

@@ -170,7 +170,7 @@ A Pipeline is not a separate repository or workflow authority. It is a project t
 
 ### Worker resources and Ollama discovery
 
-Open **Cluster → Cluster Devices → a worker** to see its last resource observation and five inference sections. Linux workers report CPU use, RAM, swap, local disk space and VRAM where the driver exposes it. Unknown counters display as unavailable. Disk figures distinguish used space from space available to the service account.
+Open **Cluster → Cluster Devices → a worker** to see separate cards for device identity, system resources and each of the five inference types. Linux workers report CPU use, RAM, swap, local disk space and VRAM where the driver exposes it. Unknown counters display as unavailable. Disk figures distinguish used space from space available to the service account.
 
 Each worker checks Ollama on its own `127.0.0.1:11434` at startup and every 45 seconds. An administrator can open **Text Generation → Configure Ollama port**, enter the loopback port and choose **Test and save port**. The worker saves a working port across restarts. A failed trial explains which check failed and preserves any working port. The model list distinguishes installed models from those currently loaded. A fresh inventory with a completion-capable model adds 💬 to the worker button and lists the worker under **Inference Types → Text Generation**. Model weights stay on the worker. Discovery reads metadata and issues no generation requests. Image, speech and video sections currently show their unavailable state.
 

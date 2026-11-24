@@ -14,6 +14,7 @@ import (
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -22,7 +23,7 @@ func inventoryGame(t *testing.T, width, height int) *Game {
 	g := horizontalGame()
 	g.Layout(width, height)
 	g.runtimeInfo.Queries = &projectionSource{}
-	v := domain.WorkerInventory{Observed: time.Now().Unix(), Version: "0.14.1", Port: 11434, Models: []domain.InventoryModel{{Name: "example:latest", Text: true, Loaded: true}}, Resources: domain.NodeResources{OS: "linux", Arch: "amd64", CPUs: 12, RAM: &domain.Capacity{Total: 32 << 30, Used: 8 << 30, Available: 24 << 30}}}
+	v := domain.WorkerInventory{Observed: time.Now().Unix(), Version: "0.14.1", Port: 11434, Models: []domain.InventoryModel{{Name: "trashcan0-local-256k-qwen3.8-flash-next:125b-a6b-q4_K_M", Text: true, Loaded: true}}, Resources: domain.NodeResources{OS: "linux", Arch: "amd64", CPUs: 12, RAM: &domain.Capacity{Total: 32 << 30, Used: 8 << 30, Available: 24 << 30}}}
 	g.serviceProjection.Devices = []domain.ClusterDevice{{Fingerprint: "fixture", Host: "trashcan0", Admin: true, Inventory: &v}}
 	selectTabThroughStrip(t, g, hud.TabCluster)
 	tab := g.presentedTab(g.shell.Snapshot().ActiveTab())
@@ -36,6 +37,17 @@ func inventoryGame(t *testing.T, width, height int) *Game {
 			selected = i
 			if s.CapabilityIcon == "" || len(s.DetailSections) != 6 {
 				t.Fatal("missing device inventory or badge")
+			}
+			pane := widget.NewContainer()
+			g.sectionDetail(pane, hud.TabCluster, s)
+			if len(pane.Children()) < 7 {
+				t.Fatal("device details must render as seven sibling cards")
+			}
+			for _, child := range pane.Children()[:7] {
+				_, card := child.(*widget.Container)
+				if !card {
+					t.Fatal("expected a separate card")
+				}
 			}
 			text := s.DetailSections[1]
 			if text.ActionID != "configure-ollama/fixture" || len(text.Rows) != 1 || !strings.Contains(text.Rows[0].Detail, "Loaded") {
@@ -112,6 +124,9 @@ func TestCaptureInventoryDevice(t *testing.T) {
 		w, h = 390, 844
 	}
 	g := inventoryGame(t, w, h)
+	if strings.Contains(path, "models") {
+		g.verticalScrolls[len(g.verticalScrolls)-1].ScrollTop = 0.72
+	}
 	ebiten.SetWindowSize(w, h)
 	c := &inventoryCapture{g: g, path: path}
 	err := ebiten.RunGame(c)
