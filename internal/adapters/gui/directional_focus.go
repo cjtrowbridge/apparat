@@ -64,6 +64,13 @@ func (g *Game) bodyTargets() []focusTarget {
 	return targets
 }
 func focusLabel(f widget.Focuser) string {
+	if f == nil {
+		return ""
+	}
+	label, labeled := f.GetWidget().CustomData.(string)
+	if labeled {
+		return label
+	}
 	w, ok := f.(interface{ Text() *widget.Text })
 	if ok && w.Text() != nil {
 		return w.Text().Label

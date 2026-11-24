@@ -1,34 +1,20 @@
 //go:build gui
 
-// Places the in-memory global prompt below the empty conversation area.
+// Routes voice entry and keyboard focus to the current planning conversation.
 // Uses the same retained editor and focus route as other HUD forms.
 package gui
 
 import (
 	"github.com/cjtrowbridge/apparat/internal/hud"
-	"github.com/ebitenui/ebitenui/widget"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-func (g *Game) globalSessionBody(tab hud.Tab) *widget.Container {
-	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()))
-	form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))),
-		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-			StretchHorizontal: true, VerticalPosition: widget.AnchorLayoutPositionEnd,
-			Padding: &widget.Insets{Bottom: pttMargin + 2*pttRadius + pttTravel + bodyGap},
-		})))
-	for _, section := range tab.Sections {
-		for _, row := range section.Rows {
-			surface := g.multilineInput(form, row.Label, &g.globalDraft)
-			g.globalField = surface.TextInput
-		}
-	}
-	body.AddChild(form)
-	return body
-}
-
 func (g *Game) focusGlobalPrompt() {
+	if g.globalField == nil {
+		return
+	}
 	g.nav.active = true
 	g.nav.strip = false
 	g.nav.gallery = false
@@ -40,6 +26,7 @@ func (g *Game) openGlobalPrompt() {
 	if g.actions.mode != "" {
 		g.closeActionScreen()
 	}
+	g.planning.page = ""
 	err := g.shell.SelectTabByID(hud.TabGlobalSession)
 	if err != nil {
 		return
@@ -69,7 +56,7 @@ func (g *Game) receiveNativePrompt() {
 		return
 	}
 	g.cancelPTT()
-	g.openGlobalPrompt()
+	g.enterPlanningVoice()
 	if capture != nil {
 		v.canvas = capture
 		v.targetField(g.globalField)

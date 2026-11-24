@@ -46,6 +46,7 @@ type Game struct {
 	actions                        actionScreen
 	nav                            navigation
 	voice                          voiceState
+	planning                       planningUI
 	globalDraft                    string
 	globalVoiceFocus               bool
 	globalField                    *widget.TextInput
@@ -184,18 +185,8 @@ func (game *Game) Update() error {
 	clusterOpen := game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster && game.clusterTop() != nil
 	game.pollDirectoryStatus()
 	peerOpen := game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster && game.lan.selected != ""
-	game.workspaceBackEnabled.Store(game.actions.mode != "" || game.inWorkspace() || peerOpen || clusterOpen)
-	if game.workspaceBackRequested.Swap(false) {
-		if game.actions.mode != "" {
-			game.backActionScreen()
-		} else if clusterOpen {
-			game.clusterBack()
-		} else if peerOpen {
-			game.leavePeer()
-		} else {
-			game.workspaceBack()
-		}
-	}
+	game.handleDeviceBack(clusterOpen, peerOpen)
+	game.updatePlanningControls()
 	game.trackWindow()
 	game.receiveServices()
 	if game.layoutDirty && game.gesture.Owner == gestureNone {

@@ -63,11 +63,11 @@ This slice proves the HUD, controller input, identity, networking, API, persiste
 
 The game engine renders the application HUD and input system. For the MVP, there is no RPG world, quest system, progression system, or active gameplay layer. Comrades and Research are visible as future-facing tabs but are not actively developed beyond navigable placeholders.
 
-The GUI includes the offline STMPCK gallery on Linux and Android. Both targets import the shared game surface directly from the pinned upstream STMPCK submodule. Its 💉 tab sits immediately before Global Agentic Session. Settings is always last when adding or reorganizing tabs.
+The GUI includes the offline STMPCK gallery on Linux and Android. Both targets import the shared game surface directly from the pinned upstream STMPCK submodule. Its 💉 tab sits immediately before Apparat Global Planning Agent. Settings is always last when adding or reorganizing tabs.
 
-The canonical order is Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, Settings.
+The canonical order is Comrades, Projects, Cluster, Research, STMPCK, Apparat Global Planning Agent, Settings.
 
-The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, 💉 STMPCK, 🧠 Global Agentic Session and ⚙️ Settings. Swipe the strip on narrow displays. Tab buttons have no popup tooltips. The active tab has a fixed page heading. STMPCK places its heading in the gallery toolbar, immediately before the star. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
+The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, 💉 STMPCK, 🧠 Apparat Global Planning Agent and ⚙️ Settings. Swipe the strip on narrow displays. Tab buttons have no popup tooltips. The active tab has a fixed page heading. STMPCK places its heading in the gallery toolbar, immediately before the star. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
 
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 
@@ -269,7 +269,7 @@ Debian GUI mode supports the Steam Deck controller mapping unchanged when a comp
 
 - **`Ctrl+PageUp`**: previous top-level tab.
 - **`Ctrl+PageDown`**: next top-level tab.
-- `Alt+1` through `Alt+7`: open Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, or Settings directly.
+- `Alt+1` through `Alt+7`: open Comrades, Projects, Cluster, Research, STMPCK, Apparat Global Planning Agent, or Settings directly.
 - `Tab` and `Shift+Tab`: move to the next or previous focusable control.
 - Arrow keys: move within lists, trees, grids, menus, and spatial focus groups.
 - **`Enter`**: activate the focused control or submit the current form.
@@ -492,7 +492,7 @@ generated text -> TTS queue -> spoken playback
 
 The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project document, place the caret or select text, then hold the PTT control and speak. Words appear at the selection as the local recognizer decodes them. Each revision updates the same passage. Release to finalize that edit. Escape cancels, and saving a document or sending a message is a separate action. Android asks for microphone permission on first use. Audio stays in memory on the device, in bounded chunks while the control is held.
 
-On every HUD screen, drag PTT into the circle above it to lock recording. Slide it back down to finish. Drag left to open 🧠 Global Agentic Session and dictate into **Prompt**. The left circle stays green and locked after release. Slide it right to finish. The visible words stay in Prompt even if the decoder produces an empty final result. On Android, tap Prompt to type directly in the field with the on-screen keyboard. Dismissing the keyboard keeps your edits. You can edit the draft and return to it during the same app session. Sending and spoken replies are planned.
+On every HUD screen, drag PTT into the circle above it to lock recording. Slide it back down to finish. Drag left to open 🧠 Apparat Global Planning Agent and dictate into **Prompt**. The left circle stays green and locked after release. Slide it right to finish. Finishing an agent-mode utterance stages the recognized message once. Ordinary focused-field dictation stays editable. On Android, tap Prompt to type directly in the field with the on-screen keyboard. Dismissing the keyboard keeps your edits. 🔙 opens planning history, ➕ starts a new session, and ✏️ edits the current title. Opening the tab resumes its current view. Entering via PTT from elsewhere starts a draft, while PTT inside a conversation continues it. **Send** stages a turn locally and a rotating gear shows its delivery state. You can edit the next draft while waiting. This UI preview keeps sessions in memory until the app closes. Cluster persistence, queue acknowledgements, inference and spoken replies are future integrations.
 
 ### Voice commands and the command directory
 

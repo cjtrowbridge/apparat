@@ -76,7 +76,7 @@ func (g *Game) dragPTTPointer(x, y int) {
 	}
 	if near(dx+pttTravel, dy) {
 		if !g.gesture.globalOpened {
-			g.openGlobalPrompt()
+			g.enterPlanningVoice()
 			g.gesture.globalOpened = true
 		}
 		if lock.source == "floating-ptt" {

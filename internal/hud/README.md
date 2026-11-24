@@ -101,4 +101,4 @@ Linux Updates copy describes the built-in verified check/install/restart flow; t
 
 - `action_query_test.go`: Exercises exact, ambiguous, partial, near, absent and unsupported queries independently of speech recognition.
 
-Global Agentic Session has a stable tab ID, a brain glyph and one local prompt field. Its enabled descriptor also supplies its open action.
+Apparat Global Planning Agent has a stable tab ID, a brain glyph and a local conversation view with a prompt composer, session history and title editing. Its enabled descriptor also supplies its open action.

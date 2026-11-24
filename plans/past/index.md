@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-24-01-19-47 | plans/past/2026-11-24-01-00-00_global-planning-ui.md | Build the global planning session interface | Implement session navigation, title editing, conversation bubbles and local turn staging before queue integration.
 2026-11-23-23-42-18 | plans/past/2026-11-24-00-40-00_shared-ollama-configuration.md | Restore shared Ollama configuration on reconnect | Persist verified ports on the owner and read configuration on client unlock and Cluster activity.
 2026-11-23-23-32-15 | plans/past/2026-11-24-00-30-00_cluster-device-cards.md | Separate the Cluster device inventory cards | Give device identity, system resources and each inference type a distinct card with wrapping model names.
 2026-11-23-23-29-01 | plans/past/2026-11-24-00-01-00_inline-prompt-keyboard.md | Type directly in the global Android prompt | Use the canvas editor's IME connection for prompt entry and retain the draft through voice and keyboard transitions.

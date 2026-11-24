@@ -7,7 +7,7 @@ import "testing"
 func TestCanonicalTabOrder(t *testing.T) {
 	shell := NewShell()
 	got := shell.Snapshot().TabTitles()
-	want := []string{"Comrades", "Projects", "Cluster", "Research", "STMPCK", "Global Agentic Session", "Settings"}
+	want := []string{"Comrades", "Projects", "Cluster", "Research", "STMPCK", "Apparat Global Planning Agent", "Settings"}
 	if len(got) != len(want) {
 		t.Fatalf("got %d tabs, want %d", len(got), len(want))
 	}

@@ -4,7 +4,7 @@ All GUI targets dispatch the same application actions for tabs, focus, activatio
 
 This is the target input contract. The live HUD implements directional navigation on all seven tabs. Phase 17 tracks broader device and accessibility qualification.
 
-The canonical top-level tab order is Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, Settings. Routing and Tasks are details within Cluster, not top-level tabs.
+The canonical top-level tab order is Comrades, Projects, Cluster, Research, STMPCK, Apparat Global Planning Agent, Settings. Routing and Tasks are details within Cluster, not top-level tabs.
 
 ## Steam Deck
 
@@ -27,7 +27,7 @@ cancels a held capture rather than submitting it.
 ## Debian GUI
 
 - `Ctrl+PageUp` / `Ctrl+PageDown`: previous/next top-level tab.
-- `Alt+1` through `Alt+7`: Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, Settings. Routing and Tasks are selected within Cluster.
+- `Alt+1` through `Alt+7`: Comrades, Projects, Cluster, Research, STMPCK, Apparat Global Planning Agent, Settings. Routing and Tasks are selected within Cluster.
 - `Tab` / `Shift+Tab`: next/previous focusable control.
 - Arrows: list, tree, grid, menu, and spatial focus movement.
 - `Enter`: activate or submit.
@@ -103,4 +103,4 @@ Select a host-qualified project, then navigate the five emoji buttons in order: 
 
 The Projects Editor opens in view mode. Focus Edit to enable text input in the same pane. Within the document, arrow keys move the caret and Shift extends the selection. Tab leaves the document for its controls. Save and Cancel are available to writers.
 
-On the HUD, drag the PTT circle up to lock recording. Drag the locked circle down to finish. Drag left from the resting circle to open Global Agentic Session and lock listening there. Text appears directly in Prompt. Slide the locked circle right to finish and retain the visible words. Tap Prompt on Android to type with the on-screen keyboard. Keyboard and controller users can open the brain tab, focus Prompt and hold right Ctrl or L2.
+On the HUD, drag the PTT circle up to lock recording. Drag the locked circle down to finish. Drag left from the resting circle to open Apparat Global Planning Agent and lock listening there. Text appears directly in Prompt. Slide the locked circle right to finish the utterance and stage it in the planning session. Tap Prompt on Android to type with the on-screen keyboard. Keyboard and controller users can open the brain tab, focus Prompt and hold right Ctrl or L2. Back opens history. The adjacent plus starts a session, and the pencil edits its title. Outside the editor, Page Up/Down and the vertical right stick scroll the transcript.

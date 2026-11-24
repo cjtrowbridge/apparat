@@ -229,3 +229,7 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `inventory.go`: renders device capacity, five inference sections, Ollama model state and discovery controls. The device badge and workload selectors use the same fresh observation.
 
 - `inventory_test.go`: renders a worker fixture on wide and phone layouts and checks fresh badges, model rows, expiry and administrator controls. To capture the device detail, run the GUI test named TestCaptureInventoryDevice on a display and set APPARAT_INVENTORY_PNG to a writable PNG path. Include “narrow” in its name for the phone layout.
+
+- `planning.go`: owns global planning drafts, history, local turn staging and session navigation actions during the current app run.
+- `planning_view.go`: renders the responsive planning conversation, scrollable history, title editor and rotating Apparat wait indicator.
+- `planning_test.go`: verifies toolbar spacing and session behavior at two widths. Set APPARAT_PLANNING_PNG for the optional screenshot fixture, using “phone” in its filename for the narrow layout.

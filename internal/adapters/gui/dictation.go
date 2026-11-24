@@ -150,6 +150,7 @@ func (g *Game) endPTT() {
 	}
 }
 func (g *Game) cancelPTT() {
+	g.planning.voiceSession = nil
 	g.voice.tap = pttLock{}
 	g.shell.CancelVoiceCapture()
 	if g.voice.canvas != nil {
@@ -189,11 +190,17 @@ func (g *Game) pollSpeech() {
 		}
 		switch r.State {
 		case "final":
+			send := g.planning.voiceSession != nil && g.planning.voiceSession == g.planning.current && v.field == g.globalField && (strings.TrimSpace(r.Text) != "" || strings.TrimSpace(v.partial) != "")
+			g.planning.voiceSession = nil
 			g.completeInline(r.Text)
+			if send {
+				g.submitPlanning()
+			}
 			v.preview = ""
 			v.canvas = nil
 			v.tap = pttLock{}
 		case "error", "cancelled":
+			g.planning.voiceSession = nil
 			g.interruptInline()
 			v.tap = pttLock{}
 			v.canvas = nil

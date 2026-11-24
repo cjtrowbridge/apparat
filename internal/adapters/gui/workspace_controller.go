@@ -63,6 +63,23 @@ func (g *Game) navigateInputs() {
 			step = -1
 		}
 	}
+	if g.planning.pane != nil && g.nav.owner == hud.TabGlobalSession && g.actions.mode == "" && g.planning.page == "" {
+		_, editing := g.ui.GetFocusedWidget().(*widget.TextInput)
+		if !editing {
+			distance := float64(g.planning.pane.ViewRect().Dy()) * 0.8
+			if inpututil.IsKeyJustPressed(ebiten.KeyPageUp) {
+				moveBodyScroll(g.planning.pane, distance)
+			} else if inpututil.IsKeyJustPressed(ebiten.KeyPageDown) {
+				moveBodyScroll(g.planning.pane, -distance)
+			}
+			if pad >= 0 {
+				axis := ebiten.StandardGamepadAxisValue(pad, ebiten.StandardGamepadAxisRightStickVertical)
+				if axis < -0.2 || axis > 0.2 {
+					moveBodyScroll(g.planning.pane, -axis*12)
+				}
+			}
+		}
+	}
 	g.routeNavigation(delta, back, activate, keyActivate, step)
 }
 
@@ -110,6 +127,8 @@ func (g *Game) routeNavigation(delta image.Point, back, activate, keyActivate bo
 		id := g.shell.Snapshot().ActiveTab().ID()
 		if g.actions.mode != "" {
 			g.backActionScreen()
+		} else if g.planningBackAvailable() {
+			g.planningBack()
 		} else if id == hud.TabCluster && g.clusterTop() != nil {
 			g.clusterBack()
 		} else if id == hud.TabCluster && g.lan.selected != "" {

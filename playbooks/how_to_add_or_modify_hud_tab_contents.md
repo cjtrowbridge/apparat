@@ -13,7 +13,7 @@ Define how to add or modify Apparat HUD tab bodies so each tab remains responsiv
 * Read `internal/hud/README.md` and `internal/adapters/gui/README.md`.
 * Inspect the current tab model in `internal/hud` and the rendering/input adapter in `internal/adapters/gui`.
 
-Settings must always be the final top-level tab, including optional editions. Add or reorganize every other tab before Settings. STMPCK precedes Global Agentic Session, which sits immediately before Settings.
+Settings must always be the final top-level tab, including optional editions. Add or reorganize every other tab before Settings. STMPCK precedes Apparat Global Planning Agent, which sits immediately before Settings.
 
 ## Layout Rules
 

@@ -1630,6 +1630,8 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 ### Chats, transactions, drafts, and artifacts
 
+- [x] Global planning conversation UI with session selection, turn bubbles, pending states and PTT entry.
+- [ ] Integrate the global planning UI with authenticated cluster queue delivery and replicated session artifacts on apparatd nodes.
 - [x] Add Project chats.
   - [x] Chat list/history and prompt editor.
   - [x] Link messages to local runs, results and artifacts. Job and route links depend on the queue and routing phases.
