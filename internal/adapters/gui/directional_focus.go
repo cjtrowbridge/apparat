@@ -263,8 +263,14 @@ func (g *Game) activateFocus() {
 	switch w := g.nav.target.w.(type) {
 	case *documentSurface:
 		g.ui.SetFocusedWidget(w.TextInput)
+		if w.TextInput == g.globalField {
+			g.editGlobalPrompt()
+		}
 	case *widget.TextInput:
 		g.ui.SetFocusedWidget(w)
+		if w == g.globalField {
+			g.editGlobalPrompt()
+		}
 	case interface{ Click() }:
 		w.Click()
 	}

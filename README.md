@@ -486,7 +486,7 @@ generated text -> TTS queue -> spoken playback
 
 The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project document, place the caret or select text, then hold the PTT control and speak. Words appear at the selection as the local recognizer decodes them. Each revision updates the same passage. Release to finalize that edit. Escape cancels, and saving a document or sending a message is a separate action. Android asks for microphone permission on first use. Audio stays in memory on the device, in bounded chunks while the control is held.
 
-On every HUD screen, drag PTT into the circle above it to lock recording. Slide it back down to finish. Drag left to open 🧠 Global Agentic Session and dictate into **Prompt**. The left circle stays green and locked after release. Slide it right to the resting position to finish. You can edit the draft and return to it during the same app session. Sending and spoken replies are planned.
+On every HUD screen, drag PTT into the circle above it to lock recording. Slide it back down to finish. Drag left to open 🧠 Global Agentic Session and dictate into **Prompt**. The left circle stays green and locked after release. Slide it right to finish. The visible words stay in Prompt even if the decoder produces an empty final result. On Android, tap Prompt to open the multiline keyboard editor. Done keeps your edits and Cancel keeps the previous draft. You can edit the draft and return to it during the same app session. Sending and spoken replies are planned.
 
 ### Voice commands and the command directory
 

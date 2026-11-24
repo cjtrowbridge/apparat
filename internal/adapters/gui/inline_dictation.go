@@ -5,6 +5,8 @@
 package gui
 
 import (
+	"strings"
+
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/ebitenui/ebitenui/event"
 	"github.com/ebitenui/ebitenui/widget"
@@ -15,6 +17,7 @@ type inlineDictation struct {
 	original, expected, partial string
 	anchor, caret               int
 	changed                     *event.Event
+	stopped                     bool
 }
 
 func (v *voiceState) targetField(field *widget.TextInput) {
@@ -40,7 +43,7 @@ func (v *inlineDictation) surface() *documentSurface {
 }
 
 func (v *inlineDictation) revise(text string) {
-	if text == v.partial {
+	if strings.TrimSpace(text) == "" || text == v.partial {
 		return
 	}
 	e := v.surface()
@@ -95,6 +98,9 @@ func (v *inlineDictation) discardInline() {
 func (g *Game) completeInline(text string) {
 	v := &g.voice
 	field := v.field
+	if field != nil && strings.TrimSpace(text) == "" {
+		text = v.partial
+	}
 	if field == nil || v.surface() != nil || text == "" || v.changed == nil {
 		v.discardInline()
 		g.finishUtterance(field, text)
@@ -104,4 +110,23 @@ func (g *Game) completeInline(text string) {
 	field.ChangedEvent = v.changed
 	v.inlineDictation = inlineDictation{}
 	field.ChangedEvent.Fire(&widget.TextInputChangedEventArgs{TextInput: field, InputText: field.GetText()})
+}
+
+// Record the visible prompt before releasing the microphone. A decoder may still
+// refine the selection while the same field remains active.
+func (g *Game) stopInline() {
+	v := &g.voice
+	v.stopped = true
+	if v.field != nil && v.field == g.globalField && v.partial != "" {
+		g.globalDraft = v.expected
+	}
+}
+
+func (g *Game) interruptInline() {
+	v := &g.voice
+	if v.stopped && v.field != nil && v.field.GetText() == v.expected {
+		g.completeInline(v.partial)
+		return
+	}
+	v.discardInline()
 }

@@ -103,4 +103,4 @@ Select a host-qualified project, then navigate the five emoji buttons in order: 
 
 The Projects Editor opens in view mode. Focus Edit to enable text input in the same pane. Within the document, arrow keys move the caret and Shift extends the selection. Tab leaves the document for its controls. Save and Cancel are available to writers.
 
-On the HUD, drag the PTT circle up to lock recording. Drag the locked circle down to finish. Drag left from the resting circle to open Global Agentic Session and lock listening there. Text appears directly in Prompt. Slide the locked circle right to the resting position to finish. Keyboard and controller users can open the brain tab, focus Prompt and hold right Ctrl or L2.
+On the HUD, drag the PTT circle up to lock recording. Drag the locked circle down to finish. Drag left from the resting circle to open Global Agentic Session and lock listening there. Text appears directly in Prompt. Slide the locked circle right to finish and retain the visible words. Tap Prompt on Android to type with the on-screen keyboard. Keyboard and controller users can open the brain tab, focus Prompt and hold right Ctrl or L2.

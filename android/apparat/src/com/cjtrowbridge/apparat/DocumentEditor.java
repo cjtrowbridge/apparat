@@ -97,6 +97,13 @@ public final class DocumentEditor implements Editor {
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
                 dialog.show();
                 input.requestFocus();
+                input.post(new Runnable() {
+                    public void run() {
+                        if (!dialog.isShowing() || !input.hasFocus()) return;
+                        android.view.inputmethod.InputMethodManager keyboard = activity.getSystemService(android.view.inputmethod.InputMethodManager.class);
+                        keyboard.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                    }
+                });
             }
         });
         try {

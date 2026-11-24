@@ -217,3 +217,55 @@ func TestSingleLineDictationReplacesPartialAtCaret(t *testing.T) {
 		t.Fatal("cancelled transcription changed the accepted draft")
 	}
 }
+
+func TestStopPreservesVisiblePrompt(t *testing.T) {
+	for _, result := range []string{"", "   ", "corrected"} {
+		g := NewGame()
+		g.openGlobalPrompt()
+		e := g.globalField.GetWidget().CustomData.(*documentSurface)
+		e.insert("abc def")
+		e.anchor, e.caret = 4, 7
+		g.voice.targetField(e.TextInput)
+		g.voice.revise("spoken")
+		g.endPTT()
+		if g.globalDraft != "abc spoken" {
+			t.Fatal("stop lost the visible draft")
+		}
+		g.voice.revise("")
+		g.completeInline(result)
+		want := "abc spoken"
+		if result == "corrected" {
+			want = "abc corrected"
+		}
+		if e.body != want || g.globalDraft != want {
+			t.Fatal("final result lost or duplicated the stopped draft", result)
+		}
+		e.history(&e.undo, &e.redo)
+		if e.body != "abc def" {
+			t.Fatal("stop and final must make one undoable edit")
+		}
+		g.Close()
+	}
+}
+
+func TestStopThenFocusLossKeepsPrompt(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	g.openGlobalPrompt()
+	field := g.globalField
+	g.voice.targetField(field)
+	g.voice.revise("keep this")
+	g.endPTT()
+	g.cancelPTT()
+	g.selectTab(0, nil)
+	g.openGlobalPrompt()
+	if g.globalField.GetText() != "keep this" {
+		t.Fatal("interruption during finalization erased draft")
+	}
+	g.voice.targetField(g.globalField)
+	g.voice.revise(" provisional")
+	g.cancelPTT()
+	if g.globalField.GetText() != "keep this" {
+		t.Fatal("explicit cancellation before stop should discard only the provisional edit")
+	}
+}

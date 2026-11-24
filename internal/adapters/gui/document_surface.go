@@ -211,6 +211,9 @@ func (e *documentSurface) Update(info *widget.UpdateObject) {
 		e.ime.Cancel()
 		return
 	}
+	if e.TextInput == e.game.globalField && e.game.runtimeInfo.PromptValue != nil {
+		return
+	}
 	if e.editable() {
 		handled, _ := e.ime.Update()
 		if handled {

@@ -2244,7 +2244,7 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 ## Phase 16: ASR, TTS, Push-To-Talk, Audio Lifecycle, And Privacy
 
-Phase 9B / Phase 16 global session entry provides an editable local draft, upper and left recording locks, and live inline transcription. Slide the left lock right to finish a global draft. Trigger-phrase or button submission, agent replies, TTS and automatic listening belong to the future global agent harness.
+Phase 9B / Phase 16 global session entry provides an editable local draft, upper and left recording locks, and live inline transcription. Sliding the left lock right retains the displayed global draft through finalization. Android users can open the native keyboard from Prompt. Trigger-phrase or button submission, agent replies, TTS and automatic listening belong to the future global agent harness.
 
 **User outcome:** Holding and releasing the configured control produces editable transcribed text through a selected local or remote route, and spoken output can be controlled independently.
 

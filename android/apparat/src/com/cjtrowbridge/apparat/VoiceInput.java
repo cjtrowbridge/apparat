@@ -159,7 +159,11 @@ final class VoiceInput {
                             show("");
                             dialog.hide();
                             Apparatmobile.voice("global-prompt");
-                            restoreOnReturn(dialog, origin);
+                            if ("global-agentic-session".equals(origin)) {
+                                ((android.app.AlertDialog)dialog).getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
+                            } else {
+                                restoreOnReturn(dialog, origin);
+                            }
                         } else if (!slideLocked) {
                             resetDrag();
                             stop("release-pointer");
@@ -292,8 +296,8 @@ final class VoiceInput {
             }
             listening=false;
             resetDrag();
-            if (state.equals("final") && !text.isEmpty()) {
-                revise(text);
+            if (state.equals("final")) {
+                if (!text.trim().isEmpty()) revise(text);
             } else {
                 restoreDraft();
             }

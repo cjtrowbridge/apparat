@@ -221,8 +221,8 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `document_exchange.go`: Exchanges text with the clipboard and imports optional Linux external working copies as scoped drafts.
 - `file_document_test.go`: Verifies view-first opening, draft cancellation and undo, checkout-bound saves and external text validation.
 
-- `global_session.go`: Anchors the global prompt, retains the in-memory draft and focuses its editor during a PTT handoff.
+- `global_session.go`: Anchors the global prompt, retains the in-memory draft and focuses its editor during a PTT handoff. Manual Android editing opens the native multiline editor and accepts the result on the HUD thread.
 - `ptt_drag.go`: Captures mouse and touch before HUD or arcade input and handles the lock and global destinations.
 
-- `inline_dictation.go`: Maintains one provisional edit at the captured selection. Cancellation restores the draft, and the final recognition produces one accepted form or document edit.
+- `inline_dictation.go`: Maintains one provisional edit at the captured selection. Cancellation during capture restores the draft. Stopping retains displayed prompt text if recognition finishes empty or is interrupted, while a nonempty final can refine the same selection.
 - `multiline_field.go`: Places a persistent label above a full-width composer and connects editable forms to the shared multiline canvas editor or Android prompt.

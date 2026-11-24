@@ -139,6 +139,7 @@ func (g *Game) beginPTT(source string) {
 	v.targetField(f)
 }
 func (g *Game) endPTT() {
+	g.stopInline()
 	g.shell.ReleaseVoiceCapture()
 	if g.voice.canvas != nil {
 		g.voice.canvas.Release()
@@ -151,7 +152,7 @@ func (g *Game) cancelPTT() {
 		g.voice.canvas.Cancel()
 		g.voice.canvas = nil
 	}
-	g.voice.discardInline()
+	g.interruptInline()
 	g.voice.preview = ""
 }
 func caretMayHaveMoved(f *widget.TextInput) bool {
@@ -189,7 +190,7 @@ func (g *Game) pollSpeech() {
 			v.canvas = nil
 			v.tap = pttLock{}
 		case "error", "cancelled":
-			v.discardInline()
+			g.interruptInline()
 			v.tap = pttLock{}
 			v.canvas = nil
 		}
