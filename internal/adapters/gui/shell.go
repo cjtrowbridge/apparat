@@ -14,22 +14,23 @@ type Adapter struct {
 }
 
 type RuntimeInfo struct {
-	CopyText        func(string)
-	PasteText       func() string
-	DeviceName      string
-	BrowseLAN       func(bool) string
-	CheckWorker     func(string)
-	PairPersonal    func(string, string)
-	ClaimHost       func(string, string)
-	EditName        func()
-	SpeakChoice     func(string)
-	MicrophoneReady func() bool
-	PromptValue     func(string, string, bool) (string, bool)
-	ProjectPicker   interface{ ChooseFolder() string }
-	WorkingDir      string
-	RuntimePath     string
-	BinaryPath      string
-	Queries         ServiceQueries
+	CanvasFitsKeyboard bool
+	CopyText           func(string)
+	PasteText          func() string
+	DeviceName         string
+	BrowseLAN          func(bool) string
+	CheckWorker        func(string)
+	PairPersonal       func(string, string)
+	ClaimHost          func(string, string)
+	EditName           func()
+	SpeakChoice        func(string)
+	MicrophoneReady    func() bool
+	PromptValue        func(string, string, bool) (string, bool)
+	ProjectPicker      interface{ ChooseFolder() string }
+	WorkingDir         string
+	RuntimePath        string
+	BinaryPath         string
+	Queries            ServiceQueries
 }
 
 func NewAdapter() Adapter {

@@ -235,6 +235,11 @@ func (e *documentSurface) setupIME() {
 		rect := e.GetWidget().Rect.Inset(4)
 		x := rect.Min.X + e.width(e.body[e.starts[e.row(e.caret)]:e.caret]) - e.left
 		y := rect.Min.Y + (e.row(e.caret)-e.top)*e.height
+		// The Android host relayouts the canvas around the IME. Keep the
+		// session anchor inside both layouts even before the first keystroke.
+		if e.game.runtimeInfo.CanvasFitsKeyboard {
+			y = 0
+		}
 		return &textinput.SessionOptions{CaretBounds: image.Rect(x, y, x+2, y+e.height), TextBeforeCaret: e.body[e.imeBegin:a], TextAfterCaret: e.body[b:e.imeEnd]}
 	}
 	e.ime.OnComposition = func(c *textinput.Composition) {

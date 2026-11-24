@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         String systemName = Settings.Global.getString(getContentResolver(), "device_name");
         Apparatmobile.setSystemDeviceName(systemName == null ? "" : systemName);
-        if (!Apparatmobile.initialize(getFilesDir().getAbsolutePath())) {
+        if (!Apparatmobile.initialize(getFilesDir().getAbsolutePath(), PromptGameView.resizesForKeyboard())) {
             Log.e(TAG, "Local runtime initialization failed");
             Toast.makeText(this, "Apparat could not initialize its local data. See app diagnostics.", Toast.LENGTH_LONG).show();
             finish();

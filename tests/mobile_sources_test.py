@@ -21,10 +21,6 @@ class MobileSourcesTest(unittest.TestCase):
             encoded = content.encode()
             info.size = len(encoded)
             bundle.addfile(info, io.BytesIO(encoded))
-            keyboard = tarfile.TarInfo('internal/ui/context.go')
-            calculation = b'caretBottom := float64(caretBounds.Max.Y)*scale + offsetY'
-            keyboard.size = len(calculation)
-            bundle.addfile(keyboard, io.BytesIO(calculation))
         return data.getvalue()
 
     def test_preparation_preserves_checkout_and_replaces_previous_output(self):
@@ -44,7 +40,6 @@ class MobileSourcesTest(unittest.TestCase):
                 self.assertFalse((second / 'stale').exists())
                 self.assertTrue((second / '.apparat-source').read_text().startswith('b' * 40))
                 self.assertEqual(source.read_text(), original)
-                self.assertIn('min(float64(c.screenHeight)', (second / 'internal/ui/context.go').read_text())
                 self.assertNotEqual((second / 'internal/ui/ui_mobile.go').read_text(), original)
 
     def test_unknown_source_fails_without_changing_checkout(self):

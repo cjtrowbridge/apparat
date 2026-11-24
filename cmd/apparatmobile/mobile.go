@@ -32,14 +32,14 @@ func SetSystemDeviceName(name string) {
 	bridgeMu.Unlock()
 }
 
-func Initialize(filesDir string) bool {
+func Initialize(filesDir string, resizesForKeyboard bool) bool {
 	initializeOnce.Do(func() {
-		initialize(filesDir)
+		initialize(filesDir, resizesForKeyboard)
 	})
 	return Ready()
 }
 
-func initialize(filesDir string) {
+func initialize(filesDir string, resizesForKeyboard bool) {
 	cfg, err := config.Load(config.Options{Env: map[string]string{"APPARAT_ANDROID_FILES_DIR": filesDir}, DefaultMode: config.ModeGUI, BinaryName: "apparat"})
 	if err != nil {
 		slog.Error("parse android config", "error", err)
@@ -72,10 +72,11 @@ func initialize(filesDir string) {
 	localName := systemDeviceName
 	bridgeMu.Unlock()
 	game = gui.NewGameWithRuntimeInfo(gui.RuntimeInfo{DeviceName: localName,
-		ClaimHost:    claimHost,
-		CheckWorker:  checkWorker,
-		PairPersonal: pairPersonal,
-		EditName:     editScreenName,
+		CanvasFitsKeyboard: resizesForKeyboard,
+		ClaimHost:          claimHost,
+		CheckWorker:        checkWorker,
+		PairPersonal:       pairPersonal,
+		EditName:           editScreenName,
 		BrowseLAN: func(open bool) string {
 			bridgeMu.Lock()
 			current := updater

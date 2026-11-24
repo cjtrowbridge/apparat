@@ -38,8 +38,12 @@ final class PromptGameView extends EbitenView {
         return super.dispatchKeyEventPreIme(event);
     }
 
+    static boolean resizesForKeyboard() {
+        return Build.VERSION.SDK_INT >= 30;
+    }
+
     static void fitKeyboard(MainActivity activity, FrameLayout content) {
-        if (Build.VERSION.SDK_INT < 30) return;
+        if (!resizesForKeyboard()) return;
         activity.getWindow().setDecorFitsSystemWindows(false);
         activity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {

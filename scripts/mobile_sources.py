@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Prepare isolated Android engine sources without editing tracked submodules.
-Exports the exact selected Git revision and applies the Android display and keyboard guards there.
+Exports the exact selected Git revision and applies the display-read guard there.
 Keeps invalid metrics unavailable and records source/patch identity for diagnostics.
 """
 import argparse
@@ -13,7 +13,7 @@ import subprocess
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
-PATCH_VERSION = 'display-values-keyboard-pan-v2'
+PATCH_VERSION = 'display-values-v1'
 
 
 def guard_display_values(text):
@@ -21,16 +21,6 @@ def guard_display_values(text):
     new = '\tif v == nil || v.width <= 0 || v.height <= 0 || v.scale <= 0 {\n\t\treturn 0, 0, 1, false\n\t}'
     if text.count(old) != 1:
         raise RuntimeError('Unsupported Ebitengine displayInfo source; expected one nil-value guard')
-    return text.replace(old, new, 1)
-
-
-def bound_keyboard_pan(text):
-    # A live IME session can retain the pre-resize caret. Only pan by the
-    # portion of the current rendering surface actually behind the keyboard.
-    old = 'caretBottom := float64(caretBounds.Max.Y)*scale + offsetY'
-    new = 'caretBottom := min(float64(c.screenHeight), float64(caretBounds.Max.Y)*scale + offsetY)'
-    if text.count(old) != 1:
-        raise RuntimeError('Unsupported Ebitengine keyboard offset calculation')
     return text.replace(old, new, 1)
 
 
@@ -46,9 +36,7 @@ def prepare_engine():
         bundle.extractall(work, filter='data')
     target = work / 'internal/ui/ui_mobile.go'
     target.write_text(guard_display_values(target.read_text()))
-    keyboard = work / 'internal/ui/context.go'
-    keyboard.write_text(bound_keyboard_pan(keyboard.read_text()))
-    digest = hashlib.sha256(target.read_bytes() + keyboard.read_bytes()).hexdigest()
+    digest = hashlib.sha256(target.read_bytes()).hexdigest()
     (work / '.apparat-source').write_text(f'{revision}\n{PATCH_VERSION}\n{digest}\n')
     print(f'Android engine: revision={revision} patch={PATCH_VERSION}', flush=True)
     return work
