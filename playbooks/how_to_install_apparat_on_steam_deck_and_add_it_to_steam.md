@@ -100,7 +100,7 @@ From the repository root:
 git status --short
 git log -1 --oneline -- releases/linux/amd64/apparat/latest
 git diff --exit-code -- releases/linux/amd64/apparat/latest
-sha256sum releases/linux/amd64/apparat/latest
+sha256sum releases/linux/amd64/apparat/latest internal/adapters/gui/logo.png
 ssh steam-deck 'df -h ~; pgrep -a -x apparat; pgrep -a -x apparatd'
 ```
 
@@ -115,10 +115,13 @@ into a staging file, leaving the installed executable intact:
 ```bash
 ssh steam-deck 'mkdir -p ~/.local/bin; test ! -L ~/.local/bin/apparat'
 scp releases/linux/amd64/apparat/latest steam-deck:.local/bin/apparat.incoming
+ssh steam-deck 'mkdir -p ~/.local/share/icons/hicolor/512x512/apps'
+scp internal/adapters/gui/logo.png steam-deck:.local/share/icons/hicolor/512x512/apps/apparat.png.incoming
+ssh steam-deck 'sha256sum ~/.local/share/icons/hicolor/512x512/apps/apparat.png.incoming'
 ssh steam-deck 'sha256sum ~/.local/bin/apparat.incoming; ldd ~/.local/bin/apparat.incoming'
 ```
 
-Compare SHA-256 with the host value exactly. Stop on any mismatch or missing
+Compare both SHA-256 digests with the corresponding host values. Stop on any mismatch or missing
 library. Do not activate an incomplete transfer. Repair a mismatched copy by
 recopying the same qualified artifact; do not compile a second application on
 the Deck or disable SteamOS read-only protection to work around prerequisites.
@@ -140,6 +143,7 @@ if test -e ~/.local/share/applications/apparat.desktop; then
 fi
 chmod 755 ~/.local/bin/apparat.incoming
 mv ~/.local/bin/apparat.incoming ~/.local/bin/apparat
+mv ~/.local/share/icons/hicolor/512x512/apps/apparat.png.incoming ~/.local/share/icons/hicolor/512x512/apps/apparat.png
 cat > ~/.local/share/applications/apparat.desktop.incoming <<'DESKTOP'
 [Desktop Entry]
 Version=1.0
@@ -149,7 +153,7 @@ Comment=Personal cluster console
 Exec=/home/deck/.local/bin/apparat
 TryExec=/home/deck/.local/bin/apparat
 Path=/home/deck
-Icon=applications-development
+Icon=/home/deck/.local/share/icons/hicolor/512x512/apps/apparat.png
 Terminal=false
 Categories=Utility;
 StartupWMClass=Apparat

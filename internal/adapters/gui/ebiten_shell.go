@@ -46,6 +46,8 @@ type Game struct {
 	actions                        actionScreen
 	nav                            navigation
 	voice                          voiceState
+	globalDraft                    string
+	globalField                    *widget.TextInput
 	prefs                          preferenceState
 	projects                       projectForm
 	window                         windowTracker
@@ -168,6 +170,9 @@ func (game *Game) Update() error {
 	if game.cancelInputRequested.Swap(false) {
 		game.cancelPointer()
 	}
+	if ebiten.IsFocused() {
+		game.receiveNativePrompt()
+	}
 	game.receivePreferences()
 	game.pollProjects()
 	game.pollUpdateDiscovery()
@@ -195,6 +200,11 @@ func (game *Game) Update() error {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())
 	}
+	if game.updatePTTPointer() {
+		game.keyboardPTT()
+		game.pollSpeech()
+		return nil
+	}
 	if game.actions.mode == "" && game.arcadeUpdate() {
 		game.keyboardPTT()
 		game.arcadeTriggerPTT()
@@ -203,9 +213,6 @@ func (game *Game) Update() error {
 	}
 	game.updatePointerState()
 	game.ui.Update()
-	if game.gesture.Owner == gesturePTT && game.voice.canvas != nil && game.voice.field != nil {
-		game.ui.SetFocusedWidget(game.voice.field)
-	}
 	game.clampBodyScroll()
 	game.enforceBodyTabScrollLock()
 	game.advanceTabDragCancellation()
@@ -224,7 +231,7 @@ func (game *Game) Update() error {
 	game.pageDownWasHit = pageDownPressed
 	game.pageUpWasHit = pageUpPressed
 
-	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6} {
+	for index, key := range []ebiten.Key{ebiten.Key1, ebiten.Key2, ebiten.Key3, ebiten.Key4, ebiten.Key5, ebiten.Key6, ebiten.Key7} {
 		if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(key) {
 			game.selectTabWithReveal(index)
 		}
@@ -346,9 +353,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	}
 	if game.actions.mode == "" && game.arcadeDraw(screen) {
 		game.drawArcadeFocus(screen)
-		if game.voice.canvas != nil || game.pttButtonHeld() {
-			game.drawPTTButton(screen)
-		}
+		game.drawPTTButton(screen)
 		return
 	}
 	game.drawFocus(screen)
@@ -356,15 +361,13 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		game.drawPTTButton(screen)
 		return
 	}
-	if game.pttButtonVisible() {
-		game.drawPTTButton(screen)
-	}
 	if game.debugOverlayOpen {
 		game.drawDebugOverlay(screen)
 	}
 	if game.debugOverlayOpen || !game.inWorkspace() {
 		drawDiagnostics(screen, game.shell.Snapshot(), game.height)
 	}
+	game.drawPTTButton(screen)
 }
 
 func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {

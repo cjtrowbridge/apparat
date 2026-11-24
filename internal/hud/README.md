@@ -42,7 +42,7 @@ Input is represented as named actions such as `previous_tab`, `next_tab`, `push_
 Default bindings preserve the accepted controls:
 
 - `L1` / `R1` and `Ctrl+PageUp` / `Ctrl+PageDown` switch tabs.
-- `Alt+1` through `Alt+5` select canonical tabs directly.
+- `Alt+1` through `Alt+7` select canonical tabs directly.
 - `L2` and right `Ctrl` are push-to-talk.
 - `Escape` cancels held recording.
 - Pointer wheel, pointer drag, touch drag, right-stick scrolling, `PageUp`, and `PageDown` are tracked as scroll defaults.
@@ -100,3 +100,5 @@ Linux Updates copy describes the built-in verified check/install/restart flow; t
 - `action_query.go`: Deterministic navigation grammar and exact or suggested destination matching.
 
 - `action_query_test.go`: Exercises exact, ambiguous, partial, near, absent and unsupported queries independently of speech recognition.
+
+Global Agentic Session has a stable tab ID, a brain glyph and one local prompt field. Its enabled descriptor also supplies its open action.

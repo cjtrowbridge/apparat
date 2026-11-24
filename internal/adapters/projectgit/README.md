@@ -43,3 +43,6 @@ workspace_files.go bounds UTF-8 files to 64 KiB and compares draft base digests 
 - `pages.go`: Streams one directory through short-lived, caller-bound page cursors.
 
 - `pages_test.go`: Checks that a large directory streams in bounded pages tied to the caller.
+
+- `chat_store.go`: creates and updates owner-local `.apparat/chats/<UTC timestamp>-<session ULID>.md` files. It pins each repository directory, stages complete revisions and uses an exclusive publication operation for creation. Malformed records, symlinks or detected concurrent edits return errors. The owner serializes Apparat writers. Ordinary Git operations version these files.
+- `chat_transcript.go`: encodes versioned YAML metadata and Markdown user/assistant sections. Each quoted message line is data, including Markdown headings inside a message. Read the transcript directly or use the owner's shared runtime API. Recovery and idempotency checks live in the application chat tests.

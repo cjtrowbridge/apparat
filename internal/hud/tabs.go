@@ -9,6 +9,7 @@ func DefaultTabDescriptors() []TabDescriptor {
 		{ID: TabCluster, Label: "Cluster", Glyph: "🖧", AccessibilityLabel: "Cluster, devices health and capabilities", Visible: true, Enabled: true},
 		{ID: TabResearch, Label: "Research", Glyph: "🧪", AccessibilityLabel: "Research, future BOINC validated compute", Visible: true, Enabled: true},
 		{ID: "stmpck", Label: "STMPCK", Glyph: "💉", AccessibilityLabel: "STMPCK games", Visible: true, Enabled: true},
+		{ID: TabGlobalSession, Label: "Global Agentic Session", Glyph: "🧠", AccessibilityLabel: "Global Agentic Session, prompt draft", Visible: true, Enabled: true},
 		{ID: TabSettings, Label: "Settings", Glyph: "⚙️", AccessibilityLabel: "Settings, local configuration and diagnostics", Visible: true, Enabled: true},
 	})
 }

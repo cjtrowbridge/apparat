@@ -75,3 +75,8 @@ workspace.go resolves every command by registered project ID and coordinates dra
 - `owner_workspace_test.go`: Verifies scoped remote operations on an actual SQLite registration and working file.
 
 - `workspace_roles_acceptance_test.go`: Exercises signed role changes, paginated registrations, nested file access, disk-verified saves and revocation through two isolated worker APIs.
+
+### Shared chat sessions
+
+- `chat.go`: exposes trusted in-process create, inspect, submit and complete operations on an initialized GUI or headless Runtime. Pass a registered filesystem checkout ID, stable session/turn ULIDs and the project or global scope. Global sessions require the caller to select the owning repository. Duplicate delivery returns the original turn. A changed payload or a second outstanding turn on the same session returns an error. Other sessions can independently await replies. A pending turn holds no execution slot.
+- `chat_test.go`: exercises owner registration, concurrent retries, restart, reply correlation and preservation of externally changed transcripts. Run through the governed Go test entrypoint for this package. Remote grants, provider dispatch and presentation belong to later harness work.

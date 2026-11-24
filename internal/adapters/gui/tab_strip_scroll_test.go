@@ -73,12 +73,12 @@ func TestTabHoverImageDiffersFromSelectedImage(t *testing.T) {
 	}
 }
 
-func TestIconTabsFitPhoneWidthWithTouchTargetsAndNames(t *testing.T) {
+func TestScrollablePhoneTabsKeepTouchTargetsAndNames(t *testing.T) {
 	game := horizontalGame()
 	game.width = 320
 	game.rebuildUI(game.shell.Snapshot())
-	if game.tabStripOverflows() {
-		t.Fatal("all five icon tabs must fit at 320 logical pixels")
+	if !game.tabStripOverflows() {
+		t.Fatal("seven touch targets require horizontal scrolling at 320 logical pixels")
 	}
 	for index, button := range game.tabButtons {
 		width, height := button.PreferredSize()
@@ -123,7 +123,7 @@ func TestResponsivePlacementAdaptsWithoutChangingSavedChoice(t *testing.T) {
 
 func TestRightRailClearsPushToTalk(t *testing.T) {
 	game := horizontalGame()
-	game.Layout(640, 480)
+	game.Layout(640, 600)
 	game.prefs.Placement = "right_rail"
 	x, _ := game.pttCenter()
 	if x+pttRadius >= game.width-windowMargin-tabIconButtonWidth {

@@ -18,10 +18,12 @@ const (
 )
 
 type pointerGesture struct {
-	Owner   gestureOwner
-	Touch   bool
-	ID      ebiten.TouchID
-	Movable bool
+	Owner          gestureOwner
+	Touch          bool
+	ID             ebiten.TouchID
+	Movable        bool
+	startX, startY int
+	global         bool
 }
 
 func (game *Game) claimGesture(owner gestureOwner, touch bool, id ebiten.TouchID) bool {

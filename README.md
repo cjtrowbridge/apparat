@@ -1,5 +1,7 @@
 # Apparat
 
+<img src="internal/adapters/gui/logo.png" alt="Official Apparat gear" width="80" height="80">
+
 Apparat is a controller-first console for building and operating a personal-area network: a cluster made from some or all of one person's computers, handhelds, phones, servers, single-board computers, and compute devices.
 
 The cluster coordinates projects, typed compute and inference services, durable message queues, automation, and device capabilities. Apparat initially uses a game engine to deliver a portable HUD rather than to build a game. Gamification comes later. The first target is Steam Deck, followed by Debian/Linux, Windows, macOS, and Android; both headless workers and the full UI/UX.
@@ -20,6 +22,24 @@ Apparat treats those devices as one personal cluster. From one HUD, a user shoul
 - Delegate explicitly budgeted compute to validated public-interest research.
 - Continue useful work while devices are offline and reconcile durable state after reconnection.
 - Use controller-first voice and text interactions without giving up keyboard, mouse, touch, or headless operation.
+
+### Conversational control of the cluster
+
+The goal is for a user to operate their projects from one ongoing conversation. Holding push-to-talk (PTT) and asking “How is project X going?” should bring back what is running, what finished, what needs a decision and how recent that information is. The user can ask a follow-up, delegate work to a project session or open that session to take direct control. A focused text field keeps PTT for dictation. Exact navigation commands retain their existing behavior.
+
+The proposed global conversation and project chats use the same small Go harness with different scopes. Each project owner hosts its own conversations and their work, so closing a HUD or switching devices leaves active sessions on the owner. A project may have any number of saved and concurrently active sessions, subject to available resources. Authorized clients use the owner's REST API to read state and submit requests, and its authenticated WebSocket to follow updates. A session can use a permitted Ollama service elsewhere on the cluster or call a configured cloud provider such as Cerebras or OpenAI while the project owner retains its history and authority over tools and approvals.
+
+Pi is the design reference for the interface a model sees during a turn, including tool definitions, calls, results and discoverable skills. The aim is to reuse familiar conventions in a native Go runtime and test whether models tuned for Pi make fewer invented or malformed calls on Apparat tasks. The first meaningful measure is whether a user gets an accurate answer or the intended authorized action.
+
+The static Apparat system prompt describes a project lookup tool. One call can list the projects visible to the caller or select a particular project, with its owner, active sessions, work in progress, results, pending decisions, next steps and the freshness of each report. Changing project details enter the conversation through tool results. Stable instructions and tool definitions form a reusable prompt prefix. On backends with persistent prompt caches, the goal is to prefill that prefix once and restore it from disk when a session starts. Cache reuse and time to first useful output must be measured for each backend.
+
+PTT and typed chat share a deterministic path for known requests. For example, within a project, “commit everything and push” should invoke that project's authorized, repeatable Task directly. The Task runs its checks and reports what actually happened, including partial success such as a local commit followed by a rejected push. Recurring requests with a stable trigger, scope and expected behavior should become named automations. An unfamiliar failure is a reason to use inference to diagnose the case. When the resolution generalizes, verify it against the failure and incorporate it into the automation so the same case can run without model inference next time.
+
+An inference call is a durable asynchronous operation. Every global or project session must be able to wait indefinitely, both in the pool queue and after a provider accepts the call, including before the first token or between tokens. Project sessions may wait hours while the same hardware serves higher-priority PTT work. The session owner records the pending turn and stable job ID before submission and resumes it when the queue owner records a result. An immediate reply takes the same path. Waiting sessions release execution slots and survive HUD disconnects and host restarts.
+
+The [rotating Apparat gear](./wait.svg) represents a session waiting for a reply. The gears keep turning across the cluster while an individual session waits its turn. Pair the gear with the owner’s recorded status so the user can distinguish queued work from generation in progress.
+
+Pool priority determines which eligible job starts next. Elapsed time alone never fails, cancels, duplicates or reroutes a session inference job. Transport requests can reconnect and worker leases can renew independently of token delivery. After an interruption, reconcile the existing job before considering another provider attempt. Surface an indeterminate provider outcome when it cannot be recovered. The operator can inspect or explicitly cancel pending work.
 
 ## MVP
 
@@ -43,11 +63,11 @@ This slice proves the HUD, controller input, identity, networking, API, persiste
 
 The game engine renders the application HUD and input system. For the MVP, there is no RPG world, quest system, progression system, or active gameplay layer. Comrades and Research are visible as future-facing tabs but are not actively developed beyond navigable placeholders.
 
-The GUI includes the offline STMPCK gallery on Linux and Android. Both targets import the shared game surface directly from the pinned upstream STMPCK submodule. Its 💉 tab sits immediately before Settings. Settings is always last when adding or reorganizing tabs.
+The GUI includes the offline STMPCK gallery on Linux and Android. Both targets import the shared game surface directly from the pinned upstream STMPCK submodule. Its 💉 tab sits immediately before Global Agentic Session. Settings is always last when adding or reorganizing tabs.
 
-The canonical order is Comrades, Projects, Cluster, Research, STMPCK, Settings.
+The canonical order is Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, Settings.
 
-The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, 💉 STMPCK and ⚙️ Settings. All six fit at 320 logical pixels. Tab buttons have no popup tooltips. The active tab has a fixed page heading. STMPCK places its heading in the gallery toolbar, immediately before the star. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
+The tab strip uses compact symbol-only buttons: ☭ Comrades, 🔨 Projects, 🖧 Cluster, 🧪 Research, 💉 STMPCK, 🧠 Global Agentic Session and ⚙️ Settings. Swipe the strip on narrow displays. Tab buttons have no popup tooltips. The active tab has a fixed page heading. STMPCK places its heading in the gallery toolbar, immediately before the star. Emoji artwork is bundled offline with [attribution](internal/adapters/gui/emoji/README.md), independent of device fonts.
 
 Cluster uses a selector panel for device and operations context. Its content panel includes Routing and Tasks; Tasks manages schedules, webhooks, approvals, and run history without becoming a top-level tab.
 
@@ -161,7 +181,7 @@ Routing manages:
 - Project, chat, workflow, and task routing profiles.
 - Required workload class.
 - Required capabilities and privacy boundaries.
-- Queue priority and timeout.
+- Queue priority and workload-specific timeout policy. Session inference has no elapsed-time deadline.
 - Ordered fallback destinations.
 - Service health and availability.
 
@@ -243,7 +263,7 @@ Debian GUI mode supports the Steam Deck controller mapping unchanged when a comp
 
 - **`Ctrl+PageUp`**: previous top-level tab.
 - **`Ctrl+PageDown`**: next top-level tab.
-- `Alt+1` through `Alt+5`: open Comrades, Projects, Cluster, Research, or Settings directly.
+- `Alt+1` through `Alt+7`: open Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, or Settings directly.
 - `Tab` and `Shift+Tab`: move to the next or previous focusable control.
 - Arrow keys: move within lists, trees, grids, menus, and spatial focus groups.
 - **`Enter`**: activate the focused control or submit the current form.
@@ -318,7 +338,11 @@ During the MVP, the Project owner evaluates that Project's Task trigger bindings
 
 Every project is an ordinary Git repository whose working tree lives on one authoritative owner device. That device owns the project because it stores and runs the repository; changing ownership requires an explicit future migration rather than an incidental cache or clone.
 
-SQLite stores project metadata, ownership, chats, events, queue routes, artifacts, indexes, transactions, drafts, and sync cursors. It does not replace Git or become the canonical store for every project file.
+Project chat transcripts belong in Git alongside the code and planning documents whose decisions they explain. The chat harness must keep one Markdown transcript per session in the owning repository under `.apparat/chats/`, including sessions delegated from global PTT. Use a sortable UTC start timestamp such as `2026-11-23-19-42-08.md` and disambiguate sessions started in the same second. YAML front matter carries a stable session ID, start time and a plain-language description of what the conversation covers. The body preserves the conversation in order.
+
+Apparat generates a browsable chat index from those descriptions and relative file paths. A maintainer with a fresh clone can trace a decision from the index to the original exchange. An agent can search both descriptions and transcript bodies through a project-scoped tool and read the relevant passage on demand.
+
+The shared Go runtime now supports owner-local session creation, turn submission, inspection and reply completion for project and global scopes on registered filesystem checkouts. Its Markdown transcript preserves a pending turn across process restarts. Callers select the repository explicitly, including for global sessions. The existing local Chat UI persists pending messages in SQLite. In the planned harness, SQLite retains operational state such as drafts, delivery state and rebuildable search indexes. The repository files are authoritative for project conversation history.
 
 Once catalog sharing is implemented, each enrolled device maintains a cluster-wide project catalog assembled from its local projects and authorized project summaries advertised by other devices. Therefore the Projects list on any enrolled device includes every project in the cluster that the current user/device is authorized to know about, along with its owner, availability, and freshness. Cached metadata may keep an offline owner's project visible as stale or unavailable, but the cache is not the repository and does not become authoritative.
 
@@ -348,7 +372,7 @@ Jobs record:
 - Project and workflow linkage.
 - Required service, model, and capabilities.
 - Workload class.
-- Priority and deadline.
+- Priority and any applicable workload deadline. Session inference has no job expiry.
 - Attempt count and retry policy.
 - Lease or assignment state.
 - Cancellation and failure state.
@@ -459,6 +483,8 @@ generated text -> TTS queue -> spoken playback
 ```
 
 The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project document, place the caret or select text, then hold the PTT control and speak. Release to insert the final transcript. A live preview stays outside the document. Escape cancels, and saving a document or sending a message is a separate action. Android asks for microphone permission on first use. Audio stays in memory on the device, in bounded chunks while the control is held.
+
+On every HUD screen, drag PTT into the circle above it to lock recording. Slide it back down to finish. Drag left to open 🧠 Global Agentic Session and dictate into **Prompt**. Release to insert the final text. You can edit the draft and return to it during the same app session. Sending and spoken replies are planned.
 
 ### Voice commands and the command directory
 

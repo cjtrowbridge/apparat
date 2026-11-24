@@ -12,7 +12,8 @@ import (
 )
 
 func (game *Game) drawPTTButton(screen *ebiten.Image) {
-	x, y := game.pttCenter()
+	x, y := game.pttDisplayCenter()
+	game.drawPTTTargets(screen)
 	fill := game.pttButtonFill()
 	vector.DrawFilledCircle(screen, float32(x), float32(y), float32(pttRadius), fill, true)
 	vector.StrokeCircle(screen, float32(x), float32(y), float32(pttRadius), 2, color.RGBA{R: 220, G: 232, B: 255, A: 255}, true)
@@ -24,10 +25,7 @@ func (game *Game) drawPTTButton(screen *ebiten.Image) {
 }
 
 func (game *Game) pointInPTT(x int, y int) bool {
-	if !game.pttButtonVisible() {
-		return false
-	}
-	cx, cy := game.pttCenter()
+	cx, cy := game.pttDisplayCenter()
 	dx, dy := x-cx, y-cy
 	return dx*dx+dy*dy <= pttRadius*pttRadius
 }
@@ -44,10 +42,6 @@ const pttTriggerButton = ebiten.StandardGamepadButtonFrontBottomLeft
 
 func (game *Game) pttButtonHeld() bool {
 	return game.voice.tap.locked || game.pttHeld || game.l2Held || game.rightCtrlHeld
-}
-
-func (game *Game) pttButtonVisible() bool {
-	return game.actions.mode != "" || game.voice.engine != nil || !game.inWorkspace() || game.ui.GetFocusedWidget() != nil || game.voice.canvas != nil || game.pttButtonHeld()
 }
 
 func (game *Game) pttButtonFill() color.RGBA {

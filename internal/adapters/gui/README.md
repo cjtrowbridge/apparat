@@ -12,7 +12,7 @@ Ebitengine owns the window, game loop, input polling, and final drawing surface.
 
 Default non-GUI builds use the stub runner so headless validation can run on systems without native desktop headers.
 
-The desktop window icon is generated in code from the same simple blue gear motif as the tracked root `logo.svg`. `RunWithRuntimeInfo` applies the generated icon images through Ebitengine's `SetWindowIcon` on desktop platforms where Ebitengine supports it.
+The desktop window icon uses the embedded 512 px transparent [logo.png](logo.png). Regenerate it from [logo.svg](../../../logo.svg) at the repository root with `gdk-pixbuf-thumbnailer -s 512 logo.svg internal/adapters/gui/logo.png` on a system with the SVG loader installed. Check the white rim and transparent hub on a dark background. The Android vector and the rotating [wait asset](../../../wait.svg) use the same path. The wait SVG turns once every six seconds and stays still when the viewer requests reduced motion. Ebitengine applies the PNG through `SetWindowIcon` on supported desktops. An invalid embedded PNG fails at GUI startup.
 
 ## EbitenUI Boundary
 
@@ -220,3 +220,6 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `document_surface.go`: Renders multiline UTF-8 text, selection and caret and receives keyboard, touch and IME edits inside the workspace.
 - `document_exchange.go`: Exchanges text with the clipboard and imports optional Linux external working copies as scoped drafts.
 - `file_document_test.go`: Verifies view-first opening, draft cancellation and undo, checkout-bound saves and external text validation.
+
+- `global_session.go`: Anchors the global prompt, retains the in-memory draft and focuses its editor during a PTT handoff.
+- `ptt_drag.go`: Captures mouse and touch before HUD or arcade input and handles the lock and global destinations.

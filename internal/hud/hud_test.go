@@ -7,7 +7,7 @@ import "testing"
 func TestCanonicalTabOrder(t *testing.T) {
 	shell := NewShell()
 	got := shell.Snapshot().TabTitles()
-	want := []string{"Comrades", "Projects", "Cluster", "Research", "STMPCK", "Settings"}
+	want := []string{"Comrades", "Projects", "Cluster", "Research", "STMPCK", "Global Agentic Session", "Settings"}
 	if len(got) != len(want) {
 		t.Fatalf("got %d tabs, want %d", len(got), len(want))
 	}
@@ -36,7 +36,7 @@ func TestDefaultHUDConfig(t *testing.T) {
 
 func TestTabDescriptorsAreStableAndAccessible(t *testing.T) {
 	descriptors := DefaultTabDescriptors()
-	ids := []TabID{TabComrades, TabProjects, TabCluster, TabResearch, "stmpck", TabSettings}
+	ids := []TabID{TabComrades, TabProjects, TabCluster, TabResearch, "stmpck", TabGlobalSession, TabSettings}
 	for index, id := range ids {
 		descriptor := descriptors[index]
 		if descriptor.ID != id {
@@ -235,7 +235,7 @@ func TestSettingsStaysLastWhenGameIsAppended(t *testing.T) {
 	if got[len(got)-1].ID != TabSettings || got[len(got)-2].ID != "extra" {
 		t.Fatalf("appended game order = %v", got)
 	}
-	config.TabView.Tabs = []TabDescriptor{config.TabView.Tabs[5], config.TabView.Tabs[1], config.TabView.Tabs[0], config.TabView.Tabs[2], config.TabView.Tabs[3]}
+	config.TabView.Tabs = []TabDescriptor{config.TabView.Tabs[len(config.TabView.Tabs)-2], config.TabView.Tabs[1], config.TabView.Tabs[0], config.TabView.Tabs[2], config.TabView.Tabs[3]}
 	tabs := DefaultTabs(config)
 	if tabs[len(tabs)-1].ID() != TabSettings || tabs[0].ID() != TabProjects {
 		t.Fatalf("reordered content = %v", tabs)

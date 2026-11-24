@@ -37,7 +37,7 @@ func (game *Game) tabIconContent(tab hud.TabDescriptor) widget.ButtonOpt {
 	}
 	names := map[hud.TabID]string{
 		"stmpck": "1f489", hud.TabProjects: "1f528", hud.TabCluster: "1f5a7",
-		hud.TabResearch: "1f9ea", hud.TabSettings: "2699",
+		hud.TabResearch: "1f9ea", hud.TabGlobalSession: "1f9e0", hud.TabSettings: "2699",
 	}
 	return widget.ButtonOpts.Graphic(&widget.GraphicImage{Idle: emojiIcon(names[tab.ID])})
 }

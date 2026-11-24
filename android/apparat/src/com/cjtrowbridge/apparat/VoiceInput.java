@@ -64,30 +64,7 @@ final class VoiceInput {
         this.preview = preview;
         button.setText("PTT");
         button.setContentDescription("Hold to dictate or double tap to lock listening");
-        button.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    v.getParent().requestDisallowInterceptTouchEvent(true);
-                    paint(true);
-                    trace("touch_down");
-                    begin("press-pointer");
-                    break;
-                case MotionEvent.ACTION_UP:
-                    paint(false);
-                    v.getParent().requestDisallowInterceptTouchEvent(false);
-                    trace("touch_up");
-                    stop("release-pointer");
-                    break;
-                case MotionEvent.ACTION_CANCEL:
-                    v.getParent().requestDisallowInterceptTouchEvent(false);
-                    trace("touch_cancel");
-                    cancel();
-                    break;
-            }
-            return true;
-            }
-        });
+        bindDrag(dialog);
         dialog.setOnKeyListener(new android.content.DialogInterface.OnKeyListener() {
             public boolean onKey(android.content.DialogInterface d, int key, KeyEvent event) {
             if (key==KeyEvent.KEYCODE_CTRL_RIGHT || key==KeyEvent.KEYCODE_BUTTON_L2) {
@@ -103,6 +80,124 @@ final class VoiceInput {
             return false;
             }
         });
+    }
+    private Button homeTarget;
+    private Button lockTarget;
+    private Button agentTarget;
+    private boolean slideLocked;
+    private boolean agentDrag;
+    private float startX;
+    private float startY;
+
+    private Button target(String label, float x, float y) {
+        FrameLayout frame = (FrameLayout)button.getParent();
+        Button target = floatingButton(frame);
+        GradientDrawable circle = new GradientDrawable();
+        circle.setShape(GradientDrawable.OVAL);
+        circle.setColor(0xff303d55);
+        target.setBackground(circle);
+        target.setTextColor(0xffffffff);
+        target.setText(label);
+        target.setTranslationX(x);
+        target.setTranslationY(y);
+        target.setClickable(false);
+        target.setVisibility(View.INVISIBLE);
+        return target;
+    }
+
+    private void bindDrag(Dialog dialog) {
+        float travel = button.getLayoutParams().width * 0.75f;
+        homeTarget = target("PTT", 0, 0);
+        lockTarget = target("Lock", 0, -travel);
+        agentTarget = target("Agent", -travel, 0);
+        button.bringToFront();
+        button.setOnTouchListener(new View.OnTouchListener() {
+            @Override public boolean onTouch(View view, MotionEvent event) {
+                float x = event.getRawX();
+                float y = event.getRawY();
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        startX = x;
+                        startY = y;
+                        view.getParent().requestDisallowInterceptTouchEvent(true);
+                        if (!slideLocked) begin("press-pointer");
+                        paint(true);
+                        homeTarget.setVisibility(View.VISIBLE);
+                        lockTarget.setVisibility(View.VISIBLE);
+                        agentTarget.setVisibility(View.VISIBLE);
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = x - startX;
+                        float dy = y - startY;
+                        if (slideLocked && Math.hypot(dx, dy-travel) < travel/2) {
+                            resetDrag();
+                            stop("stop");
+                        } else if (!slideLocked && !agentDrag) {
+                            if (Math.hypot(dx+travel,dy) < travel/2) {
+                                agentDrag = true;
+                                button.setTranslationX(-travel);
+                            } else if (listening && Math.hypot(dx,dy+travel) < travel/2) {
+                                slideLocked = true;
+                                startX = x;
+                                startY = y;
+                                button.setTranslationY(-travel);
+                                receive(Apparatmobile.voice("slide-lock"));
+                            }
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        view.getParent().requestDisallowInterceptTouchEvent(false);
+                        if (agentDrag) {
+                            String origin = Apparatmobile.activeTab();
+                            listening = false;
+                            handler.removeCallbacks(poll);
+                            resetDrag();
+                            show("");
+                            dialog.hide();
+                            Apparatmobile.voice("global-prompt");
+                            restoreOnReturn(dialog, origin);
+                        } else if (!slideLocked) {
+                            resetDrag();
+                            stop("release-pointer");
+                        }
+                        break;
+                    case MotionEvent.ACTION_CANCEL:
+                        view.getParent().requestDisallowInterceptTouchEvent(false);
+                        cancel();
+                        break;
+                }
+                return true;
+            }
+        });
+    }
+
+    // Keep the native editor and its unconfirmed text until the user returns.
+    private void restoreOnReturn(Dialog dialog, String origin) {
+        handler.postDelayed(new Runnable() {
+            boolean left;
+            public void run() {
+                if (!field.isAttachedToWindow() || activity.isDestroyed()) return;
+                String current = Apparatmobile.activeTab();
+                if (!origin.equals(current)) left = true;
+                if (left && origin.equals(current)) {
+                    dialog.show();
+                    field.requestFocus();
+                } else {
+                    handler.postDelayed(this, 200);
+                }
+            }
+        }, 200);
+    }
+
+    private void resetDrag() {
+        slideLocked = false;
+        agentDrag = false;
+        button.setTranslationX(0);
+        button.setTranslationY(0);
+        homeTarget.setVisibility(View.INVISIBLE);
+        lockTarget.setVisibility(View.INVISIBLE);
+        agentTarget.setVisibility(View.INVISIBLE);
+        paint(false);
     }
     private void begin(String action) {
         if (listening) {
@@ -128,7 +223,7 @@ final class VoiceInput {
         if (listening) receive(Apparatmobile.voice(action));
     }
     void cancel() {
-        paint(false);
+        resetDrag();
         if (listening) Apparatmobile.voice("cancel");
         listening=false;
         handler.removeCallbacks(poll);
@@ -162,7 +257,7 @@ final class VoiceInput {
             if (state.equals("locked") || state.equals("recording") || state.equals("starting") || state.equals("finishing")) {
                 String label = state.equals("finishing") ? "Finishing" : "Listening";
                 if (state.equals("locked")) {
-                    label = "Listening locked · tap to finish";
+                    label = slideLocked ? "Listening locked · slide down to finish" : "Listening locked · tap to finish";
                     paint(true);
                 }
                 show(text.isEmpty() ? label : label+" · "+text);
@@ -170,7 +265,7 @@ final class VoiceInput {
                 return;
             }
             listening=false;
-            paint(false);
+            resetDrag();
             if (state.equals("final") && !text.isEmpty()) {
                 field.getText().replace(Math.min(start,end),Math.max(start,end),text);
             }

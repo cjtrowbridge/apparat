@@ -140,7 +140,6 @@ func (game *Game) updatePointerState() {
 	game.updateTabStripDrag(x, y)
 	game.updateDividerDrag(x, y)
 	game.updateBodyScrollMouse(x, y)
-	game.updatePTTMouse(x, y)
 }
 
 func (game *Game) updateDebugOverlayDrag(x int, y int) {
@@ -174,9 +173,6 @@ func (game *Game) updateTouchDrag() {
 				game.debugDragDY = y - game.debugOverlayY
 				// The entire overlay captures input; only its title initiates movement.
 				game.gesture.Movable = pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30)
-			case game.pointInPTT(x, y):
-				game.claimGesture(gesturePTT, true, id)
-				game.setPTTHeld(true)
 			case game.tabScroll != nil && imagePoint(x, y).In(game.tabScroll.GetWidget().Rect):
 				game.claimGesture(gestureTabs, true, id)
 				game.tabStripLastX = x
@@ -200,8 +196,6 @@ func (game *Game) updateTouchDrag() {
 		game.updateTabTouch()
 	case gestureBody:
 		game.updateBodyTouch()
-	case gesturePTT:
-		game.updatePTTTouch()
 	}
 }
 
@@ -320,24 +314,6 @@ func (game *Game) tabSelectionSuppressed() bool {
 func (game *Game) advanceTabDragCancellation() {
 	if game.tabDragCancelUpdates > 0 {
 		game.tabDragCancelUpdates--
-	}
-}
-
-func (game *Game) updatePTTMouse(x int, y int) {
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && game.pointInPTT(x, y) && !game.pointInDebugOverlay(x, y) && game.claimGesture(gesturePTT, false, 0) {
-		game.setPTTHeld(true)
-	}
-	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) && game.pttHeld && game.gesture.Owner == gesturePTT {
-		game.setPTTHeld(false)
-		game.releaseGesture(gesturePTT)
-	}
-}
-
-func (game *Game) updatePTTTouch() {
-	if inpututil.IsTouchJustReleased(game.gesture.ID) {
-		game.releaseGesture(gesturePTT)
-		game.setPTTHeld(false)
-		game.releaseGesture(gesturePTT)
 	}
 }
 

@@ -2,6 +2,8 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-23-22-32-20 | plans/past/2026-11-23-22-00-00_global-session-ptt.md | Global session prompt and PTT drag controls | Add the global draft tab and pointer gestures for locking and prompt dictation.
+2026-11-23-21-50-38 | plans/past/2026-11-23-18-00-00_gear-identity.md | Use the Apparat gear for identity and waiting | Share the outlined gear across launcher artwork and a rotating wait asset.
 2026-11-21-16-15-01 | plans/past/2026-11-20-13-00-00_settings-command-dialog.md | Clarify Settings and voice choices | Restore the PTT label and present choices over the current page.
 2026-11-21-16-15-01 | plans/past/2026-11-20-12-30-00_ptt-lock.md | Lock PTT with a double tap | Retain a single capture across quick taps and verify target delivery.
 2026-11-21-16-15-01 | plans/past/2026-11-20-12-15-00_action-catalog.md | Searchable actions and offline voice navigation | Resolve navigation against current destinations and preserve exclusive dictation.

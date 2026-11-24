@@ -38,6 +38,8 @@ func (g *Game) actionCatalog() []catalogAction {
 			g.selectTab(index, nil)
 		})
 		switch tab.ID() {
+		case hud.TabGlobalSession:
+			continue // The tab itself is the prompt destination.
 		case "stmpck":
 			g.registerGameActions(add, index, owner)
 		case hud.TabSettings:

@@ -11,6 +11,7 @@ func DefaultTabs(config HUDConfig) []Tab {
 		clusterTab(),
 		researchTab(),
 		tab(config, "stmpck", "Offline games", nil),
+		tab(config, TabGlobalSession, "Local prompt draft", []Section{{Rows: []Row{{Label: "Prompt"}}}}),
 		settingsTab(config),
 	}
 	ordered := make([]Tab, 0, len(tabs))
@@ -52,7 +53,7 @@ func settingsTab(config HUDConfig) Tab {
 		{ActionID: "hud-configuration", Title: "Appearance"},
 		{ActionID: "navigation-layout", Title: "Navigation and Window"},
 		{ActionID: "speech-recognition", Title: "Speech Recognition", Description: "Choose the offline model that transcribes push-to-talk audio."},
-		{ActionID: "bindings", Title: "Bindings", Description: "Controller, keyboard, mouse, and touch bindings dispatch the same HUD actions.", Rows: []Row{{Label: "Previous tab", Detail: "L1, Ctrl+PageUp"}, {Label: "Next tab", Detail: "R1, Ctrl+PageDown"}, {Label: "Direct tabs", Detail: "Alt+1..Alt+6"}, {Label: "Push-to-talk", Detail: "L2, right Ctrl"}}}, {ActionID: "diagnostics", Title: "Diagnostics", Description: "Local checks and logs support troubleshooting without backend services.", Rows: []Row{{Label: "Doctor", Detail: "run --doctor"}, {Label: "Smoke test", Detail: "run --smoke-test"}, {Label: "Logs", Detail: "last_run.log and logs/apparat.jsonl"}, {Label: "Verify", Detail: "make verify && make check-docs"}}}})
+		{ActionID: "bindings", Title: "Bindings", Description: "Controller, keyboard, mouse, and touch bindings dispatch the same HUD actions.", Rows: []Row{{Label: "Previous tab", Detail: "L1, Ctrl+PageUp"}, {Label: "Next tab", Detail: "R1, Ctrl+PageDown"}, {Label: "Direct tabs", Detail: "Alt+1..Alt+7"}, {Label: "Push-to-talk", Detail: "L2, right Ctrl"}}}, {ActionID: "diagnostics", Title: "Diagnostics", Description: "Local checks and logs support troubleshooting without backend services.", Rows: []Row{{Label: "Doctor", Detail: "run --doctor"}, {Label: "Smoke test", Detail: "run --smoke-test"}, {Label: "Logs", Detail: "last_run.log and logs/apparat.jsonl"}, {Label: "Verify", Detail: "make verify && make check-docs"}}}})
 }
 
 func tab(config HUDConfig, id TabID, summary string, sections []Section) Tab {

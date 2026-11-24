@@ -25,7 +25,8 @@ type voiceState struct {
 	tap, nativeTap                              pttLock
 	engine                                      *speech.Engine
 	nativeMu                                    sync.Mutex
-	native, canvas                              *speech.Session
+	globalRequested                             bool
+	native, canvas, globalCapture               *speech.Session
 	field                                       *widget.TextInput
 	original, preview, details, status, confirm string
 }
@@ -65,6 +66,18 @@ func (g *Game) NativeVoice(action string) string {
 		}
 	}
 	switch action {
+	case "slide-lock":
+		if v.native != nil && v.nativeTap.source == "pointer" {
+			v.nativeTap.locked = true
+			v.nativeTap.slideLocked = true
+		}
+	case "global-prompt":
+		v.globalRequested = true
+		v.globalCapture = v.native
+		v.native = nil
+		if v.globalCapture != nil {
+			v.globalCapture.Release()
+		}
 	case "start":
 		if v.engine == nil {
 			result = speech.Result{State: "error", Text: "Speech unavailable"}
@@ -79,10 +92,15 @@ func (g *Game) NativeVoice(action string) string {
 			result = speech.Result{State: "error", Text: err.Error()}
 		}
 	case "stop":
+		v.nativeTap = pttLock{}
 		if v.native != nil {
 			v.native.Release()
 		}
 	case "cancel":
+		if v.globalCapture != nil {
+			v.globalCapture.Cancel()
+			v.globalCapture = nil
+		}
 		v.nativeTap = pttLock{}
 		if v.native != nil {
 			v.native.Cancel()

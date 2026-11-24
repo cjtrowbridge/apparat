@@ -7,11 +7,12 @@ import "fmt"
 type TabID string
 
 const (
-	TabComrades TabID = "comrades"
-	TabProjects TabID = "projects"
-	TabResearch TabID = "research"
-	TabCluster  TabID = "cluster"
-	TabSettings TabID = "settings"
+	TabComrades      TabID = "comrades"
+	TabProjects      TabID = "projects"
+	TabResearch      TabID = "research"
+	TabCluster       TabID = "cluster"
+	TabGlobalSession TabID = "global-agentic-session"
+	TabSettings      TabID = "settings"
 )
 
 type VoiceState string

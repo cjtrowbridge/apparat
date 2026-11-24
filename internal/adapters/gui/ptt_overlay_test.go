@@ -22,7 +22,7 @@ func TestTriggerPTTMatchesPointerFeedbackAndRelease(t *testing.T) {
 		t.Fatal("pointer PTT has no pressed feedback")
 	}
 	game.setTriggerPTT(true)
-	if !game.pttButtonHeld() || !game.pttButtonVisible() || game.pttButtonFill() != pressed {
+	if !game.pttButtonHeld() || game.pttButtonFill() != pressed {
 		t.Fatal("left trigger does not show the same pressed PTT appearance")
 	}
 	game.setTriggerPTT(false)
@@ -82,6 +82,62 @@ func TestPTTLockTransitions(t *testing.T) {
 		lock.release(source, start)
 		if lock.expired(start.Add(time.Millisecond)) || !lock.expired(start.Add(pttTapWindow)) || lock.expired(start.Add(time.Second)) {
 			t.Fatal("single tap timeout must submit once")
+		}
+	}
+}
+
+func TestSlideLockSurvivesReleaseUntilDraggedHome(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	cx, cy := g.pttCenter()
+	g.pressPTTPointer(cx, cy, true, 2)
+	g.voice.tap = pttLock{source: "floating-ptt"}
+	g.shell.StartVoiceCapture("floating-ptt")
+	g.dragPTTPointer(cx, cy-pttTravel)
+	g.setPTTHeld(false)
+	g.releaseGesture(gesturePTT)
+	if !g.voice.tap.slideLocked || !g.pointInPTT(cx, cy-pttTravel) || g.pointInPTT(cx, cy) {
+		t.Fatal("locked circle must stay at the upper target")
+	}
+	g.setTriggerPTT(true)
+	g.setTriggerPTT(false)
+	g.pressPTTPointer(cx, cy-pttTravel, false, 0)
+	if g.shell.Snapshot().VoiceState != hud.VoiceRecording {
+		t.Fatal("grabbing the locked circle finished capture")
+	}
+	g.dragPTTPointer(cx, cy)
+	if g.shell.Snapshot().VoiceState != hud.VoiceQueued || g.voice.tap.locked {
+		t.Fatal("returning home did not finish capture")
+	}
+}
+
+func TestDragIntoGlobalDraft(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	for _, width := range []int{320, 1100} {
+		g.Layout(width, 740)
+		g.rebuildUI(g.shell.Snapshot())
+		g.openActionBrowser()
+		x, y := g.pttCenter()
+		g.pressPTTPointer(x, y, false, 0)
+		g.dragPTTPointer(x-pttTravel, y)
+		if g.actions.mode != "" || g.shell.Snapshot().ActiveTab().ID() != hud.TabGlobalSession || g.ui.GetFocusedWidget() != g.globalField {
+			t.Fatal("drag did not enter the global editor")
+		}
+		g.setPTTHeld(false)
+		g.releaseGesture(gesturePTT)
+		renderNavigation(g)
+		field := g.globalField.GetWidget().Rect
+		cx, cy := g.pttCenter()
+		if field.Dy() < 44 || field.Max.X > g.width || field.Min.X < 0 || field.Max.Y > cy-pttRadius-pttTravel && field.Max.X > cx-pttRadius {
+			t.Fatalf("prompt outside its reserved space: %v at %d", field, width)
+		}
+		g.globalField.SetText("")
+		g.finishUtterance(g.globalField, "open Projects")
+		g.selectTab(0, nil)
+		g.openGlobalPrompt()
+		if g.globalField.GetText() != "open Projects" {
+			t.Fatal("command-shaped draft lost on return")
 		}
 	}
 }

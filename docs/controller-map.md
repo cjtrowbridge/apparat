@@ -2,9 +2,9 @@
 
 All GUI targets dispatch the same application actions for tabs, focus, activation, cancellation, context, scrolling, text entry, and push-to-talk.
 
-This is the target input contract. The live HUD implements directional navigation on all six tabs. Phase 17 tracks broader device and accessibility qualification.
+This is the target input contract. The live HUD implements directional navigation on all seven tabs. Phase 17 tracks broader device and accessibility qualification.
 
-The canonical top-level tab order is Comrades, Projects, Cluster, Research, STMPCK, Settings. Routing and Tasks are details within Cluster, not top-level tabs.
+The canonical top-level tab order is Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, Settings. Routing and Tasks are details within Cluster, not top-level tabs.
 
 ## Steam Deck
 
@@ -27,7 +27,7 @@ cancels a held capture rather than submitting it.
 ## Debian GUI
 
 - `Ctrl+PageUp` / `Ctrl+PageDown`: previous/next top-level tab.
-- `Alt+1` through `Alt+6`: Comrades, Projects, Cluster, Research, STMPCK, Settings. Routing and Tasks are selected within Cluster.
+- `Alt+1` through `Alt+7`: Comrades, Projects, Cluster, Research, STMPCK, Global Agentic Session, Settings. Routing and Tasks are selected within Cluster.
 - `Tab` / `Shift+Tab`: next/previous focusable control.
 - Arrows: list, tree, grid, menu, and spatial focus movement.
 - `Enter`: activate or submit.
@@ -102,3 +102,5 @@ New Project exposes the selected host’s provider choices, install, enroll, and
 Select a host-qualified project, then navigate the five emoji buttons in order: Chat, Files, Editor, Terminal and Tasks. Files opens one directory at a time. Back returns to its parent. Save returns to Files after owner acknowledgement. Terminal input belongs to the text field until Send is activated. Take control transfers input between the same user's devices. Task history and retained terminal output each have explicit continuation controls.
 
 The Projects Editor opens in view mode. Focus Edit to enable text input in the same pane. Within the document, arrow keys move the caret and Shift extends the selection. Tab leaves the document for its controls. Save and Cancel are available to writers.
+
+On the HUD, drag the PTT circle up to lock recording. Drag the locked circle down to finish. Drag left from the resting circle to open Global Agentic Session and release to insert the transcript. Keyboard and controller users can open the brain tab, focus Prompt and hold right Ctrl or L2.

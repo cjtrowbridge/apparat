@@ -6,7 +6,7 @@ Read `./agentic-pipelines/AGENTS.md` in its entirety before doing anything in th
 
 Work only on the existing designated main. Before first-party edits run `python3 scripts/checkout_identity.py`. Never create another branch, worktree, nested repository or maintained scratch source copy. Read-only submodules can be detached. Test package identity and runtime isolation do not change source ownership. All app builds use the no-flag scripts/build.py; package tests and scratch artifacts cannot certify an application build.
 
-Settings must always be the final top-level tab, including optional editions. Add or reorganize every other tab before Settings. STMPCK belongs immediately before Settings. Choose game titles that resolve uniquely against other games and top-level tabs after voice-command normalization. Preserve stable game IDs when renaming titles. Every gallery and voice launch must show a setup screen with the exact catalog title at the top. Starting or resuming requires player input.
+Settings must always be the final top-level tab, including optional editions. Add or reorganize every other tab before Settings. STMPCK precedes Global Agentic Session, which sits immediately before Settings. Choose game titles that resolve uniquely against other games and top-level tabs after voice-command normalization. Preserve stable game IDs when renaming titles. Every gallery and voice launch must show a setup screen with the exact catalog title at the top. Starting or resuming requires player input.
 
 ## Framework Resolution
 
@@ -76,6 +76,8 @@ Supporting ownership:
 ## HUD navigation governance
 
 Every new or changed HUD control must satisfy `docs/controller-map.md` and the navigation acceptance procedure in `playbooks/how_to_add_or_modify_hud_tab_contents.md`. Use the shared keyboard and D-pad route, including on custom-drawn surfaces. Preserve text-edit, modal and gameplay input ownership.
+
+Every Apparat form must follow the **Form typography and alignment** and **Form interaction acceptance** requirements in `playbooks/how_to_add_or_modify_hud_tab_contents.md`. This applies across tabs and platforms, including inline forms, detail pages, dialogs, native prompts, and search filters. Treat label styling and spacing, initial focus, Tab and Shift+Tab order, arrow and D-pad navigation, progressive choices, and submission and recovery behavior as mandatory acceptance criteria. Verify applicable criteria whenever adding or changing a form.
 
 Default to a child page for any right-hand detail control that opens multiple choices. Render a touch-sized 🔙 Back button first, a heading second, then the options. Apply the same hierarchy in full-width narrow layouts. Follow the HUD tab playbook for exceptions and return-navigation checks.
 

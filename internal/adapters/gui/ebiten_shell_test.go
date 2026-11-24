@@ -85,7 +85,8 @@ func selectTabThroughStrip(t *testing.T, game *Game, id hud.TabID) {
 
 func buildSettingsContentForTest(t *testing.T, game *Game) *widget.Container {
 	t.Helper()
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
+	tabs := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())
+	settings := tabs[len(tabs)-1]
 	content := game.buildSettingsContent(settings)
 	content.Validate()
 	return content
@@ -207,7 +208,8 @@ func TestNarrowBodyPreferredWidthsAreBounded(t *testing.T) {
 func TestHUDBodyTextUsesWrappingWidth(t *testing.T) {
 	game := NewGame()
 	game.width = 360
-	settings := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())[5]
+	tabs := hud.DefaultTabs(hud.DefaultConfigManager{}.Config())
+	settings := tabs[len(tabs)-1]
 	for _, text := range collectTextNodes(game.buildSettingsContent(settings)) {
 		if text.MaxWidth <= 0 {
 			t.Fatalf("settings text %q MaxWidth = %.1f, want positive", text.Label, text.MaxWidth)

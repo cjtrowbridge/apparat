@@ -12,9 +12,6 @@ import (
 	"strings"
 )
 
-// rebuildUI constructs the complete EbitenUI widget tree from the current HUD snapshot.
-// In the future, this should intelligently update existing widgets instead of rebuilding
-// from scratch, but for this initial migration, rebuilding ensures layout correctness.
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	if game.actions.mode != "" {
 		game.buildActionScreen()
@@ -130,6 +127,9 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	}
 	game.finishWorkspaceLayout()
 	game.restoreEditing(old)
+	if changedTab && !game.nav.strip && snapshot.ActiveTab().ID() == hud.TabGlobalSession {
+		game.focusGlobalPrompt()
+	}
 	if game.nav.active && game.ui.GetFocusedWidget() == nil {
 		if changedTab || game.nav.strip {
 			game.focusStrip()
@@ -270,6 +270,9 @@ func (game *Game) syncTabButtonStates() {
 }
 
 func (game *Game) buildActiveTabBody(snapshot hud.Snapshot) widget.PreferredSizeLocateableWidget {
+	if snapshot.ActiveTab().ID() == hud.TabGlobalSession {
+		return game.globalSessionBody(snapshot.ActiveTab())
+	}
 	if snapshot.ActiveTab().ID() == "stmpck" {
 		return widget.NewContainer()
 	}

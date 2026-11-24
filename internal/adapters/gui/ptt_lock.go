@@ -20,9 +20,13 @@ type pttLock struct {
 	source            string
 	pressed, deadline time.Time
 	locked            bool
+	slideLocked       bool
 }
 
 func (l *pttLock) press(source string, now time.Time) tapDecision {
+	if l.slideLocked {
+		return tapWait
+	}
 	if l.locked {
 		*l = pttLock{}
 		return tapSubmit

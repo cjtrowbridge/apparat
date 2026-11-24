@@ -66,7 +66,7 @@ The roadmap assumes these decisions:
   - Project Repos starts with explicitly registered local checkouts. After trusted membership, the list also includes authorized summaries advertised by other owners.
   - A Pipeline is a Project with one or more Apparat Task entrypoints; it is not a separately owned entity.
   - A Task may run manually with no trigger or be bound to intervals, authenticated webhooks, internal application events, or cluster events.
-  - SQLite stores identities, metadata, chats, transactions, events, queue state, indexes, and durable workflow state.
+  - SQLite stores identities, metadata, chat delivery state, transactions, events, queue state, indexes, and durable workflow state.
   - Projects and queues have one authoritative owner device during the MVP; Project Tasks and their run records are owned with the Project.
   - All cross-device Project, Task, queue-submission, worker-claim, heartbeat, and result operations use authenticated HTTPS REST directed to the owning device.
   - Queue owners validate and admit requests; authorized inference workers pull leased tasks and post signed results back; only the owner records authoritative completion.
@@ -291,7 +291,7 @@ The ignored local checkout at `third_party/salvagecore` is an older implementati
   - **SQLite role**
     - **Store in SQLite**
       - Identity metadata, signed certificates, device records, trust and authorization grants.
-      - Project metadata, chats, message metadata, artifact indexes, transaction records, and workflow state.
+      - Project metadata, chat indexes, message metadata, artifact indexes, transaction records, and workflow state.
       - Workload capability advertisements, service instances, queue definitions, routes, jobs, attempts, results, and status projections.
       - Task definitions, schedules, triggers, runs, retries, and audit events.
       - Durable transport inboxes, outboxes, acknowledgements, delivery attempts, and synchronization cursors.
@@ -1929,6 +1929,7 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 **Dependencies:** Phase 9A commands, Phase 10 trusted REST and Phase 11 owner discovery. Phase 11A supplies the mixed-catalog regression baseline.
 
+- [ ] Persist every project chat as a version-controlled Markdown transcript on its owner, including existing local conversations. Generate the chat index from YAML descriptions. Verify that simultaneous sessions keep distinct files and that a fresh clone supports finding an earlier decision without the owner's database.
 - [ ] Serve bounded file reads, Git operations, chat, draft transactions, Task summaries and manual runs through the owner’s authenticated API. Reuse the local commands and enforce separate discovery, read, Git, mutation, invocation, chat, artifact and secret permissions.
 - [ ] Support bounded authenticated artifact uploads and downloads with ranges or chunks, partial state, resume, digest validation, atomic finalization and visible transfer states.
 - [ ] Recover pending drafts, rejected or conflicted transactions and interrupted transfers across client and owner restart. Verify retries are idempotent and preserve editable content.
@@ -1937,6 +1938,8 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 - [ ] From a second device, including the Steam Deck controller surface, operate a real project through its owner. Verify the edit, commit, manual run and artifact on the owner and verify a discovery-only client cannot perform those actions.
 - [ ] Interrupt a transfer, resume and verify the digest. Exercise an owner-side conflict, duplicate request and revocation. Preserve the local and mixed-catalog workflows proved in 9A and 11A.
+
+The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent-harness.md) connects repository chat and owner access in Phase 11C to inference, queue durability, deterministic Tasks and global PTT in Phases 12–16.
 
 ## Phase 12: Multi-Instance Local Inference Drivers, Health, Capabilities, And Advertisements
 
@@ -2005,7 +2008,7 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 - [ ] Retain the mock driver as conformance coverage.
 - [ ] Add OpenAI-compatible text.
-  - [ ] Chat/completion, streaming/non-streaming, timeouts, cancellation, usage/error normalization, and results/artifacts.
+  - [ ] Support streaming and non-streaming chat/completion, cancellation, usage/error normalization and results/artifacts. Session inference waits indefinitely for provider output. Handle connection failures separately and reconcile interrupted attempts.
 - [ ] Add Ollama.
   - [ ] Model inventory, generation, authorized pull/install state, health, and cancellation.
 - [ ] Add llama.cpp.
@@ -2101,6 +2104,7 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 - [ ] Show owner, requester, workload, route requirement, queue, attempts, lease, progress, cancellation, retry, result/artifacts, retention, and failure.
 - [ ] Support loading, empty, offline, unauthorized, incompatible, waiting, leased, retrying, cancelled, failed, expired, and completed states.
 - [ ] Test duplicate submission, owner/worker/requester restart, lease expiry, reassignment, late result, corrupted artifact, authorization loss, and cancellation races.
+- [ ] Persist waiting session turns and job identities without a queue-age, first-token, inter-token or total-generation deadline. Renew worker leases independently of provider output. With a controlled clock, exercise 100 project sessions competing with interactive PTT work, hours of silence, disconnects, restart and immediate completion. Verify that priority governs admission, waiting sessions release compute capacity and each accepted result resumes its turn once.
 - [ ] Run concurrency, race, bounded-resource, and database-recovery tests.
 
 **Exit criteria**
@@ -2237,6 +2241,8 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 - [ ] Duplicate triggers and webhooks do not duplicate a logical run.
 
 ## Phase 16: ASR, TTS, Push-To-Talk, Audio Lifecycle, And Privacy
+
+Phase 9B / Phase 16 global session entry provides an editable local draft, upper drag-to-lock and left drag-to-dictate. Trigger-phrase or button submission, agent replies, TTS and automatic listening belong to the future global agent harness.
 
 **User outcome:** Holding and releasing the configured control produces editable transcribed text through a selected local or remote route, and spoken output can be controlled independently.
 
@@ -2571,7 +2577,7 @@ Every focused implementation plan includes the applicable items below and its ph
 The MVP is complete only when the applicable cross-cutting requirements and all outcomes below have evidence.
 
 - [ ] Steam Deck HUD and input
-  - [ ] Controller navigation works across all six primary tabs, including the STMPCK gallery and Settings.
+  - [ ] Controller navigation works across all seven primary tabs, including the STMPCK gallery and Settings.
   - [x] Comrades is the first navigable future-facing tab.
   - [x] Research follows Cluster as a navigable future-facing tab.
   - [x] Settings is final.

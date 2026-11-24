@@ -33,3 +33,5 @@ project.go also defines the project-scoped workspace request and bounded text vi
 The canonical delivery allocates the number in release.txt before compilation. ReleaseVersion returns that embedded number for the running process, including offline node health and Linux Settings.
 
 - `git_provider.go`: Defines authenticated provider capabilities and host operation progress.
+
+- `chat.go`: defines session identity, scope, descriptive metadata and ordered turns. A submitted turn with no reply stays pending indefinitely. Redelivery of the same turn and content is idempotent.

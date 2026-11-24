@@ -61,7 +61,8 @@ public final class DocumentEditor implements Editor {
                 FrameLayout workspace=new FrameLayout(activity);
                 workspace.addView(input);
                 Button ptt=VoiceInput.floatingButton(workspace);
-                int space=ptt.getLayoutParams().height*3/2;
+                int space=ptt.getLayoutParams().height*2;
+                workspace.setMinimumHeight(space+Math.round(12*activity.getResources().getDisplayMetrics().density));
                 if (singleLine) {
                     FrameLayout.LayoutParams field = new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER_VERTICAL);
                     field.rightMargin=space;
