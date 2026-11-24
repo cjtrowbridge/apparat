@@ -377,6 +377,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {
 	outsideWidth = outsideWidth * 100 / max(1, game.prefs.Scale)
 	outsideHeight = outsideHeight * 100 / max(1, game.prefs.Scale)
+	keyboardClosing := game.globalVoiceFocus && game.voice.canvas != nil && outsideWidth == game.width && outsideHeight > game.height
 	changed := false
 	if outsideWidth > 0 {
 		changed = changed || outsideWidth != game.width
@@ -389,7 +390,9 @@ func (game *Game) Layout(outsideWidth int, outsideHeight int) (int, int) {
 		game.height = outsideHeight
 	}
 	if changed {
-		game.cancelPointer()
+		if !keyboardClosing {
+			game.cancelPointer()
+		}
 		game.requestActiveTabVisible()
 	}
 	return game.width, game.height

@@ -33,3 +33,5 @@ The document and input dialogs anchor the circular PTT control to the lower-righ
 - `AndroidKeyProtection.java`: Uses authenticated AES-GCM operations in Android Keystore on eligible Android 11+ devices.
 
 Native speech revisions replace the selected range directly. Cancelling restores the draft.
+
+- `PromptGameView.java`: Sizes the canvas above the Android keyboard and routes printable hardware keys into the focused global prompt. Software-keyboard composition uses the engine IME. Verify rapid typing, keyboard dismissal and visibility of the prompt and PTT on the Pixel.

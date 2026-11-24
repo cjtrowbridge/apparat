@@ -12,3 +12,5 @@ Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` clo
 
 - [x] Replace the modal with inline keyboard editing and exercise the HUD regressions.
 - [ ] Verify typing and draft retention in the activity window on the designated Pixel.
+
+0.1.85 Pixel verification showed inline Gboard input and persistence after Back. Rapid hardware input lost characters and the keyboard covered PTT. Route hardware text once and fit the canvas to the visible activity before repeating the checks.

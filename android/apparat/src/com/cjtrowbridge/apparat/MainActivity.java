@@ -14,10 +14,8 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.View;
-import android.graphics.Insets;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -68,7 +66,7 @@ public class MainActivity extends Activity {
             finish();
             return;
         }
-        view = new EbitenView(this);
+        view = new PromptGameView(this);
         view.setFocusable(true);
         view.setFocusableInTouchMode(true);
         FrameLayout content = new FrameLayout(this);
@@ -79,18 +77,7 @@ public class MainActivity extends Activity {
             getWindow().setNavigationBarContrastEnforced(false);
         }
         content.addView(view, new FrameLayout.LayoutParams(-1, -1));
-        if (Build.VERSION.SDK_INT >= 35) {
-            // Inset the parent: EbitenView lays out its surface without padding.
-            content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
-                @Override
-                public WindowInsets onApplyWindowInsets(View target, WindowInsets insets) {
-                    int types = WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout();
-                    Insets safe = insets.getInsets(types);
-                    target.setPadding(safe.left, safe.top, safe.right, safe.bottom);
-                    return insets;
-                }
-            });
-        }
+        PromptGameView.fitKeyboard(this, content);
         setContentView(content);
         nodeKeys = new NodeKeys(this);
         voice = new ActionVoice(this);
