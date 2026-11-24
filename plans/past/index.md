@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-24-01-43-12 | plans/past/2026-11-24-02-00-00_android-keyboard-viewport.md | Keep the resized Android chat canvas above the keyboard | Keep canvas-editor IME anchors stable while Android resizes the rendering surface.
 2026-11-24-01-32-50 | plans/past/2026-11-24-01-31-00_planning-transcript-preview.md | Anchor the planning composer and preview transcript scrolling | Use the remaining chat height for scrollable sample and real messages, keeping the prompt accessible beside PTT.
 2026-11-24-01-19-47 | plans/past/2026-11-24-01-00-00_global-planning-ui.md | Build the global planning session interface | Implement session navigation, title editing, conversation bubbles and local turn staging before queue integration.
 2026-11-23-23-42-18 | plans/past/2026-11-24-00-40-00_shared-ollama-configuration.md | Restore shared Ollama configuration on reconnect | Persist verified ports on the owner and read configuration on client unlock and Cluster activity.

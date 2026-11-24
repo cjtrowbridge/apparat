@@ -78,7 +78,7 @@ class BuildPipelineTest(unittest.TestCase):
     def test_android_wrapper_activity_uses_ebiten_view(self):
         activity = Path("android/apparat/src/com/cjtrowbridge/apparat/MainActivity.java").read_text(encoding="utf-8")
         self.assertIn("Apparatmobile.initialize(getFilesDir().getAbsolutePath(), PromptGameView.resizesForKeyboard())", activity)
-        self.assertIn("new EbitenView(this)", activity)
+        self.assertIn("new PromptGameView(this)", activity)
 
     def test_android_manifest_declares_temporary_update_installer_boundary(self):
         manifest = Path("android/apparat/AndroidManifest.xml").read_text(encoding="utf-8")
