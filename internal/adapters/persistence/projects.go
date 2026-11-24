@@ -97,3 +97,29 @@ func (db *DB) RegisteredThreads(ctx context.Context) (map[string][]domain.Worksp
 	}
 	return threads, rows.Err()
 }
+
+// ChatCatalog exposes bounded public summaries without loading checkout paths or accounts.
+func (db *DB) ChatCatalog(ctx context.Context, project, selector, cursor string) ([]domain.ChatProject, string, error) {
+	rows, err := db.sql.QueryContext(ctx, `SELECT id,name,owner FROM project_registry
+	WHERE (?='' OR id=?) AND (?='' OR id=? OR name=? COLLATE NOCASE)
+	AND (?='' OR id<?) ORDER BY id DESC LIMIT 33`, project, project, selector, selector, selector, cursor, cursor)
+	if err != nil {
+		return nil, "", err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	projects := []domain.ChatProject{}
+	for rows.Next() {
+		if len(projects) == 32 {
+			return projects, projects[31].ID, nil
+		}
+		var p domain.ChatProject
+		err = rows.Scan(&p.ID, &p.Name, &p.Owner)
+		if err != nil {
+			return nil, "", err
+		}
+		projects = append(projects, p)
+	}
+	return projects, "", rows.Err()
+}

@@ -16,18 +16,26 @@ func (g *Game) projectField(c *widget.Container, label string, value *string) wi
 			*value = text
 		})
 	}
-	return g.nativeProjectField(c, label, *value, false, func(text string) {
+	return g.nativeProjectField(c, label, *value, true, func(text string) {
 		*value = text
 	})
 }
 func (g *Game) nativeProjectField(c *widget.Container, label string, value string, singleLine bool, changed func(string)) *widget.Button {
 	prompt := g.runtimeInfo.PromptValue
-	row := g.formFieldRow(c, label)
+	var row *widget.Container
+	if singleLine {
+		row = g.formFieldRow(c, label)
+	} else {
+		row = g.multilineRow(c, label)
+	}
 	caption := "Tap to enter…"
 	if value != "" {
 		caption = value
 	}
 	width := max(1, g.detailPanePreferredWidth()-56-g.formLabelWidth()-4-32)
+	if !singleLine {
+		width += g.formLabelWidth() + 4
+	}
 	caption = wrapSelectorLabel(caption, *g.theme.ButtonTheme.TextFace, width)
 	if singleLine {
 		first, _, more := strings.Cut(caption, "\n")
@@ -45,9 +53,9 @@ func (g *Game) nativeProjectField(c *widget.Container, label string, value strin
 			}}
 		})
 	})
-	if singleLine {
-		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 8, Right: 8, Top: 2, Bottom: 2})(button)
-		compactSearchControl(button.GetWidget(), g.prefs.Font)
+	if !singleLine {
+		button.GetWidget().LayoutData = widget.RowLayoutData{Stretch: true}
+		button.GetWidget().MinHeight = 3*(g.prefs.Font+5) + 8
 	}
 	return button
 }

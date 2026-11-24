@@ -1716,7 +1716,7 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
 
 **Exit criteria**
 
-- [x] In a fresh offline installation, hold PTT in a local text field, see a live preview, then release to insert editable text once. Cancelling preserves the original draft.
+- [x] In a fresh offline installation, hold PTT in a local text field, see live text at the selection, then finish the capture to accept the edit once. Cancelling preserves the original draft.
 - [x] In Settings, inspect a model's language support, download and activate it, then restart offline and dictate with the selected model. Switch back to bundled Tiny without downloading it again.
 
 ### Local action discovery and voice navigation
@@ -1938,6 +1938,8 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 - [ ] From a second device, including the Steam Deck controller surface, operate a real project through its owner. Verify the edit, commit, manual run and artifact on the owner and verify a discovery-only client cannot perform those actions.
 - [ ] Interrupt a transfer, resume and verify the digest. Exercise an owner-side conflict, duplicate request and revocation. Preserve the local and mixed-catalog workflows proved in 9A and 11A.
+
+The shared runtime now drives owner-local model turns with durable job IDs and read-only tools. The terminal client exercises this interface through a configurable Chat Completions endpoint. Live cluster routing and remote chat interfaces remain future work.
 
 The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent-harness.md) connects repository chat and owner access in Phase 11C to inference, queue durability, deterministic Tasks and global PTT in Phases 12–16.
 
@@ -2242,7 +2244,7 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 ## Phase 16: ASR, TTS, Push-To-Talk, Audio Lifecycle, And Privacy
 
-Phase 9B / Phase 16 global session entry provides an editable local draft, upper drag-to-lock and left drag-to-dictate. Trigger-phrase or button submission, agent replies, TTS and automatic listening belong to the future global agent harness.
+Phase 9B / Phase 16 global session entry provides an editable local draft, upper and left recording locks, and live inline transcription. Slide the left lock right to finish a global draft. Trigger-phrase or button submission, agent replies, TTS and automatic listening belong to the future global agent harness.
 
 **User outcome:** Holding and releasing the configured control produces editable transcribed text through a selected local or remote route, and spoken output can be controlled independently.
 

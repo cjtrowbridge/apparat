@@ -26,6 +26,8 @@ type ChatHeader struct {
 
 type ChatTurn struct {
 	ID, Input, Reply string
+	Stopped          string
+	Steps            []ChatStep
 }
 
 type ChatSession struct {
@@ -62,7 +64,7 @@ func chatText(text string) bool {
 
 func (s ChatSession) Pending() string {
 	n := len(s.Turns)
-	if n > 0 && s.Turns[n-1].Reply == "" {
+	if n > 0 && s.Turns[n-1].Reply == "" && s.Turns[n-1].Stopped == "" {
 		return s.Turns[n-1].ID
 	}
 	return ""
@@ -82,6 +84,9 @@ func (s *ChatSession) Apply(id, text string, reply bool) (bool, error) {
 		if reply {
 			prior = t.Reply
 			if prior == "" {
+				if t.Stopped != "" || len(t.Steps) > 0 {
+					return false, errors.New("turn is stopped or managed by an inference job")
+				}
 				t.Reply = text
 				return true, nil
 			}

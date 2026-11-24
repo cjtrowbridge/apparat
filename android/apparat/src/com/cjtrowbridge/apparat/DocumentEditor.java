@@ -59,7 +59,11 @@ public final class DocumentEditor implements Editor {
                 LinearLayout panel=new LinearLayout(activity);
                 panel.setOrientation(LinearLayout.VERTICAL);
                 FrameLayout workspace=new FrameLayout(activity);
-                workspace.addView(input);
+                if (singleLine) {
+                    workspace.addView(input);
+                } else {
+                    panel.addView(input,new LinearLayout.LayoutParams(-1,-2));
+                }
                 Button ptt=VoiceInput.floatingButton(workspace);
                 int space=ptt.getLayoutParams().height*2;
                 workspace.setMinimumHeight(space+Math.round(12*activity.getResources().getDisplayMetrics().density));
@@ -69,7 +73,7 @@ public final class DocumentEditor implements Editor {
                     input.setLayoutParams(field);
                 } else {
                     input.setMinHeight(space);
-                    input.setPadding(input.getPaddingLeft(), input.getPaddingTop(),space,input.getPaddingBottom());
+                    input.setGravity(Gravity.TOP | Gravity.START);
                 }
                 panel.addView(workspace);
                 TextView preview=new TextView(activity);

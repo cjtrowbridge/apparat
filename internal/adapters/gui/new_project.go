@@ -310,6 +310,8 @@ func (g *Game) deviceSearchField(c *widget.Container) {
 	w := &g.projects.wizard
 	if g.runtimeInfo.PromptValue != nil {
 		button := g.nativeProjectField(c, label, w.search, true, g.filterProjectHosts)
+		widget.ButtonOpts.TextPadding(&widget.Insets{Left: 8, Right: 8, Top: 2, Bottom: 2})(button)
+		compactSearchControl(button.GetWidget(), g.prefs.Font)
 		g.projectFocusControl("search", button)
 		return
 	}

@@ -61,7 +61,7 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 	box.AddChild(scroll)
 	c := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))))
 	w := &g.projects.workspace
-	g.projectField(c, "Message", &w.message)
+	g.multilineProjectField(c, "Message", &w.message)
 	if w.attachment != "" {
 		c.AddChild(g.detailText(w.attachmentLabel))
 	}

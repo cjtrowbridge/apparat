@@ -342,6 +342,8 @@ Project chat transcripts belong in Git alongside the code and planning documents
 
 Apparat generates a browsable chat index from those descriptions and relative file paths. A maintainer with a fresh clone can trace a decision from the index to the original exchange. An agent can search both descriptions and transcript bodies through a project-scoped tool and read the relevant passage on demand.
 
+The headless command `apparatd chat --repo .` opens an owner-local terminal conversation through a configured Chat Completions service. It shares its conversation loop and repository transcripts with the application API. [Provider setup, session listing and resume](cmd/apparatd/README.md)
+
 The shared Go runtime now supports owner-local session creation, turn submission, inspection and reply completion for project and global scopes on registered filesystem checkouts. Its Markdown transcript preserves a pending turn across process restarts. Callers select the repository explicitly, including for global sessions. The existing local Chat UI persists pending messages in SQLite. In the planned harness, SQLite retains operational state such as drafts, delivery state and rebuildable search indexes. The repository files are authoritative for project conversation history.
 
 Once catalog sharing is implemented, each enrolled device maintains a cluster-wide project catalog assembled from its local projects and authorized project summaries advertised by other devices. Therefore the Projects list on any enrolled device includes every project in the cluster that the current user/device is authorized to know about, along with its owner, availability, and freshness. Cached metadata may keep an offline owner's project visible as stale or unavailable, but the cache is not the repository and does not become authoritative.
@@ -482,9 +484,9 @@ L2 or right-Ctrl audio capture -> ASR queue -> transcribed text -> command or pr
 generated text -> TTS queue -> spoken playback
 ```
 
-The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project document, place the caret or select text, then hold the PTT control and speak. Release to insert the final transcript. A live preview stays outside the document. Escape cancels, and saving a document or sending a message is a separate action. Android asks for microphone permission on first use. Audio stays in memory on the device, in bounded chunks while the control is held.
+The GUI includes whisper.cpp and Whisper Tiny (English Only). Open a project document, place the caret or select text, then hold the PTT control and speak. Words appear at the selection as the local recognizer decodes them. Each revision updates the same passage. Release to finalize that edit. Escape cancels, and saving a document or sending a message is a separate action. Android asks for microphone permission on first use. Audio stays in memory on the device, in bounded chunks while the control is held.
 
-On every HUD screen, drag PTT into the circle above it to lock recording. Slide it back down to finish. Drag left to open 🧠 Global Agentic Session and dictate into **Prompt**. Release to insert the final text. You can edit the draft and return to it during the same app session. Sending and spoken replies are planned.
+On every HUD screen, drag PTT into the circle above it to lock recording. Slide it back down to finish. Drag left to open 🧠 Global Agentic Session and dictate into **Prompt**. The left circle stays green and locked after release. Slide it right to the resting position to finish. You can edit the draft and return to it during the same app session. Sending and spoken replies are planned.
 
 ### Voice commands and the command directory
 

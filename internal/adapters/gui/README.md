@@ -223,3 +223,6 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 
 - `global_session.go`: Anchors the global prompt, retains the in-memory draft and focuses its editor during a PTT handoff.
 - `ptt_drag.go`: Captures mouse and touch before HUD or arcade input and handles the lock and global destinations.
+
+- `inline_dictation.go`: Maintains one provisional edit at the captured selection. Cancellation restores the draft, and the final recognition produces one accepted form or document edit.
+- `multiline_field.go`: Places a persistent label above a full-width composer and connects editable forms to the shared multiline canvas editor or Android prompt.

@@ -4,6 +4,7 @@ package projectgit
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -26,6 +27,16 @@ func chatBytes(s domain.ChatSession) ([]byte, error) {
 	}
 	for _, t := range s.Turns {
 		write("User", t.ID, t.Input)
+		for _, step := range t.Steps {
+			data, err := json.Marshal(step)
+			if err != nil {
+				return nil, err
+			}
+			write("Inference", t.ID, string(data))
+		}
+		if t.Stopped != "" {
+			write("Stopped", t.ID, t.Stopped)
+		}
 		if t.Reply != "" {
 			write("Assistant", t.ID, t.Reply)
 		}
@@ -85,6 +96,22 @@ func parseChat(raw []byte, id string) (s domain.ChatSession, err error) {
 			}
 			seen[turn] = true
 			s.Turns = append(s.Turns, domain.ChatTurn{ID: turn, Input: text})
+		case "Inference":
+			if s.Pending() != turn {
+				return s, bad
+			}
+			var step domain.ChatStep
+			err = json.Unmarshal([]byte(text), &step)
+			if err != nil || !domain.ValidID(step.Job) || step.Route == "" || len(step.Digest) != 64 {
+				return s, bad
+			}
+			t := &s.Turns[len(s.Turns)-1]
+			t.Steps = append(t.Steps, step)
+		case "Stopped":
+			if s.Pending() != turn {
+				return s, bad
+			}
+			s.Turns[len(s.Turns)-1].Stopped = text
 		case "Assistant":
 			if s.Pending() != turn {
 				return s, bad

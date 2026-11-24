@@ -200,8 +200,12 @@ func (g *Game) projectInput(c *widget.Container, label, initial string, changed 
 	return field
 }
 func (g *Game) newProjectInput(initial string, changed func(string)) *widget.TextInput {
+	reported := initial
 	w := widget.NewTextInput(widget.TextInputOpts.Face(g.theme.ButtonTheme.TextFace), widget.TextInputOpts.Image(&widget.TextInputImage{Idle: uiimage.NewNineSliceColor(backgroundColor), Highlight: uiimage.NewNineSliceColor(activeTabColor)}), widget.TextInputOpts.Color(&widget.TextInputColor{Idle: color.White, Caret: color.White}), widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.TextInputOpts.ChangedHandler(func(e *widget.TextInputChangedEventArgs) {
-		changed(e.InputText)
+		if e.InputText != reported {
+			reported = e.InputText
+			changed(e.InputText)
+		}
 	}))
 	w.SetText(initial)
 	return w

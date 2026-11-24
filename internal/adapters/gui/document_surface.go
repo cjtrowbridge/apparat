@@ -25,6 +25,7 @@ type documentSurface struct {
 	*widget.TextInput
 	game                             *Game
 	panel                            *workspacePanel
+	draft                            *string
 	body                             string
 	starts                           []int
 	anchor, caret, top, left, height int
@@ -37,8 +38,9 @@ type documentSurface struct {
 }
 
 func (g *Game) newDocumentSurface(w *workspacePanel) *documentSurface {
-	e := &documentSurface{TextInput: g.newProjectInput("", func(string) {}), game: g, panel: w, height: max(20, g.prefs.Font+5)}
+	e := &documentSurface{TextInput: g.newProjectInput("", ignoreDocumentTextChange), game: g, panel: w, height: max(20, g.prefs.Font+5)}
 	e.GetWidget().MinHeight = 240
+	e.GetWidget().CustomData = e
 	e.load(strings.Join(w.lines, "\n"))
 	e.setupIME()
 	return e
@@ -46,12 +48,7 @@ func (g *Game) newDocumentSurface(w *workspacePanel) *documentSurface {
 func (e *documentSurface) load(s string) {
 	e.body = s
 	e.TextInput.SetText(s)
-	e.starts = []int{0}
-	for i, r := range s {
-		if r == '\n' {
-			e.starts = append(e.starts, i+1)
-		}
-	}
+	e.reflow()
 	e.caret = min(e.caret, len(s))
 	for e.caret > 0 && e.caret < len(s) && !utf8.RuneStart(s[e.caret]) {
 		e.caret--
@@ -73,7 +70,10 @@ func (e *documentSurface) row(pos int) int {
 func (e *documentSurface) line(row int) string {
 	end := len(e.body)
 	if row+1 < len(e.starts) {
-		end = e.starts[row+1] - 1
+		end = e.starts[row+1]
+		if end > 0 && e.body[end-1] == '\n' {
+			end--
+		}
 	}
 	return e.body[e.starts[row]:end]
 }
@@ -95,7 +95,12 @@ func (e *documentSurface) pointPos(x, y int) int {
 func (e *documentSurface) reveal() {
 	r := e.GetWidget().Rect.Inset(4)
 	row := e.row(e.caret)
-	e.top = max(0, min(row, max(e.top, row-max(1, r.Dy()/e.height)+1)))
+	visible := max(1, r.Dy()/e.height)
+	e.top = max(0, min(row, len(e.starts)-visible, max(e.top, row-visible+1)))
+	if e.draft != nil {
+		e.left = 0
+		return
+	}
 	x := e.width(e.body[e.starts[row]:e.caret])
 	e.left = max(0, min(x, max(e.left, x-r.Dx()+3)))
 }
@@ -103,13 +108,17 @@ func (e *documentSurface) change(s string, pos int) {
 	e.caret = pos
 	e.anchor = pos
 	e.load(s)
-	e.panel.lines = strings.Split(s, "\n")
-	e.panel.confirmation = ""
-	e.game.keepEditingDraft(e.panel)
+	if e.draft != nil {
+		*e.draft = s
+	} else {
+		e.panel.lines = strings.Split(s, "\n")
+		e.panel.confirmation = ""
+		e.game.keepEditingDraft(e.panel)
+	}
 	e.reveal()
 }
 func (e *documentSurface) insert(s string) {
-	if !e.panel.editing || e.panel.readOnly || e.game.projects.pending != nil {
+	if !e.editable() {
 		return
 	}
 	a, b := min(e.caret, e.anchor), max(e.caret, e.anchor)
@@ -162,11 +171,11 @@ func (e *documentSurface) Render(screen *ebiten.Image) {
 		op := &text.DrawOptions{}
 		op.GeoM.Translate(float64(x), float64(y))
 		op.ColorScale.ScaleWithColor(color.White)
-		if e.composing != "" && e.caret >= begin && e.caret <= end {
+		if e.composing != "" && i == e.row(e.caret) {
 			line = e.body[begin:e.caret] + e.composing + e.body[e.caret:end]
 		}
 		text.Draw(dst, line, *e.game.theme.ButtonTheme.TextFace, op)
-		if e.IsFocused() && e.panel.editing && e.caret >= begin && e.caret <= end {
+		if e.IsFocused() && e.editable() && i == e.row(e.caret) {
 			cx := x + e.width(e.body[begin:e.caret])
 			vector.FillRect(dst, float32(cx), float32(y), 2, float32(e.height), color.White, false)
 		}
@@ -198,11 +207,11 @@ func (e *documentSurface) Update(info *widget.UpdateObject) {
 		_, wheel := ebiten.Wheel()
 		e.top = max(0, min(max(0, len(e.starts)-max(1, (r.Dy()-8)/e.height)), e.top-int(wheel*3)))
 	}
-	if !e.IsFocused() || e.game.projects.pending != nil {
+	if !e.IsFocused() || e.game.voice.canvas != nil && e.game.voice.field == e.TextInput || e.draft == nil && e.game.projects.pending != nil {
 		e.ime.Cancel()
 		return
 	}
-	if e.panel.editing {
+	if e.editable() {
 		handled, _ := e.ime.Update()
 		if handled {
 			return
@@ -253,14 +262,14 @@ func (e *documentSurface) keys() {
 			e.caret = len(e.body)
 		case press(ebiten.KeyC):
 			e.game.copyDocument(e.body[min(e.anchor, e.caret):max(e.anchor, e.caret)])
-		case press(ebiten.KeyX) && e.panel.editing:
+		case press(ebiten.KeyX) && e.editable():
 			e.game.copyDocument(e.body[min(e.anchor, e.caret):max(e.anchor, e.caret)])
 			e.insert("")
-		case press(ebiten.KeyV) && e.panel.editing:
+		case press(ebiten.KeyV) && e.editable():
 			e.insert(e.game.pasteDocument())
-		case press(ebiten.KeyZ) && e.panel.editing && !shift:
+		case press(ebiten.KeyZ) && e.editable() && !shift:
 			e.history(&e.undo, &e.redo)
-		case (press(ebiten.KeyY) || press(ebiten.KeyZ) && shift) && e.panel.editing:
+		case (press(ebiten.KeyY) || press(ebiten.KeyZ) && shift) && e.editable():
 			e.history(&e.redo, &e.undo)
 		default:
 			return
@@ -292,19 +301,19 @@ func (e *documentSurface) keys() {
 		e.caret = e.starts[row]
 	case press(ebiten.KeyEnd):
 		e.caret = e.starts[row] + len(e.line(row))
-	case e.panel.editing && repeat(ebiten.KeyBackspace):
+	case e.editable() && repeat(ebiten.KeyBackspace):
 		if e.anchor == e.caret {
 			e.anchor -= back
 		}
 		e.insert("")
 		return
-	case e.panel.editing && repeat(ebiten.KeyDelete):
+	case e.editable() && repeat(ebiten.KeyDelete):
 		if e.anchor == e.caret {
 			e.anchor += forward
 		}
 		e.insert("")
 		return
-	case e.panel.editing && press(ebiten.KeyEnter):
+	case e.editable() && press(ebiten.KeyEnter):
 		e.insert("\n")
 		return
 	default:
@@ -319,4 +328,52 @@ func (e *documentSurface) keys() {
 	}
 	e.syncIME()
 	e.reveal()
+}
+
+func (e *documentSurface) editable() bool {
+	return e.draft != nil || e.panel.editing && !e.panel.readOnly && e.game.projects.pending == nil
+}
+
+// The multiline surface owns edits directly, including IME and undo.
+func ignoreDocumentTextChange(string) {}
+
+func (e *documentSurface) SetLocation(rect image.Rectangle) {
+	previous := e.GetWidget().Rect.Dx()
+	e.TextInput.SetLocation(rect)
+	if e.draft != nil && previous != rect.Dx() {
+		e.reflow()
+		e.reveal()
+	}
+}
+
+// Soft breaks are visual offsets only. Keep original bytes for selection and undo.
+func (e *documentSurface) reflow() {
+	e.starts = []int{0}
+	width := e.GetWidget().Rect.Dx() - 8
+	lineStart, lastSpace, advance := 0, -1, 0
+	for i, r := range e.body {
+		if r == '\n' {
+			lineStart = i + 1
+			e.starts = append(e.starts, lineStart)
+			lastSpace, advance = -1, 0
+			continue
+		}
+		if e.draft == nil || width <= 0 {
+			continue
+		}
+		glyph := e.width(string(r))
+		if i > lineStart && advance+glyph > width {
+			lineStart = i
+			if lastSpace > e.starts[len(e.starts)-1] {
+				lineStart = lastSpace
+			}
+			e.starts = append(e.starts, lineStart)
+			advance = e.width(e.body[lineStart:i])
+			lastSpace = -1
+		}
+		advance += glyph
+		if r == ' ' || r == '\t' {
+			lastSpace = i + 1
+		}
+	}
 }

@@ -19,7 +19,15 @@ Build one Go harness inside the existing GUI and headless application core. Scop
 ### Shared-core checkpoint
 
 - [x] Expose owner-local create, submit, inspect and complete operations on the shared Runtime. Project and global scopes use an explicitly selected registered filesystem repository. Persist versioned YAML and readable Markdown. Verify concurrent redelivery, mismatched payload rejection, restart with a pending turn, completion replay and external transcript damage. The governed application, domain and project Git package suites passed.
-- [ ] Extend this foundation with transcript listing/indexing, search, migration, provider/job correlation and scoped tool execution as specified below. The initial reader loads one requested session and publishes a complete revision per mutation. Measure long-history I/O before using this path for high-frequency updates.
+- [ ] Extend the header-based session directory with a tracked index, full-text search and legacy migration. The initial reader loads one requested session and publishes a complete revision per mutation. Measure long-history I/O before using this path for high-frequency updates.
+
+### Provider and interface readiness checkpoint
+
+Implement the owner-local provider handoff, correlated responses, read-only project lookup, session discovery and cancellation on the existing runtime. Verify a real HTTP protocol exchange against a local fixture, duplicate/concurrent dispatch, tool continuation and restart. Existing project/global HUDs and public cluster endpoints remain separate integration milestones.
+
+- [x] Provide durable job claims, callback correlation, digest-checked request recovery, cancellation and an ordered model/tool loop through the shared Runtime.
+- [x] Expose paged sessions, owner-scoped catalog queries, a zero-model list command and a terminal conversation client. The non-streaming Chat Completions adapter accepts an explicit endpoint, model and optional bearer credential.
+- [x] Verify actual HTTP encoding and tool continuation against a loopback fixture, terminal resume, eight-way duplicate drive, restart, late callbacks, 100 simultaneously pending sessions and paged discovery. Live vendor/model qualification, cluster scheduling, authenticated remote session endpoints and GUI integration remain open.
 
 ## What the pinned Pi source actually does
 

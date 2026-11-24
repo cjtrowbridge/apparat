@@ -32,7 +32,15 @@ func (n *Runtime) Chat(ctx context.Context, project, id string) (domain.ChatSess
 
 func (n *Runtime) SubmitChatTurn(ctx context.Context, project, id, turn, text string) (domain.ChatSession, error) {
 	return n.withChat(ctx, project, id, nil, func(s *domain.ChatSession) (bool, error) {
-		return s.Apply(turn, text, false)
+		changed, err := s.Apply(turn, text, false)
+		if err != nil || !changed || !strings.EqualFold(strings.TrimSpace(text), "list projects") {
+			return changed, err
+		}
+		result, err := n.chatProjectList(ctx, project, s.Scope, "", "")
+		if err != nil {
+			return false, err
+		}
+		return s.Apply(turn, result, true)
 	})
 }
 
@@ -43,27 +51,45 @@ func (n *Runtime) CompleteChatTurn(ctx context.Context, project, id, turn, reply
 }
 
 func (n *Runtime) withChat(ctx context.Context, project, id string, h *domain.ChatHeader, apply func(*domain.ChatSession) (bool, error)) (domain.ChatSession, error) {
-	if !domain.ValidID(project) {
-		return domain.ChatSession{}, errors.New("expected an owner-local project registration")
-	}
 	n.workspaceMu.Lock()
 	defer n.workspaceMu.Unlock()
-	n.mu.Lock()
-	if n.state != "ready" {
-		n.mu.Unlock()
-		return domain.ChatSession{}, domain.ErrUnavailable
-	}
-	location, err := n.database.ProjectLocation(ctx, project)
-	n.mu.Unlock()
-	if err != nil {
-		return domain.ChatSession{}, err
-	}
-	if strings.HasPrefix(location, "content://") {
-		return domain.ChatSession{}, errors.New("session transcripts require a filesystem checkout")
-	}
-	err = ctx.Err()
+	location, err := n.chatLocation(ctx, project)
 	if err != nil {
 		return domain.ChatSession{}, err
 	}
 	return projectgit.WithChat(location, id, h, apply)
+}
+
+// Chats returns up to 32 repository-owned sessions, newest first.
+func (n *Runtime) Chats(ctx context.Context, project, before string) ([]domain.ChatHeader, error) {
+	location, err := n.chatLocation(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return projectgit.ChatHeaders(location, before)
+}
+
+func (n *Runtime) chatLocation(ctx context.Context, project string) (string, error) {
+	if !domain.ValidID(project) {
+		return "", errors.New("expected an owner-local project registration")
+	}
+
+	n.mu.Lock()
+	if n.state != "ready" {
+		n.mu.Unlock()
+		return "", domain.ErrUnavailable
+	}
+	location, err := n.database.ProjectLocation(ctx, project)
+	n.mu.Unlock()
+	if err != nil {
+		return "", err
+	}
+	if strings.HasPrefix(location, "content://") {
+		return "", errors.New("session transcripts require a filesystem checkout")
+	}
+	err = ctx.Err()
+	if err != nil {
+		return "", err
+	}
+	return location, nil
 }

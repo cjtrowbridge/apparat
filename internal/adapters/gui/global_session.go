@@ -10,9 +10,6 @@ import (
 )
 
 func (g *Game) globalSessionBody(tab hud.Tab) *widget.Container {
-	if g.globalField != nil {
-		g.globalDraft = g.globalField.GetText()
-	}
 	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()))
 	form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))),
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
@@ -21,9 +18,8 @@ func (g *Game) globalSessionBody(tab hud.Tab) *widget.Container {
 		})))
 	for _, section := range tab.Sections {
 		for _, row := range section.Rows {
-			g.globalField = g.projectInput(form, row.Label, g.globalDraft, func(text string) {
-				g.globalDraft = text
-			})
+			surface := g.multilineInput(form, row.Label, &g.globalDraft)
+			g.globalField = surface.TextInput
 		}
 	}
 	body.AddChild(form)
@@ -46,13 +42,15 @@ func (g *Game) openGlobalPrompt() {
 	if err != nil {
 		return
 	}
+	if g.voice.tap.source == "floating-ptt" {
+		g.voice.discardInline()
+	}
 	g.requestActiveTabVisible()
 	g.rebuildUI(g.shell.Snapshot())
 	g.focusGlobalPrompt()
 	g.activeTabID.Store(string(hud.TabGlobalSession))
 	if g.voice.canvas != nil && g.voice.tap.source == "floating-ptt" {
-		g.voice.field = g.globalField
-		g.voice.original = g.globalField.GetText()
+		g.voice.targetField(g.globalField)
 	}
 }
 
@@ -71,7 +69,8 @@ func (g *Game) receiveNativePrompt() {
 	g.openGlobalPrompt()
 	if capture != nil {
 		v.canvas = capture
-		v.field = g.globalField
-		v.original = v.field.GetText()
+		v.targetField(g.globalField)
+		v.tap = pttLock{source: "floating-ptt", locked: true, slideLocked: true, global: true}
+		g.shell.StartVoiceCapture("floating-ptt")
 	}
 }

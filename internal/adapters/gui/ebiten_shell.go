@@ -211,6 +211,7 @@ func (game *Game) Update() error {
 		game.pollSpeech()
 		return nil
 	}
+	game.cancelSpeechBeforeEditing()
 	game.updatePointerState()
 	game.ui.Update()
 	game.clampBodyScroll()

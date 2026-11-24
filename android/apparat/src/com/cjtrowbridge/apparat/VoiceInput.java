@@ -48,6 +48,9 @@ final class VoiceInput {
     private final TextView preview;
     private final Handler handler = new Handler(android.os.Looper.getMainLooper());
     private String original;
+    private String expected;
+    private int expectedStart;
+    private int expectedEnd;
     private int start;
     private int end;
     private boolean listening;
@@ -149,6 +152,7 @@ final class VoiceInput {
                         view.getParent().requestDisallowInterceptTouchEvent(false);
                         if (agentDrag) {
                             String origin = Apparatmobile.activeTab();
+                            restoreDraft();
                             listening = false;
                             handler.removeCallbacks(poll);
                             resetDrag();
@@ -216,6 +220,9 @@ final class VoiceInput {
         end=field.getSelectionEnd();
         if (start<0 || end<0) return;
         original=field.getText().toString();
+        expected=original;
+        expectedStart=start;
+        expectedEnd=end;
         listening=true;
         receive(Apparatmobile.voice(action));
     }
@@ -223,11 +230,29 @@ final class VoiceInput {
         if (listening) receive(Apparatmobile.voice(action));
     }
     void cancel() {
+        restoreDraft();
         resetDrag();
         if (listening) Apparatmobile.voice("cancel");
         listening=false;
         handler.removeCallbacks(poll);
         show("");
+    }
+    private void revise(String text) {
+        int pos = Math.min(start,end);
+        String next = original.substring(0,pos)+text+original.substring(Math.max(start,end));
+        if (next.equals(expected)) return;
+        field.getText().replace(pos,expected.length()-(original.length()-Math.max(start,end)),text);
+        expected=next;
+        expectedStart=pos+text.length();
+        expectedEnd=expectedStart;
+        field.setSelection(expectedStart);
+    }
+    private void restoreDraft() {
+        if (expected!=null && !expected.equals(original) && expected.contentEquals(field.getText())) {
+            field.setText(original);
+            field.setSelection(start,end);
+        }
+        expected=null;
     }
     private void show(String value) {
         preview.setText(value);
@@ -240,8 +265,8 @@ final class VoiceInput {
     };
     private void receive(String json) {
         handler.removeCallbacks(poll);
-        if (!field.isAttachedToWindow() || !field.hasFocus() || !original.contentEquals(field.getText())
-                || start!=field.getSelectionStart() || end!=field.getSelectionEnd()) {
+        if (!field.isAttachedToWindow() || !field.hasFocus() || !expected.contentEquals(field.getText())
+                || expectedStart!=field.getSelectionStart() || expectedEnd!=field.getSelectionEnd()) {
             trace("editing_target_changed");
             cancel();
             return;
@@ -260,15 +285,19 @@ final class VoiceInput {
                     label = slideLocked ? "Listening locked · slide down to finish" : "Listening locked · tap to finish";
                     paint(true);
                 }
-                show(text.isEmpty() ? label : label+" · "+text);
+                if (!text.isEmpty()) revise(text);
+                show(label);
                 handler.postDelayed(poll,120);
                 return;
             }
             listening=false;
             resetDrag();
             if (state.equals("final") && !text.isEmpty()) {
-                field.getText().replace(Math.min(start,end),Math.max(start,end),text);
+                revise(text);
+            } else {
+                restoreDraft();
             }
+            expected=null;
             show(state.equals("error") ? text : "");
         } catch (org.json.JSONException error) {
             cancel();

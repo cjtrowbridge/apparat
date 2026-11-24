@@ -22,13 +22,13 @@ import (
 )
 
 type voiceState struct {
-	tap, nativeTap                              pttLock
-	engine                                      *speech.Engine
-	nativeMu                                    sync.Mutex
-	globalRequested                             bool
-	native, canvas, globalCapture               *speech.Session
-	field                                       *widget.TextInput
-	original, preview, details, status, confirm string
+	tap, nativeTap                pttLock
+	engine                        *speech.Engine
+	nativeMu                      sync.Mutex
+	globalRequested               bool
+	native, canvas, globalCapture *speech.Session
+	inlineDictation
+	preview, details, status, confirm string
 }
 
 func (g *Game) initSpeech() {
@@ -75,9 +75,6 @@ func (g *Game) NativeVoice(action string) string {
 		v.globalRequested = true
 		v.globalCapture = v.native
 		v.native = nil
-		if v.globalCapture != nil {
-			v.globalCapture.Release()
-		}
 	case "start":
 		if v.engine == nil {
 			result = speech.Result{State: "error", Text: "Speech unavailable"}
@@ -139,10 +136,7 @@ func (g *Game) beginPTT(source string) {
 	}
 	g.shell.StartVoiceCapture(source)
 	v.canvas = s
-	v.field = f
-	if f != nil {
-		v.original = f.GetText()
-	}
+	v.targetField(f)
 }
 func (g *Game) endPTT() {
 	g.shell.ReleaseVoiceCapture()
@@ -157,7 +151,7 @@ func (g *Game) cancelPTT() {
 		g.voice.canvas.Cancel()
 		g.voice.canvas = nil
 	}
-	g.voice.field = nil
+	g.voice.discardInline()
 	g.voice.preview = ""
 }
 func caretMayHaveMoved(f *widget.TextInput) bool {
@@ -175,7 +169,7 @@ func (g *Game) pollSpeech() {
 		g.endPTT()
 	}
 	if v.canvas != nil {
-		if v.field != nil && (g.ui.GetFocusedWidget() != v.field || v.field.GetText() != v.original || g.gesture.Owner != gesturePTT && caretMayHaveMoved(v.field)) {
+		if v.field != nil && (g.ui.GetFocusedWidget() != v.field || v.field.GetText() != v.expected || g.gesture.Owner != gesturePTT && caretMayHaveMoved(v.field)) {
 			g.cancelPTT()
 			return
 		}
@@ -184,14 +178,18 @@ func (g *Game) pollSpeech() {
 		if v.preview == "" {
 			v.preview = r.State
 		}
+		if v.field != nil && (r.State == "recording" || r.State == "finishing") {
+			v.revise(r.Text)
+			v.preview = ""
+		}
 		switch r.State {
 		case "final":
-			g.finishUtterance(v.field, r.Text)
-			v.field = nil
+			g.completeInline(r.Text)
 			v.preview = ""
 			v.canvas = nil
 			v.tap = pttLock{}
 		case "error", "cancelled":
+			v.discardInline()
 			v.tap = pttLock{}
 			v.canvas = nil
 		}
@@ -210,9 +208,9 @@ func (g *Game) finishUtterance(field *widget.TextInput, text string) {
 		return
 	}
 	if field != nil {
-		w := &g.projects.workspace
-		if w.surface != nil && w.surface.TextInput == field {
-			w.surface.insert(text)
+		e, _ := field.GetWidget().CustomData.(*documentSurface)
+		if e != nil {
+			e.insert(text)
 			return
 		}
 		field.Insert(text)
@@ -279,5 +277,21 @@ func (g *Game) speechSettings(c *widget.Container) {
 			}
 		}
 		c.AddChild(g.detailText(fmt.Sprintf("%.1f MB · %s", float64(m.Bytes)/1e6, languages)))
+	}
+}
+
+func (g *Game) cancelSpeechBeforeEditing() {
+	if g.voice.canvas == nil || g.voice.field == nil {
+		return
+	}
+	keys := inpututil.AppendJustPressedKeys(nil)
+	for _, key := range keys {
+		if key != ebiten.KeyControlRight {
+			g.cancelPTT()
+			return
+		}
+	}
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) || len(inpututil.AppendJustPressedTouchIDs(nil)) > 0 {
+		g.cancelPTT()
 	}
 }

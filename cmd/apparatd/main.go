@@ -5,6 +5,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"flag"
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/adapters/discovery"
 	"github.com/cjtrowbridge/apparat/internal/adapters/mockprovider"
@@ -29,6 +31,17 @@ func main() {
 	os.Exit(code)
 }
 func run() (code int) {
+	if len(os.Args) > 1 && os.Args[1] == "chat" {
+		err := terminalChat(os.Args[2:], os.Stdin, os.Stdout)
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		return 0
+	}
 	if len(os.Args) > 1 && os.Args[1] == "workspace-access" {
 		return workspaceAccess(os.Args[2:])
 	}

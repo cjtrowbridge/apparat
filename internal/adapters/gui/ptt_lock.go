@@ -21,6 +21,7 @@ type pttLock struct {
 	pressed, deadline time.Time
 	locked            bool
 	slideLocked       bool
+	global            bool
 }
 
 func (l *pttLock) press(source string, now time.Time) tapDecision {

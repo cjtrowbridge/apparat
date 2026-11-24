@@ -28,3 +28,17 @@ A returning headless installation with an existing database and missing key wait
 Run `apparatd trust-host` in the service account’s environment to inspect the active public device fingerprint. With one personal fingerprint argument it confirms the intended owner in the worker database. On a claimed worker it only accepts the original owner and worker key. Use the same APPARAT_RUNTIME_DIR as the service. A mismatch or missing active manifest fails without changing ownership.
 
 Use `apparatd workspace-access grant|revoke PROJECT_ID USER_FINGERPRINT SCOPE` on the owner to manage task and terminal grants. Approved membership supplies file reads and cluster administration supplies file writes. Use `workspace-access status PROJECT_ID USER_FINGERPRINT` to inspect effective access. It can run alongside the service. Scopes and required combinations are described in the [workspace guide](../../docs/workspaces.md).
+
+- `chat.go`: interactive owner-local terminal client for the shared chat harness. It registers the selected Git checkout and owns the runtime root for the duration of the conversation. Set APPARAT_RUNTIME_DIR to an unused root when another node owns the default root. The chat endpoint and model are explicit; set APPARAT_CHAT_API_KEY only when required. Each submitted line and consequential tool exchange is recorded in the checkout.
+
+For an Ollama service with a tool-capable model installed, use its Chat Completions endpoint:
+
+```sh
+export APPARAT_CHAT_ENDPOINT=http://127.0.0.1:11434/v1/chat/completions
+export APPARAT_CHAT_MODEL=your-installed-model
+apparatd chat --repo . --topic "Release planning"
+```
+
+Enter a line and press Return. Use /quit to detach. List transcripts with `apparatd chat --repo . --list` and reopen one with `apparatd chat --repo . --session SESSION_ID`. Use --global with the checkout chosen to own a new global transcript. Session listing works offline. An uncertain delivery stays pending, and /cancel abandons it locally. A cloud configuration sends conversation history and selected tool results to its configured endpoint. Use an approved provider and project for that route.
+
+- `chat_test.go`: verifies the terminal entrypoint, actual JSON/HTTP tool round trip, session listing and resumed conversation against a local fixture.

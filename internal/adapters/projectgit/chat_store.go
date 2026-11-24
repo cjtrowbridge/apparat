@@ -34,6 +34,13 @@ func chatDirectory(location string, create bool) (*os.Root, error) {
 				return nil, err
 			}
 		}
+		if !create {
+			_, err = parent.Lstat(part)
+			if err != nil {
+				_ = parent.Close()
+				return nil, err
+			}
+		}
 		child, err := workspaceDirectory(parent, part)
 		_ = parent.Close()
 		if err != nil {
@@ -44,7 +51,7 @@ func chatDirectory(location string, create bool) (*os.Root, error) {
 	return parent, nil
 }
 
-func chatRead(dir *os.Root, name string) ([]byte, error) {
+func openChatLeaf(dir *os.Root, name string) (*os.File, error) {
 	info, err := dir.Lstat(name)
 	if err != nil {
 		return nil, err
@@ -56,13 +63,23 @@ func chatRead(dir *os.Root, name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	current, err := f.Stat()
+	if err != nil || !os.SameFile(current, info) {
+		_ = f.Close()
+		return nil, errors.New("transcript changed while opening")
+	}
+	return f, nil
+}
+
+func chatRead(dir *os.Root, name string) ([]byte, error) {
+	f, err := openChatLeaf(dir, name)
+	if err != nil {
+		return nil, err
+	}
 	defer func() {
 		_ = f.Close()
 	}()
-	current, err := f.Stat()
-	if err != nil || !os.SameFile(current, info) {
-		return nil, errors.New("transcript changed while opening")
-	}
 	return io.ReadAll(f)
 }
 

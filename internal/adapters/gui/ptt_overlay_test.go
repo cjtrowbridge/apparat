@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"github.com/ebitenui/ebitenui/event"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -132,12 +133,87 @@ func TestDragIntoGlobalDraft(t *testing.T) {
 		if field.Dy() < 44 || field.Max.X > g.width || field.Min.X < 0 || field.Max.Y > cy-pttRadius-pttTravel && field.Max.X > cx-pttRadius {
 			t.Fatalf("prompt outside its reserved space: %v at %d", field, width)
 		}
-		g.globalField.SetText("")
+		editor := g.globalField.GetWidget().CustomData.(*documentSurface)
+		editor.anchor = 0
+		editor.caret = len(editor.body)
 		g.finishUtterance(g.globalField, "open Projects")
 		g.selectTab(0, nil)
 		g.openGlobalPrompt()
 		if g.globalField.GetText() != "open Projects" {
 			t.Fatal("command-shaped draft lost on return")
 		}
+	}
+}
+
+func TestGlobalLockAndInlineRevisions(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	x, y := g.pttCenter()
+	g.pressPTTPointer(x, y, true, 1)
+	g.voice.tap = pttLock{source: "floating-ptt"}
+	g.shell.StartVoiceCapture("floating-ptt")
+	g.dragPTTPointer(x-pttTravel, y)
+	g.setPTTHeld(false)
+	g.releaseGesture(gesturePTT)
+	if !g.voice.tap.global || !g.voice.tap.locked || !g.pointInPTT(x-pttTravel, y) || !g.pttButtonHeld() {
+		t.Fatal("left capture lost its latched position or active color")
+	}
+	renderNavigation(g)
+	e := g.globalField.GetWidget().CustomData.(*documentSurface)
+	e.insert("before 猫 after")
+	e.anchor = len("before ")
+	e.caret = len("before 猫")
+	g.voice.targetField(e.TextInput)
+	g.voice.revise("draft")
+	g.voice.revise("draft revised")
+	if e.body != "before draft revised after" || g.globalDraft != "before 猫 after" {
+		t.Fatal("inline speech revision lost its original range")
+	}
+	g.voice.discardInline()
+	if e.body != g.globalDraft || e.anchor != len("before ") || e.caret != len("before 猫") {
+		t.Fatal("cancellation lost text or selection")
+	}
+	g.voice.targetField(e.TextInput)
+	g.voice.revise("next")
+	g.pressPTTPointer(x-pttTravel, y, false, 0)
+	g.dragPTTPointer(x, y)
+	if g.voice.tap.locked || g.shell.Snapshot().VoiceState != hud.VoiceQueued {
+		t.Fatal("returning right did not finish capture")
+	}
+	g.completeInline("next\nline")
+	if g.globalDraft != "before next\nline after" || len(e.starts) < 2 {
+		t.Fatal("final edit duplicated or flattened multiline speech")
+	}
+	e.history(&e.undo, &e.redo)
+	if g.globalDraft != "before 猫 after" {
+		t.Fatal("dictation must undo in one operation")
+	}
+}
+
+func TestSingleLineDictationReplacesPartialAtCaret(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	last := "abc"
+	field := g.newProjectInput(last, func(s string) {
+		last = s
+	})
+	field.CursorMoveEnd()
+	field.CursorMoveLeft()
+	g.voice.targetField(field)
+	g.voice.revise("first")
+	g.voice.revise("final")
+	if field.GetText() != "abfinalc" || last != "abc" {
+		t.Fatal("provisional input must stay in the editor at the caret")
+	}
+	g.completeInline("finished")
+	event.ExecuteDeferred()
+	if field.GetText() != "abfinishedc" || last != field.GetText() {
+		t.Fatal("final result must replace the provisional range")
+	}
+	g.voice.targetField(field)
+	g.voice.revise("temporary")
+	g.voice.discardInline()
+	if field.GetText() != "abfinishedc" {
+		t.Fatal("cancelled transcription changed the accepted draft")
 	}
 }

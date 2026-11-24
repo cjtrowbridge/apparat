@@ -256,7 +256,7 @@ func (g *Game) changesScreen(c *widget.Container, w *workspacePanel) {
 		}
 	case "commit":
 		c.AddChild(g.detailText("Commit " + w.path + " to " + g.workspaceBranch()))
-		g.projectField(c, "Commit message", &w.argument)
+		g.multilineProjectField(c, "Commit message", &w.argument)
 		g.projectButton(c, "Commit file", func() {
 			g.workspaceRequest("commit")
 		})

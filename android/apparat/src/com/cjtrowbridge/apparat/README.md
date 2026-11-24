@@ -21,7 +21,7 @@ Regression verification: compile this helper with `tests/UpdateTransferTest.java
 
 - `DocumentEditor.java`: Implements Android field prompts and the clipboard bridge for the workspace.
 
-- `VoiceInput.java`: Holds, cancels and finalizes local dictation in the original Android editor selection. Requests microphone permission on the first press. Sliding up locks capture. Sliding left hands the utterance to the global prompt on release and preserves the open editor for return to its tab.
+- `VoiceInput.java`: Holds, cancels and finalizes local dictation in the original Android editor selection. Requests microphone permission on the first press. Sliding up locks capture. Sliding left hands the utterance to the locked global prompt on release and preserves the open editor for return to its tab.
 
 The document and input dialogs anchor the circular PTT control to the lower-right editing area above the keyboard. A listening indicator remains visible alongside partial text until submission. A double tap on PTT or L2 locks dictation in the original selection. A subsequent tap finishes it.
 - `AndroidUpdater.java`: Reports the installed version and starts the user-requested signed APK download.
@@ -31,3 +31,5 @@ The document and input dialogs anchor the circular PTT control to the lower-righ
 - `LanBrowser.java`: browses Apparat service names on the active Wi-Fi network via Android 13+ scoped NSD. Leaving the detail or pausing the Activity releases discovery.
 - `NodeKeys.java`: Presents startup key recovery, creation, protected entry and Android document pickers.
 - `AndroidKeyProtection.java`: Uses authenticated AES-GCM operations in Android Keystore on eligible Android 11+ devices.
+
+Native speech revisions replace the selected range directly. Cancelling restores the draft.

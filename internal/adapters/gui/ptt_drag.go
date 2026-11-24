@@ -16,11 +16,11 @@ const pttTravel = 3 * pttRadius / 2
 
 func (g *Game) pttDisplayCenter() (int, int) {
 	x, y := g.pttCenter()
+	if g.voice.tap.global {
+		return x - pttTravel, y
+	}
 	if g.voice.tap.slideLocked {
 		return x, y - pttTravel
-	}
-	if g.gesture.global {
-		return x - pttTravel, y
 	}
 	return x, y
 }
@@ -54,16 +54,17 @@ func (g *Game) pressPTTPointer(x, y int, touch bool, id ebiten.TouchID) bool {
 }
 
 func (g *Game) dragPTTPointer(x, y int) {
-	if g.gesture.global {
-		return
-	}
 	dx, dy := x-g.gesture.startX, y-g.gesture.startY
 	near := func(x, y int) bool {
 		return x*x+y*y <= pttRadius*pttRadius/2
 	}
 	lock := &g.voice.tap
 	if lock.slideLocked {
-		if near(dx, dy-pttTravel) {
+		homeX, homeY := 0, pttTravel
+		if lock.global {
+			homeX, homeY = pttTravel, 0
+		}
+		if near(dx-homeX, dy-homeY) {
 			*lock = pttLock{}
 			g.endPTT()
 			g.pttHeld = false
@@ -74,13 +75,22 @@ func (g *Game) dragPTTPointer(x, y int) {
 		return
 	}
 	if near(dx+pttTravel, dy) {
-		g.gesture.global = true
-		g.openGlobalPrompt()
-	} else if near(dx, dy+pttTravel) && lock.source == "floating-ptt" {
-		lock.locked = true
-		lock.slideLocked = true
-		g.gesture.startX, g.gesture.startY = x, y
+		if !g.gesture.globalOpened {
+			g.openGlobalPrompt()
+			g.gesture.globalOpened = true
+		}
+		if lock.source == "floating-ptt" {
+			lock.global = true
+		} else {
+			return
+		}
+	} else if !near(dx, dy+pttTravel) || lock.source != "floating-ptt" {
+		return
 	}
+
+	lock.locked = true
+	lock.slideLocked = true
+	g.gesture.startX, g.gesture.startY = x, y
 }
 
 func (g *Game) updatePTTPointer() bool {
@@ -115,10 +125,6 @@ func (g *Game) updatePTTPointer() bool {
 	}
 	g.dragPTTPointer(x, y)
 	if released {
-		if g.gesture.global && g.voice.tap.source == "floating-ptt" {
-			g.voice.tap = pttLock{}
-			g.endPTT()
-		}
 		g.setPTTHeld(false)
 		g.releaseGesture(gesturePTT)
 	}

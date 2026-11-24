@@ -53,7 +53,7 @@ func (g *Game) terminalScreen(c *widget.Container, w *workspacePanel) {
 		}
 	} else {
 		if w.selected.State != "Ended" {
-			g.projectField(c, "Terminal input", &w.message)
+			g.multilineProjectField(c, "Terminal input", &w.message)
 			keys := []struct{ label, input string }{{"Send line", ""}, {"Enter", "\r"}, {"Tab", "\t"}, {"Escape", "\x1b"}, {"Interrupt", "\x03"}, {"Up", "\x1b[A"}, {"Down", "\x1b[B"}, {"Left", "\x1b[D"}, {"Right", "\x1b[C"}}
 			for _, key := range keys {
 				g.projectButton(c, key.label, func() {

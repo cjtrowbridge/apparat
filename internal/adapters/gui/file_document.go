@@ -56,7 +56,11 @@ func (g *Game) fileDocument(c *widget.Container, w *workspacePanel) {
 			})
 		}
 	}
-	c.AddChild(w.surface)
+	if w.editing {
+		g.multilineRow(c, "Document").AddChild(w.surface)
+	} else {
+		c.AddChild(w.surface)
+	}
 	tools := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2))))
 	c.AddChild(tools)
 	g.projectButton(tools, "Select all", func() {
