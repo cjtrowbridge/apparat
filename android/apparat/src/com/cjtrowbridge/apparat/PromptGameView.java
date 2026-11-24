@@ -20,7 +20,7 @@ final class PromptGameView extends EbitenView {
         super(context);
     }
 
-    @Override public boolean dispatchKeyEvent(KeyEvent event) {
+    @Override public boolean dispatchKeyEventPreIme(KeyEvent event) {
         int character = event.getUnicodeChar();
         if (findFocus() instanceof EditText && character >= ' ' &&
                 Character.isValidCodePoint(character) && !event.isCtrlPressed() &&
@@ -35,18 +35,16 @@ final class PromptGameView extends EbitenView {
                 return onKeyUp(event.getKeyCode(), event);
             }
         }
-        return super.dispatchKeyEvent(event);
+        return super.dispatchKeyEventPreIme(event);
     }
 
     static void fitKeyboard(MainActivity activity, FrameLayout content) {
         if (Build.VERSION.SDK_INT < 30) return;
+        activity.getWindow().setDecorFitsSystemWindows(false);
         activity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override public WindowInsets onApplyWindowInsets(View target, WindowInsets insets) {
-                int types = WindowInsets.Type.ime();
-                if (Build.VERSION.SDK_INT >= 35) {
-                    types |= WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout();
-                }
+                int types = WindowInsets.Type.ime() | WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout();
                 android.graphics.Insets safe = insets.getInsets(types);
                 target.setPadding(safe.left, safe.top, safe.right, safe.bottom);
                 return insets;
