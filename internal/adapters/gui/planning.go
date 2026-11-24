@@ -22,6 +22,7 @@ type planningSession struct {
 	acknowledged bool
 }
 type planningUI struct {
+	modelButton     *widget.Button
 	picker          modelPicker
 	sessions        []*planningSession
 	current         *planningSession

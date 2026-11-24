@@ -221,7 +221,10 @@ func (g *Game) addModelButton(c *widget.Container) {
 		width -= 70
 	}
 	name := g.modelLabel()
-	g.projectButton(c, g.planningTitle(name, max(40, width)), g.openModels)
+	b := g.projectButton(c, g.planningTitle(name, max(40, width)), g.openModels)
+	if !g.inWorkspace() {
+		g.planning.modelButton = b
+	}
 }
 func (g *Game) saveModel(asDefault bool) {
 	p := &g.planning.picker

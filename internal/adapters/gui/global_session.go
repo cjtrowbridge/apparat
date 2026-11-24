@@ -86,6 +86,13 @@ func (g *Game) globalTypingPress() {
 	bounds := g.globalField.GetWidget().Rect
 	for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
 		x, y := ebiten.TouchPosition(id)
+		// Releasing text focus resizes the Android canvas before a touch-up can
+		// reach this same button. Resolve the tap in the pre-resize geometry.
+		button := g.planning.modelButton
+		if g.runtimeInfo.CanvasFitsKeyboard && g.globalField.IsFocused() && button != nil && imagePoint(x, y).In(button.GetWidget().Rect) {
+			g.openModels()
+			return
+		}
 		if imagePoint(x, y).In(bounds) {
 			g.editGlobalPrompt()
 			return
