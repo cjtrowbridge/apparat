@@ -277,6 +277,7 @@ func (g *Game) activateFocus() {
 }
 func (g *Game) drawFocus(dst *ebiten.Image) {
 	g.applyProjectFocus()
+	g.applyInventoryFocus()
 	if g.nav.active && !g.nav.strip && !g.nav.gallery && g.nav.target.w == nil {
 		g.enterBody()
 	}

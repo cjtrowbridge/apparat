@@ -38,6 +38,8 @@ type Section struct {
 	ProjectID            string
 	SelectorSubtitle     string
 	SelectorIcon         string
+	CenterIcon           string
+	CapabilityIcon       string
 	CurrentDevice        bool
 	Title                string
 	Description          string

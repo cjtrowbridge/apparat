@@ -10,3 +10,5 @@ Examples include the Ebitengine HUD, SQLite repositories, HTTPS REST, WireGuard 
 - Must keep blocking I/O, external process calls, model execution, SQL, and network calls outside the render/update path.
 - Must return typed outcomes so the application layer can persist, retry, reject, display, or audit failures.
 - Must not encode product authorization policy that belongs in the application or domain layer.
+
+The inventory adapter samples worker resources and probes the configured loopback Ollama metadata endpoints. See [worker inventory](inventory/README.md).

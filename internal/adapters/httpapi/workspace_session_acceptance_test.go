@@ -84,12 +84,17 @@ func TestWorkspaceSessionBoundary(t *testing.T) {
 		{"expired", "expired", valid},
 		{"wrong-device", "active", chain(other)},
 	} {
-		for _, op := range []string{"catalog", "list", "read", "save", "live"} {
+		for _, op := range []string{"catalog", "list", "read", "save", "live", "inventory", "configure-ollama"} {
 			t.Run(session.name+"/"+op, func(t *testing.T) {
 				path := "/v1/workspace"
 				method := "POST"
 				q := domain.WorkspaceRequest{ProjectID: project, Path: file, Action: op}
 				switch op {
+				case "inventory":
+					path = "/v1/inventory"
+					method = "GET"
+				case "configure-ollama":
+					path = "/v1/admin/inventory/ollama"
 				case "catalog", "live":
 					path += "/" + op
 					method = "GET"

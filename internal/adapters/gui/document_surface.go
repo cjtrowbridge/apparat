@@ -207,11 +207,16 @@ func (e *documentSurface) Update(info *widget.UpdateObject) {
 		_, wheel := ebiten.Wheel()
 		e.top = max(0, min(max(0, len(e.starts)-max(1, (r.Dy()-8)/e.height)), e.top-int(wheel*3)))
 	}
+	if !e.IsFocused() && e.TextInput == e.game.globalField {
+		e.ime.Confirm()
+		return
+	}
 	if !e.IsFocused() || e.game.voice.canvas != nil && e.game.voice.field == e.TextInput || e.draft == nil && e.game.projects.pending != nil {
 		e.ime.Cancel()
 		return
 	}
-	if e.TextInput == e.game.globalField && e.game.runtimeInfo.PromptValue != nil {
+	if e.TextInput == e.game.globalField && e.game.globalVoiceFocus && e.game.runtimeInfo.PromptValue != nil {
+		e.ime.Cancel()
 		return
 	}
 	if e.editable() {

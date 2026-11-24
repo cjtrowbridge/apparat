@@ -54,7 +54,7 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := serveWorkerClaims(listener, &tls.Config{MinVersion: tls.VersionTLS13, ClientAuth: tls.RequestClientCert, Certificates: []tls.Certificate{cert}}, db, worker, filepath.Join(t.TempDir(), "artifacts", "pool"))
+	server := serveWorkerClaims(listener, &tls.Config{MinVersion: tls.VersionTLS13, ClientAuth: tls.RequestClientCert, Certificates: []tls.Certificate{cert}}, db, worker, filepath.Join(t.TempDir(), "artifacts", "pool"), WorkerSurface{Inventory: &inventoryFixture{}})
 	defer server.Close()
 	address := listener.Addr().String()
 	pin := identity.Fingerprint(worker.Public())
@@ -86,6 +86,14 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	access, err := session.WhoAmI(ctx)
 	if err != nil || !access.Admin || session.Worker != pin {
 		t.Fatal("owner access failed", err)
+	}
+	snapshot, err := session.Inventory(ctx)
+	if err != nil || snapshot.Port != 12345 {
+		t.Fatal("authenticated inventory", snapshot, err)
+	}
+	snapshot, err = session.TryOllama(ctx, 11434)
+	if err == nil || err.Error() != "test metadata failure" || snapshot.Port != 12345 {
+		t.Fatal("authenticated port trial", snapshot, err)
 	}
 	dir := t.TempDir()
 	t.Setenv("GH_CONFIG_DIR", dir)
@@ -128,6 +136,10 @@ func TestPinnedWorkerClaim(t *testing.T) {
 	_, err = unapproved.GitAccounts(ctx)
 	if !errors.Is(err, ErrDenied) {
 		t.Fatal("pending user could enumerate accounts")
+	}
+	_, err = unapproved.Inventory(ctx)
+	if !errors.Is(err, ErrDenied) {
+		t.Fatal("pending inventory read", err)
 	}
 	exerciseWorkerGit(t, session, other, unapproved)
 	exerciseWorkspaceWatch(t, session, db, dbPath)

@@ -165,6 +165,9 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 		for _, opt := range g.deviceManagementLinks(s.ActionID) {
 			key, _ := json.Marshal(opt.Route)
 			kind := "device-pools"
+			if opt.Route.Page == "ollama" {
+				kind = "configure-ollama"
+			}
 			if opt.Route.Page == "performance" {
 				kind = "performance"
 			}

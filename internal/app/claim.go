@@ -141,7 +141,16 @@ func (node *Runtime) KnownWorkers(ctx context.Context) ([]domain.ClusterDevice, 
 	if node.Personal == nil {
 		return nil, nil
 	}
-	return node.database.WorkerSummaries(ctx, node.Personal.Fingerprint(), identity.Fingerprint(node.Keys.Public()))
+	user := node.Personal.Fingerprint()
+	rows, err := node.database.WorkerSummaries(ctx, user, identity.Fingerprint(node.Keys.Public()))
+	for i, w := range rows {
+		cached, ok := node.peerInventory.Load(user + "/" + w.Fingerprint)
+		if ok {
+			v := cached.(domain.WorkerInventory)
+			rows[i].Inventory = &v
+		}
+	}
+	return rows, err
 }
 
 func (n *Runtime) CheckWorker(ctx context.Context, id string, dialog identity.Dialog) {

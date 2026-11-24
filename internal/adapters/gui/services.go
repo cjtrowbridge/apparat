@@ -14,6 +14,7 @@ type ServiceQueries interface {
 	Changed() <-chan struct{}
 }
 type ServiceProjection struct {
+	LocalInventory  domain.WorkerInventory
 	Devices         []domain.ClusterDevice
 	Peers           []domain.PoolDevice
 	LocalDevice     domain.PoolDevice
@@ -69,6 +70,10 @@ func WatchServices(ctx context.Context, queries ServiceQueries) <-chan ServicePr
 			}
 
 			projection := ServiceProjection{Devices: devices, Peers: peers, DeviceError: deviceErr != nil || peerErr != nil, Services: list, State: state}
+			inv, hasInventory := queries.(interface{ LocalInventory() domain.WorkerInventory })
+			if hasInventory {
+				projection.LocalInventory = inv.LocalInventory()
+			}
 			names, hasName := queries.(interface{ ProjectHostname() string })
 			if hasName {
 				projection.ProjectHostname = names.ProjectHostname()

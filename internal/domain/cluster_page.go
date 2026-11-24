@@ -14,6 +14,7 @@ type ClusterOption struct {
 	Run            func(context.Context, string) error
 }
 type ClusterPage struct {
+	InitialValue  string
 	Overview      *PoolOverview
 	Title, Detail string
 	Options       []ClusterOption

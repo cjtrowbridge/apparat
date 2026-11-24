@@ -159,11 +159,7 @@ final class VoiceInput {
                             show("");
                             dialog.hide();
                             Apparatmobile.voice("global-prompt");
-                            if ("global-agentic-session".equals(origin)) {
-                                ((android.app.AlertDialog)dialog).getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
-                            } else {
-                                restoreOnReturn(dialog, origin);
-                            }
+                            restoreOnReturn(dialog, origin);
                         } else if (!slideLocked) {
                             resetDrag();
                             stop("release-pointer");

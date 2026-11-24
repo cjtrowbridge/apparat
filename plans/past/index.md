@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-23-23-20-51 | plans/past/2026-11-23-23-50-00_worker-inference-inventory.md | Advertise worker Ollama inventory and measured capacity | Discover worker loopback Ollama, expose authorized inventory and show resource and capability sections in Cluster.
 2026-11-23-22-59-58 | plans/past/2026-11-23-23-30-00_prompt-stop-and-keyboard.md | Preserve stopped prompt dictation and open Android typing | Retain visible dictated words on stop and give manual prompt entry an Android keyboard.
 2026-11-23-22-47-16 | plans/past/2026-11-23-23-00-00_inline-dictation.md | Inline dictation and multiline prompts | Stack multiline labels, replace live recognition inside editors and latch global PTT until dragged home.
 2026-11-23-22-32-20 | plans/past/2026-11-23-22-00-00_global-session-ptt.md | Global session prompt and PTT drag controls | Add the global draft tab and pointer gestures for locking and prompt dictation.

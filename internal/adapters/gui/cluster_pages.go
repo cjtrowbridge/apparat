@@ -24,6 +24,8 @@ type clusterFrame struct {
 	selectedPools               map[string]bool
 	poolTab, taskFilter         string
 	oldestFirst, choosingFilter bool
+	focusInput                  bool
+	input                       widget.Focuser
 	scroll                      float64
 	focus                       focusBookmark
 }
@@ -153,7 +155,11 @@ func (g *Game) pollCluster() {
 					f.selectedPools[pool] = true
 				}
 			}
-			if (f.route.Page == "rename" || f.route.Page == "rename-local") && len(f.page.Options) == 1 {
+			if f.route.Page == "ollama" {
+				f.draft = f.page.InitialValue
+				f.focusInput = true
+			}
+			if (f.route.Page == "ollama" || f.route.Page == "rename" || f.route.Page == "rename-local") && len(f.page.Options) == 1 {
 				f.form = &f.page.Options[0]
 			}
 			f.notice = ""
@@ -265,7 +271,7 @@ func (g *Game) clusterContent(c *widget.Container) {
 	}
 	if f.form != nil {
 		if f.form.Input != "" {
-			g.projectField(c, f.form.Input, &f.draft)
+			f.input = g.projectField(c, f.form.Input, &f.draft)
 		}
 		g.projectButton(c, f.form.Label, func() {
 			g.clusterRun(*f.form, f.draft)

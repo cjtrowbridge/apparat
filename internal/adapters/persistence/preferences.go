@@ -59,3 +59,17 @@ func (db *DB) SetSpeechModel(ctx context.Context, id string) error {
 	_, err := db.sql.ExecContext(ctx, "INSERT INTO local_runtime VALUES('speech_model',?,0) ON CONFLICT(key) DO UPDATE SET value=excluded.value", id)
 	return err
 }
+
+// OllamaPort returns zero on first use so the monitor selects the standard port.
+func (db *DB) OllamaPort(ctx context.Context) (int, error) {
+	var value int
+	err := db.sql.QueryRowContext(ctx, "SELECT value FROM local_runtime WHERE key='ollama_loopback_port'").Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return value, err
+}
+func (db *DB) SaveOllamaPort(ctx context.Context, port int) error {
+	_, err := db.sql.ExecContext(ctx, `INSERT INTO local_runtime VALUES('ollama_loopback_port',?,0) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, port)
+	return err
+}

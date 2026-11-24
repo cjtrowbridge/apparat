@@ -269,3 +269,29 @@ func TestStopThenFocusLossKeepsPrompt(t *testing.T) {
 		t.Fatal("explicit cancellation before stop should discard only the provisional edit")
 	}
 }
+
+func TestGlobalKeyboardEditsSameVoiceDraft(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	g.runtimeInfo.PromptValue = func(string, string, bool) (string, bool) {
+		t.Fatal("global prompt opened a native dialog")
+		return "", false
+	}
+	g.openGlobalPrompt()
+	field := g.globalField
+	g.finishUtterance(field, "spoken")
+	if !g.globalVoiceFocus {
+		t.Fatal("voice entry did not suppress the software keyboard")
+	}
+	g.editGlobalPrompt()
+	if g.globalVoiceFocus || g.ui.GetFocusedWidget() != field {
+		t.Fatal("manual entry did not focus the inline editor")
+	}
+	field.GetWidget().CustomData.(*documentSurface).insert(" and typed")
+	g.selectTab(0, nil)
+	g.leaveGlobalPrompt()
+	g.openGlobalPrompt()
+	if g.globalDraft != "spoken and typed" || g.globalField.GetText() != g.globalDraft {
+		t.Fatal("voice and keyboard edits did not survive tab navigation")
+	}
+}

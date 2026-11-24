@@ -47,8 +47,7 @@ type Game struct {
 	nav                            navigation
 	voice                          voiceState
 	globalDraft                    string
-	globalTyping                   chan *string
-	openingVoicePrompt             bool
+	globalVoiceFocus               bool
 	globalField                    *widget.TextInput
 	prefs                          preferenceState
 	projects                       projectForm
@@ -172,8 +171,8 @@ func (game *Game) Update() error {
 	if game.cancelInputRequested.Swap(false) {
 		game.cancelPointer()
 	}
-	game.pollGlobalTyping()
-	if ebiten.IsFocused() && game.globalTyping == nil {
+	game.leaveGlobalPrompt()
+	if ebiten.IsFocused() {
 		game.receiveNativePrompt()
 	}
 	game.receivePreferences()
@@ -214,9 +213,7 @@ func (game *Game) Update() error {
 		game.pollSpeech()
 		return nil
 	}
-	if game.globalTypingPress() {
-		return nil
-	}
+	game.globalTypingPress()
 	game.cancelSpeechBeforeEditing()
 	game.updatePointerState()
 	game.ui.Update()

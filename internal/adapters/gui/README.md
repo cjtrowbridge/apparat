@@ -221,8 +221,11 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `document_exchange.go`: Exchanges text with the clipboard and imports optional Linux external working copies as scoped drafts.
 - `file_document_test.go`: Verifies view-first opening, draft cancellation and undo, checkout-bound saves and external text validation.
 
-- `global_session.go`: Anchors the global prompt, retains the in-memory draft and focuses its editor during a PTT handoff. Manual Android editing opens the native multiline editor and accepts the result on the HUD thread.
+- `global_session.go`: Anchors the global prompt, retains the in-memory draft and focuses its editor during a PTT handoff. Manual entry uses the canvas editor and its platform IME connection. Voice entry keeps the keyboard dismissed until the user taps or activates Prompt.
 - `ptt_drag.go`: Captures mouse and touch before HUD or arcade input and handles the lock and global destinations.
 
 - `inline_dictation.go`: Maintains one provisional edit at the captured selection. Cancellation during capture restores the draft. Stopping retains displayed prompt text if recognition finishes empty or is interrupted, while a nonempty final can refine the same selection.
 - `multiline_field.go`: Places a persistent label above a full-width composer and connects editable forms to the shared multiline canvas editor or Android prompt.
+- `inventory.go`: renders device capacity, five inference sections, Ollama model state and discovery controls. The device badge and workload selectors use the same fresh observation.
+
+- `inventory_test.go`: renders a worker fixture on wide and phone layouts and checks fresh badges, model rows, expiry and administrator controls. To capture the device detail, run the GUI test named TestCaptureInventoryDevice on a display and set APPARAT_INVENTORY_PNG to a writable PNG path. Include “narrow” in its name for the phone layout.

@@ -37,3 +37,4 @@ The canonical delivery allocates the number in release.txt before compilation. R
 - `chat.go`: defines session identity, scope, descriptive metadata and ordered turns. A submitted turn with no reply stays pending indefinitely. Redelivery of the same turn and content is idempotent.
 
 - `chat_model.go`: provider-neutral requests, job IDs, assistant tool calls and correlated results shared by synchronous and deferred providers.
+- `inventory.go`: typed timestamped worker observations, installed model metadata, capacity counters and fresh text capability checks.

@@ -70,6 +70,9 @@ func (game *Game) selectorHeading(section hud.Section) *widget.Container {
 
 func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionIndex int) (*widget.Button, *widget.Text) {
 	rightPadding := 12
+	if section.CapabilityIcon != "" {
+		rightPadding += tabIconSize + 4
+	}
 	if section.SelectorIcon != "" || tabData.ID() == hud.TabProjects && (section.HasConfiguredActions || section.ContentKind == hud.ContentPipeline) {
 		rightPadding += tabIconSize
 	}
@@ -119,6 +122,9 @@ func (game *Game) sectionButton(tabData hud.Tab, section hud.Section, sectionInd
 			}
 			game.selectSection(tabData.ID(), sectionIndex)
 		}),
+	}
+	if section.CenterIcon != "" {
+		opts = append(opts, widget.ButtonOpts.TextPadding(&widget.Insets{Left: tabIconSize + 12, Right: 4, Top: 10, Bottom: 10}), widget.ButtonOpts.TextPosition(widget.TextPositionCenter, widget.TextPositionCenter))
 	}
 	if tabData.ID() != hud.TabCluster {
 		opts = append(opts, widget.ButtonOpts.ToggleMode())
@@ -225,6 +231,7 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 	if section.ContentKind == hud.ContentResearchContribution {
 		sectionContainer.AddChild(game.researchContributionTable(section))
 	}
+	game.addInventoryControl(sectionContainer, section.ActionID)
 	for _, detail := range section.DetailSections {
 		sectionContainer.AddChild(game.buildSectionContainer(detail))
 	}
@@ -370,6 +377,9 @@ func (game *Game) selectedSectionIndex(tabData hud.Tab) int {
 func (game *Game) sectionDetail(detailContainer *widget.Container, tabID hud.TabID, section hud.Section) {
 	detailContainer.AddChild(game.buildSectionContainer(section))
 	for _, opt := range game.deviceManagementLinks(section.ActionID) {
+		if opt.Route.Page == "ollama" {
+			continue
+		}
 		game.projectButton(detailContainer, opt.Label, func() {
 			game.clusterOpen(opt.Route)
 		})

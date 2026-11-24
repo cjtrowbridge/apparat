@@ -83,7 +83,7 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 		return game.projectTab(tab)
 	}
 	if tab.ID() == hud.TabCluster && game.runtimeInfo.Queries != nil {
-		tab.Summary = "Browse saved devices and pool assignments. Tasks and inference types show examples."
+		tab.Summary = "Browse saved devices and pool assignments. Inference types show current worker advertisements."
 		sections := []hud.Section{game.liveServicesSection()}
 		for _, s := range tab.Sections {
 			if s.Title == "Cluster Devices" && s.IsSelectorHeading() {
@@ -117,7 +117,7 @@ func (game *Game) presentedTab(tab hud.Tab) hud.Tab {
 				}
 			}
 		}
-		tab.Sections = sections
+		tab.Sections = game.inventorySections(sections)
 	}
 	return tab
 }

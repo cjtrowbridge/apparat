@@ -20,6 +20,7 @@ func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string, 
 	auth.gitContext = ctx
 	if len(handlers) > 0 {
 		auth.workspace = handlers[0].Workspace
+		auth.inventory = handlers[0].Inventory
 		auth.metrics = handlers[0].Metrics
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

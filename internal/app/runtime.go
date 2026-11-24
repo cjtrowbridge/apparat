@@ -7,6 +7,7 @@ import (
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/adapters/discovery"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
+	"github.com/cjtrowbridge/apparat/internal/adapters/inventory"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/adapters/projectgit"
 	"github.com/cjtrowbridge/apparat/internal/adapters/telemetry"
@@ -34,6 +35,8 @@ const (
 )
 
 type Runtime struct {
+	inventory           *inventory.Monitor
+	peerInventory       sync.Map
 	workspaceConnection ownerConnection
 	workspaceCache      workspaceCache
 	terminals           terminal.Host
@@ -230,14 +233,24 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	if result != nil {
 		return result
 	}
+	port, err := node.database.OllamaPort(ctx)
+	if err != nil {
+		return err
+	}
+	node.inventory = inventory.New(port, node.database.SaveOllamaPort)
 	if runtime.GOOS == "linux" && node.WorkerEvents != nil && node.Keys.State() == "unlocked" {
-		node.claimServer, result = httpapi.ListenWorkerClaims(filepath.Join(filepath.Dir(node.config.DatabasePath), "worker-claims.sock"), filepath.Join(node.config.ArtifactsDir, "pool"), node.database, node.Keys, httpapi.WorkerSurface{Workspace: node.serveWorkspace, Metrics: &node.observations})
+		node.claimServer, result = httpapi.ListenWorkerClaims(filepath.Join(filepath.Dir(node.config.DatabasePath), "worker-claims.sock"), filepath.Join(node.config.ArtifactsDir, "pool"), node.database, node.Keys, httpapi.WorkerSurface{Inventory: node.inventory, Workspace: node.serveWorkspace, Metrics: &node.observations})
 		if result != nil {
 			return result
 		}
 	}
 	workCtx, cancel := context.WithCancel(ctx)
 	node.cancel = cancel
+	if !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
+		node.discoveryWorkers.Go(func() {
+			node.inventory.Run(workCtx)
+		})
+	}
 	if runtime.GOOS == "linux" && !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
 		args := []string{"supervise", node.config.DatabasePath}
 		if node.WorkerEvents != nil {
@@ -257,6 +270,8 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	if node.Personal != nil && !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
 		node.discoveryWorkers.Add(1)
 		go node.reconcile(workCtx, node.database)
+		node.discoveryWorkers.Add(1)
+		go node.refreshInventoryPeers(workCtx)
 	}
 	node.stopped = make(chan struct{})
 	go node.supervise(workCtx, node.serviceManager, node.stopped)

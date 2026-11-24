@@ -1951,6 +1951,8 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 **Deferred:** Distributed queue execution to Phase 13 and route/pool selection to Phase 14.
 
+- [x] Initial single-port loopback Ollama metadata discovery, authorized worker inventory, persistent administrator port trials and Cluster capability views.
+
 ### Workload and driver contracts
 
 - [ ] Establish the versioned workload-class registry.
@@ -2124,6 +2126,8 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 **Dependencies:** Phase 10 trusted membership, Phase 12 service capabilities and Phase 13 authoritative queues.
 
 ### Safe resource telemetry
+
+- [x] Initial Linux worker resource snapshot and fresh capability badges on the authenticated Cluster device view.
 
 - [ ] Publish an authenticated, bounded resource snapshot for each trusted peer.
   - [ ] Include CPU logical capacity and utilization; RAM and swap total, used, and available; disk capacity, used, and free space; and accelerator identity/availability, utilization, and VRAM total, used, and available where the platform can report them.

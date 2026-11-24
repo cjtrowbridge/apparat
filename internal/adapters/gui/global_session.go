@@ -34,9 +34,6 @@ func (g *Game) focusGlobalPrompt() {
 	g.nav.gallery = false
 	g.ui.SetFocusedWidget(g.globalField)
 	g.nav.target = focusTarget{w: g.globalField}
-	if !g.openingVoicePrompt {
-		g.editGlobalPrompt()
-	}
 }
 
 func (g *Game) openGlobalPrompt() {
@@ -50,10 +47,7 @@ func (g *Game) openGlobalPrompt() {
 	if g.voice.tap.source == "floating-ptt" {
 		g.voice.discardInline()
 	}
-	g.openingVoicePrompt = true
-	defer func() {
-		g.openingVoicePrompt = false
-	}()
+	g.globalVoiceFocus = true
 	g.requestActiveTabVisible()
 	g.rebuildUI(g.shell.Snapshot())
 	g.focusGlobalPrompt()
@@ -84,63 +78,42 @@ func (g *Game) receiveNativePrompt() {
 	}
 }
 
-// The native multiline editor owns Android keyboard focus. Its result returns
-// to the game thread, where keyboard and speech edits share the same draft.
+// Arm the canvas IME only for manual prompt entry. Voice focus uses the
+// same field but keeps the keyboard dismissed during and after capture.
 func (g *Game) editGlobalPrompt() {
-	prompt := g.runtimeInfo.PromptValue
-	if prompt == nil || g.globalTyping != nil || g.openingVoicePrompt {
+	if g.globalField == nil {
 		return
 	}
 	if g.voice.canvas != nil {
 		g.endPTT()
 		g.cancelPTT()
 	}
-	initial := g.globalDraft
-	done := make(chan *string, 1)
-	g.globalTyping = done
-	go func() {
-		value, ok := prompt("Prompt", initial, false)
-		if !ok {
-			done <- nil
-			return
-		}
-		done <- &value
-	}()
+	g.globalVoiceFocus = false
+	g.ui.SetFocusedWidget(g.globalField)
 }
 
-func (g *Game) pollGlobalTyping() {
-	select {
-	case value := <-g.globalTyping:
-		g.globalTyping = nil
-		if value == nil || *value == g.globalDraft {
-			return
-		}
-		e, _ := g.globalField.GetWidget().CustomData.(*documentSurface)
-		if e != nil {
-			e.anchor = 0
-			e.caret = len(e.body)
-			e.insert(*value)
-		}
-	default:
-	}
-}
-
-func (g *Game) globalTypingPress() bool {
-	if g.runtimeInfo.PromptValue == nil || g.globalField == nil || g.actions.mode != "" || g.shell.Snapshot().ActiveTab().ID() != hud.TabGlobalSession {
-		return false
+func (g *Game) globalTypingPress() {
+	if g.globalField == nil || g.actions.mode != "" || g.shell.Snapshot().ActiveTab().ID() != hud.TabGlobalSession {
+		return
 	}
 	bounds := g.globalField.GetWidget().Rect
 	for _, id := range inpututil.AppendJustPressedTouchIDs(nil) {
 		x, y := ebiten.TouchPosition(id)
 		if imagePoint(x, y).In(bounds) {
 			g.editGlobalPrompt()
-			return true
+			return
 		}
 	}
 	x, y := ebiten.CursorPosition()
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && imagePoint(x, y).In(bounds) {
 		g.editGlobalPrompt()
-		return true
 	}
-	return false
+}
+
+func (game *Game) leaveGlobalPrompt() {
+	if game.globalField != nil && (game.actions.mode != "" || game.shell.Snapshot().ActiveTab().ID() != hud.TabGlobalSession) {
+		game.globalField.GetWidget().CustomData.(*documentSurface).ime.Confirm()
+		game.globalField = nil
+		game.globalVoiceFocus = false
+	}
 }

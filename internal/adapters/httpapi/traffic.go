@@ -12,6 +12,7 @@ import (
 )
 
 type WorkerSurface struct {
+	Inventory InventorySource
 	Workspace OwnerWorkspace
 	Metrics   *telemetry.Ring
 }
@@ -29,6 +30,10 @@ func (c *countedBody) Read(p []byte) (int, error) {
 type countedResponse struct {
 	http.ResponseWriter
 	bytes, status int
+}
+
+func (c *countedResponse) Unwrap() http.ResponseWriter {
+	return c.ResponseWriter
 }
 
 func (c *countedResponse) Write(p []byte) (int, error) {

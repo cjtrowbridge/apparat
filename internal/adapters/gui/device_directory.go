@@ -79,6 +79,14 @@ func (g *Game) deviceManagementLinks(action string) []domain.ClusterOption {
 	if local.ID != "" && action == "gui-"+local.ID {
 		options = append(options, domain.ClusterOption{Label: "Performance", Route: domain.ClusterRoute{Page: "performance"}})
 	}
+	for _, w := range g.serviceProjection.Devices {
+		if w.Admin && action == "worker-"+w.Fingerprint {
+			options = append(options, ollamaOption(w.Fingerprint))
+		}
+	}
+	if action == "gui-"+local.ID && local.ID != "" && g.serviceProjection.LocalInventory.Observed > 0 {
+		options = append(options, ollamaOption("local"))
+	}
 	return options
 }
 

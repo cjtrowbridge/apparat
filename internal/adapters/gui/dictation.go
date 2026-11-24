@@ -136,6 +136,10 @@ func (g *Game) beginPTT(source string) {
 	}
 	g.shell.StartVoiceCapture(source)
 	v.canvas = s
+	if f != nil && f == g.globalField {
+		f.GetWidget().CustomData.(*documentSurface).ime.Confirm()
+		g.globalVoiceFocus = true
+	}
 	v.targetField(f)
 }
 func (g *Game) endPTT() {

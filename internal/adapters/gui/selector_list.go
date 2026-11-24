@@ -8,6 +8,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 const selectorListInset = 8
@@ -55,27 +56,35 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 			}
 			continue
 		}
-		if subtitle != nil || hasIcon || section.SelectorIcon != "" {
+		if subtitle != nil || hasIcon || section.SelectorIcon != "" || section.CenterIcon != "" || section.CapabilityIcon != "" {
 			row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
 				widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 			btn.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
 			row.AddChild(btn)
+			if section.CenterIcon != "" {
+				label := wrapSelectorLabel(section.Title, *game.theme.ButtonTheme.TextFace, game.masterPanePreferredWidth()-2*selectorListInset-52)
+				width, _ := text.Measure(label, *game.theme.ButtonTheme.TextFace, 0)
+				row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon(section.CenterIcon)), widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{HorizontalPosition: widget.AnchorLayoutPositionCenter, VerticalPosition: widget.AnchorLayoutPositionCenter, Padding: &widget.Insets{Right: int(width) + 8}}))))
+			}
 			if section.CurrentDevice {
 				row.AddChild(leadingIcon("1f3af"))
 			}
 			if subtitle != nil {
 				row.AddChild(subtitle)
 			}
+			if section.CapabilityIcon != "" {
+				row.AddChild(trailingSelectorIcon(section.CapabilityIcon, 12))
+			}
 			if hasIcon || section.SelectorIcon != "" {
 				icon := section.SelectorIcon
 				if icon == "" {
 					icon = "1f9e0"
 				}
-				row.AddChild(widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon(icon)),
-					widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-						HorizontalPosition: widget.AnchorLayoutPositionEnd, VerticalPosition: widget.AnchorLayoutPositionCenter,
-						Padding: &widget.Insets{Right: 12},
-					}))))
+				right := 12
+				if section.CapabilityIcon != "" {
+					right += tabIconSize + 4
+				}
+				row.AddChild(trailingSelectorIcon(icon, right))
 			}
 			listContainer.AddChild(row)
 		} else {
@@ -98,6 +107,12 @@ func (game *Game) buildMasterList(tabData hud.Tab, layoutData interface{}) widge
 	scroll.GetWidget().LayoutData = widget.GridLayoutData{}
 	box.AddChild(actions, scroll)
 	return boundPreferredWidth(box, game.masterPanePreferredWidth)
+}
+
+func trailingSelectorIcon(icon string, right int) *widget.Graphic {
+	return widget.NewGraphic(widget.GraphicOpts.Image(emojiIcon(icon)), widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+		HorizontalPosition: widget.AnchorLayoutPositionEnd, VerticalPosition: widget.AnchorLayoutPositionCenter, Padding: &widget.Insets{Right: right},
+	})))
 }
 
 func leadingIconRow(btn *widget.Button, icon string) *widget.Container {

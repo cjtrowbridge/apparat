@@ -29,6 +29,9 @@ type clusterPageBuilder struct {
 }
 
 func (n *Runtime) ClusterPage(ctx context.Context, r domain.ClusterRoute) (domain.ClusterPage, error) {
+	if r.Page == "ollama" {
+		return n.inventoryPage(ctx, r)
+	}
 	if r.Page == "performance" {
 		return n.performance(ctx, r)
 	}
