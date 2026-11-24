@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-24-02-41-48 | plans/past/2026-11-24-03-20-00_picker-inventory-controls.md | Align and order model choices and hide healthy Ollama port controls | Refine the Phase 9A selector and cluster inventory actions.
 2026-11-24-02-29-31 | plans/past/2026-11-24-03-00-00_chat-model-choice.md | Choose models and synchronize chat defaults | Attach model identity to chat sessions and turns, build the scoped picker, and exchange durable defaults through authenticated workers.
 2026-11-24-01-43-12 | plans/past/2026-11-24-02-00-00_android-keyboard-viewport.md | Keep the resized Android chat canvas above the keyboard | Keep canvas-editor IME anchors stable while Android resizes the rendering surface.
 2026-11-24-01-32-50 | plans/past/2026-11-24-01-31-00_planning-transcript-preview.md | Anchor the planning composer and preview transcript scrolling | Use the remaining chat height for scrollable sample and real messages, keeping the prompt accessible beside PTT.

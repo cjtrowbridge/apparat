@@ -177,9 +177,9 @@ func TestPlanningModelPickerReturnsToDraft(t *testing.T) {
 
 func TestPickerCatalogUsesStableTextModelIdentities(t *testing.T) {
 	now := time.Now()
-	v := domain.WorkerInventory{Observed: now.Unix(), Version: "test", Models: []domain.InventoryModel{{Name: "z", Digest: "same", Text: true}, {Name: "b", Digest: "one", Text: true}, {Name: "image", Digest: "x"}}}
+	v := domain.WorkerInventory{Observed: now.Unix(), Version: "test", Models: []domain.InventoryModel{{Name: "Z", Digest: "same", Text: true}, {Name: "b", Digest: "one", Text: true}, {Name: "image", Digest: "x"}}}
 	other := v
-	other.Models = []domain.InventoryModel{{Name: "z", Digest: "same", Text: true, Loaded: true}, {Name: "b", Digest: "two", Text: true}}
+	other.Models = []domain.InventoryModel{{Name: "Z", Digest: "same", Text: true, Loaded: true}, {Name: "b", Digest: "two", Text: true}}
 	old := v
 	old.Observed = now.Add(-time.Hour).Unix()
 	catalog := domain.ChatModelCatalog(v, domain.PoolDevice{ID: "a", Host: "first"}, []domain.ClusterDevice{{Host: "second", Inventory: &other}, {Host: "offline", Inventory: &old}}, now)

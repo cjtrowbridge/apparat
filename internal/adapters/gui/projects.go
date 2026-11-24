@@ -180,14 +180,15 @@ func (g *Game) projectTab(t hud.Tab) hud.Tab {
 	}
 	return t
 }
-func (g *Game) projectButton(c *widget.Container, label string, click func()) *widget.Button {
-	button := widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor),
+func (g *Game) projectButton(c *widget.Container, label string, click func(), options ...widget.ButtonOpt) *widget.Button {
+	opts := []widget.ButtonOpt{widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor),
 		widget.ButtonOpts.Image(g.theme.ButtonTheme.Image), widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)),
 		widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 			if !g.bodySelectionSuppressed() {
 				click()
 			}
-		}))
+		})}
+	button := widget.NewButton(append(opts, options...)...)
 	c.AddChild(button)
 	return button
 }

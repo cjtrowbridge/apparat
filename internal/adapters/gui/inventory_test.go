@@ -50,7 +50,7 @@ func inventoryGame(t *testing.T, width, height int) *Game {
 				}
 			}
 			text := s.DetailSections[1]
-			if text.ActionID != "configure-ollama/fixture" || len(text.Rows) != 1 || !strings.Contains(text.Rows[0].Detail, "Loaded") {
+			if text.ActionID != "" || len(text.Rows) != 1 || !strings.Contains(text.Rows[0].Detail, "Loaded") {
 				t.Fatal(text)
 			}
 		}
@@ -67,6 +67,24 @@ func TestInventoryDeviceView(t *testing.T) {
 	for _, size := range []image.Point{{1280, 800}, {390, 844}} {
 		g := inventoryGame(t, size.X, size.Y)
 		v := g.serviceProjection.Devices[0].Inventory
+		v.Models = nil
+		checkPort := func(want bool) {
+			t.Helper()
+			card := inventoryDetail(v, "fixture")[1]
+			found := false
+			for _, o := range g.deviceManagementLinks("worker-fixture") {
+				if o.Route.Page == "ollama" {
+					found = true
+				}
+			}
+			if found != want || (card.ActionID != "") != want {
+				t.Fatal("port control visibility", card, found, want)
+			}
+		}
+		checkPort(false)
+		v.Problem = "service unavailable"
+		checkPort(true)
+		v.Problem = ""
 		v.Observed -= 121
 		g.serviceProjection.Devices[0].Admin = false
 		tab := g.presentedTab(g.shell.Snapshot().ActiveTab())

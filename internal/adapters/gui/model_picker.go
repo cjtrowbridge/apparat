@@ -287,6 +287,7 @@ func (g *Game) modelCards(body *widget.Container) {
 			list = append(list, domain.ModelOption{Model: m})
 		}
 	}
+	domain.SortChatModels(list)
 	for _, o := range list {
 		label := o.Model.Name + " · " + o.Model.Provider + " · " + strings.Join(o.Nodes, ", ")
 		if len(o.Nodes) == 0 {
@@ -304,7 +305,7 @@ func (g *Game) modelCards(body *widget.Container) {
 			p.op = ""
 			p.notice = ""
 			g.layoutDirty = true
-		})
+		}, widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter))
 		b.GetWidget().LayoutData = widget.RowLayoutData{Stretch: true}
 		b.GetWidget().Disabled = p.saving || len(o.Nodes) == 0
 		if o.Model == p.selected {

@@ -33,11 +33,16 @@ func (g *Game) ollamaOption(worker string) domain.ClusterOption {
 			}
 		}
 	}
-	label := "Configure Ollama port"
-	if v != nil && (v.Configured || v.Version != "") {
-		label = "Change Ollama port"
+	return domain.ClusterOption{Label: ollamaPortLabel(v), Route: domain.ClusterRoute{Page: "ollama", Worker: worker}}
+}
+func ollamaPortLabel(v *domain.WorkerInventory) string {
+	if v != nil && v.Version != "" && v.Problem == "" {
+		return ""
 	}
-	return domain.ClusterOption{Label: label, Route: domain.ClusterRoute{Page: "ollama", Worker: worker}}
+	if v != nil && (v.Configured || v.Version != "") {
+		return "Change Ollama port"
+	}
+	return "Configure Ollama port"
 }
 func inventoryDetail(v *domain.WorkerInventory, configure string) []hud.Section {
 	now := time.Now()
@@ -84,7 +89,7 @@ func inventoryDetail(v *domain.WorkerInventory, configure string) []hud.Section 
 			if v != nil && v.Configured {
 				s.Description = "Ollama configured on this device · awaiting a current health report."
 			}
-			if configure != "" {
+			if configure != "" && ollamaPortLabel(v) != "" {
 				s.ActionID = "configure-ollama/" + configure
 			}
 			if v != nil && v.Fresh(now) {
@@ -171,6 +176,9 @@ func (g *Game) addInventoryControl(c *widget.Container, action string) {
 	worker, ok := strings.CutPrefix(action, "configure-ollama/")
 	if ok {
 		opt := g.ollamaOption(worker)
+		if opt.Label == "" {
+			return
+		}
 		g.projectButton(c, opt.Label, func() {
 			g.clusterOpen(opt.Route)
 		})

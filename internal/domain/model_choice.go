@@ -96,8 +96,17 @@ func ChatModelCatalog(local WorkerInventory, device PoolDevice, peers []ClusterD
 		sort.Strings(n)
 		result = append(result, ModelOption{m, n})
 	}
+	SortChatModels(result)
+	return result
+}
+
+func SortChatModels(result []ModelOption) {
 	sort.Slice(result, func(i, j int) bool {
 		a, b := result[i].Model, result[j].Model
+		left, right := strings.ToLower(a.Name), strings.ToLower(b.Name)
+		if left != right {
+			return left < right
+		}
 		if a.Name != b.Name {
 			return a.Name < b.Name
 		}
@@ -109,5 +118,4 @@ func ChatModelCatalog(local WorkerInventory, device PoolDevice, peers []ClusterD
 		}
 		return a.Worker < b.Worker
 	})
-	return result
 }
