@@ -46,8 +46,28 @@ func TestPlanningSessionNavigation(t *testing.T) {
 		if g.globalField.GetWidget().Rect.Min.Y <= edit.GetWidget().Rect.Max.Y || g.planning.pane.ViewRect().Dy() < 20 {
 			t.Fatal("composer overlaps session toolbar or transcript", size, g.globalField.GetWidget().Rect, edit.GetWidget().Rect, g.planning.pane.ViewRect())
 		}
+		pane := g.planning.pane
+		composer := g.globalField.GetWidget().Rect
+		body := g.nav.body.GetWidget().Rect
+		if pane.ContentRect().Dy() <= pane.ViewRect().Dy() || len(original.Turns) != 0 {
+			t.Fatal("expected overflowing presentation-only sample", size, pane.ContentRect(), pane.ViewRect())
+		}
+		gap := body.Max.Y - max(composer.Max.Y, g.planning.send.GetWidget().Rect.Max.Y)
+		if gap > bodyGap {
+			t.Fatal("composer above bottom of chat", size, gap)
+		}
+		pane.ScrollTop = 0
+		renderNavigation(g)
+		if g.globalField.GetWidget().Rect != composer {
+			t.Fatal("scroll moved composer", size)
+		}
 		g.globalDraft = "first message"
 		g.submitPlanning()
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		if g.planning.pane.ContentRect().Dy() >= pane.ContentRect().Dy() {
+			t.Fatal("sample bubbles remained after sending")
+		}
 		g.globalDraft = "next draft"
 		g.submitPlanning()
 		if len(original.Turns) != 1 || g.globalDraft != "next draft" {
@@ -91,21 +111,23 @@ func TestCapturePlanning(t *testing.T) {
 	g := horizontalGame()
 	g.Layout(w, h)
 	selectTabThroughStrip(t, g, hud.TabGlobalSession)
-	s := g.planning.current
-	s.Description = "Review the cluster inference inventory and next steps"
-	g.globalDraft = "What should I check before adding another model?"
-	g.submitPlanning()
-	_, err := s.Apply(s.Pending(), "Check the available memory on the worker and the size of the model you want to load.", true)
-	if err != nil {
-		t.Fatal(err)
+	if !strings.Contains(path, "sample") {
+		s := g.planning.current
+		s.Description = "Review the cluster inference inventory and next steps"
+		g.globalDraft = "What should I check before adding another model?"
+		g.submitPlanning()
+		_, err := s.Apply(s.Pending(), "Check the available memory on the worker and the size of the model you want to load.", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		g.globalDraft = "Show me the available workers."
+		g.submitPlanning()
+		s.acknowledged = true
 	}
-	g.globalDraft = "Show me the available workers."
-	g.submitPlanning()
-	s.acknowledged = true
 	g.rebuildUI(g.shell.Snapshot())
 	ebiten.SetWindowSize(w, h)
 	c := &inventoryCapture{g: g, path: path}
-	err = ebiten.RunGame(c)
+	err := ebiten.RunGame(c)
 	if err != nil || c.err != nil {
 		t.Fatal(err, c.err)
 	}

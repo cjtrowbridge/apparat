@@ -299,6 +299,9 @@ func (g *Game) workerPage(action, page string, admin bool) func() {
 }
 
 func (game *Game) addHeading(shell *widget.Container, title string, id hud.TabID) {
+	if id == hud.TabGlobalSession {
+		title = "Global Planning Agent"
+	}
 	heading := widget.NewText(
 		widget.TextOpts.Text(title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle),
 		widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth())),
@@ -307,6 +310,12 @@ func (game *Game) addHeading(shell *widget.Container, title string, id hud.TabID
 		shell.AddChild(game.clusterHeader(heading))
 	} else {
 		game.cluster.gear = nil
+		if id == hud.TabGlobalSession {
+			group := planningColumn()
+			group.AddChild(heading, widget.NewText(widget.TextOpts.Text("Ask what’s happening across every project and node in your cluster.", game.theme.ButtonTheme.TextFace, game.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(game.hudPreferredWidth()))))
+			shell.AddChild(group)
+			return
+		}
 		shell.AddChild(heading)
 	}
 }

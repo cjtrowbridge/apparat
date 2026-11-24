@@ -105,13 +105,15 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	if p.pane != nil {
 		s.scroll = p.pane.ScrollTop
 	}
-	bottom := pttMargin + 2*pttRadius + pttTravel
 	compact := g.height < 590
-	if compact {
-		bottom = 0
-	}
-	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}), widget.GridLayoutOpts.Spacing(0, bodyGap), widget.GridLayoutOpts.Padding(&widget.Insets{Bottom: bottom}))))
+	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}), widget.GridLayoutOpts.Spacing(0, bodyGap))))
 	conversation := planningColumn()
+	if len(s.Turns) == 0 {
+		conversation.AddChild(g.hudText("Sample conversation"))
+		for i, message := range planningSamples {
+			g.chatBubble(conversation, message, i%2 == 0, false)
+		}
+	}
 	for _, turn := range s.Turns {
 		g.chatBubble(conversation, turn.Input, true, false)
 		switch {
@@ -127,9 +129,9 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	}
 	p.pane = g.planningScroll(conversation)
 	p.pane.ScrollTop = s.scroll
-	form := planningColumn()
+	form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Spacing(bodyGap), widget.RowLayoutOpts.Padding(&widget.Insets{Right: 2*pttRadius + pttMargin + pttTravel}))))
 	if compact {
-		form = widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Padding(&widget.Insets{Right: pttMargin + 2*pttRadius + pttTravel}))))
+		form = widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2), widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false}), widget.GridLayoutOpts.Spacing(bodyGap, 0), widget.GridLayoutOpts.Padding(&widget.Insets{Right: 2*pttRadius + pttMargin + pttTravel}))))
 	}
 	surface := g.multilineInput(form, "Prompt", &g.globalDraft)
 	if compact {
@@ -139,9 +141,24 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	}
 	g.globalField = surface.TextInput
 	p.send = g.projectButton(form, "Send", g.submitPlanning)
+	if compact {
+		p.send.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 44, VerticalPosition: widget.GridLayoutPositionCenter}
+	}
 	g.updatePlanningControls()
 	body.AddChild(g.planningHeader(s), p.pane, form)
 	return body
+}
+
+// Empty sessions show presentation-only examples. Sending the first turn replaces them.
+var planningSamples = [...]string{
+	"Lorem ipsum dolor sit amet, consectetur adipiscing elit?",
+	"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.",
+	"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris?",
+	"Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.",
+	"Aliquam erat volutpat. Nulla facilisi?",
+	"Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae. Integer posuere erat a ante venenatis dapibus posuere velit aliquet.",
+	"Maecenas sed diam eget risus varius blandit sit amet non magna?",
+	"Curabitur blandit tempus porttitor. Donec ullamcorper nulla non metus auctor fringilla. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.",
 }
 
 func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting bool) {
@@ -157,7 +174,7 @@ func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting b
 		b.AddChild(planningGear())
 	}
 	lines := strings.Split(body, "\n")
-	width := max(60, (g.hudPreferredWidth()*4/5)-24)
+	width := max(60, min(540, (g.hudPreferredWidth()*4/5)-24))
 	for i, line := range lines {
 		lines[i] = wrapSelectorLabel(line, *g.theme.ButtonTheme.TextFace, width)
 	}
