@@ -33,7 +33,7 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 			group.SetLimit(4)
 			for _, w := range workers {
 				group.Go(func() error {
-					call, cancel := context.WithTimeout(ctx, 5*time.Second)
+					call, cancel := context.WithTimeout(ctx, 25*time.Second)
 					defer cancel()
 					client, err := n.workspaceClient(call, "worker-"+w.Fingerprint)
 					if err == nil {
@@ -51,10 +51,16 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 				})
 			}
 			_ = group.Wait()
+			n.mu.Lock()
+			if n.serviceManager != nil && len(workers) > 0 {
+				n.serviceManager.notify()
+			}
+			n.mu.Unlock()
 		}
 		select {
 		case <-ctx.Done():
 			return
+		case <-n.inventoryHint:
 		case <-tick.C:
 		}
 	}

@@ -1,6 +1,6 @@
 # Worker inventory
 
-- `monitor.go`: samples at startup and every 45 seconds. A manual trial persists the chosen port after a successful probe. A failed trial on a different port leaves the working configuration intact.
+- `monitor.go`: samples at startup and every 45 seconds. The first successful probe persists the default or selected port, and successful changes replace it. A restarted monitor exposes that saved configuration before its first health check. A failed trial on a different port leaves the working configuration intact.
 - `ollama.go`: fixed loopback metadata requests verify the server version, list installed and loaded models and check completion support per digest. Rejects redirects, invalid payloads and oversized inventories. No user prompts or model execution.
 - `resources_linux.go`: measures CPU use, logical cores, RAM, swap, local filesystem capacity and DRM or NVIDIA VRAM. Reserved disk blocks can make used plus available smaller than total. No mounted paths are advertised.
 - `resources_other.go`: exposes portable CPU/OS information when native counters are unavailable.

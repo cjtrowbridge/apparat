@@ -50,7 +50,9 @@ func TestOllamaInventory(t *testing.T) {
 		saved = value
 		return nil
 	})
-	v, err := m.Refresh(t.Context(), port)
+	// First discovery at the fallback port must persist it even without a port change.
+	m.port = port
+	v, err := m.Refresh(t.Context(), 0)
 	if err != nil || saved != port || !v.HasText(time.Now()) || v.HasText(time.Now().Add(3*time.Minute)) || len(v.Models) != 2 || v.Models[0].Text || !v.Models[1].Loaded || shows.Load() != 2 {
 		t.Fatal(v, err)
 	}
@@ -69,7 +71,7 @@ func TestOllamaInventory(t *testing.T) {
 	}
 	fixture.Close()
 	v, err = m.Refresh(t.Context(), 0)
-	if err == nil || v.HasText(time.Now()) || len(v.Models) != 0 || v.Problem == "" {
+	if err == nil || !v.Configured || v.HasText(time.Now()) || len(v.Models) != 0 || v.Problem == "" {
 		t.Fatal("stale inventory after outage", v, err)
 	}
 }

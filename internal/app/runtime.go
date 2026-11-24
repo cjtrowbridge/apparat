@@ -45,6 +45,7 @@ type Runtime struct {
 	ResolveSaved     func(context.Context, string, string) (string, error)
 	ResolvePeer      func(context.Context, string, string) (string, error)
 	syncHint         chan struct{}
+	inventoryHint    chan struct{}
 	discoveryWorkers sync.WaitGroup
 	Keys             *identity.Session
 	Personal         *identity.Personal
@@ -98,7 +99,7 @@ func NewRuntimeWithConfig(cfg config.Config) (*Runtime, error) {
 	if mode == ModeGUI {
 		personal = identity.NewPersonal(filepath.Join(cfg.RootDir, "user-identity"))
 	}
-	return &Runtime{syncHint: make(chan struct{}, 1), Personal: personal, Keys: identity.NewSession(cfg.IdentityDir), mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
+	return &Runtime{syncHint: make(chan struct{}, 1), inventoryHint: make(chan struct{}, 1), Personal: personal, Keys: identity.NewSession(cfg.IdentityDir), mode: mode, config: cfg, state: "stopped", drivers: map[string]Probe{}}, nil
 }
 func (node *Runtime) SetDrivers(drivers map[string]Probe) {
 	node.mu.Lock()

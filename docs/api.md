@@ -160,6 +160,6 @@ Remote enrollment currently requires a Linux worker with multi-account GitHub CL
 
 ## Worker capability inventory
 
-With an admitted device-bound worker session, `GET /v1/inventory` reads the latest observation without triggering a probe. `Observed` is Unix time in seconds. Capacity counters and model sizes use bytes. Missing measurements are null. `Models` lists installed names, whether each is loaded, and whether it supports text completion. Only administrators receive the configured port and detailed probe diagnostics. Clients expire capabilities after 120 seconds.
+With an admitted device-bound worker session, `GET /v1/inventory` reads the latest observation without triggering a probe. `Observed` is Unix time in seconds. The worker-owned `Configured` flag remains true across restarts and failed health checks after a verified port is saved. Capacity counters and model sizes use bytes. Missing measurements are null. `Models` lists installed names, whether each is loaded, and whether it supports text completion. Only administrators receive the configured port and detailed probe diagnostics. Clients expire capabilities after 120 seconds.
 
 Administrators can call `POST /v1/admin/inventory/ollama` with `{"Port":11434}`. The worker checks its own IPv4 loopback and saves a successful change in local SQLite. An executed trial returns HTTP 200 with `Inventory` and an `Error` string (empty on success). Invalid ports return 400, unauthorized requests are denied, and a missing monitor returns 503. Neither endpoint accepts prompts.

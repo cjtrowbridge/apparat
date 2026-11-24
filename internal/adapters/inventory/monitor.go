@@ -22,10 +22,11 @@ type Monitor struct {
 }
 
 func New(port int, save func(context.Context, int) error) *Monitor {
-	if port < 1 || port > 65535 {
+	configured := port >= 1 && port <= 65535
+	if !configured {
 		port = DefaultPort
 	}
-	return &Monitor{port: port, save: save, view: domain.WorkerInventory{Port: port}, cache: map[string]bool{}}
+	return &Monitor{port: port, save: save, view: domain.WorkerInventory{Port: port, Configured: configured}, cache: map[string]bool{}}
 }
 func (m *Monitor) Snapshot() domain.WorkerInventory {
 	m.mu.RLock()
@@ -44,6 +45,7 @@ func (m *Monitor) Refresh(ctx context.Context, trial int) (domain.WorkerInventor
 	if port < 1 || port > 65535 {
 		return m.Snapshot(), errors.New("port must be 1 through 65535")
 	}
+	configured := m.Snapshot().Configured
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	v, err := probe(ctx, port, m.cache)
@@ -52,13 +54,14 @@ func (m *Monitor) Refresh(ctx context.Context, trial int) (domain.WorkerInventor
 			return m.Snapshot(), err
 		}
 		v = domain.WorkerInventory{Port: port, Problem: err.Error()}
-	} else if trial != 0 && port != m.port {
+	} else if !configured || port != m.port {
 		err = m.save(ctx, port)
 		if err != nil {
 			return m.Snapshot(), errors.New("Ollama responded but its loopback port could not be saved")
 		}
 		m.port = port
 	}
+	v.Configured = err == nil || configured
 	v.Resources = resources(ctx)
 	v.Observed = time.Now().Unix()
 	m.mu.Lock()

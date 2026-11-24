@@ -16,6 +16,10 @@ import (
 
 func (n *Runtime) RequestSync() {
 	select {
+	case n.inventoryHint <- struct{}{}:
+	default:
+	}
+	select {
 	case n.syncHint <- struct{}{}:
 	default:
 	}

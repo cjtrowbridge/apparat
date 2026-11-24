@@ -81,11 +81,11 @@ func (g *Game) deviceManagementLinks(action string) []domain.ClusterOption {
 	}
 	for _, w := range g.serviceProjection.Devices {
 		if w.Admin && action == "worker-"+w.Fingerprint {
-			options = append(options, ollamaOption(w.Fingerprint))
+			options = append(options, g.ollamaOption(w.Fingerprint))
 		}
 	}
 	if action == "gui-"+local.ID && local.ID != "" && g.serviceProjection.LocalInventory.Observed > 0 {
-		options = append(options, ollamaOption("local"))
+		options = append(options, g.ollamaOption("local"))
 	}
 	return options
 }

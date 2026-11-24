@@ -21,8 +21,23 @@ var inferenceKinds = []struct{ id, title, icon string }{
 	{"video-generation", "Video Generation", "1f3ac"},
 }
 
-func ollamaOption(worker string) domain.ClusterOption {
-	return domain.ClusterOption{Label: "Configure Ollama port", Route: domain.ClusterRoute{Page: "ollama", Worker: worker}}
+func (g *Game) ollamaOption(worker string) domain.ClusterOption {
+	var v *domain.WorkerInventory
+	if worker == "local" {
+		v = &g.serviceProjection.LocalInventory
+	} else {
+		for _, d := range g.serviceProjection.Devices {
+			if d.Fingerprint == worker {
+				v = d.Inventory
+				break
+			}
+		}
+	}
+	label := "Configure Ollama port"
+	if v != nil && (v.Configured || v.Version != "") {
+		label = "Change Ollama port"
+	}
+	return domain.ClusterOption{Label: label, Route: domain.ClusterRoute{Page: "ollama", Worker: worker}}
 }
 func inventoryDetail(v *domain.WorkerInventory, configure string) []hud.Section {
 	now := time.Now()
@@ -65,13 +80,19 @@ func inventoryDetail(v *domain.WorkerInventory, configure string) []hud.Section 
 	for _, kind := range inferenceKinds {
 		s := hud.Section{Title: kind.title, Description: "Unavailable · discovery is not implemented."}
 		if kind.id == "text-generation" {
-			s.Description = "Unavailable · no current Ollama advertisement."
+			s.Description = "Awaiting the worker’s Ollama inventory."
+			if v != nil && v.Configured {
+				s.Description = "Ollama configured on this device · awaiting a current health report."
+			}
 			if configure != "" {
 				s.ActionID = "configure-ollama/" + configure
 			}
 			if v != nil && v.Fresh(now) {
 				if v.Problem != "" {
 					s.Description = v.Problem
+					if v.Configured {
+						s.Description = "Ollama configured · last health check failed. " + v.Problem
+					}
 				} else if v.Version != "" {
 					s.Description = "Ollama " + v.Version + " · configured"
 					if !v.HasText(now) {
@@ -149,7 +170,7 @@ func (g *Game) inventorySections(sections []hud.Section) []hud.Section {
 func (g *Game) addInventoryControl(c *widget.Container, action string) {
 	worker, ok := strings.CutPrefix(action, "configure-ollama/")
 	if ok {
-		opt := ollamaOption(worker)
+		opt := g.ollamaOption(worker)
 		g.projectButton(c, opt.Label, func() {
 			g.clusterOpen(opt.Route)
 		})

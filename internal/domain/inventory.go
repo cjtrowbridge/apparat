@@ -22,6 +22,7 @@ type InventoryModel struct {
 	Text   bool
 }
 type WorkerInventory struct {
+	Configured       bool
 	Observed         int64
 	Resources        NodeResources
 	Port             int
