@@ -2,6 +2,7 @@
 
 Format: `last_modified | path | title | summary`
 
+2026-11-23-23-29-01 | plans/past/2026-11-24-00-01-00_inline-prompt-keyboard.md | Type directly in the global Android prompt | Use the canvas editor's IME connection for prompt entry and retain the draft through voice and keyboard transitions.
 2026-11-23-23-20-51 | plans/past/2026-11-23-23-50-00_worker-inference-inventory.md | Advertise worker Ollama inventory and measured capacity | Discover worker loopback Ollama, expose authorized inventory and show resource and capability sections in Cluster.
 2026-11-23-22-59-58 | plans/past/2026-11-23-23-30-00_prompt-stop-and-keyboard.md | Preserve stopped prompt dictation and open Android typing | Retain visible dictated words on stop and give manual prompt entry an Android keyboard.
 2026-11-23-22-47-16 | plans/past/2026-11-23-23-00-00_inline-dictation.md | Inline dictation and multiline prompts | Stack multiline labels, replace live recognition inside editors and latch global PTT until dragged home.

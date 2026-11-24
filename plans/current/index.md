@@ -2,7 +2,6 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-11-23-23-14-02 | plans/current/2026-11-24-00-01-00_inline-prompt-keyboard.md | Type directly in the global Android prompt | Use the canvas editor's IME connection for prompt entry and retain the draft through voice and keyboard transitions.
 2026-11-23-22-47-55 | plans/current/2026-11-23-21-00-00_owner-agent-harness.md | Build the owner-hosted Go chat harness against the pinned Pi tool protocol | Deliver repo-owned conversations, deterministic commands, durable inference waits and a scoped global PTT session with measured Pi compatibility.
 2026-11-23-16-01-34 | plans/current/2026-11-23-14-00-00_owner-workspaces.md | Operate owner-hosted projects and capture workspace performance | Deliver host-qualified project navigation, file-based performance captures, safe owner edits, live subscriptions, tasks and restricted terminals.
 2026-11-23-13-47-46 | plans/current/2026-11-17-20-34-03_local-project-repos.md | Register local projects and clone GitHub repositories on confirmed workers | Register local working trees, choose clone locations and use a confirmed worker’s provider accounts to clone and inspect a remote checkout.

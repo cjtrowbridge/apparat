@@ -2,7 +2,7 @@
 plan_id: 2026-11-24-00-01-00_inline-prompt-keyboard
 title: Type directly in the global Android prompt
 summary: Use the canvas editor's IME connection for prompt entry and retain the draft through voice and keyboard transitions.
-status: current
+status: past
 created_at: 2026-11-24-00-01-00
 ---
 
@@ -11,6 +11,8 @@ Phase 9B / Phase 16. The operator rejected opening a separate Android dialog for
 Key: `[ ]` pending task, `[x]` completed task, `[?]` needs validation, `[-]` closed task
 
 - [x] Replace the modal with inline keyboard editing and exercise the HUD regressions.
-- [ ] Verify typing and draft retention in the activity window on the designated Pixel.
+- [x] Verify typing and draft retention in the activity window on the designated Pixel.
 
 0.1.85 Pixel verification showed inline Gboard input and persistence after Back. Rapid hardware input lost characters and the keyboard covered PTT. Route hardware text once and fit the canvas to the visible activity before repeating the checks.
+
+On 0.1.87, Pixel 4a showed the full multiline prompt and PTT above Gboard in the activity window. Gboard taps and rapid key events produced the expected complete text, which remained after Back. Sliding PTT left from keyboard entry and home again preserved the typed prefix and appended dictation.
