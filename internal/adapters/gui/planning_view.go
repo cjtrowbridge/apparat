@@ -105,7 +105,12 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	if p.pane != nil {
 		s.scroll = p.pane.ScrollTop
 	}
-	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}), widget.GridLayoutOpts.Spacing(0, bodyGap), widget.GridLayoutOpts.Padding(&widget.Insets{Bottom: pttMargin + 2*pttRadius + pttTravel}))))
+	bottom := pttMargin + 2*pttRadius + pttTravel
+	compact := g.height < 590
+	if compact {
+		bottom = 0
+	}
+	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}), widget.GridLayoutOpts.Spacing(0, bodyGap), widget.GridLayoutOpts.Padding(&widget.Insets{Bottom: bottom}))))
 	conversation := planningColumn()
 	for _, turn := range s.Turns {
 		g.chatBubble(conversation, turn.Input, true, false)
@@ -123,7 +128,15 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	p.pane = g.planningScroll(conversation)
 	p.pane.ScrollTop = s.scroll
 	form := planningColumn()
+	if compact {
+		form = widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Padding(&widget.Insets{Right: pttMargin + 2*pttRadius + pttTravel}))))
+	}
 	surface := g.multilineInput(form, "Prompt", &g.globalDraft)
+	if compact {
+		surface.GetWidget().MinHeight = 2*surface.height + 8
+	} else {
+		surface.GetWidget().MinHeight = 3*surface.height + 8
+	}
 	g.globalField = surface.TextInput
 	p.send = g.projectButton(form, "Send", g.submitPlanning)
 	g.updatePlanningControls()

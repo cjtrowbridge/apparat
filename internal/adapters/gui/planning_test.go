@@ -16,9 +16,10 @@ import (
 )
 
 func TestPlanningSessionNavigation(t *testing.T) {
-	for _, width := range []int{390, 1100} {
+	for _, size := range [][2]int{{390, 844}, {390, 424}, {1100, 844}} {
+		width := size[0]
 		g := horizontalGame()
-		g.Layout(width, 844)
+		g.Layout(width, size[1])
 		selectTabThroughStrip(t, g, hud.TabGlobalSession)
 		original := g.planning.current
 		original.Description = strings.Repeat("planning ", 24)
@@ -41,6 +42,9 @@ func TestPlanningSessionNavigation(t *testing.T) {
 		}
 		if newButton.GetWidget().Rect.Min.X-back.GetWidget().Rect.Max.X != 8 || edit.GetWidget().Rect.Max.X > width {
 			t.Fatal("header control layout", back.GetWidget().Rect, newButton.GetWidget().Rect, edit.GetWidget().Rect)
+		}
+		if g.globalField.GetWidget().Rect.Min.Y <= edit.GetWidget().Rect.Max.Y || g.planning.pane.ViewRect().Dy() < 20 {
+			t.Fatal("composer overlaps session toolbar or transcript", size, g.globalField.GetWidget().Rect, edit.GetWidget().Rect, g.planning.pane.ViewRect())
 		}
 		g.globalDraft = "first message"
 		g.submitPlanning()
