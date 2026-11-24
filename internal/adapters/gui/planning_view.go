@@ -69,6 +69,9 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	if s == nil {
 		return planningColumn()
 	}
+	if p.page == "model-picker" {
+		return g.globalModelPage(s)
+	}
 	if p.page == "history" {
 		body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true}))))
 		head := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal), widget.RowLayoutOpts.Spacing(bodyGap))))
@@ -133,7 +136,12 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	if compact {
 		form = widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2), widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false}), widget.GridLayoutOpts.Spacing(bodyGap, 0), widget.GridLayoutOpts.Padding(&widget.Insets{Right: 2*pttRadius + pttMargin + pttTravel}))))
 	}
-	surface := g.multilineInput(form, "Prompt", &g.globalDraft)
+	surface := g.multilineInput(form, "", &g.globalDraft)
+	if p.picker.restore {
+		surface.caret = min(p.picker.caret, len(surface.body))
+		surface.anchor = min(p.picker.anchor, len(surface.body))
+		p.picker.restore = false
+	}
 	if compact {
 		surface.GetWidget().MinHeight = 2*surface.height + 8
 	} else {

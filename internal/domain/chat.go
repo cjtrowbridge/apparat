@@ -17,6 +17,7 @@ const (
 )
 
 type ChatHeader struct {
+	Model       ModelRef  `yaml:"model,omitempty"`
 	Version     int       `yaml:"version"`
 	ID          string    `yaml:"session_id"`
 	Scope       ChatScope `yaml:"scope"`
@@ -25,6 +26,7 @@ type ChatHeader struct {
 }
 
 type ChatTurn struct {
+	Model            ModelRef
 	ID, Input, Reply string
 	Stopped          string
 	Steps            []ChatStep
@@ -51,6 +53,9 @@ func (s ChatHeader) Validate() error {
 	t, err := ChatTime(s.ID)
 	if err != nil || s.Version != 1 || !t.Equal(s.Started) || (s.Scope != ProjectChat && s.Scope != GlobalChat) {
 		return errors.New("invalid session header")
+	}
+	if s.Model != (ModelRef{}) && !s.Model.Valid() {
+		return errors.New("invalid session model")
 	}
 	if !chatText(s.Description) || len(s.Description) > 512 || strings.ContainsAny(s.Description, "\r\n") {
 		return errors.New("expected a single-line session description of at most 512 bytes")
@@ -102,6 +107,6 @@ func (s *ChatSession) Apply(id, text string, reply bool) (bool, error) {
 	if s.Pending() != "" {
 		return false, errors.New("session has a pending turn")
 	}
-	s.Turns = append(s.Turns, ChatTurn{ID: id, Input: text})
+	s.Turns = append(s.Turns, ChatTurn{ID: id, Input: text, Model: s.Model})
 	return true, nil
 }

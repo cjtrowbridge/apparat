@@ -39,3 +39,7 @@ Worker clients probe TLS without client credentials and require an approved devi
 - `workspace_session_acceptance_test.go`: Checks all protected workspace route families for uniform JSON denial and verifies file integrity with anonymous, expired and incorrectly bound sessions.
 - `inventory.go`: authenticated worker inventory GET and administrator-only metadata probe POST, with typed responses and failure guidance.
 - `inventory_test.go`: checks administrator-only port trials, member redaction and actionable probe errors. Device-bound session tests cover both inventory routes.
+
+- `chat_models.go`: Exchanges scoped model choices over the worker's authenticated, device-bound API.
+
+- `model_live.go`: Emits invalidation hints without project IDs, model names or message contents.

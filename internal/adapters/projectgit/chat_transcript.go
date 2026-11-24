@@ -27,6 +27,13 @@ func chatBytes(s domain.ChatSession) ([]byte, error) {
 	}
 	for _, t := range s.Turns {
 		write("User", t.ID, t.Input)
+		if t.Model.Valid() {
+			raw, err := json.Marshal(t.Model)
+			if err != nil {
+				return nil, err
+			}
+			write("Model", t.ID, string(raw))
+		}
 		for _, step := range t.Steps {
 			data, err := json.Marshal(step)
 			if err != nil {
@@ -96,6 +103,14 @@ func parseChat(raw []byte, id string) (s domain.ChatSession, err error) {
 			}
 			seen[turn] = true
 			s.Turns = append(s.Turns, domain.ChatTurn{ID: turn, Input: text})
+		case "Model":
+			if s.Pending() != turn {
+				return s, bad
+			}
+			t := &s.Turns[len(s.Turns)-1]
+			if t.Model.Valid() || json.Unmarshal([]byte(text), &t.Model) != nil || !t.Model.Valid() {
+				return s, bad
+			}
 		case "Inference":
 			if s.Pending() != turn {
 				return s, bad

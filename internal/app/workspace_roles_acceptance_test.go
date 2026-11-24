@@ -102,6 +102,7 @@ func exerciseRoleWorker(t *testing.T, owner, member workspaceActor) {
 	paths := registerMatrixProjects(t, db, root)
 	checkMatrixCatalog(t, reader, paths, false)
 	checkMatrixCatalog(t, admin, paths, true)
+	checkModelRoles(t, admin, reader, owner, db)
 	id := "remote-fixture"
 	file := filepath.Join(paths[id], "nested", "note")
 	fixture, err := sql.Open("sqlite", path)
@@ -259,5 +260,125 @@ func checkMatrixWrite(t *testing.T, c *httpapi.WorkerClient, read domain.Workspa
 	requireWorkspaceOK(t, err)
 	if string(after) != expected || current.Text != expected {
 		t.Fatalf("save allowed=%t: disk or API bytes incorrect", allowed)
+	}
+}
+
+// All registered members can select a session model. Only administrators can
+// author defaults; members may ferry an unmodified, signed admin revision.
+func checkModelRoles(t *testing.T, admin, member *httpapi.WorkerClient, owner workspaceActor, db *persistence.DB) {
+	t.Helper()
+	ctx := t.Context()
+	project, err := domain.NewID(time.Now(), nil)
+	requireWorkspaceOK(t, err)
+	requireWorkspaceOK(t, db.RegisterProject(ctx, domain.Project{ID: project, Name: "test", Location: t.TempDir()}))
+	op, err := domain.NewID(time.Now(), nil)
+	requireWorkspaceOK(t, err)
+	model := domain.ModelRef{Provider: "ollama", Name: "qwen:4b", Digest: "sha256:test"}
+	q := httpapi.ModelCommand{Action: "save", Project: project, Session: "General", Edit: domain.ModelEdit{Operation: op, Model: model}}
+	_, err = member.ModelCommand(ctx, q)
+	requireWorkspaceOK(t, err)
+	q.Edit.Default = true
+	_, err = member.ModelCommand(ctx, q)
+	if !errors.Is(err, httpapi.ErrDenied) {
+		t.Fatal("member set project default", err)
+	}
+	_, err = admin.ModelCommand(ctx, q)
+	requireWorkspaceOK(t, err)
+	next, err := member.ModelCommand(ctx, httpapi.ModelCommand{Action: "bind", Project: project, Session: "Second"})
+	requireWorkspaceOK(t, err)
+	if next.Session != model || next.CanDefault {
+		t.Fatal("member inherited wrong project state", next)
+	}
+	q.Project = ""
+	q.Session = "global-default"
+	_, err = member.ModelCommand(ctx, q)
+	if !errors.Is(err, httpapi.ErrDenied) {
+		t.Fatal("member set global default", err)
+	}
+	d := domain.ModelDefault{Model: model, Revision: 1, Operation: op}
+	d.Proof, err = owner.person.SignModelDefault(owner.device, admin.Access.Cluster, d)
+	requireWorkspaceOK(t, err)
+	q.Edit.Proof = d.Proof
+	state, err := admin.ModelCommand(ctx, q)
+	requireWorkspaceOK(t, err)
+	if state.Default != d {
+		t.Fatal("default acknowledgement differs")
+	}
+	d.Revision++
+	d.Operation, err = domain.NewID(time.Now(), nil)
+	requireWorkspaceOK(t, err)
+	d.Proof, err = owner.person.SignModelDefault(owner.device, admin.Access.Cluster, d)
+	requireWorkspaceOK(t, err)
+	_, err = member.ModelCommand(ctx, httpapi.ModelCommand{Action: "merge", Replica: d})
+	requireWorkspaceOK(t, err)
+	d.Model.Name = "other"
+	_, err = member.ModelCommand(ctx, httpapi.ModelCommand{Action: "merge", Replica: d})
+	if !errors.Is(err, httpapi.ErrDenied) {
+		t.Fatal("member altered an administrator's revision", err)
+	}
+}
+
+func TestGlobalModelAcrossWorkers(t *testing.T) {
+	ctx := t.Context()
+	owner := fixtureActor(t, "Owner")
+	worker := func() *httpapi.WorkerClient {
+		root := t.TempDir()
+		db, err := persistence.Open(ctx, filepath.Join(root, "worker"))
+		requireWorkspaceOK(t, err)
+		t.Cleanup(func() {
+			db.Close()
+		})
+		requireWorkspaceOK(t, db.Migrate(ctx))
+		key := fixtureDevice(t)
+		pin := identity.Fingerprint(key.Public())
+		requireWorkspaceOK(t, db.ConfirmOwner(ctx, pin, owner.person.Fingerprint()))
+		l, err := net.Listen("tcp", "127.0.0.1:0")
+		requireWorkspaceOK(t, err)
+		server := httpapi.ServeWorkerListener(l, root, db, key, httpapi.WorkerSurface{})
+		t.Cleanup(func() {
+			server.Close()
+		})
+		c, err := httpapi.OpenWorker(ctx, l.Addr().String(), pin, owner.person, owner.device)
+		requireWorkspaceOK(t, err)
+		return c
+	}
+	a, b := worker(), worker()
+	db, err := persistence.Open(ctx, filepath.Join(t.TempDir(), "relay"))
+	requireWorkspaceOK(t, err)
+	defer db.Close()
+	requireWorkspaceOK(t, db.Migrate(ctx))
+	relay := Runtime{database: db}
+	id, err := domain.NewID(time.Now(), nil)
+	requireWorkspaceOK(t, err)
+	d := domain.ModelDefault{Revision: 1, Operation: id, Model: domain.ModelRef{Provider: "ollama", Name: "test:latest", Digest: "build"}}
+	d.Proof, err = owner.person.SignModelDefault(owner.device, a.Access.Cluster, d)
+	requireWorkspaceOK(t, err)
+	notify := make(chan bool, 4)
+	watch, stop := context.WithTimeout(ctx, 6*time.Second)
+	defer stop()
+	go func() {
+		_ = b.WatchModels(watch, func() {
+			notify <- true
+		})
+	}()
+	wait := func() {
+		select {
+		case <-notify:
+		case <-watch.Done():
+			t.Fatal("missing model notification")
+		}
+	}
+	wait()
+	_, err = a.ModelCommand(ctx, httpapi.ModelCommand{Action: "save", Session: "global-default", Edit: domain.ModelEdit{Default: true, Operation: id, Proof: d.Proof, Model: d.Model}})
+	requireWorkspaceOK(t, err)
+	_, err = relay.syncGlobalModel(ctx, a)
+	requireWorkspaceOK(t, err)
+	_, err = relay.syncGlobalModel(ctx, b)
+	requireWorkspaceOK(t, err)
+	wait()
+	received, err := b.ModelCommand(ctx, httpapi.ModelCommand{Action: "read"})
+	requireWorkspaceOK(t, err)
+	if received.Default != d {
+		t.Fatal("second worker lost replicated default")
 	}
 }

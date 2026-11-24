@@ -276,3 +276,24 @@ func (game *Game) detailSections(tabData hud.Tab) []hud.Section {
 func (game *Game) collapsed() bool {
 	return game.contentWidth() < collapsedWidth
 }
+
+func (game *Game) masterListWidth() int {
+	if game.collapsed() {
+		return 0
+	}
+	return game.splitWidth
+}
+
+func (game *Game) masterPanePreferredWidth() int {
+	if game.collapsed() {
+		return game.hudPreferredWidth()
+	}
+	return min(game.masterListWidth(), game.hudPreferredWidth())
+}
+
+func (game *Game) detailPanePreferredWidth() int {
+	if game.collapsed() {
+		return game.hudPreferredWidth()
+	}
+	return max(120, game.hudPreferredWidth()-game.masterListWidth()-40)
+}

@@ -233,3 +233,5 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 - `planning.go`: owns global planning drafts, history, local turn staging and session navigation actions during the current app run.
 - `planning_view.go`: renders the responsive planning conversation, scrollable history, title editor and rotating Apparat wait indicator.
 - `planning_test.go`: verifies toolbar spacing and session behavior at two widths. Set APPARAT_PLANNING_PNG for the optional screenshot fixture, using “phone” in its filename for the narrow layout.
+
+- `model_picker.go`: Drives one asynchronous, scope-addressed model picker on the HUD thread.

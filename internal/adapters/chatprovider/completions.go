@@ -69,6 +69,9 @@ func (p *Completions) Dispatch(ctx context.Context, r domain.ChatRequest) (*doma
 	for _, t := range r.Tools {
 		tools = append(tools, map[string]any{"type": "function", "function": map[string]any{"name": t.Name, "description": t.Description, "parameters": t.Parameters}})
 	}
+	if r.Model.Valid() && r.Model.Name != p.model {
+		return nil, errors.New("provider is configured for a different chat model")
+	}
 	body, err := json.Marshal(map[string]any{"model": p.model, "messages": messages, "tools": tools, "max_tokens": r.MaxOutputTokens, "stream": false})
 	if err != nil {
 		return nil, err

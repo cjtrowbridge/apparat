@@ -64,3 +64,5 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `remote_workspace.go`: Stores per-project host permissions, client drafts and bounded save receipts.
 
 - `catalog_page.go`: Pages registered checkouts by insertion order without inspecting their trees.
+
+- `chat_models.go`: Persists revisioned scope defaults and session choices together.

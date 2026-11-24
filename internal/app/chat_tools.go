@@ -47,6 +47,9 @@ const maxChatPacketBytes = 128 * 1024
 
 func chatPacket(a domain.ChatAddress, route, job string, s domain.ChatSession) (domain.ChatRequest, error) {
 	p := domain.ChatRequest{ChatAddress: a, Job: job, Route: route, MaxOutputTokens: 4096}
+	if len(s.Turns) > 0 {
+		p.Model = s.Turns[len(s.Turns)-1].Model
+	}
 	var prompt strings.Builder
 	prompt.WriteString("You are the Apparat assistant.\n<tools>\n")
 	for _, t := range chatTools {

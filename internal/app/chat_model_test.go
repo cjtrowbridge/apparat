@@ -39,6 +39,9 @@ func TestAsynchronousChatToolRecovery(t *testing.T) {
 	a := domain.ChatAddress{Project: projects[0].ID, Session: id(), Turn: id()}
 	_, err = node.CreateChat(ctx, a.Project, a.Session, domain.ProjectChat, "Catalog query")
 	requireSuccess(t, err)
+	firstModel := domain.ModelRef{Provider: "ollama", Name: "qwen:a", Digest: "a"}
+	_, err = node.SetChatSessionModel(ctx, a.Project, a.Session, firstModel)
+	requireSuccess(t, err)
 	_, err = node.SubmitChatTurn(ctx, a.Project, a.Session, a.Turn, "What project is this?")
 	requireSuccess(t, err)
 	requests := make(chan domain.ChatRequest, 8)
@@ -62,6 +65,11 @@ func TestAsynchronousChatToolRecovery(t *testing.T) {
 		t.Fatal("duplicate or missing dispatch", count.Load())
 	}
 	first := <-requests
+	_, err = node.SetChatSessionModel(ctx, a.Project, a.Session, domain.ModelRef{Provider: "ollama", Name: "qwen:b", Digest: "b"})
+	requireSuccess(t, err)
+	if first.Model != firstModel {
+		t.Fatal("incorrect initial turn model")
+	}
 	requireSuccess(t, node.Close())
 	node = nodeFor(t, root, false)
 	requireSuccess(t, node.Initialize(ctx))
@@ -69,7 +77,7 @@ func TestAsynchronousChatToolRecovery(t *testing.T) {
 	requireSuccess(t, err)
 	recovered, err := node.OutstandingChatRequest(ctx, a)
 	requireSuccess(t, err)
-	if recovered.Job != first.Job || len(recovered.Messages) != 1 {
+	if recovered.Model != firstModel || recovered.Job != first.Job || len(recovered.Messages) != 1 {
 		t.Fatal("lost claimed packet")
 	}
 	if count.Load() != 1 {

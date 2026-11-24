@@ -28,6 +28,56 @@ func (n *Runtime) workspaceFile(ctx context.Context, location string, q domain.W
 	}
 	return projectgit.Files(location, q)
 }
+func (n *Runtime) workspaceThread(ctx context.Context, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
+	switch q.Action {
+	case "threads":
+		v.Choices, err = n.database.ChatThreads(ctx, q.ProjectID)
+		return v, err
+	case "chat", "post":
+		thread := strings.TrimSpace(q.Thread)
+		if thread == "" {
+			thread = "General"
+		}
+		if len(thread) > 100 {
+			return v, errors.New("thread title exceeds 100 bytes")
+		}
+		kind := "chat:" + thread
+		if q.Action == "post" {
+			if strings.TrimSpace(q.Argument) == "" || !domain.ValidID(q.ID) {
+				return v, errors.New("enter a message")
+			}
+			body := "Pending on this device · " + q.Argument
+			if q.RelatedRun != "" {
+				runKind, record, lookup := n.database.ProjectEntry(ctx, q.ProjectID, q.RelatedRun)
+				if lookup != nil || runKind != "run" {
+					return v, errors.New("run unavailable in this project")
+				}
+				var run artifactRun
+				err = json.Unmarshal([]byte(record), &run)
+				if err != nil {
+					return v, err
+				}
+				body += "\nAttached run: " + run.Task + " · " + run.State + " (" + q.RelatedRun + ")"
+			}
+			q.Thread = thread
+			err = n.database.AddChatEntry(ctx, q, kind, body)
+			if err != nil {
+				return v, err
+			}
+		}
+		messages, _, readErr := n.database.EntryPage(ctx, q.ProjectID, kind, "")
+		err = readErr
+		for i := len(messages) - 1; i >= 0; i-- {
+			v.Report += messages[i].Label + "\n"
+		}
+		if v.Report == "" {
+			v.Report = "No pending project messages"
+		}
+		return v, err
+	}
+	return v, errors.New("unknown conversation operation")
+}
+
 func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
 	start := time.Now()
 	if q.Correlation == "" {
@@ -138,49 +188,8 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 	case "transactions":
 		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, "save")
 		return v, err
-	case "threads":
-		v.Choices, err = n.database.ChatThreads(ctx, q.ProjectID)
-		return v, err
-	case "chat", "post":
-		thread := strings.TrimSpace(q.Thread)
-		if thread == "" {
-			thread = "General"
-		}
-		if len(thread) > 100 {
-			return v, errors.New("thread title exceeds 100 bytes")
-		}
-		kind := "chat:" + thread
-		if q.Action == "post" {
-			if strings.TrimSpace(q.Argument) == "" || !domain.ValidID(q.ID) {
-				return v, errors.New("enter a message")
-			}
-			body := "Pending on this device · " + q.Argument
-			if q.RelatedRun != "" {
-				runKind, record, lookup := n.database.ProjectEntry(ctx, q.ProjectID, q.RelatedRun)
-				if lookup != nil || runKind != "run" {
-					return v, errors.New("run unavailable in this project")
-				}
-				var run artifactRun
-				err = json.Unmarshal([]byte(record), &run)
-				if err != nil {
-					return v, err
-				}
-				body += "\nAttached run: " + run.Task + " · " + run.State + " (" + q.RelatedRun + ")"
-			}
-			err = n.database.AddProjectEntry(ctx, q.ProjectID, q.ID, kind, body)
-			if err != nil {
-				return v, err
-			}
-		}
-		messages, _, readErr := n.database.EntryPage(ctx, q.ProjectID, kind, "")
-		err = readErr
-		for i := len(messages) - 1; i >= 0; i-- {
-			v.Report += messages[i].Label + "\n"
-		}
-		if v.Report == "" {
-			v.Report = "No pending project messages"
-		}
-		return v, err
+	case "threads", "chat", "post":
+		return n.workspaceThread(ctx, q)
 	case "tasks":
 		return n.workspaceCatalog(ctx, location, q)
 	case "run", "runs", "artifact", "delete-artifact":

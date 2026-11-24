@@ -1630,6 +1630,7 @@ Users can clone a public repo on either platform. Linux also supports private cl
 
 ### Chats, transactions, drafts, and artifacts
 
+- [x] Scoped model picker with admin-managed defaults, authenticated global replication, project-owner storage and turn-level model snapshots.
 - [x] Global planning conversation UI with session selection, turn bubbles, pending states and PTT entry.
 - [ ] Integrate the global planning UI with authenticated cluster queue delivery and replicated session artifacts on apparatd nodes.
 - [x] Add Project chats.

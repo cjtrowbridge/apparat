@@ -22,6 +22,7 @@ type planningSession struct {
 	acknowledged bool
 }
 type planningUI struct {
+	picker          modelPicker
 	sessions        []*planningSession
 	current         *planningSession
 	page, title     string
@@ -91,6 +92,10 @@ func (g *Game) planningBackAvailable() bool {
 	return g.shell.Snapshot().ActiveTab().ID() == hud.TabGlobalSession && g.planning.page != "history"
 }
 func (g *Game) planningBack() {
+	if g.planning.page == "model-picker" {
+		g.closeModels()
+		return
+	}
 	if g.planning.page == "rename" {
 		g.openPlanning(g.planning.current)
 		return
@@ -108,7 +113,7 @@ func (g *Game) enterPlanningVoice() {
 
 func (g *Game) submitPlanning() {
 	s := g.planning.current
-	if s == nil || s.Pending() != "" || strings.TrimSpace(g.globalDraft) == "" {
+	if s == nil || !g.chatModelReady() || s.Pending() != "" || strings.TrimSpace(g.globalDraft) == "" {
 		return
 	}
 	id, err := domain.NewID(time.Now(), nil)
@@ -150,6 +155,7 @@ func (g *Game) planningActions(add registerAction, index int, tab hud.Tab) {
 		})
 	}
 	if g.planning.current != nil && g.planning.page == "" {
+		register("model", "Choose chat model", g.openModels)
 		register("rename", "Edit planning session title", func() {
 			g.planningPage("rename")
 		})
@@ -178,7 +184,7 @@ func (g *Game) updatePlanningControls() {
 		return
 	}
 	if p.send != nil {
-		p.send.GetWidget().Disabled = strings.TrimSpace(g.globalDraft) == "" || p.current.Pending() != ""
+		p.send.GetWidget().Disabled = !g.chatModelReady() || strings.TrimSpace(g.globalDraft) == "" || p.current.Pending() != ""
 	}
 	if p.saveTitle != nil {
 		title := strings.TrimSpace(p.title)

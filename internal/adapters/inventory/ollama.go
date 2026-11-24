@@ -109,7 +109,7 @@ func probe(ctx context.Context, port int, cache map[string]bool) (domain.WorkerI
 		}
 		cache[m.Digest] = text
 		next[m.Digest] = text
-		v.Models = append(v.Models, domain.InventoryModel{Name: m.Name, Size: m.Size, Loaded: loaded[m.Name], Text: text})
+		v.Models = append(v.Models, domain.InventoryModel{Name: m.Name, Digest: m.Digest, Size: m.Size, Loaded: loaded[m.Name], Text: text})
 	}
 	clear(cache)
 	for k, b := range next {

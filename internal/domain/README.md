@@ -38,3 +38,5 @@ The canonical delivery allocates the number in release.txt before compilation. R
 
 - `chat_model.go`: provider-neutral requests, job IDs, assistant tool calls and correlated results shared by synchronous and deferred providers.
 - `inventory.go`: typed timestamped worker observations, installed model metadata, capacity counters and fresh text capability checks.
+
+- `model_choice.go`: Identifies a chat model independently of the worker chosen to serve a turn.

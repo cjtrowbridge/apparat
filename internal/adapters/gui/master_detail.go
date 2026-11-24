@@ -7,6 +7,7 @@ package gui
 import (
 	"fmt"
 	"image/color"
+	"runtime"
 	"strings"
 
 	"github.com/cjtrowbridge/apparat/internal/hud"
@@ -17,6 +18,9 @@ import (
 )
 
 func (game *Game) buildMasterDetailTab(tabData hud.Tab) widget.PreferredSizeLocateableWidget {
+	if runtime.GOOS == "android" && tabData.ID() == hud.TabProjects && game.inWorkspace() && game.projects.workspace.mode == "model-picker" {
+		return game.globalModelPage(nil)
+	}
 	if game.collapsed() {
 		if game.detailOpen[tabData.ID()] {
 			return game.buildCollapsedDetail(tabData)
@@ -141,7 +145,9 @@ func (game *Game) buildDetailScroll(tabData hud.Tab, withBack bool) widget.Prefe
 		)),
 	)
 	child := tabData.ID() == hud.TabCluster && game.clusterTop() != nil
-	if child {
+	if tabData.ID() == hud.TabProjects && game.inWorkspace() && game.projects.workspace.mode == "model-picker" {
+		game.modelCards(detailContainer)
+	} else if child {
 		game.clusterContent(detailContainer)
 	} else {
 		selected := game.selectedSectionIndex(tabData)
@@ -340,27 +346,6 @@ func (game *Game) updateDividerDrag(x, y int) {
 	for i, scroll := range game.verticalScrolls {
 		scroll.ScrollTop = scrolls[i].ScrollTop
 	}
-}
-
-func (game *Game) masterListWidth() int {
-	if game.collapsed() {
-		return 0
-	}
-	return game.splitWidth
-}
-
-func (game *Game) masterPanePreferredWidth() int {
-	if game.collapsed() {
-		return game.hudPreferredWidth()
-	}
-	return min(game.masterListWidth(), game.hudPreferredWidth())
-}
-
-func (game *Game) detailPanePreferredWidth() int {
-	if game.collapsed() {
-		return game.hudPreferredWidth()
-	}
-	return max(120, game.hudPreferredWidth()-game.masterListWidth()-40)
 }
 
 func (game *Game) selectedSectionIndex(tabData hud.Tab) int {

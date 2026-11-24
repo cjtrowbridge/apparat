@@ -33,3 +33,5 @@ Identity code must redact private keys, passphrases, tokens, raw prompts, raw vo
 - `launch_unlock.go`: Wraps the opted-in local personal unlock with the OS-protected device secret and migrates independently protected references after a successful unlock.
 
 - `device_name.go`: prompts for a specific hostname if the OS cannot supply one and saves the installation choice beside its device identity.
+
+- `model_default.go`: Signs and verifies global model default revisions for authenticated replication.

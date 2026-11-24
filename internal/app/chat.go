@@ -18,7 +18,7 @@ func (n *Runtime) CreateChat(ctx context.Context, project, id string, scope doma
 	if err != nil {
 		return domain.ChatSession{}, err
 	}
-	h := domain.ChatHeader{Version: 1, ID: id, Started: started, Scope: scope, Description: description}
+	h := domain.ChatHeader{Model: n.initialChatModel(ctx, project, scope), Version: 1, ID: id, Started: started, Scope: scope, Description: description}
 	err = h.Validate()
 	if err != nil {
 		return domain.ChatSession{}, err
@@ -32,6 +32,9 @@ func (n *Runtime) Chat(ctx context.Context, project, id string) (domain.ChatSess
 
 func (n *Runtime) SubmitChatTurn(ctx context.Context, project, id, turn, text string) (domain.ChatSession, error) {
 	return n.withChat(ctx, project, id, nil, func(s *domain.ChatSession) (bool, error) {
+		if !s.Model.Valid() {
+			s.Model = n.initialChatModel(ctx, project, s.Scope)
+		}
 		changed, err := s.Apply(turn, text, false)
 		if err != nil || !changed || !strings.EqualFold(strings.TrimSpace(text), "list projects") {
 			return changed, err

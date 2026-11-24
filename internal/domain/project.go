@@ -19,6 +19,7 @@ type LocalProjectSetup struct {
 
 // WorkspaceRequest addresses one registration and repository-relative path.
 type WorkspaceRequest struct {
+	Model                                                                 ModelRef `json:",omitzero"`
 	Known                                                                 string
 	ProjectID, Action, Path, Base, Text, Argument, ID, Thread, RelatedRun string
 	Correlation                                                           string

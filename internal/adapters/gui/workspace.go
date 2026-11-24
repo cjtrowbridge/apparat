@@ -58,6 +58,9 @@ func (g *Game) workspaceRequest(action string) {
 		file = w.dir
 	}
 	q := domain.WorkspaceRequest{Approved: action == "run", ProjectID: w.id, Action: action, Path: file, Base: w.base, Thread: w.thread, Text: strings.Join(w.lines, "\n"), Argument: w.argument}
+	if action == "post" || action == "post-with-run" {
+		q.Model = g.planning.picker.settings.Session
+	}
 	if action == "post-with-run" {
 		q.Action = "post"
 		q.RelatedRun = w.attachment

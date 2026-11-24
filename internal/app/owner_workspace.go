@@ -48,11 +48,11 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 	}
 	scope := "read"
 	switch q.Action {
-	case "save":
+	case "save", "post":
 		scope = "write"
 	case "run":
 		scope = "tasks"
-	case "list", "read", "tasks", "runs", "artifact", "directory-status":
+	case "chat", "threads", "list", "read", "tasks", "runs", "artifact", "directory-status":
 	default:
 		return v, httpapi.ErrDenied
 	}
@@ -67,6 +67,8 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 		}
 	}
 	switch q.Action {
+	case "chat", "threads", "post":
+		return n.workspaceThread(ctx, q)
 	case "list":
 		v, err = n.pages.Page(caller.Device+"/"+q.ProjectID, location, q.Path, q.Argument)
 		return conditional(q, v, err)

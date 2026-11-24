@@ -8,6 +8,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/event"
 	"github.com/ebitenui/ebitenui/widget"
+	"strings"
 )
 
 type workspaceLayout struct {
@@ -61,11 +62,16 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 	box.AddChild(scroll)
 	c := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))))
 	w := &g.projects.workspace
+	g.addModelButton(c)
 	g.multilineProjectField(c, "Message", &w.message)
 	if w.attachment != "" {
 		c.AddChild(g.detailText(w.attachmentLabel))
 	}
-	g.projectButton(c, "Post locally", func() {
+	postLabel := "Post locally"
+	if strings.HasPrefix(w.id, "worker-") {
+		postLabel = "Post to project"
+	}
+	post := g.projectButton(c, postLabel, func() {
 		w.argument = w.message
 		action := "post"
 		if w.attachment != "" {
@@ -73,6 +79,7 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 		}
 		g.workspaceRequest(action)
 	})
+	post.GetWidget().Disabled = !g.chatModelReady()
 	g.projectButton(c, "Attach a run", func() {
 		g.workspaceGo("attachments", "runs")
 	})

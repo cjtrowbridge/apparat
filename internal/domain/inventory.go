@@ -16,10 +16,10 @@ type NodeResources struct {
 	Disks, GPUs []Capacity
 }
 type InventoryModel struct {
-	Name   string
-	Size   int64
-	Loaded bool
-	Text   bool
+	Name, Digest string
+	Size         int64
+	Loaded       bool
+	Text         bool
 }
 type WorkerInventory struct {
 	Configured       bool

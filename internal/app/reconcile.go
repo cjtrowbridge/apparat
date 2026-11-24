@@ -84,6 +84,7 @@ func (n *Runtime) syncOne(ctx context.Context, db *persistence.DB, w domain.Clus
 		if c.Access.Admission != "approved" {
 			err = httpapi.ErrDenied
 		} else {
+			_, _ = n.syncGlobalModel(ctx, c)
 			for range 8 {
 				var seconds int
 				seconds, err = c.Sync(ctx, db)

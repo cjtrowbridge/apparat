@@ -29,6 +29,7 @@ func (g *Game) actionCatalog() []catalogAction {
 		key := hud.ActionAddress{Operation: "open", Kind: kind, Owner: owner, Target: id}
 		actions = append(actions, catalogAction{hud.Destination{Address: key, Name: name, Path: path}, open})
 	}
+	g.modelActions(add)
 	for index, tab := range g.shell.Snapshot().Tabs {
 		if !tab.Descriptor.Enabled || !tab.Descriptor.Visible {
 			continue
@@ -262,13 +263,12 @@ func (g *Game) registerWorkspaceActions(add registerAction, index, i int, p doma
 			g.beginDocumentEdit(file)
 		})
 	}
-	if p.RemoteHost != "" {
-		return
+	if p.RemoteHost == "" {
+		add("workspace", p.ID, "changes", "Changes for "+p.Name, path+" / Changes", func() {
+			selectWorkspace()
+			g.workspaceGo("changes", "changes")
+		})
 	}
-	add("workspace", p.ID, "changes", "Changes for "+p.Name, path+" / Changes", func() {
-		selectWorkspace()
-		g.workspaceGo("changes", "changes")
-	})
 	threads := p.Threads
 	if len(threads) == 0 {
 		threads = []domain.WorkspaceChoice{{ID: "General", Label: "General"}}

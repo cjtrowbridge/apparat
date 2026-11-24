@@ -186,6 +186,7 @@ func (game *Game) Update() error {
 	game.pollDirectoryStatus()
 	peerOpen := game.shell.Snapshot().ActiveTab().ID() == hud.TabCluster && game.lan.selected != ""
 	game.handleDeviceBack(clusterOpen, peerOpen)
+	game.pollChatModels()
 	game.updatePlanningControls()
 	game.trackWindow()
 	game.receiveServices()

@@ -80,6 +80,9 @@ func (g *Game) workspaceBack() {
 		g.workspaceGo("runs", "runs")
 	case "output", "output-options":
 		g.workspaceGo("result", "")
+	case "model-picker":
+		g.closeModels()
+		return
 	case "conversation":
 		g.workspaceGo("chat", "threads")
 	case "attachments":
@@ -99,9 +102,6 @@ func (g *Game) openWorkspaceTab(mode, action string) {
 	w := &g.projects.workspace
 	if mode == "editor" && w.path != "" && w.base != "" {
 		mode = "file"
-	}
-	if mode == "chat" && strings.HasPrefix(w.id, "worker-") {
-		action = ""
 	}
 	g.workspaceGo(mode, action)
 }
@@ -190,10 +190,6 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 		g.changesScreen(c, w)
 		return
 	default:
-		if remote && w.mode == "chat" {
-			c.AddChild(g.detailText("Shared project chat is planned."))
-			return
-		}
 		g.taskChatScreen(c, w)
 		return
 	}

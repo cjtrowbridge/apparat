@@ -8,7 +8,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/event"
 	"github.com/ebitenui/ebitenui/widget"
@@ -111,7 +113,11 @@ func TestCapturePlanning(t *testing.T) {
 	g := horizontalGame()
 	g.Layout(w, h)
 	selectTabThroughStrip(t, g, hud.TabGlobalSession)
-	if !strings.Contains(path, "sample") {
+	if strings.Contains(path, "picker") {
+		m := domain.ModelRef{Provider: "ollama", Name: "qwen3.5:4b", Digest: "build-a"}
+		g.planning.picker = modelPicker{address: modelAddress{"", g.planning.current.ID}, loaded: true, settings: domain.ModelSettings{CanDefault: true, Session: m, Default: domain.ModelDefault{Model: m}}, options: []domain.ModelOption{{Model: m, Nodes: []string{"trashcan0"}}, {Model: domain.ModelRef{Provider: "ollama", Name: "qwen3.8-flash-next:125b-a6b-q4_K_M", Digest: "build-b"}, Nodes: []string{"trashcan0"}}}}
+		g.openModels()
+	} else if !strings.Contains(path, "sample") {
 		s := g.planning.current
 		s.Description = "Review the cluster inference inventory and next steps"
 		g.globalDraft = "What should I check before adding another model?"
@@ -130,5 +136,54 @@ func TestCapturePlanning(t *testing.T) {
 	err := ebiten.RunGame(c)
 	if err != nil || c.err != nil {
 		t.Fatal(err, c.err)
+	}
+}
+
+func TestPlanningModelPickerReturnsToDraft(t *testing.T) {
+	for _, width := range []int{390, 1200} {
+		g := horizontalGame()
+		g.Layout(width, 844)
+		selectTabThroughStrip(t, g, hud.TabGlobalSession)
+		s := g.planning.current
+		g.globalDraft = "Draft to keep"
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		p := &g.planning.picker
+		m := domain.ModelRef{Provider: "ollama", Name: "qwen:4b", Digest: "test"}
+		p.address = modelAddress{"", s.ID}
+		p.loaded = true
+		p.settings.Session = m
+		p.settings.Default.Model = m
+		p.options = []domain.ModelOption{{Model: m, Nodes: []string{"worker"}}}
+		g.openModels()
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		labels := map[string]bool{}
+		for _, target := range g.bodyTargets() {
+			labels[focusLabel(target.w)] = true
+		}
+		if !labels["Cancel"] || !labels["Save for this chat"] || labels["Set as global default"] {
+			t.Fatal("incorrect member controls", labels)
+		}
+		g.planningBack()
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		if g.planning.current != s || g.globalDraft != "Draft to keep" || g.modelLabel() != m.Name {
+			t.Fatal("lost originating chat or model")
+		}
+		g.Close()
+	}
+}
+
+func TestPickerCatalogUsesStableTextModelIdentities(t *testing.T) {
+	now := time.Now()
+	v := domain.WorkerInventory{Observed: now.Unix(), Version: "test", Models: []domain.InventoryModel{{Name: "z", Digest: "same", Text: true}, {Name: "b", Digest: "one", Text: true}, {Name: "image", Digest: "x"}}}
+	other := v
+	other.Models = []domain.InventoryModel{{Name: "z", Digest: "same", Text: true, Loaded: true}, {Name: "b", Digest: "two", Text: true}}
+	old := v
+	old.Observed = now.Add(-time.Hour).Unix()
+	catalog := domain.ChatModelCatalog(v, domain.PoolDevice{ID: "a", Host: "first"}, []domain.ClusterDevice{{Host: "second", Inventory: &other}, {Host: "offline", Inventory: &old}}, now)
+	if len(catalog) != 3 || catalog[0].Model.Digest != "one" || catalog[1].Model.Digest != "two" || strings.Join(catalog[2].Nodes, ",") != "first,second" {
+		t.Fatal(catalog)
 	}
 }

@@ -91,3 +91,7 @@ A new interface uses CreateChat/Chats/Chat to manage transcripts and SubmitChatT
 For a queued provider, Dispatch returns a nil output after acceptance. DeliverChatOutput records the eventual completed assistant response and tool receipts, then DriveChat resumes from the owner revision. OutstandingChatRequest reconstructs a pending packet and checks its digest before provider reconciliation. If its contents have changed, inspect the stored job ID. StopChatTurn fences late callbacks. Known provider rejections end the turn; transport ambiguity preserves it. The non-streaming packet builder budgets 128 KiB of normalized JSON and 4096 completion tokens, retains whole recent turns and reports an oversized active turn. Model-specific limits and tokenization remain provider configuration concerns.
 - `inventory.go`: polls admitted workers independently of policy replication, reads local observations, and configures the selected worker's loopback port through an administrator session.
 - `inventory_reconnect_test.go`: verifies worker database reopen, persisted loopback configuration, and automatic inventory reads by a second authenticated device.
+
+- `model_choices.go`: Resolves chat choices at the project owner or from a user's cluster default replica.
+
+- `model_watch.go`: Follows model invalidations on currently accessible workers and repairs dropped watches.

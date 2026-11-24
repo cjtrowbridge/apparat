@@ -50,6 +50,7 @@ type ChatTool struct {
 
 type ChatRequest struct {
 	ChatAddress
+	Model              ModelRef `json:"model,omitzero"`
 	Job, Route, System string
 	Messages           []ChatMessage
 	Tools              []ChatTool

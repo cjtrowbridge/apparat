@@ -273,6 +273,8 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 		go node.reconcile(workCtx, node.database)
 		node.discoveryWorkers.Add(1)
 		go node.refreshInventoryPeers(workCtx)
+		node.discoveryWorkers.Add(1)
+		go node.watchModelWorkers(workCtx)
 	}
 	node.stopped = make(chan struct{})
 	go node.supervise(workCtx, node.serviceManager, node.stopped)
