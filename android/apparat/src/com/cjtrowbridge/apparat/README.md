@@ -35,3 +35,5 @@ The document and input dialogs anchor the circular PTT control to the lower-righ
 Native speech revisions replace the selected range directly. Cancelling restores the draft.
 
 - `PromptGameView.java`: Sizes the canvas above the Android keyboard and routes printable hardware keys into the focused global prompt. Software-keyboard composition uses the engine IME. Verify rapid typing, keyboard dismissal and visibility of the prompt and PTT on the Pixel.
+
+When testing the planning prompt, inspect the first frame that settles after the keyboard opens, before typing. The bottom of the HUD should meet the keyboard and the heading should remain visible. Repeat after typing and after dismissal and reopening. The Android engine preparation bounds caret panning to the part of the current canvas still covered by the keyboard, including while a session holds caret coordinates from the previous layout.
