@@ -149,7 +149,10 @@ func TestCapturePlanning(t *testing.T) {
 	g := horizontalGame()
 	g.Layout(w, h)
 	selectTabThroughStrip(t, g, hud.TabGlobalSession)
-	if strings.Contains(path, "project-chat") {
+	if strings.Contains(path, "markdown") {
+		s := g.planning.current
+		s.Turns = []domain.ChatTurn{{ID: "demo", Input: "How did the workers perform?", Reply: "## Worker results\n\n1. **Prefill** improved on both nodes.\n2. *Evaluation* stayed steady.\n   - No retries needed.\n\n| Worker | Prefill | Eval |\n|:---|---:|---:|\n| trashcan0 | 46 | 12 |\n| big-ai | 110 | 38 |"}}
+	} else if strings.Contains(path, "project-chat") {
 		g.projects.store = layoutRegistry{}
 		g.projects.rows = []domain.Project{{ID: "project", Name: "Apparat", Available: true}}
 		selectTabThroughStrip(t, g, hud.TabProjects)
@@ -249,10 +252,10 @@ func TestBubbleActionsAndReturn(t *testing.T) {
 		}
 		g.rebuildUI(g.shell.Snapshot())
 		renderNavigation(g)
-		var button *widget.Button
+		var button interface{ Click() }
 		for _, f := range g.bodyTargets() {
 			if strings.HasPrefix(focusLabel(f.w), "**Keep**") {
-				button = f.w.(*widget.Button)
+				button = f.w.(interface{ Click() })
 			}
 			if focusLabel(f.w) == "Copy message" {
 				t.Fatal("actions visible before activation")

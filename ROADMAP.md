@@ -1935,6 +1935,7 @@ The real primary Pixel and Steam Machine have authenticated as the same owner on
 
 **Dependencies:** Phase 9A commands, Phase 10 trusted REST and Phase 11 owner discovery. Phase 11A supplies the mixed-catalog regression baseline.
 
+- [x] Render CommonMark and GitHub Flavored Markdown in global and project bubbles and streaming previews, preserving original source for copy.
 - [ ] Persist every project chat as a version-controlled Markdown transcript on its owner, including existing local conversations. Generate the chat index from YAML descriptions. Verify that simultaneous sessions keep distinct files and that a fresh clone supports finding an earlier decision without the owner's database.
 - [ ] Serve bounded file reads, Git operations, chat, draft transactions, Task summaries and manual runs through the owner’s authenticated API. Reuse the local commands and enforce separate discovery, read, Git, mutation, invocation, chat, artifact and secret permissions.
 - [ ] Support bounded authenticated artifact uploads and downloads with ranges or chunks, partial state, resume, digest validation, atomic finalization and visible transfer states.

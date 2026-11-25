@@ -187,24 +187,15 @@ func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting b
 	}
 	b := widget.NewContainer(widget.ContainerOpts.BackgroundImage(uiimage.NewNineSliceColor(color)), widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Spacing(4), widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 8, Bottom: 8}))), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{HorizontalPosition: position})))
 
-	lines := strings.Split(body, "\n")
-	paneWidth := g.hudPreferredWidth()
-	if g.inWorkspace() {
-		paneWidth = g.detailPanePreferredWidth()
-	}
-	width := max(60, min(540, (paneWidth*4/5)-24))
-	for i, line := range lines {
-		lines[i] = wrapSelectorLabel(line, *g.theme.ButtonTheme.TextFace, width)
-	}
-	label := strings.Join(lines, "\n")
+	width := g.chatBubbleWidth()
 	if len(details) > 0 {
-		g.bubbleControls(b, body, label, user, waiting, details[0])
+		g.bubbleControls(b, body, width, user, waiting, details[0])
 	} else {
 		content := controlRow(b)
 		if waiting {
 			content.AddChild(planningGear())
 		}
-		content.AddChild(widget.NewText(widget.TextOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor.Idle)))
+		content.AddChild(g.markdownText(body, width))
 	}
 	row.AddChild(b)
 	parent.AddChild(row)

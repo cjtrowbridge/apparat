@@ -32,7 +32,7 @@ check-docs:
 	python3 scripts/check_directory_docs.py
 
 test-gui-deps:
-	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) test -tags gui ./internal/adapters/gui
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) test -tags gui ./internal/adapters/gui github.com/yuin/goldmark github.com/yuin/goldmark/extension
 
 build:
 	$(GO_ENV) python3 scripts/build.py
@@ -65,6 +65,7 @@ ifeq ($(HOST_GOOS),linux)
 .PHONY: test-hud-navigation
 verify: test-hud-navigation
 test-hud-navigation:
+	$(GO_ENV) python3 scripts/build_gate.py -- $(GO) test github.com/yuin/goldmark github.com/yuin/goldmark/extension
 	$(GO_ENV) python3 scripts/build_gate.py -- xvfb-run -a $(GO) test -race -tags gui ./internal/adapters/gui ./internal/hud
 endif
 

@@ -43,7 +43,7 @@ func (s *bubbleSelection) show(next *bubbleTools, pin bool) {
 	}
 }
 
-func (g *Game) bubbleControls(b *widget.Container, source, label string, user, waiting bool, detail bubbleDetail) {
+func (g *Game) bubbleControls(b *widget.Container, source string, width int, user, waiting bool, detail bubbleDetail) {
 	detail.user = user
 	if user {
 		detail.id += "/user"
@@ -79,6 +79,10 @@ func (g *Game) bubbleControls(b *widget.Container, source, label string, user, w
 	}
 	skin := tabButtonImage()
 	skin.Idle = uiimage.NewNineSliceColor(color)
+	label := ""
+	if waiting {
+		label = wrapSelectorLabel(source, *g.theme.ButtonTheme.TextFace, width-24)
+	}
 	face := widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.TextPadding(&widget.Insets{}), widget.ButtonOpts.Image(skin), widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 		selectBubble()
 	}))
@@ -87,9 +91,11 @@ func (g *Game) bubbleControls(b *widget.Container, source, label string, user, w
 	}
 	content := controlRow(b)
 	if waiting {
-		content.AddChild(planningGear())
+		content.AddChild(planningGear(), face)
+	} else {
+		face.GetWidget().CustomData = source
+		content.AddChild(&markdownButton{face, layoutMarkdown(source, width, g.prefs.Font)})
 	}
-	content.AddChild(face)
 	tools.row = controlRow(b)
 	tools.row.AddChild(g.planningIcon("1f4cb", "Copy message", tools.copy), g.planningIcon("2139", "Message information", tools.open))
 	tools.row.GetWidget().SetVisibility(widget.Visibility_Hide)

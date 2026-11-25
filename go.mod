@@ -8,6 +8,7 @@ require (
 	github.com/ebitenui/ebitenui v0.7.4-0.20260422023258-b1c31d852489
 	github.com/hajimehoshi/ebiten/v2 v2.10.6
 	github.com/pmezard/go-difflib v1.0.0
+	github.com/yuin/goldmark v1.7.16
 	golang.org/x/crypto v0.56.0
 	golang.org/x/image v0.45.0
 	gopkg.in/yaml.v3 v3.0.1

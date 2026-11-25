@@ -21,8 +21,10 @@ type chatPreviewUI struct {
 	user, job, stage, text string
 	updates                chan domain.PreviewFrame
 	cancel                 context.CancelFunc
+	nextPaint              time.Time
+	dirty                  bool
 	widgetJob              string
-	body                   *widget.Text
+	body                   *markdownPreview
 	status                 *widget.Button
 	fallback               string
 	parent                 *widget.Container
@@ -108,21 +110,25 @@ func (g *Game) pollChatPreview() {
 	}
 	select {
 	case f := <-p.updates:
+		if f.Stage != p.stage || f.Done {
+			p.nextPaint = time.Time{}
+		}
+		p.dirty = true
 		p.text, p.stage = f.Text, f.Stage
 		if f.Done {
 			p.stage = "Finishing model step"
 		}
-		g.paintChatPreview()
 	default:
+	}
+	if p.dirty && !time.Now().Before(p.nextPaint) {
+		g.paintChatPreview()
+		p.dirty = false
+		p.nextPaint = time.Now().Add(125 * time.Millisecond)
 	}
 }
 func (g *Game) attachChatPreview(b *widget.Container, job string, face *widget.Button, fallback string) {
 	p := &g.preview
-	width := g.hudPreferredWidth()
-	if g.inWorkspace() {
-		width = g.detailPanePreferredWidth()
-	}
-	p.body = widget.NewText(widget.TextOpts.Text("", g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(max(60, min(540, width*4/5-24)))))
+	p.body = g.markdownText("", g.chatBubbleWidth())
 	p.widgetJob, p.parent, p.status, p.fallback = job, b, face, fallback
 	b.AddChild(p.body)
 	g.paintChatPreview()
@@ -136,7 +142,7 @@ func (g *Game) paintChatPreview() {
 	if p.widgetJob == p.job && p.stage != "" {
 		text, stage = p.text, p.stage
 	}
-	p.body.Label = text
+	p.body.set(text)
 	vis := widget.Visibility_Show
 	if text == "" {
 		vis = widget.Visibility_Hide

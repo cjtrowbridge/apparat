@@ -245,3 +245,7 @@ Project conversation pages share the global chat bubble and gear renderer. The w
 - `chat_details.go`: implements selected and hovered bubble actions, exact-source clipboard copy and per-step metric tables for global and project conversations. Missing provider counters are omitted. Prefill throughput excludes cached prompt tokens when Ollama supplies that count.
 
 - `chat_preview.go`: Follows only the open global or project chat and updates preview text above its progress gear.
+
+- `markdown.go`: maps parsed CommonMark and GitHub Flavored Markdown into headings, paragraphs, lists, quotes, tables and styled text. Links are display-only, image references use alt text and raw HTML is suppressed by the parser.
+- `markdown_layout.go`: measures styled runs against the bubble width and paints completed messages and streaming previews with the same native layout.
+- `markdown_test.go`: verifies visible layout semantics, wrapping and literal code on phone and desktop surfaces. Run `make test-gui-deps` for the native tests, the pinned parser’s CommonMark specification corpus and its GFM extension tests.
