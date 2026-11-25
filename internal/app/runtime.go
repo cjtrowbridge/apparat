@@ -240,7 +240,7 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	if err != nil {
 		return err
 	}
-	node.inventory = inventory.New(port, node.database.SaveOllamaPort)
+	node.inventory = inventory.New(port, node.database.SaveOllamaPort, node.database.CPUBaseline)
 	if runtime.GOOS == "linux" && node.WorkerEvents != nil && node.Keys.State() == "unlocked" {
 		node.inference, result = newInferencePool(ctx, node.database, node.Keys, node.inventory)
 		if result != nil {

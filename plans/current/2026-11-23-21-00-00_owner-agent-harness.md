@@ -182,3 +182,7 @@ Remove separate validator enrollment and hash service assignments from inference
 ### Hardware and chat inspection (Phases 14 and 16)
 
 Show a four-column desktop scorecard and an INT8-equivalent CPU plus accelerator estimate with coverage. Share contextual copy and per-step telemetry across both conversation views. Verify partial inventory, tool-call exchange, rates, narrow and wide HUD navigation, then qualify the release. Markdown presentation is a design discussion.
+
+### Persist the Phase 14 CPU baseline
+
+Reuse one successful CPU measurement per node database across inventory refreshes, concurrent startup and restarts. Verify by counting measurements across two database connections and a reopen.

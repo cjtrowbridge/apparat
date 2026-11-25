@@ -46,7 +46,7 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 		requireWorkspaceOK(t, db.Migrate(ctx))
 		saved, err := db.OllamaPort(ctx)
 		requireWorkspaceOK(t, err)
-		monitor := inventory.New(saved, db.SaveOllamaPort)
+		monitor := inventory.New(saved, db.SaveOllamaPort, db.CPUBaseline)
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		requireWorkspaceOK(t, err)
 		server := httpapi.ServeWorkerListener(l, root, db, key, httpapi.WorkerSurface{Inventory: monitor})

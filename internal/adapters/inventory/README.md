@@ -8,6 +8,6 @@
 Snapshots expire after two minutes. Unsupported measurements stay unknown. Verify with the metadata-only fixture and a running Linux worker.
 - `monitor_test.go`: uses metadata-only loopback fixtures to verify model capabilities, loaded status, cache reuse, redirection rejection and preservation of a working configuration.
 
-- `compute.go`: Measures parallel scalar CPU FP32 operations per second once per process, using a 50 ms arithmetic loop. Each multiply and add counts as one operation. Scheduling and CPU load affect the result.
+- `compute.go`: Measures parallel scalar CPU FP32 operations per second once per node database and reuses the recorded rate across restarts, using a 50 ms arithmetic loop. Each multiply and add counts as one operation. Scheduling and CPU load affect the result.
 
 - `accelerator_linux.go`: estimates GPU FP32 operations per second from AMD KFD CU count and maximum clock (64 lanes, two operations per FMA). The two Apple FirePro D700 board IDs use the published 3.5 TFLOP/s per board. Unsupported GPU rates remain unknown. [Apple specifications](https://support.apple.com/en-us/112025)

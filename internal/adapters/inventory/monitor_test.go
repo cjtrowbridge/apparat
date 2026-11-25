@@ -50,6 +50,8 @@ func TestOllamaInventory(t *testing.T) {
 	m := New(0, func(_ context.Context, value int) error {
 		saved = value
 		return nil
+	}, func(context.Context, func() float64) (float64, error) {
+		return 10, nil
 	})
 	// First discovery at the fallback port must persist it even without a port change.
 	m.port = port

@@ -7,6 +7,8 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"math"
+	"strconv"
 )
 
 const preferencesSchema = `
@@ -72,4 +74,37 @@ func (db *DB) OllamaPort(ctx context.Context) (int, error) {
 func (db *DB) SaveOllamaPort(ctx context.Context, port int) error {
 	_, err := db.sql.ExecContext(ctx, `INSERT INTO local_runtime VALUES('ollama_loopback_port',?,0) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, port)
 	return err
+}
+
+// CPUBaseline reserves the node-local key before measuring so simultaneous
+// first launches sharing the database run only one benchmark.
+func (db *DB) CPUBaseline(ctx context.Context, measure func() float64) (float64, error) {
+	const key = "cpu_fp32_per_second"
+	tx, err := db.sql.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, "INSERT INTO local_runtime VALUES(?,0,0) ON CONFLICT(key) DO NOTHING", key)
+	if err != nil {
+		return 0, err
+	}
+	inserted, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	var rate float64
+	if inserted == 1 {
+		rate = measure()
+		if !(rate > 0) || math.IsInf(rate, 0) {
+			return 0, errors.New("invalid CPU benchmark result")
+		}
+		_, err = tx.ExecContext(ctx, "UPDATE local_runtime SET value=? WHERE key=?", strconv.FormatFloat(rate, 'g', -1, 64), key)
+	} else {
+		err = tx.QueryRowContext(ctx, "SELECT value FROM local_runtime WHERE key=?", key).Scan(&rate)
+	}
+	if err != nil {
+		return 0, err
+	}
+	return rate, tx.Commit()
 }

@@ -1,5 +1,5 @@
 // Measures sustained scalar FP32 multiply-add throughput in a short parallel CPU sample.
-// Every monitor advertises the process sample without repeating it on inventory refresh.
+// The inventory monitor requests this sample only when the durable baseline is missing.
 package inventory
 
 import (

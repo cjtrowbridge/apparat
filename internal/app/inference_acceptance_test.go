@@ -50,7 +50,7 @@ func workerFixture(t *testing.T, owner *identity.Personal, device *identity.Sess
 	mustInference(t, db.Migrate(ctx))
 	self := identity.Fingerprint(key.Public())
 	mustInference(t, db.ConfirmOwner(ctx, self, owner.Fingerprint()))
-	monitor := inventory.New(port, db.SaveOllamaPort)
+	monitor := inventory.New(port, db.SaveOllamaPort, db.CPUBaseline)
 	_, err = monitor.Refresh(ctx, port)
 	mustInference(t, err)
 	p, err := newInferencePool(ctx, db, key, monitor)

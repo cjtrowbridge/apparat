@@ -110,3 +110,5 @@ Migration 22 retires the Personal pool from active views. Migrations 23–27 add
 Migration 28 preserves the previous participant identities in `inference_membership`. Session homes, worker intake receipts, originating-device acknowledgements and update generations survive restarts. Older unsent entries retain their turn IDs. The home commits a pending global transcript and its work in one transaction. Ownership receipts continue to fence provider execution during recovery.
 
 Migration 29 indexes cached transcripts with an unanswered turn. Background sync checks their revision numbers and downloads changed transcripts even after the originating device has acknowledged delivery.
+
+The local_runtime key cpu_fp32_per_second retains the first successful CPU benchmark for the node. Both application entrypoints reuse it when opening the same database.

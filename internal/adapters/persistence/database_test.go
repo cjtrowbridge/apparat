@@ -7,6 +7,8 @@ import (
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -101,5 +103,49 @@ func TestModelScopeAndSessionIsolation(t *testing.T) {
 	_, err = db.SaveChatModel(ctx, "", edit)
 	if !errors.Is(err, domain.ErrModelConflict) {
 		t.Fatal("stale default overwrite", err)
+	}
+}
+
+func TestCPUBaselineSurvivesConcurrentStartupAndRestart(t *testing.T) {
+	ctx := t.Context()
+	path := t.TempDir() + "/node.db"
+	open := func() *DB {
+		db, err := Open(ctx, path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return db
+	}
+	a, b := open(), open()
+	err := a.Migrate(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var calls atomic.Int32
+	const want = 12345678.987654321
+	measure := func() float64 {
+		calls.Add(1)
+		return want
+	}
+	read := func(db *DB) {
+		rate, err := db.CPUBaseline(ctx, measure)
+		if err != nil || rate != want {
+			t.Errorf("baseline %g: %v", rate, err)
+		}
+	}
+	var wg sync.WaitGroup
+	for _, db := range []*DB{a, b} {
+		wg.Go(func() {
+			read(db)
+		})
+	}
+	wg.Wait()
+	a.Close()
+	b.Close()
+	c := open()
+	defer c.Close()
+	read(c)
+	if calls.Load() != 1 {
+		t.Fatal("benchmark runs", calls.Load())
 	}
 }

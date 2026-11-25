@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -13,20 +14,21 @@ import (
 const DefaultPort = 11434
 
 type Monitor struct {
-	run   sync.Mutex
-	mu    sync.RWMutex
-	view  domain.WorkerInventory
-	cache map[string]bool
-	port  int
-	save  func(context.Context, int) error
+	run      sync.Mutex
+	mu       sync.RWMutex
+	view     domain.WorkerInventory
+	cache    map[string]bool
+	port     int
+	save     func(context.Context, int) error
+	baseline func(context.Context, func() float64) (float64, error)
 }
 
-func New(port int, save func(context.Context, int) error) *Monitor {
+func New(port int, save func(context.Context, int) error, baseline func(context.Context, func() float64) (float64, error)) *Monitor {
 	configured := port >= 1 && port <= 65535
 	if !configured {
 		port = DefaultPort
 	}
-	return &Monitor{port: port, save: save, view: domain.WorkerInventory{Port: port, Configured: configured}, cache: map[string]bool{}}
+	return &Monitor{port: port, save: save, baseline: baseline, view: domain.WorkerInventory{Port: port, Configured: configured}, cache: map[string]bool{}}
 }
 func (m *Monitor) Snapshot() domain.WorkerInventory {
 	m.mu.RLock()
@@ -63,8 +65,14 @@ func (m *Monitor) Refresh(ctx context.Context, trial int) (domain.WorkerInventor
 	}
 	v.Configured = err == nil || configured
 	v.Resources = resources(ctx)
-	if ctx.Err() == nil {
-		v.Resources.CPUFP32PerSecond = cpuFP32()
+	v.Resources.CPUFP32PerSecond = m.Snapshot().Resources.CPUFP32PerSecond
+	if v.Resources.CPUFP32PerSecond == 0 && ctx.Err() == nil {
+		rate, baselineErr := m.baseline(ctx, cpuFP32)
+		if baselineErr == nil {
+			v.Resources.CPUFP32PerSecond = rate
+		} else {
+			slog.Warn("CPU baseline unavailable", "component", "inventory", "event", "cpu_baseline_unavailable", "error", baselineErr)
+		}
 	}
 	v.Observed = time.Now().Unix()
 	m.mu.Lock()
