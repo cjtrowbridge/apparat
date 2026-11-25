@@ -227,9 +227,10 @@ func (n *Runtime) openSavedWorker(ctx context.Context, worker domain.ClusterDevi
 	if resolver == nil {
 		resolver = discovery.ResolveSaved
 	}
+	contactErr := err
 	address, err := resolver(ctx, worker.Host, worker.Address)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(contactErr, err)
 	}
 	client, err = httpapi.OpenWorker(ctx, address, worker.Fingerprint, n.Personal, n.Keys, &n.observations)
 	if err != nil {

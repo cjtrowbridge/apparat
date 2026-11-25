@@ -133,6 +133,9 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 		if path == "/v1/auth" {
 			return accessExplanation("The worker rejected sign-in. Unlock both identities and ask a cluster admin to check this user and device before reconnecting.")
 		}
+		if resp.StatusCode == http.StatusUnauthorized && c.token != "" {
+			return errors.Join(ErrDenied, domain.ErrWorkerSessionExpired)
+		}
 		if ok {
 			return workspaceDenial(resp.StatusCode, resp.Body, q, c.Access)
 		}

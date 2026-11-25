@@ -26,6 +26,7 @@ type clusterFrame struct {
 	oldestFirst, choosingFilter bool
 	focusInput                  bool
 	input                       widget.Focuser
+	retryAt                     time.Time
 	scroll                      float64
 	focus                       focusBookmark
 }
@@ -40,6 +41,7 @@ type clusterNavigation struct {
 	pane           *widget.ScrollContainer
 	gear           *widget.Button
 	previousDetail bool
+	statusTick     time.Time
 }
 
 func (g *Game) clusterTop() *clusterFrame {
@@ -130,6 +132,7 @@ func (g *Game) clusterRequest(run func(context.Context) clusterResponse) {
 	}()
 }
 func (g *Game) pollCluster() {
+	g.tickWorkerPresence(time.Now())
 	select {
 	case response := <-g.cluster.pending:
 		g.cluster.pending = nil
@@ -139,7 +142,15 @@ func (g *Game) pollCluster() {
 		}
 		switch {
 		case response.err != nil:
-			f.notice = response.err.Error()
+			f.retryAt = time.Time{}
+			if f.route.Worker != "" && !response.edited && domain.ContactInterrupted(response.err) {
+				f.retryAt = time.Now().Add(10 * time.Second)
+				f.notice = ""
+			} else if response.edited && domain.ContactInterrupted(response.err) && f.route.Worker != "" {
+				f.notice = g.clusterRetryMessage(f.route.Worker) + " The action was not confirmed. Check its result before trying again."
+			} else {
+				f.notice = response.err.Error()
+			}
 		case response.edited && f.page.SavePools != nil:
 			g.clusterBack()
 		case response.edited:
@@ -148,6 +159,7 @@ func (g *Game) pollCluster() {
 			}
 			g.clusterLoad()
 		default:
+			f.retryAt = time.Time{}
 			f.page = response.page
 			if f.page.SavePools != nil {
 				f.selectedPools = make(map[string]bool)
@@ -170,7 +182,11 @@ func (g *Game) pollCluster() {
 }
 func (g *Game) clusterBack() {
 	if g.cluster.pending != nil {
-		return
+		f := g.clusterTop()
+		if f == nil || f.retryAt.IsZero() {
+			return
+		}
+		g.cluster.pending = nil
 	}
 	s := g.cluster.stack
 	if len(s) == 0 {
@@ -211,6 +227,10 @@ func (g *Game) clusterSelect(opt domain.ClusterOption) {
 func (g *Game) clusterRun(opt domain.ClusterOption, value string) {
 	if g.cluster.pending != nil {
 		return
+	}
+	f := g.clusterTop()
+	if f != nil {
+		f.retryAt = time.Time{}
 	}
 	g.clusterRequest(func(ctx context.Context) clusterResponse {
 		return clusterResponse{edited: true, err: opt.Run(ctx, value)}
@@ -257,7 +277,10 @@ func (g *Game) clusterContent(c *widget.Container) {
 	if f.notice != "" {
 		c.AddChild(g.detailText(f.notice))
 	}
-	if g.cluster.pending != nil {
+	if !f.retryAt.IsZero() {
+		c.AddChild(g.detailText(g.clusterRetryMessage(f.route.Worker)))
+	}
+	if g.cluster.pending != nil && f.retryAt.IsZero() {
 		c.AddChild(g.detailText("Contacting worker…"))
 		return
 	}
@@ -359,6 +382,7 @@ func (g *Game) savePoolSelection(f *clusterFrame) {
 		return
 	}
 	save := f.page.SavePools
+	f.retryAt = time.Time{}
 	g.clusterRequest(func(ctx context.Context) clusterResponse {
 		return clusterResponse{edited: true, err: save(ctx, selected)}
 	})

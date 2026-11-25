@@ -50,7 +50,7 @@ func (db *DB) KnownWorkers(ctx context.Context, user string) ([]domain.ClusterDe
 func (db *DB) WorkerSummaries(ctx context.Context, user, device string) ([]domain.ClusterDevice, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT w.worker,w.host,w.address,w.cluster,coalesce(r.revision,0),
  coalesce(json_extract(r.body,'$.View.Governance.Head.Revision'),0),coalesce(json_extract(r.body,'$.View.Admin'),0),
- coalesce(json_array_length(r.body,'$.View.Pools'),0),coalesce(json_extract(r.body,'$.View.PollSeconds'),0),coalesce(json_extract(r.body,'$.View.Devices'),'[]'),coalesce(json_extract(r.body,'$.View.Governance.Pools'),json_extract(r.body,'$.View.Pools'),'[]'),w.hardware
+ coalesce(json_array_length(r.body,'$.View.Pools'),0),coalesce(json_extract(r.body,'$.View.PollSeconds'),0),coalesce(json_extract(r.body,'$.View.Devices'),'[]'),coalesce(json_extract(r.body,'$.View.Governance.Pools'),json_extract(r.body,'$.View.Pools'),'[]'),w.hardware,w.inventory,w.heard
  FROM claimed_workers w LEFT JOIN worker_replicas r ON r.worker=w.worker AND r.user=w.owner AND r.device=?
  WHERE w.owner=? ORDER BY host COLLATE NOCASE,w.worker`, device, user)
 	if err != nil {
@@ -61,8 +61,9 @@ func (db *DB) WorkerSummaries(ctx context.Context, user, device string) ([]domai
 	for rows.Next() {
 		var d domain.ClusterDevice
 		var roster, pools string
-		var hardware []byte
-		err = rows.Scan(&d.Fingerprint, &d.Host, &d.Address, &d.Cluster, &d.ReplicaRevision, &d.PolicyRevision, &d.Admin, &d.PoolCount, &d.PollSeconds, &roster, &pools, &hardware)
+		var hardware, inventory []byte
+		var heard int64
+		err = rows.Scan(&d.Fingerprint, &d.Host, &d.Address, &d.Cluster, &d.ReplicaRevision, &d.PolicyRevision, &d.Admin, &d.PoolCount, &d.PollSeconds, &roster, &pools, &hardware, &inventory, &heard)
 		if err == nil {
 			err = json.Unmarshal([]byte(roster), &d.Roster)
 		}
@@ -79,6 +80,16 @@ func (db *DB) WorkerSummaries(ctx context.Context, user, device string) ([]domai
 				return nil, err
 			}
 		}
+		if len(inventory) > 0 {
+			var v domain.WorkerInventory
+			err = json.Unmarshal(inventory, &v)
+			if err != nil {
+				return nil, err
+			}
+			v.LastContact = heard
+			v.Retrying = true
+			d.Inventory = &v
+		}
 		devices = append(devices, d)
 	}
 	return devices, rows.Err()
@@ -94,7 +105,7 @@ func (db *DB) ReplaceWorkerPin(ctx context.Context, old, newPin, address string,
 	if !a.Admin || a.Admission != "approved" {
 		return errors.New("administrator required")
 	}
-	result, err := db.sql.ExecContext(ctx, "UPDATE claimed_workers SET worker=?,address=?,hardware=NULL WHERE worker=? AND owner=? AND cluster=?", newPin, address, old, a.User, a.Cluster)
+	result, err := db.sql.ExecContext(ctx, "UPDATE claimed_workers SET worker=?,address=?,hardware=NULL,inventory=NULL,heard=0 WHERE worker=? AND owner=? AND cluster=?", newPin, address, old, a.User, a.Cluster)
 	if err != nil {
 		return err
 	}
@@ -103,4 +114,17 @@ func (db *DB) ReplaceWorkerPin(ctx context.Context, old, newPin, address string,
 		return errors.New("worker registration changed during review")
 	}
 	return nil
+}
+
+func (db *DB) RememberInventory(ctx context.Context, user, worker string, v *domain.WorkerInventory) error {
+	if v == nil {
+		_, err := db.sql.ExecContext(ctx, "UPDATE claimed_workers SET inventory=NULL,heard=0 WHERE owner=? AND worker=?", user, worker)
+		return err
+	}
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	_, err = db.sql.ExecContext(ctx, "UPDATE claimed_workers SET inventory=?,heard=? WHERE owner=? AND worker=? AND heard<=?", raw, v.LastContact, user, worker, v.LastContact)
+	return err
 }

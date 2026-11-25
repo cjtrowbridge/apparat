@@ -268,7 +268,7 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 					continue
 				}
 				inv := cached.(domain.WorkerInventory)
-				if !inv.Fresh(time.Now()) {
+				if inv.Retrying || !inv.Fresh(time.Now()) {
 					continue
 				}
 				checked++

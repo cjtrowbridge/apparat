@@ -88,7 +88,14 @@ func (game *Game) liveServicesSection() hud.Section {
 				model = "Text generation unavailable"
 			}
 		}
-		if d.Inference != nil && d.Inference.OfflineSince > 0 {
+		if d.Inventory != nil && d.Inventory.Retrying {
+			health = workerRetryMessage(name, d.Inventory, time.Now())
+			tasks = "Waiting for the next worker update."
+			model = health
+			if d.Inventory.ReportedText() {
+				model = "Text generation last reported · " + health
+			}
+		} else if d.Inference != nil && d.Inference.OfflineSince > 0 {
 			health = "Status unavailable since " + time.UnixMilli(d.Inference.OfflineSince).Local().Format("15:04:05")
 		} else if d.Inference != nil {
 			v := d.Inference

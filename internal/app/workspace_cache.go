@@ -136,3 +136,18 @@ func (n *Runtime) cachedWorker(ctx context.Context, host string, connect func() 
 	}
 	return value.(*httpapi.WorkerClient), nil
 }
+
+// Evict only the failed connection so the next poll can resolve a restarted worker's port.
+func (n *Runtime) invalidateWorkerClient(client *httpapi.WorkerClient) {
+	if client == nil {
+		return
+	}
+	cache := &n.workspaceConnection
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	for key, item := range cache.entries {
+		if item.client == client {
+			delete(cache.entries, key)
+		}
+	}
+}

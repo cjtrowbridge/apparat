@@ -106,7 +106,7 @@ func (db *DB) ForgetReplica(ctx context.Context, w string, a Access) error {
 			return err
 		}
 	}
-	_, err = tx.ExecContext(ctx, "UPDATE claimed_workers SET hardware=NULL WHERE worker=? AND owner=?", w, a.User)
+	_, err = tx.ExecContext(ctx, "UPDATE claimed_workers SET hardware=NULL,inventory=NULL,heard=0 WHERE worker=? AND owner=?", w, a.User)
 	if err != nil {
 		return err
 	}

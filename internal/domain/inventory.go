@@ -2,7 +2,13 @@
 // Unknown measurements are omitted; all capacity counters are in bytes.
 package domain
 
-import "time"
+import (
+	"context"
+	"errors"
+	"io"
+	"net"
+	"time"
+)
 
 type Capacity struct {
 	Name                   string
@@ -27,6 +33,8 @@ type InventoryModel struct {
 	Text         bool
 }
 type WorkerInventory struct {
+	LastContact      int64 `json:"-"`
+	Retrying         bool  `json:"-"`
 	Configured       bool
 	Observed         int64
 	Resources        NodeResources
@@ -40,7 +48,12 @@ func (v WorkerInventory) Fresh(now time.Time) bool {
 	return v.Observed > 0 && age >= -30 && age <= 120
 }
 func (v WorkerInventory) HasText(now time.Time) bool {
-	if !v.Fresh(now) || v.Version == "" || v.Problem != "" {
+	return !v.Retrying && v.Fresh(now) && v.ReportedText()
+}
+
+// ReportedText describes the last service advertisement, independently of reachability.
+func (v WorkerInventory) ReportedText() bool {
+	if v.Version == "" || v.Problem != "" {
 		return false
 	}
 	for _, m := range v.Models {
@@ -74,4 +87,14 @@ func (v WorkerInventory) Capacity() HardwareCapacity {
 		h.Disk += d.Total
 	}
 	return h
+}
+
+// ErrWorkerSessionExpired triggers a new login before retrying a read.
+var ErrWorkerSessionExpired = errors.New("worker session expired")
+
+// ContactInterrupted identifies transport failures on an authenticated worker read.
+func ContactInterrupted(err error) bool {
+	var op *net.OpError
+	var timeout net.Error
+	return errors.Is(err, ErrWorkerSessionExpired) || errors.As(err, &op) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || (errors.As(err, &timeout) && timeout.Timeout())
 }

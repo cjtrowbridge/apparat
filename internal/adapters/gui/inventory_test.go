@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"context"
 	"image"
 	"image/png"
 	"os"
@@ -240,4 +241,46 @@ func TestHardwareMembershipChanges(t *testing.T) {
 	threads("72")
 	p.Devices = nil
 	threads("8")
+}
+
+func TestInterruptedWorkerPresentation(t *testing.T) {
+	for _, size := range []image.Point{{390, 844}, {1280, 800}} {
+		g := inventoryGame(t, size.X, size.Y)
+		d := &g.serviceProjection.Devices[0]
+		v := d.Inventory
+		v.LastContact = time.Now().Add(-3 * time.Minute).Unix()
+		v.Observed = v.LastContact
+		v.Retrying = true
+		tab := g.presentedTab(g.shell.Snapshot().ActiveTab())
+		for _, s := range tab.Sections {
+			switch s.ActionID {
+			case "worker-fixture":
+				if s.CapabilityIcon == "" || len(s.DetailSections[1].Rows) != 1 || !strings.Contains(s.Description, "Retrying automatically") {
+					t.Fatal("lost worker state", s)
+				}
+			case "text-generation":
+				if len(s.Rows) != 1 || !strings.Contains(s.Rows[0].Detail, "Last heard from trashcan0") {
+					t.Fatal("lost service advertisement", s)
+				}
+			}
+		}
+		catalog := domain.ChatModelCatalog(domain.WorkerInventory{}, domain.PoolDevice{}, g.serviceProjection.Devices, time.Now())
+		if len(catalog) != 1 || v.HasText(time.Now()) {
+			t.Fatal("catalog and live readiness diverged from expected state")
+		}
+		g.clusterPush(clusterFrame{route: domain.ClusterRoute{Page: "ollama", Worker: d.Fingerprint}})
+		g.cluster.pending = make(chan clusterResponse, 1)
+		g.cluster.pending <- clusterResponse{err: context.DeadlineExceeded}
+		g.pollCluster()
+		if g.clusterTop().retryAt.IsZero() || g.clusterTop().notice != "" {
+			t.Fatal("failed read did not schedule retry")
+		}
+		renderNavigation(g)
+		g.cluster.pending = make(chan clusterResponse, 1)
+		g.cluster.pending <- clusterResponse{page: domain.ClusterPage{Title: "Configure Ollama"}}
+		g.pollCluster()
+		if !g.clusterTop().retryAt.IsZero() || g.clusterTop().page.Title != "Configure Ollama" {
+			t.Fatal("failed to recover detail")
+		}
+	}
 }

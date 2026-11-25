@@ -39,6 +39,8 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 			group.SetLimit(4)
 			for _, w := range workers {
 				group.Go(func() error {
+					user := n.Personal.Fingerprint()
+					key := user + "/" + w.Fingerprint
 					started := time.Now()
 					call, cancel := context.WithTimeout(ctx, 25*time.Second)
 					defer cancel()
@@ -46,9 +48,13 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 					if err == nil {
 						v, readErr := client.Inventory(call)
 						err = readErr
-						key := client.Access.User + "/" + w.Fingerprint
+
 						if readErr == nil {
-							n.peerInventory.Store(key, v)
+							if v.Observed == 0 && w.Inventory != nil {
+								v = *w.Inventory
+								v.Retrying = false
+							}
+							n.rememberInventory(call, client.Access.User, w.Fingerprint, v)
 							n.notifyInventory()
 							n.refreshCapacity(call, client, w, v)
 							reply, statusErr := client.Inference(call, domain.InferenceCommand{Operation: "status", Roster: membershipFor(w.Cluster, workers)})
@@ -64,15 +70,34 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 								n.inferenceOffline(key)
 							}
 						} else {
-							n.peerInventory.Delete(key)
 							n.inferenceOffline(key)
 						}
 					} else {
-						key := n.Personal.Fingerprint() + "/" + w.Fingerprint
-						n.peerInventory.Delete(key)
 						n.inferenceOffline(key)
 					}
-					if errors.Is(err, httpapi.ErrDenied) {
+					if err != nil {
+						n.invalidateWorkerClient(client)
+						var changed *httpapi.ChangedWorker
+						if domain.ContactInterrupted(err) {
+							prior := domain.WorkerInventory{}
+							if w.Inventory != nil {
+								prior = *w.Inventory
+							}
+							prior.Retrying = true
+							n.peerInventory.Store(key, prior)
+						} else {
+							n.peerInventory.Delete(key)
+							if errors.Is(err, httpapi.ErrDenied) || errors.As(err, &changed) {
+								n.mu.Lock()
+								if n.database != nil {
+									_ = n.database.RememberInventory(ctx, user, w.Fingerprint, nil)
+								}
+								n.mu.Unlock()
+							}
+						}
+						n.notifyInventory()
+					}
+					if errors.Is(err, httpapi.ErrDenied) && !errors.Is(err, domain.ErrWorkerSessionExpired) {
 						n.rosterHardware.Delete(n.Personal.Fingerprint() + "/" + w.Fingerprint)
 						n.mu.Lock()
 						if n.database != nil {
@@ -116,8 +141,10 @@ func (n *Runtime) inventoryPage(ctx context.Context, r domain.ClusterRoute) (dom
 		}
 		v, err = client.Inventory(ctx)
 		if err != nil {
+			n.invalidateWorkerClient(client)
 			return domain.ClusterPage{}, err
 		}
+		n.rememberInventory(ctx, client.Access.User, r.Worker, v)
 	}
 	port := v.Port
 	if port == 0 {
@@ -142,7 +169,7 @@ func (n *Runtime) inventoryPage(ctx context.Context, r domain.ClusterRoute) (dom
 			}
 			result, err = active.TryOllama(ctx, value)
 			if result.Observed > 0 {
-				n.peerInventory.Store(client.Access.User+"/"+r.Worker, result)
+				n.rememberInventory(ctx, client.Access.User, r.Worker, result)
 			}
 		}
 		n.mu.Lock()
@@ -185,5 +212,16 @@ func (n *Runtime) refreshCapacity(ctx context.Context, c *httpapi.WorkerClient, 
 		if err == nil {
 			n.notifyInventory()
 		}
+	}
+}
+
+func (n *Runtime) rememberInventory(ctx context.Context, user, worker string, v domain.WorkerInventory) {
+	v.LastContact = time.Now().Unix()
+	n.peerInventory.Store(user+"/"+worker, v)
+	n.mu.Lock()
+	db := n.database
+	n.mu.Unlock()
+	if db != nil {
+		_ = db.RememberInventory(ctx, user, worker, &v)
 	}
 }

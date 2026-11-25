@@ -36,7 +36,7 @@ func (g *Game) ollamaOption(worker string) domain.ClusterOption {
 	return domain.ClusterOption{Label: ollamaPortLabel(v), Route: domain.ClusterRoute{Page: "ollama", Worker: worker}}
 }
 func ollamaPortLabel(v *domain.WorkerInventory) string {
-	if v != nil && v.Version != "" && v.Problem == "" {
+	if v != nil && (v.Retrying || v.Version != "" && v.Problem == "") {
 		return ""
 	}
 	if v != nil && (v.Configured || v.Version != "") {
@@ -92,7 +92,7 @@ func inventoryDetail(v *domain.WorkerInventory, configure string) []hud.Section 
 			if configure != "" && ollamaPortLabel(v) != "" {
 				s.ActionID = "configure-ollama/" + configure
 			}
-			if v != nil && v.Fresh(now) {
+			if v != nil && (v.Fresh(now) || v.LastContact > 0) {
 				if v.Problem != "" {
 					s.Description = v.Problem
 					if v.Configured {
@@ -100,7 +100,7 @@ func inventoryDetail(v *domain.WorkerInventory, configure string) []hud.Section 
 					}
 				} else if v.Version != "" {
 					s.Description = "Ollama " + v.Version + " · configured"
-					if !v.HasText(now) {
+					if !v.ReportedText() {
 						s.Description += " · no text-generation models reported"
 					}
 					for _, model := range v.Models {
@@ -152,9 +152,19 @@ func (g *Game) inventorySections(sections []hud.Section) []hud.Section {
 				}
 				s.DetailSections = append(s.DetailSections, services)
 			}
-			if d.v != nil && d.v.HasText(time.Now()) {
+			contact := ""
+			if d.v != nil && d.v.Retrying {
+				contact = workerRetryMessage(d.name, d.v, time.Now())
+				s.Description = contact
+				s.DetailSections[1].Description += " · " + contact
+			}
+			if d.v != nil && (d.v.HasText(time.Now()) || d.v.LastContact > 0 && d.v.ReportedText()) {
 				s.CapabilityIcon = inferenceKinds[0].icon
-				textRows = append(textRows, hud.Row{Label: d.name, Detail: "Ollama " + d.v.Version})
+				status := "Ollama " + d.v.Version
+				if contact != "" {
+					status += " · " + contact
+				}
+				textRows = append(textRows, hud.Row{Label: d.name, Detail: status})
 			}
 		}
 	}
@@ -226,4 +236,50 @@ func (g *Game) addInventoryCards(pane *widget.Container, sections []hud.Section)
 		}
 		pane.AddChild(card)
 	}
+}
+
+func workerRetryMessage(host string, v *domain.WorkerInventory, now time.Time) string {
+	if host == "" {
+		host = "worker"
+	}
+	if v == nil || v.LastContact == 0 {
+		return "Waiting for contact with " + host + ". Retrying automatically."
+	}
+	elapsed := max(time.Duration(0), now.Sub(time.Unix(v.LastContact, 0))).Truncate(time.Second)
+	return fmt.Sprintf("Last heard from %s %s ago. Retrying automatically.", host, elapsed)
+}
+
+// Retry only the active page read. Submission callbacks remain explicit user actions.
+func (g *Game) tickWorkerPresence(now time.Time) {
+	if now.Before(g.cluster.statusTick) {
+		return
+	}
+	g.cluster.statusTick = now.Add(5 * time.Second)
+	if g.shell.Snapshot().ActiveTab().ID() != hud.TabCluster {
+		return
+	}
+	f := g.clusterTop()
+	if f != nil && !f.retryAt.IsZero() && !now.Before(f.retryAt) && g.cluster.pending == nil {
+		g.clusterLoad()
+	}
+
+	if f != nil && !f.retryAt.IsZero() {
+		g.layoutDirty = true
+		return
+	}
+	for _, d := range g.serviceProjection.Devices {
+		if d.Inventory != nil && d.Inventory.Retrying {
+			g.layoutDirty = true
+			return
+		}
+	}
+}
+
+func (g *Game) clusterRetryMessage(worker string) string {
+	for _, d := range g.serviceProjection.Devices {
+		if d.Fingerprint == worker {
+			return workerRetryMessage(d.DisplayName(), d.Inventory, time.Now())
+		}
+	}
+	return workerRetryMessage("worker", nil, time.Now())
 }

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -67,7 +68,11 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 
 	db, monitor, server, addr := open()
 	defer db.Close()
-	defer server.Close()
+	defer func() {
+		if server != nil {
+			_ = server.Close()
+		}
+	}()
 	if !monitor.Snapshot().Configured || monitor.Snapshot().Port != port {
 		t.Fatal("lost saved port before first probe")
 	}
@@ -78,6 +83,11 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 	defer secondDB.Close()
 	requireWorkspaceOK(t, secondDB.Migrate(ctx))
 	second := &Runtime{database: secondDB, Personal: actor.person, Keys: fixtureDevice(t), inventoryHint: make(chan struct{}, 1)}
+	var endpoint atomic.Value
+	endpoint.Store(addr)
+	second.ResolveSaved = func(context.Context, string, string) (string, error) {
+		return endpoint.Load().(string), nil
+	}
 	poll, cancel := context.WithCancel(ctx)
 	second.discoveryWorkers.Add(1)
 	go second.refreshInventoryPeers(poll)
@@ -94,6 +104,7 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 	}
 	requireWorkspaceOK(t, secondDB.SaveWorkerAccess(ctx, "worker", addr, pin, secondClient.Access))
 	second.RequestSync()
+	heard := int64(0)
 	deadline := time.Now().Add(4 * time.Second)
 	for time.Now().Before(deadline) {
 		rows, err := second.KnownWorkers(ctx)
@@ -101,10 +112,51 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 		if len(rows) == 1 && rows[0].Inventory != nil {
 			v := rows[0].Inventory
 			if rows[0].Hardware[firstID].Threads == 24 && rows[0].Hardware[pin].Threads > 0 && v.Configured && v.Port == port && v.HasText(time.Now()) && v.Models[0].Name == "shared" {
-				return
+				heard = v.LastContact
+				break
 			}
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	t.Fatal("second device failed to discover the configured worker on entry")
+	if heard == 0 {
+		t.Fatal("second device failed to discover the configured worker on entry")
+	}
+	requireWorkspaceOK(t, server.Close())
+	server = nil
+	second.RequestSync()
+	offline := false
+	deadline = time.Now().Add(4 * time.Second)
+	for time.Now().Before(deadline) {
+		rows, e := second.KnownWorkers(ctx)
+		requireWorkspaceOK(t, e)
+		v := rows[0].Inventory
+		if v != nil && v.Retrying && v.LastContact >= heard && v.ReportedText() && !v.HasText(time.Now()) {
+			disk, e := secondDB.KnownWorkers(ctx, actor.person.Fingerprint())
+			requireWorkspaceOK(t, e)
+			if disk[0].Inventory == nil || !disk[0].Inventory.ReportedText() {
+				t.Fatal("lost stored service advertisement")
+			}
+			offline = true
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !offline {
+		t.Fatal("lost service listing or contact time on disconnect")
+	}
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	requireWorkspaceOK(t, err)
+	server = httpapi.ServeWorkerListener(listener, root, db, key, httpapi.WorkerSurface{Inventory: monitor})
+	endpoint.Store(listener.Addr().String())
+	second.RequestSync()
+	deadline = time.Now().Add(4 * time.Second)
+	for time.Now().Before(deadline) {
+		rows, e := second.KnownWorkers(ctx)
+		requireWorkspaceOK(t, e)
+		if rows[0].Inventory != nil && !rows[0].Inventory.Retrying && rows[0].Address == listener.Addr().String() {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("failed to reconnect to restarted worker on its new port")
 }

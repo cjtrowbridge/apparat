@@ -58,7 +58,7 @@ type ModelEdit struct {
 func ChatModelCatalog(local WorkerInventory, device PoolDevice, peers []ClusterDevice, now time.Time) []ModelOption {
 	groups := map[ModelRef][]string{}
 	add := func(v WorkerInventory, id, host string) {
-		if !v.HasText(now) {
+		if !v.HasText(now) && !(v.LastContact > 0 && v.ReportedText()) {
 			return
 		}
 		for _, m := range v.Models {

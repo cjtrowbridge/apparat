@@ -80,3 +80,5 @@ Cluster Status now replaces Local Services on the cluster selector. The local de
 - [x] Phase 10 Chat Pool Devices shows measured prefill/eval throughput for the effective global chat default. Preserve device navigation, order numerically and exercise narrow and wide layouts and historical metrics.
 
 - [x] Phase 10 Cluster Status recomputes installed hardware from member identities and their last reported capacity. Publish inventory changes independently of inference status, include reporting GUI members and verify join, withdrawal, stale reports and host deduplication.
+
+- [x] Phase 10 worker presence: retain authenticated service listings during transport loss, show elapsed contact time and retry failed detail reads while open. Verify reconnection, catalog stability and distinct access failures.

@@ -57,6 +57,7 @@ var migrations = []Migration{
 	{Version: 29, Name: "pending_planning_revisions", SQL: `CREATE INDEX pending_planning_revisions ON global_chats(user,session,revision) WHERE pending=0 AND json_extract(body,'$.Turns[#-1].Reply')='' AND json_extract(body,'$.Turns[#-1].Stopped')='';`},
 	{Version: 30, Name: "member_hardware_capacity", SQL: `ALTER TABLE cluster_devices_authorized ADD COLUMN hardware BLOB;
 ALTER TABLE claimed_workers ADD COLUMN hardware BLOB;`},
+	{Version: 31, Name: "last_worker_inventory", SQL: `ALTER TABLE claimed_workers ADD COLUMN inventory BLOB; ALTER TABLE claimed_workers ADD COLUMN heard INTEGER NOT NULL DEFAULT 0;`},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {
