@@ -67,6 +67,37 @@ class BootstrapTest(unittest.TestCase):
                 socket.create_connection(("127.0.0.1", port), timeout=2)
 
 
+class FirstStartTest(unittest.TestCase):
+    lan = "ens18/profile/router/192.168.1.130"
+    overlay = "tailscale0/tailnet/id/100.64.0.1"
+
+    def run_supervisor(self, db, snapshots, *options):
+        with patch.object(discovery, "profiles", side_effect=snapshots), \
+             patch.object(discovery.os.path, "exists", side_effect=lambda p: p == "/sys/class/net/ens18/device"), \
+             patch.object(discovery, "SOURCE", "", create=True), \
+             patch.object(discovery.subprocess, "Popen") as spawn, \
+             patch.object(discovery.time, "sleep", side_effect=[None] * (len(snapshots)-1) + [StopIteration]), \
+             self.assertRaises(StopIteration):
+            discovery.supervise(db, "node.sqlite", *options)
+        return spawn
+
+    def test_headless_waits_for_lan_and_honors_saved_policy(self):
+        db = sqlite3.connect(":memory:")
+        self.addCleanup(db.close)
+        db.execute("create table local_runtime(key text primary key,value text,rev integer)")
+        early = {self.overlay: ("tailscale0", "100.64.0.1")}
+        ready = {**early, self.lan: ("ens18", "192.168.1.130")}
+        self.run_supervisor(db, [ready]).assert_not_called()
+        spawned = self.run_supervisor(db, [early, ready], "headless")
+        self.assertEqual(spawned.call_args.args[0][-2:], [self.lan, "headless"])
+        self.assertEqual(discovery.grants(db), [self.lan])
+        for rules, enabled in (([self.lan], False), ([], False)):
+            discovery.save(db, rules, enabled)
+            self.run_supervisor(db, [ready], "headless").assert_not_called()
+            self.assertEqual(discovery.saved(db), rules)
+            self.assertFalse(discovery.enabled(db))
+
+
 class ScheduleTest(unittest.TestCase):
     def test_request_cadence_and_owner_controls(self):
         db = sqlite3.connect(":memory:")

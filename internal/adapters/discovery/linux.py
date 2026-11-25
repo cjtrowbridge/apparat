@@ -296,6 +296,16 @@ def serve(db, rule, headless=False):
             listener.handle_request()
 
 
+def initialize_lan(db, available):
+    for rule, (dev, _) in available.items():
+        if os.path.exists("/sys/class/net/" + dev + "/device"):
+            with db:
+                db.execute("""INSERT INTO local_runtime SELECT ?, ?, 0
+                    WHERE NOT EXISTS (SELECT 1 FROM local_runtime WHERE key IN (?, 'bootstrap_enabled'))""",
+                           (KEY, json.dumps([rule]), KEY))
+            break
+
+
 def supervise(db, path, *options):
     if options:
         with db:
@@ -307,11 +317,15 @@ def supervise(db, path, *options):
         while True:
             if options and value(db, "manual", "0") == "1" and claim_update(db, manual=True):
                 print("M", end="", flush=True)
-            rules = set(grants(db))
+            unconfigured = options == ("headless",) and not db.execute(
+                "SELECT 1 FROM local_runtime WHERE key IN (?, 'bootstrap_enabled')", (KEY,)).fetchone()
             try:
-                available = profiles() if rules else {}
+                available = profiles() if unconfigured or grants(db) else {}
+                if unconfigured:
+                    initialize_lan(db, available)
             except (OSError, subprocess.SubprocessError, ValueError):
                 available = {}
+            rules = set(grants(db))
             for rule in list(workers):
                 if workers[rule].poll() is not None or rule not in rules or rule not in available:
                     workers.pop(rule).terminate()

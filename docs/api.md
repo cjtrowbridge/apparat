@@ -87,7 +87,7 @@ Workers may return bounded inline results or artifact references. A queue owner 
 
 ## Current loopback operations
 
-Phase 8 exposed the following local diagnostic projections. The discovery release removes the legacy --listen switch and isolates bootstrap requests from these handlers. Default startup opens no listener. The diagnostic router remains available to package tests. Product listeners use the isolated bootstrap handler described below.
+Phase 8 exposed the following local diagnostic projections. The discovery release removes the legacy --listen switch and isolates bootstrap requests from these handlers. GUI startup defaults to client-only. An unconfigured Linux worker automatically starts its scoped LAN listener. The diagnostic router remains available to package tests. Product listeners use the isolated bootstrap handler described below.
 
 GET `/v1/health` returns version, lifecycle state and readiness; `/v1/device` returns OS, architecture and **local bootstrap-file** identity status. `/v1/services` and `/v1/services/{service_id}` return ID, name, mock driver, desired enablement/revision, health, observation time, safe error and capabilities. `/v1/capabilities` and `/v1/services/{service_id}/capabilities` expose service-scoped capability IDs and workload classes. Canonical ULIDs are required in paths. No provider address, filesystem path, credential reference, raw error, fail-injection switch or key is serialized.
 
@@ -101,7 +101,7 @@ The initial anonymous milestone used a dedicated bootstrap handler serving the a
 
 ## Planned Phase 10 local authentication contract
 
-The following responses apply only on an explicitly enabled network/interface pair. A disabled server or unapproved ingress has no API listener, including for public-key lookup and the anonymous 401. Phase 10 replaces Phase 8's automatic loopback listener with explicit grants. Outbound API clients operate independently of hosting. See [API hosting policy](node-identity.md#api-hosting-policy).
+The following responses apply only on an enabled network/interface pair. A disabled server or unapproved ingress has no API listener, including for public-key lookup and the anonymous 401. Phase 10 replaces Phase 8's automatic loopback listener with scoped grants. Outbound API clients operate independently of hosting. See [API hosting policy](node-identity.md#api-hosting-policy).
 
 Extend the existing versioned read-only handler. The public-key URL works before and after authentication, including while the signing key is locked. See [node identity and credential issuance](node-identity.md).
 
@@ -141,7 +141,7 @@ The confirmed worker’s TLS admin route `GET /v1/admin/git/providers` reports t
 
 #### Client operation sequence
 
-Use the pinned worker listener on an explicitly enabled interface. All four Git routes require the same TLS 1.3 device certificate, live device-bound bearer, current SQLite admin grant and host-local owner confirmation. The GitHub account authorizes a transfer at GitHub. It cannot authenticate the caller to Apparat.
+Use the pinned worker listener on an enabled interface. All four Git routes require the same TLS 1.3 device certificate, live device-bound bearer, current SQLite admin grant and host-local owner confirmation. The GitHub account authorizes a transfer at GitHub. It cannot authenticate the caller to Apparat.
 
 | Step | JSON contract |
 | --- | --- |
