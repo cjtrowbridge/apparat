@@ -177,3 +177,5 @@ Run the two-worker acceptance with `python3 scripts/build_gate.py -- go test -co
 Worker inventory resources optionally include `PhysicalCores`, `CPUFP32PerSecond` (scalar CPU operations per second) and `HostBootDigest` (a Linux boot-scoped identifier for deduplicating local hardware reports). Older workers can still contribute their existing capacity fields.
 
 For an initial project workspace `agent-post`, use the same new ID for the thread and the first turn. The owner creates the Markdown session with the opening sentence as its title. Retry with the same IDs and input after a lost response. Subsequent turns use new turn IDs.
+
+Authenticated inference operation `model-speed` takes a ModelRef and returns the responding executor’s aggregate prefill and eval tokens per second across completed jobs for that model. Each missing rate is null. The response contains no job inputs or outputs.

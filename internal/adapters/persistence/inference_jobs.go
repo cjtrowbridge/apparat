@@ -221,3 +221,20 @@ func (db *DB) InferenceTasks(ctx context.Context, user, pool, cursor string) ([]
 	}
 	return out, rows.Err()
 }
+
+// ModelSpeed aggregates native token counts and nanoseconds on the actual executor.
+// Finished replicas of another worker's jobs never contribute to this worker's rate.
+func (db *DB) ModelSpeed(ctx context.Context, executor string, model domain.ModelRef) (v domain.ModelSpeed, err error) {
+	err = db.sql.QueryRowContext(ctx, `WITH samples AS (
+      SELECT json_extract(output,'$.metrics.prompt_eval_count') - coalesce(json_extract(output,'$.metrics.prompt_eval_cached_count'),0) AS p,
+             json_extract(output,'$.metrics.prompt_eval_duration') AS pt,
+             json_extract(output,'$.metrics.eval_count') AS e, json_extract(output,'$.metrics.eval_duration') AS et
+      FROM inference_jobs WHERE state='finished' AND json_extract(claim,'$.Executor')=?
+        AND json_extract(body,'$.Packet.model.provider')=? AND json_extract(body,'$.Packet.model.name')=?
+        AND coalesce(json_extract(body,'$.Packet.model.digest'),'')=?
+        AND coalesce(json_extract(body,'$.Packet.model.worker'),'')=?)
+      SELECT 1e9*total(p) FILTER (WHERE p>0 AND pt>0)/total(pt) FILTER (WHERE p>0 AND pt>0),
+             1e9*total(e) FILTER (WHERE e>0 AND et>0)/total(et) FILTER (WHERE e>0 AND et>0)
+      FROM samples`, executor, model.Provider, model.Name, model.Digest, model.Worker).Scan(&v.Prefill, &v.Eval)
+	return
+}

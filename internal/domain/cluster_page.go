@@ -61,10 +61,22 @@ func (d PoolDevice) DisplayName(workerHost string) string {
 
 // PoolOverview is the signed-in user's last synchronized view across the selected workers.
 type PoolOverview struct {
-	Tasks                []PoolTaskRow
-	Devices, Add, Policy []ClusterOption
-	Users                []string
+	Tasks       []PoolTaskRow
+	Devices     []PoolDeviceRow
+	Add, Policy []ClusterOption
+	GlobalModel ModelRef
+	Users       []string
 }
+type PoolDeviceRow struct {
+	ClusterOption
+	Speed ModelSpeed
+}
+
+// Each rate is absent until the worker has reported a timed sample for that phase.
+type ModelSpeed struct {
+	Prefill, Eval *float64
+}
+
 type PoolTaskRow struct {
 	Inference               bool
 	ID, State, Worker, Host string

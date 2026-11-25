@@ -171,6 +171,13 @@ func (p *inferencePool) InferenceUser(ctx context.Context, a persistence.Access,
 			return v, httpapi.ErrDenied
 		}
 		err = p.admit(ctx, q.Job)
+	case "model-speed":
+		if !q.Model.Valid() {
+			return v, domain.ErrUnavailable
+		}
+		speed, e := p.db.ModelSpeed(ctx, p.self, q.Model)
+		v.Speed = &speed
+		return v, e
 	case "tasks":
 		v.Tasks, err = p.db.InferenceTasks(ctx, a.User, q.Pool, q.ID)
 	case "task", "result", "job-state":

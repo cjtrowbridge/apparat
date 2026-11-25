@@ -3,12 +3,14 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 	"slices"
 	"strings"
+	"time"
 )
 
 func poolAuthorized(v *persistence.GovernanceView, member persistence.Member, pool string) bool {
@@ -42,7 +44,14 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 			page.Detail = p.Priority + " priority. " + page.Detail
 		}
 	}
-	workers, err := n.KnownWorkers(ctx)
+	var cluster string
+	var workers []domain.ClusterDevice
+	var err error
+	if r.Pool == "Chat Pool" {
+		cluster, workers, err = n.modelCluster(ctx)
+	} else {
+		workers, err = n.KnownWorkers(ctx)
+	}
 	if err != nil {
 		return page, err
 	}
@@ -52,6 +61,19 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 	if db == nil || n.Personal == nil {
 		return page, nil
 	}
+	if r.Pool == "Chat Pool" {
+		settings, err := db.ChatModels(ctx, cluster, "", "")
+		if err != nil {
+			return page, err
+		}
+		overview.GlobalModel = settings.Default.Model
+		if !overview.GlobalModel.Valid() {
+			catalog := domain.ChatModelCatalog(n.LocalInventory(), n.LocalClusterDevice(), workers, time.Now())
+			if len(catalog) > 0 {
+				overview.GlobalModel = catalog[0].Model
+			}
+		}
+	}
 	user := n.Personal.Fingerprint()
 	device := n.LocalClusterDevice().ID
 	users := map[string]string{}
@@ -60,7 +82,8 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 		if r.Worker != "" && r.Worker != w.Fingerprint {
 			continue
 		}
-		overview.Tasks = append(overview.Tasks, n.inferenceRows(ctx, w, r.Pool, seenJobs)...)
+		tasks, speed := n.inferenceRows(ctx, w, r.Pool, seenJobs, overview.GlobalModel)
+		overview.Tasks = append(overview.Tasks, tasks...)
 		a := persistence.Access{Cluster: w.Cluster, User: user, Device: device}
 		replica, _, err := db.LocalReplica(ctx, w.Fingerprint, a)
 		if err != nil {
@@ -72,7 +95,7 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 		}
 		for _, d := range v.Devices {
 			if d.Worker && d.ID == w.Fingerprint && slices.Contains(d.Pools, r.Pool) {
-				overview.Devices = append(overview.Devices, domain.ClusterOption{Label: w.DisplayName(), Route: domain.ClusterRoute{Page: "device-detail", Target: "worker-" + d.ID}})
+				overview.Devices = append(overview.Devices, domain.PoolDeviceRow{ClusterOption: domain.ClusterOption{Label: w.DisplayName(), Route: domain.ClusterRoute{Page: "device-detail", Target: "worker-" + d.ID}}, Speed: speed})
 			}
 		}
 		if slices.Contains(v.Pools, r.Pool) {
@@ -111,6 +134,9 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 		}
 		overview.Users = append(overview.Users, name)
 	}
+	if r.Pool == "Chat Pool" {
+		slices.SortFunc(overview.Devices, comparePoolSpeed)
+	}
 	slices.Sort(overview.Users)
 	slices.SortFunc(overview.Tasks, func(a, b domain.PoolTaskRow) int {
 		if a.Changed > b.Changed {
@@ -139,4 +165,16 @@ func (b *clusterPageBuilder) poolAddUser() {
 	if len(b.Options) == 0 {
 		b.Detail += "\nAll approved users already have access."
 	}
+}
+
+func comparePoolSpeed(a, b domain.PoolDeviceRow) int {
+	value := func(rate *float64) float64 {
+		if rate == nil {
+			return -1
+		}
+		return *rate
+	}
+	return cmp.Or(cmp.Compare(value(b.Speed.Prefill), value(a.Speed.Prefill)),
+		cmp.Compare(value(b.Speed.Eval), value(a.Speed.Eval)),
+		strings.Compare(a.Label, b.Label), strings.Compare(a.Route.Target, b.Route.Target))
 }

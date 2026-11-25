@@ -9,20 +9,27 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/domain"
 )
 
-func (n *Runtime) inferenceRows(ctx context.Context, w domain.ClusterDevice, pool string, seen map[string]bool) []domain.PoolTaskRow {
+func (n *Runtime) inferenceRows(ctx context.Context, w domain.ClusterDevice, pool string, seen map[string]bool, model domain.ModelRef) ([]domain.PoolTaskRow, domain.ModelSpeed) {
 	if w.Inference != nil && w.Inference.OfflineSince > 0 {
-		return nil
+		return nil, domain.ModelSpeed{}
 	}
 	c, err := n.workspaceClient(ctx, "worker-"+w.Fingerprint)
 	if err != nil {
-		return nil
+		return nil, domain.ModelSpeed{}
+	}
+	var speed domain.ModelSpeed
+	if model.Valid() {
+		reply, e := c.Inference(ctx, domain.InferenceCommand{Operation: "model-speed", Model: model})
+		if e == nil && reply.Speed != nil {
+			speed = *reply.Speed
+		}
 	}
 	var out []domain.PoolTaskRow
 	cursor := ""
 	for ctx.Err() == nil {
 		v, e := c.Inference(ctx, domain.InferenceCommand{Operation: "tasks", ID: cursor, Pool: pool})
 		if e != nil {
-			return out
+			return out, speed
 		}
 		for _, t := range v.Tasks {
 			if seen[t.ID] {
@@ -39,7 +46,7 @@ func (n *Runtime) inferenceRows(ctx context.Context, w domain.ClusterDevice, poo
 		}
 		cursor = v.Tasks[len(v.Tasks)-1].ID
 	}
-	return out
+	return out, speed
 }
 func (n *Runtime) inferenceTaskPage(ctx context.Context, r domain.ClusterRoute) (p domain.ClusterPage, err error) {
 	c, err := n.workspaceClient(ctx, "worker-"+r.Worker)

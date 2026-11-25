@@ -135,7 +135,7 @@ func TestPoolTabsAndDirectoryReturn(t *testing.T) {
 		selectTabThroughStrip(t, g, hud.TabCluster)
 		opt := domain.ClusterOption{Label: "Worker", Route: domain.ClusterRoute{Page: "device-detail", Target: "worker-w"}}
 		g.serviceProjection.Devices = []domain.ClusterDevice{{Host: "worker", Fingerprint: "w"}}
-		g.clusterPush(clusterFrame{route: domain.ClusterRoute{Page: "pool", Pool: "Chat Pool"}, page: domain.ClusterPage{Title: "Chat Pool", Overview: &domain.PoolOverview{Devices: []domain.ClusterOption{opt}}}})
+		g.clusterPush(clusterFrame{route: domain.ClusterRoute{Page: "pool", Pool: "Chat Pool"}, page: domain.ClusterPage{Title: "Chat Pool", Overview: &domain.PoolOverview{GlobalModel: domain.ModelRef{Provider: "ollama", Name: "test-model"}, Devices: []domain.PoolDeviceRow{{ClusterOption: opt}}}}})
 		f := g.clusterTop()
 		if !poolTaskMatches("succeeded", f.taskFilter) || poolTaskMatches("running", f.taskFilter) || f.oldestFirst {
 			t.Fatal("unexpected initial task filter or sort order")

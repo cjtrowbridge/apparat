@@ -92,6 +92,7 @@ func OrderInferenceJobs(jobs []InferenceJob) {
 
 // InferenceCommand carries either a user-authorized submission or a pinned worker transition.
 type InferenceCommand struct {
+	Model     ModelRef `json:",omitzero"`
 	Chunk     GlobalChunk
 	Pool      string
 	Global    GlobalRequest
@@ -123,6 +124,7 @@ type InferenceStatus struct {
 }
 
 type InferenceReply struct {
+	Speed    *ModelSpeed   `json:",omitempty"`
 	Executor InferencePeer `json:",omitzero"`
 	Protocol int           `json:",omitempty"`
 	Projects []ChatProject

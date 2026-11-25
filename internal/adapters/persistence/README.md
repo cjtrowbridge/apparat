@@ -77,3 +77,5 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 
 - `inference_intake.go`: Stores authenticated global turn receipts on the receiving worker and tracks delivery to the session home. Repeated identical sends reuse the receipt; conflicting bodies fail.
 - `inference_maintenance.go`: Persists update generations and recovery phases, and restores missed jobs and completion receipts before the worker resumes.
+
+- `model_speed_test.go`: verifies executor and model isolation and weighted prefill/eval telemetry from stored inference results.

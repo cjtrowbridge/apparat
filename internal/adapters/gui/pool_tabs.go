@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"github.com/ebitenui/ebitenui/widget"
@@ -72,10 +73,14 @@ func (g *Game) poolTabs(c *widget.Container, f *clusterFrame) {
 	c.AddChild(g.detailText(active))
 	switch active {
 	case "Devices":
-		for _, opt := range p.Devices {
-			g.projectButton(c, opt.Label, func() {
-				g.clusterOpen(opt.Route)
-			})
+		if f.route.Pool == "Chat Pool" {
+			g.poolSpeedTable(c, p)
+		} else {
+			for _, opt := range p.Devices {
+				g.projectButton(c, opt.Label, func() {
+					g.clusterOpen(opt.Route)
+				})
+			}
 		}
 		if len(p.Devices) == 0 {
 			c.AddChild(g.detailText("No workers assigned."))
@@ -236,4 +241,29 @@ func poolTaskPage(t domain.PoolTaskRow) string {
 		return "inference-task"
 	}
 	return "task"
+}
+
+func (g *Game) poolSpeedTable(c *widget.Container, p *domain.PoolOverview) {
+	description := "No global chat default is available."
+	if p.GlobalModel.Valid() {
+		description = "Showing TPS values for the global chat default (" + p.GlobalModel.Name + ")."
+	}
+	c.AddChild(g.detailText(wrapSelectorLabel(description, *g.theme.ButtonTheme.TextFace, int(g.detailTextMaxWidth()))))
+	format := func(v *float64) string {
+		if v == nil {
+			return "—"
+		}
+		return fmt.Sprintf("%.1f", *v)
+	}
+	var rows []tableRow
+	for _, d := range p.Devices {
+		cell := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()))
+		label := wrapSelectorLabel(d.Label, *g.theme.ButtonTheme.TextFace, max(60, g.detailPanePreferredWidth()/2-32))
+		button := g.projectButton(cell, label, func() {
+			g.clusterOpen(d.Route)
+		})
+		button.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
+		rows = append(rows, tableRow{cell, g.tableText(format(d.Speed.Prefill) + " / " + format(d.Speed.Eval))})
+	}
+	c.AddChild(g.borderedTable(tableRow{g.tableText("Device"), g.tableText("tps prefill/eval")}, rows...))
 }
