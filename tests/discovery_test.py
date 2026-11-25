@@ -9,11 +9,12 @@ import json
 import queue
 import socket
 import sqlite3
+import sys
 import tempfile
 import threading
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 source = Path(__file__).resolve().parents[1] / "internal/adapters/discovery/linux.py"
 spec = importlib.util.spec_from_file_location("linux_discovery", source)
@@ -65,6 +66,26 @@ class BootstrapTest(unittest.TestCase):
             self.assertFalse(worker.is_alive())
             with self.assertRaises(ConnectionRefusedError):
                 socket.create_connection(("127.0.0.1", port), timeout=2)
+
+
+class PublicationTest(unittest.TestCase):
+    def test_claimed_worker_only_answers_exact_service_lookups(self):
+        spec = importlib.util.spec_from_file_location("publication", source.with_name("publish.py"))
+        publication = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(publication)
+        server = Mock()
+        server.GetHostNameFqdn.return_value = "worker.local"
+        group = Mock()
+        with patch.dict(sys.modules, dbus=Mock(ByteArray=bytes)):
+            publication.publish_endpoint(group, server, 7, "worker", 1234, False)
+            group.AddService.assert_called_once()
+            group.reset_mock()
+            publication.publish_endpoint(group, server, 7, "worker", 1234, True)
+            group.AddService.assert_not_called()
+            records = [call.args for call in group.AddRecord.call_args_list]
+            self.assertEqual([r[5] for r in records], [33, 16])
+            self.assertEqual(records[0][7], b"\0\0\0\0\x04\xd2\x06worker\x05local\0")
+            group.Commit.assert_called_once()
 
 
 class FirstStartTest(unittest.TestCase):

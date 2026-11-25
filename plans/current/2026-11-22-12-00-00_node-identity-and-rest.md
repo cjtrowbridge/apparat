@@ -71,3 +71,5 @@ For implementation checkpoints, run checkout identity before edits, package and 
 The [personal cluster execution plan](2026-11-22-15-00-00_personal-cluster.md) governs portable user pairing, user-owned claims, SQLite policy and the initial queue slice.
 
 Worker claiming uses the existing unlocked credentials directly from discovery. The host-confirmed owner’s verified login establishes ownership. Two-way OTP belongs to personal app pairing.
+
+- [x] Phase 10 worker discovery ends after the first committed claim. Verify withdrawal, authenticated endpoint continuity and saved-host resolution after restart. Keep personal identity pairing separate from the signed worker login.

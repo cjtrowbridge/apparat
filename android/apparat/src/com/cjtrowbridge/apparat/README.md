@@ -37,3 +37,5 @@ Native speech revisions replace the selected range directly. Cancelling restores
 - `PromptGameView.java`: Sizes the canvas above the Android keyboard and routes printable hardware keys into the focused global prompt. Software-keyboard composition uses the engine IME. Verify rapid typing, keyboard dismissal and visibility of the prompt and PTT on the Pixel.
 
 When testing the planning prompt, inspect the first frame that settles after the keyboard opens, before typing. The bottom of the HUD should meet the keyboard and the heading should remain visible. Repeat after typing and after dismissal and reopening. On Android 11 and newer the activity fits the canvas above the IME. Canvas editors use a top-edge vertical IME anchor so the engine keeps the resized surface stationary from the first frame. The editor draws its caret at the current selection.
+
+LanBrowser resolves saved worker service names directly on the foreground Wi-Fi network. This allows pinned connections to resume after a worker has withdrawn from the new-device browser.

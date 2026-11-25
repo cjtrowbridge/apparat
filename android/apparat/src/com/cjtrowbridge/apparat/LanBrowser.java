@@ -45,31 +45,17 @@ final class LanBrowser {
     }
     String resolveSaved(String host) {
         if (Build.VERSION.SDK_INT < 33) return "";
+        Network active = connectivity.getActiveNetwork();
+        NetworkCapabilities caps = connectivity.getNetworkCapabilities(active);
+        if (caps == null || !caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return "";
         synchronized (this) {
             if (!foreground) return "";
         }
-        LanBrowser search = new LanBrowser(activity);
-        search.foreground(true);
-        try {
-            for (int attempt=0; attempt<24; attempt++) {
-                synchronized (this) {
-                    if (!foreground) return "";
-                }
-                search.browse(true);
-                Network active = connectivity.getActiveNetwork();
-                android.net.LinkProperties link = connectivity.getLinkProperties(active);
-                if (link != null && link.getInterfaceName() != null) {
-                    String value = search.resolve(link.getInterfaceName(),host);
-                    if (!value.isEmpty()) return value;
-                }
-                Thread.sleep(200);
-            }
-        } catch (InterruptedException error) {
-            Thread.currentThread().interrupt();
-        } finally {
-            search.foreground(false);
-        }
-        return "";
+        NsdServiceInfo saved = new NsdServiceInfo();
+        saved.setServiceName(host);
+        saved.setServiceType("_apparat._tcp");
+        saved.setNetwork(active);
+        return resolveEndpoint(active, saved, true);
     }
     String resolve(String device, String name) {
         final Network expected;
@@ -81,6 +67,10 @@ final class LanBrowser {
             if (!foreground || expected == null || selected == null || link == null ||
                 !device.equals(link.getInterfaceName()) || !expected.equals(connectivity.getActiveNetwork())) return "";
         }
+        return resolveEndpoint(expected, selected, false);
+    }
+    private String resolveEndpoint(Network expected, NsdServiceInfo selected, boolean saved) {
+        String name = selected.getServiceName();
         java.util.concurrent.ArrayBlockingQueue<String> answer = new java.util.concurrent.ArrayBlockingQueue<>(1);
         try {
             nsd.resolveService(selected, new NsdManager.ResolveListener() {
@@ -90,8 +80,8 @@ final class LanBrowser {
                 public void onServiceResolved(NsdServiceInfo result) {
                     String address = "";
                     synchronized (LanBrowser.this) {
-                        if (foreground && expected.equals(network) && expected.equals(connectivity.getActiveNetwork()) &&
-                            names.containsKey(name) && name.equals(result.getServiceName()) &&
+                        if (foreground && expected.equals(connectivity.getActiveNetwork()) &&
+                            (saved || (expected.equals(network) && names.containsKey(name))) && name.equals(result.getServiceName()) &&
                             result.getHost() != null && result.getPort() > 0) {
                             String host = result.getHost().getHostAddress();
                             address = (host.contains(":") ? "[" + host + "]" : host) + ":" + result.getPort();

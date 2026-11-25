@@ -6,7 +6,6 @@ import hashlib
 import http.server
 import json
 import os
-import re
 import select
 import shutil
 import socket
@@ -281,18 +280,18 @@ def serve(db, rule, headless=False):
             import dbus
             bus, server = avahi()
             group = dbus.Interface(bus.get_object("org.freedesktop.Avahi", server.EntryGroupNew()), "org.freedesktop.Avahi.EntryGroup")
-            name = os.environ.get("APPARAT_DISCOVERY_NAME", "")
+            name = discovery_name()
             if not name:
-                try:
-                    with open(os.environ["APPARAT_NAME_FILE"]) as source:
-                        name = source.read(64)
-                except (OSError, KeyError):
-                    return
-            if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", name) or name.lower() in ("localhost", "localhost4", "localhost6", "ip6-localhost", "ip6-loopback", "loopback", "android", "unknown", "none"):
                 return
-            group.AddService(index, 0, 0, name, TYPE, "local", "", listener.server_port, dbus.Array([], signature="ay"))
-            group.Commit()
+        advertised = None
         while permitted():
+            if dev not in ("lo", "tailscale0"):
+                claimed = headless and db.execute("SELECT EXISTS(SELECT 1 FROM worker_cluster)").fetchone()[0]
+                if advertised != claimed:
+                    if advertised is not None:
+                        group.Reset()
+                    publish_endpoint(group, server, index, name, listener.server_port, claimed)
+                    advertised = claimed
             listener.handle_request()
 
 

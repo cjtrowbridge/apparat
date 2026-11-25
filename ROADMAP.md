@@ -1738,6 +1738,7 @@ completed prototype checklists retain R2 as historical evidence of the old bindi
 
 ### First deliverable — browse nearby Apparat hosts
 
+- [x] Withdraw headless workers from new-device browsing after a committed claim, retain direct hostname resolution and the authenticated API across restarts, and keep OTP exclusive to personal identity transfer.
 - [x] Put ➕ Add New Device first under Cluster Devices and open the discovery detail screen. Browse with hosting off and show transient candidates. Offer a ➕ hostname button per discovered candidate and an unpaired detail screen. Claiming becomes available with authenticated enrollment.
 - [ ] Implement Settings and headless grants, the isolated anonymous GET /v1 JSON responder, and per-interface DNS-SD advertisement and browsing. Demonstrate Linux-to-Pixel discovery on an approved network and silence on an unapproved second interface, including after revocation or roaming. Linux wired hosting, withdrawal and rediscovery passed on the local LAN. Roaming and other OS hosting remain open.
 

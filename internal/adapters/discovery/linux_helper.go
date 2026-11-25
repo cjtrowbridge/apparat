@@ -9,7 +9,12 @@ import (
 )
 
 //go:embed linux.py
-var source string
+var linuxSource string
+
+//go:embed publish.py
+var publication string
+
+var source = publication + "\n" + linuxSource
 
 func Command(ctx context.Context, args ...string) *exec.Cmd {
 	return exec.CommandContext(ctx, "/usr/bin/python3", append([]string{"-c", "import sys;SOURCE=sys.argv.pop(1);exec(SOURCE)", source}, args...)...)
