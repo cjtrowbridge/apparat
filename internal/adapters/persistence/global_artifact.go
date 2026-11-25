@@ -122,3 +122,24 @@ func (db *DB) GlobalVersion(ctx context.Context, user, id string) (revision int6
 	err = db.sql.QueryRowContext(ctx, "SELECT revision FROM global_chats WHERE user=? AND session=?", user, id).Scan(&revision)
 	return
 }
+
+// Use the locally cached pending turn to follow a session after the GUI outbox was acknowledged.
+func (db *DB) PendingPlanningRevisions(ctx context.Context, user string) (map[string]int64, error) {
+	rows, err := db.sql.QueryContext(ctx, `SELECT session,revision FROM global_chats WHERE user=? AND pending=0 AND
+ json_extract(body,'$.Turns[#-1].Reply')='' AND json_extract(body,'$.Turns[#-1].Stopped')=''`, user)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int64{}
+	for rows.Next() {
+		var id string
+		var revision int64
+		err = rows.Scan(&id, &revision)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = revision
+	}
+	return out, rows.Err()
+}

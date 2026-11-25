@@ -184,19 +184,7 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 			cursor = reply.Headers[len(reply.Headers)-1].ID
 		}
 		if id != "" {
-			q := domain.InferenceCommand{Operation: "global-version", Global: domain.GlobalRequest{Session: id}}
-			head, e := c.Inference(ctx, q)
-			if e != nil || head.Chunk == nil || head.Chunk.Revision <= known {
-				continue
-			}
-			q.Operation = "global-get"
-			reply, e := c.Inference(ctx, q)
-			if e == nil && reply.Artifact != nil && reply.Artifact.User == user {
-				e = n.database.PutGlobalArtifact(ctx, *reply.Artifact, false)
-				if e == nil {
-					known = reply.Artifact.Version
-				}
-			}
+			known = n.refreshGlobalRevision(ctx, c, user, id, known)
 		}
 	}
 	a, e := n.database.GlobalArtifact(ctx, user, id)
@@ -299,4 +287,47 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 		v.Headers = append(v.Headers, h)
 	}
 	return v, err
+}
+
+// Fetch a transcript only when a worker has a newer revision for this user.
+func (n *Runtime) refreshGlobalRevision(ctx context.Context, c *httpapi.WorkerClient, user, id string, known int64) int64 {
+	q := domain.InferenceCommand{Operation: "global-version", Global: domain.GlobalRequest{Session: id}}
+	head, e := c.Inference(ctx, q)
+	if e != nil || head.Chunk == nil || head.Chunk.Revision <= known {
+		return known
+	}
+	q.Operation = "global-get"
+	reply, e := c.Inference(ctx, q)
+	if e != nil || reply.Artifact == nil || reply.Artifact.User != user {
+		return known
+	}
+	e = n.database.PutGlobalArtifact(ctx, *reply.Artifact, false)
+	if e != nil {
+		return known
+	}
+	return reply.Artifact.Version
+}
+
+func (n *Runtime) syncPersonalPlanning(ctx context.Context) {
+	user := n.PlanningUser()
+	if user == "" {
+		return
+	}
+	entries, e := n.database.PlanningEntries(ctx, user)
+	if e != nil {
+		return
+	}
+	pending, e := n.database.PendingPlanningRevisions(ctx, user)
+	if e != nil || len(entries) == 0 && len(pending) == 0 {
+		return
+	}
+	membership, clients, _ := n.planningClients(ctx, user)
+	if len(entries) > 0 {
+		n.syncPlanning(ctx, user, entries, membership, clients)
+	}
+	for id, known := range pending {
+		for _, c := range clients {
+			known = n.refreshGlobalRevision(ctx, c, user, id, known)
+		}
+	}
 }

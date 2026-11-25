@@ -82,6 +82,12 @@ func (node *Runtime) authenticateWorker(ctx context.Context, network, host strin
 	node.mu.Unlock()
 	node.RequestSync()
 	if client.Access.Admin {
+		workers, lookupErr := node.KnownWorkers(ctx)
+		if lookupErr == nil {
+			_, _ = client.Inference(ctx, domain.InferenceCommand{Operation: "status", Roster: membershipFor(client.Access.Cluster, workers)})
+		}
+	}
+	if client.Access.Admin {
 		return "Connected as a cluster administrator.", nil
 	}
 	if client.Access.Admission == "approved" {

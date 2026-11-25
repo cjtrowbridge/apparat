@@ -71,11 +71,22 @@ func TestAutomaticWorkerAndStrandedTurn(t *testing.T) {
 		t.Fatal("expected one owner turn")
 	}
 	node.p.runtime.reconcileChatWork(ctx, work[0])
+	gui.syncPersonalPlanning(ctx)
+	entries, err = db.PlanningEntries(ctx, user)
+	mustInference(t, err)
+	if len(entries) != 0 {
+		t.Fatal("worker did not acknowledge the pending turn")
+	}
 	if !node.p.dispatchNext(ctx) {
 		t.Fatal("singleton did not dispatch")
 	}
 	node.p.runtime.reconcileChatWork(ctx, work[0])
-	gui.syncPlanning(ctx, user, entries, r, clients)
+	gui.syncPersonalPlanning(ctx)
+	cached, err := db.GlobalArtifact(ctx, user, id)
+	mustInference(t, err)
+	if cached.Session.Turns[0].Reply != "one reply" {
+		t.Fatal("reply missing from originating device with chat closed")
+	}
 	view, err := gui.PlanningView(ctx, user, id)
 	mustInference(t, err)
 	if view.Session == nil || len(view.Session.Turns) != 1 || view.Session.Turns[0].Reply != "one reply" || !view.Acknowledged {

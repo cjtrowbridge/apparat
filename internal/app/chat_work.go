@@ -44,12 +44,7 @@ func (n *Runtime) runChatWork(ctx context.Context) {
 	defer tick.Stop()
 	for ctx.Err() == nil {
 		if n.Personal != nil {
-			user := n.PlanningUser()
-			entries, e := n.database.PlanningEntries(ctx, user)
-			if user != "" && e == nil && len(entries) > 0 {
-				r, c, _ := n.planningClients(ctx, user)
-				n.syncPlanning(ctx, user, entries, r, c)
-			}
+			n.syncPersonalPlanning(ctx)
 		}
 		if n.inference != nil {
 			n.inference.recoverMaintenance(ctx)
