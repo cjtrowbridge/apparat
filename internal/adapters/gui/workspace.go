@@ -26,6 +26,7 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
+	terminalWait                                 *domain.ChatTerminalWait
 	lastChatRequest                              domain.WorkspaceRequest
 	agentThread, chatDraft                       bool
 	threadTitle                                  string
@@ -216,6 +217,7 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 		w.mode = "conversation"
 		w.choices = v.Choices
 	case "agent-chat", "agent-rename", "agent-post":
+		w.terminalWait = v.TerminalWait
 		w.mode = "conversation"
 		w.choices = v.Choices
 		w.threadTitle = v.Detail

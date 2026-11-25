@@ -48,7 +48,7 @@ func (g *Game) planningTitle(title string, width int) string {
 }
 
 func (g *Game) planningHeader(s *planningSession) *widget.Container {
-	bar := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44)))
+	bar := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.MinSize(0, 44), widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 	left := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal), widget.RowLayoutOpts.Spacing(8))))
 	left.AddChild(g.planningIcon("1f519", "Back to sessions", g.planningBack), g.planningIcon("2795", "New session", g.newPlanning))
 	title := g.planningTitle(s.Description, max(1, g.hudPreferredWidth()-2*(48+8+48+8)))
@@ -118,7 +118,11 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 		s.scroll = p.pane.ScrollTop
 	}
 	compact := g.height < 590
-	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}), widget.GridLayoutOpts.Spacing(0, bodyGap))))
+	gap := bodyGap
+	if compact {
+		gap = 0
+	}
+	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}), widget.GridLayoutOpts.Spacing(0, gap))))
 	conversation := planningColumn()
 	if p.sync.notice != "" {
 		conversation.AddChild(g.hudText(p.sync.notice))
@@ -149,12 +153,21 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 			g.chatBubble(conversation, status, false, true, info)
 		}
 	}
-	p.pane = g.planningScroll(conversation)
-	p.pane.ScrollTop = s.scroll
-	form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Spacing(bodyGap), widget.RowLayoutOpts.Padding(&widget.Insets{Right: 2*pttRadius + pttMargin + pttTravel}))))
-	if compact {
-		form = widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2), widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false}), widget.GridLayoutOpts.Spacing(bodyGap, 0), widget.GridLayoutOpts.Padding(&widget.Insets{Right: 2*pttRadius + pttMargin + pttTravel}))))
+	a, t := g.currentChatTerminal()
+	if t != nil && t.permissionPage {
+		pane := planningColumn()
+		g.chatPermissionPage(pane, a, t)
+		return g.globalChatDetail(s, g.planningScroll(pane))
 	}
+	content := planningColumn()
+	if t != nil {
+		g.chatPanes(content, conversation, a, t)
+	} else {
+		content.AddChild(conversation)
+	}
+	p.pane = g.planningScroll(content)
+	p.pane.ScrollTop = s.scroll
+	form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Spacing(gap))))
 	surface := g.multilineInput(form, "", &g.globalDraft)
 	surface.submit = g.submitPlanning
 	if p.picker.restore {
@@ -163,17 +176,22 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 		p.picker.restore = false
 	}
 	if compact {
-		surface.GetWidget().MinHeight = 2*surface.height + 8
+		surface.GetWidget().MinHeight = surface.height + 8
 	} else {
 		surface.GetWidget().MinHeight = 3*surface.height + 8
 	}
 	g.globalField = surface.TextInput
-	p.send = g.projectButton(form, "Send", g.submitPlanning)
-	if compact {
-		p.send.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 44, VerticalPosition: widget.GridLayoutPositionCenter}
-	}
+	buttons := chatComposerButtons(form)
+	g.addModelButton(buttons)
+	g.chatPermissionButton(buttons, a, t)
+	p.send = g.projectButton(buttons, "Send", g.submitPlanning)
 	g.updatePlanningControls()
-	body.AddChild(g.planningHeader(s), p.pane, form)
+	header := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Spacing(gap))))
+	header.AddChild(g.planningHeader(s))
+	if t != nil {
+		g.chatViewButtons(header, t)
+	}
+	body.AddChild(header, p.pane, form)
 	return body
 }
 

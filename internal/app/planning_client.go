@@ -21,6 +21,9 @@ func (n *Runtime) SavePlanning(ctx context.Context, user, op string, q domain.Gl
 	if user == "" || user != n.PlanningUser() {
 		return errors.New("unlock your personal identity")
 	}
+	if op == "global-post" {
+		q.TerminalHost = n.ChatTerminalDevice()
+	}
 	return n.database.SavePlanning(ctx, user, op, q)
 }
 
@@ -212,11 +215,14 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 	}
 	entries, err := n.database.PlanningEntries(ctx, user)
 	for _, entry := range entries {
+		if entry.Operation == "global-terminal-result" {
+			continue
+		}
 		g := entry.Request
 		at, _ := domain.ChatTime(g.Session)
 		h, exists := headers[g.Session]
 		if !exists {
-			h = domain.ChatHeader{Version: 1, ID: g.Session, Scope: domain.GlobalChat, Started: at, Model: g.Model, Description: g.Title}
+			h = domain.ChatHeader{Version: 1, ID: g.Session, TerminalHost: g.TerminalHost, Scope: domain.GlobalChat, Started: at, Model: g.Model, Description: g.Title}
 		}
 		if entry.Operation == "global-rename" {
 			h.Description = g.Title

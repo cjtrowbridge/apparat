@@ -44,6 +44,7 @@ func (n *Runtime) runChatWork(ctx context.Context) {
 	defer tick.Stop()
 	for ctx.Err() == nil {
 		if n.Personal != nil {
+			n.reconcileTerminalCallbacks(ctx)
 			n.syncPersonalPlanning(ctx)
 		}
 		if n.inference != nil {
@@ -94,7 +95,7 @@ func (n *Runtime) reconcileChatWork(ctx context.Context, w persistence.ChatWork)
 		return
 	}
 	steps := s.Turns[len(s.Turns)-1].Steps
-	if len(steps) == 0 {
+	if len(steps) == 0 || steps[len(steps)-1].Wait != nil || steps[len(steps)-1].Output != nil {
 		return
 	}
 	job := steps[len(steps)-1].Job

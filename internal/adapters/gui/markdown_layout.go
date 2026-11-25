@@ -199,7 +199,11 @@ func (g *Game) chatBubbleWidth() int {
 	if g.inWorkspace() {
 		pane = g.detailPanePreferredWidth()
 	}
-	return max(60, min(540, pane*4/5-24))
+	a, t := g.currentChatTerminal()
+	if t != nil && t.view == "split" {
+		pane = g.chatSplitWidth(g.chatSplitAvailable(a), t)
+	}
+	return max(44, min(540, pane*4/5-24))
 }
 func (g *Game) markdownText(value string, width int) *markdownPreview {
 	p := &markdownPreview{Text: widget.NewText(widget.TextOpts.Text("", g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor.Idle)), width: width, font: g.prefs.Font}

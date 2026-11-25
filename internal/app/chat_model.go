@@ -38,6 +38,12 @@ func (n *Runtime) DriveChat(ctx context.Context, a domain.ChatAddress, route str
 			t := &s.Turns[len(s.Turns)-1]
 			if len(t.Steps) > 0 {
 				last := t.Steps[len(t.Steps)-1]
+				if last.Wait != nil {
+					if !time.Now().Before(last.Wait.Deadline) {
+						return s.FinishTerminalWait(last.Job, "Wait expired. Check the terminal for the process state.", true), nil
+					}
+					return false, nil
+				}
 				if last.Route != route {
 					return false, errors.New("turn is bound to another route")
 				}
@@ -119,6 +125,12 @@ func (n *Runtime) DeliverChatOutput(ctx context.Context, a domain.ChatAddress, j
 					}
 					t.Reply = out.Text
 				case "tool_calls":
+					wait := terminalWait(job, out.Calls, time.Now())
+					if wait != nil && step.Route == "cluster" {
+						step.Wait = wait
+						step.Output = &out
+						return true, nil
+					}
 					results, err := n.chatToolBatch(ctx, a.Project, s.ID, s.Scope, out.Calls)
 					if err != nil {
 						return false, err

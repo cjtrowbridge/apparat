@@ -2,6 +2,8 @@
 // Credentials and working tree contents remain outside the registration.
 package domain
 
+import "time"
+
 type Project struct {
 	ID, Owner, Name, Location, Account string
 	RemoteHost, NextCursor             string
@@ -19,7 +21,8 @@ type LocalProjectSetup struct {
 
 // WorkspaceRequest addresses one registration and repository-relative path.
 type WorkspaceRequest struct {
-	Model                                                                 ModelRef `json:",omitzero"`
+	Deadline                                                              time.Time `json:",omitzero"`
+	Model                                                                 ModelRef  `json:",omitzero"`
 	Known                                                                 string
 	ProjectID, Action, Path, Base, Text, Argument, ID, Thread, RelatedRun string
 	Correlation                                                           string
@@ -40,6 +43,7 @@ type WorkspaceChange struct {
 	Directory                  bool `json:",omitempty"`
 }
 type WorkspaceView struct {
+	TerminalWait                             *ChatTerminalWait `json:",omitempty"`
 	ReadOnly, Unchanged                      bool
 	Changes                                  []WorkspaceChange
 	Choices                                  []WorkspaceChoice

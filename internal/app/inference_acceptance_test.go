@@ -231,7 +231,7 @@ func TestInferenceAgreement(t *testing.T) {
 			t.Fatal("missing global Markdown reply")
 		}
 	}
-
+	checkClusterTerminalToolContinuation(t, nodes, r, user, device)
 }
 
 func exerciseProjectQueue(t *testing.T, nodes []inferenceFixture, model domain.ModelRef) {

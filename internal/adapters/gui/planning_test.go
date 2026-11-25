@@ -24,6 +24,10 @@ type planningTestStore struct {
 	saved domain.GlobalRequest
 }
 
+func (s *planningTestStore) ChatTerminalDevice() string {
+	return "test-device"
+}
+
 func (s *planningTestStore) PlanningUser() string {
 	return "test-user"
 }
@@ -180,6 +184,19 @@ func TestCapturePlanning(t *testing.T) {
 		g.submitPlanning()
 		s.acknowledged = true
 	}
+	if strings.Contains(path, "terminal-") {
+		attachPlanningTestStore(g)
+		g.planning.current.TerminalHost = "test-device"
+		_, pane := g.currentChatTerminal()
+		pane.permission = "yolo"
+		pane.permissionPage = strings.Contains(path, "permissions")
+		g.planning.current.scroll = 0
+		g.planning.pane = nil
+		pane.view = "split"
+		pane.screen = "$ pwd\n/project"
+		pane.state = "Running"
+	}
+
 	g.rebuildUI(g.shell.Snapshot())
 	ebiten.SetWindowSize(w, h)
 	c := &inventoryCapture{g: g, path: path}

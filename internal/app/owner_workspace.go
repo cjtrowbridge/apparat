@@ -48,7 +48,7 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 	}
 	scope := "read"
 	switch q.Action {
-	case "save", "post", "agent-create", "agent-rename", "agent-post":
+	case "save", "post", "agent-create", "agent-rename", "agent-terminal-result", "agent-post":
 		scope = "write"
 	case "run":
 		scope = "tasks"
@@ -67,7 +67,7 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 		}
 	}
 	switch q.Action {
-	case "chat", "threads", "post", "agent-chat", "agent-create", "agent-rename", "agent-post":
+	case "chat", "threads", "post", "agent-chat", "agent-create", "agent-rename", "agent-terminal-result", "agent-post":
 		n.workspaceMu.Lock()
 		defer n.workspaceMu.Unlock()
 		return n.workspaceThread(ctx, location, caller.User, q)

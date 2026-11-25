@@ -14,6 +14,7 @@ const (
 	gestureTabs
 	gestureBody
 	gestureDivider
+	gestureChatDivider
 	gesturePTT
 )
 

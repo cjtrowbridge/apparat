@@ -138,6 +138,7 @@ func (game *Game) updatePointerState() {
 	x, y := ebiten.CursorPosition()
 	game.updateDebugOverlayDrag(x, y)
 	game.updateTabStripDrag(x, y)
+	game.chatDividerMouse(x, y)
 	game.updateDividerDrag(x, y)
 	game.updateBodyScrollMouse(x, y)
 }
@@ -173,6 +174,7 @@ func (game *Game) updateTouchDrag() {
 				game.debugDragDY = y - game.debugOverlayY
 				// The entire overlay captures input; only its title initiates movement.
 				game.gesture.Movable = pointInRect(x, y, game.debugOverlayX, game.debugOverlayY, width, 30)
+			case game.beginChatDivider(x, y, true, id):
 			case game.tabScroll != nil && imagePoint(x, y).In(game.tabScroll.GetWidget().Rect):
 				game.claimGesture(gestureTabs, true, id)
 				game.tabStripLastX = x
@@ -190,6 +192,13 @@ func (game *Game) updateTouchDrag() {
 		return
 	}
 	switch game.gesture.Owner {
+	case gestureChatDivider:
+		if inpututil.IsTouchJustReleased(game.gesture.ID) {
+			game.releaseGesture(gestureChatDivider)
+		} else {
+			x, _ := ebiten.TouchPosition(game.gesture.ID)
+			game.moveChatDivider(x)
+		}
 	case gestureDebug:
 		game.updateDebugTouch()
 	case gestureTabs:

@@ -148,7 +148,7 @@ func (p *inferencePool) InferenceUser(ctx context.Context, a persistence.Access,
 		rev, e := p.db.GlobalVersion(ctx, a.User, q.Global.Session)
 		v.Chunk = &domain.GlobalChunk{Revision: rev}
 		return v, e
-	case "global-get", "global-list", "global-post", "global-rename":
+	case "global-get", "global-list", "global-post", "global-rename", "global-terminal-result":
 		return p.globalOperation(ctx, a, q)
 	case "status":
 		if len(q.Roster.Peers) != 0 && a.Admin && q.Roster.Cluster == a.Cluster {

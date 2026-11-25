@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/hajimehoshi/ebiten/v2"
+	"reflect"
 	"slices"
 	"strings"
 	"time"
@@ -115,7 +116,8 @@ func (g *Game) pollProjectConversation() {
 		select {
 		case r := <-f.chatRead:
 			f.chatRead = nil
-			if r.err == nil && r.request.ProjectID == w.id && r.request.Thread == w.thread && (!slices.Equal(r.view.Choices, w.choices) || r.view.Detail != w.threadTitle) {
+			if r.err == nil && r.request.ProjectID == w.id && r.request.Thread == w.thread && (!slices.Equal(r.view.Choices, w.choices) || r.view.Detail != w.threadTitle || !reflect.DeepEqual(r.view.TerminalWait, w.terminalWait)) {
+				w.terminalWait = r.view.TerminalWait
 				w.choices = r.view.Choices
 				w.threadTitle = r.view.Detail
 				g.layoutDirty = true

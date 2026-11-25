@@ -25,6 +25,9 @@ func (p *inferencePool) sessionWriter(ctx context.Context, user, id string, r do
 }
 
 func (p *inferencePool) receiveTurn(ctx context.Context, a persistence.Access, g domain.GlobalRequest) (v domain.InferenceReply, err error) {
+	if a.Device != "" && g.TerminalHost != "" && g.TerminalHost != a.Device {
+		return v, httpapi.ErrDenied
+	}
 	if !domain.ValidID(g.Session) || !domain.ValidID(g.Turn) || !g.Model.Valid() || strings.TrimSpace(g.Input) == "" || len(g.Home) != 43 {
 		return v, errors.New("invalid global turn")
 	}

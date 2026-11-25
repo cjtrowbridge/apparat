@@ -45,8 +45,8 @@ func TestChatPrimingPrefix(t *testing.T) {
 		}
 		return p
 	}
-	first := build("one", "first", read(), false)
-	second := build("two", "second", read(), false)
+	first := build("cluster", "first", read(), false)
+	second := build("cluster", "second", read(), false)
 	if first.System != second.System || !strings.HasSuffix(first.System, primeInstruction) ||
 		!strings.Contains(first.System, "Follow AGENTS.md") || strings.Contains(first.System, "Follow agents.md") {
 		t.Fatal("unstable or incomplete project prefix")
@@ -62,14 +62,14 @@ func TestChatPrimingPrefix(t *testing.T) {
 
 // A changed digest requires an intentional cache-prefix migration.
 func TestSharedChatPrefixFingerprint(t *testing.T) {
-	var p domain.ChatRequest
+	p := domain.ChatRequest{Route: "cluster"}
 	p.System = chatSystem(&p, "", false)
 	prefix, err := json.Marshal([]any{p.System, p.Tools, domain.ChatReadyReply})
 	if err != nil {
 		t.Fatal(err)
 	}
 	got := fmt.Sprintf("%x", sha256.Sum256(prefix))
-	if got != "4828d2c1ed934e7d16ec08b2d24dbcfb188f6ebd05841446a174613a65d4d2e0" {
+	if got != "fb75aab1540028f36d0d4b125cfe0df2ae0c87373f5f803bd4cf702f76d16b78" {
 		t.Fatalf("shared prefix changed: %s", got)
 	}
 }

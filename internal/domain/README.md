@@ -47,3 +47,5 @@ The canonical delivery allocates the number in release.txt before compilation. R
 
 - `global_artifact.go`: Global session replica envelope and deterministic transcript writer.
 - `inference_claim_test.go`: Checks adaptive timing, cold-start votes, withdrawal replay and owner fencing.
+
+- `chat_terminal.go`: Defines a pending terminal observation or command and consumes a result for its matching model job.

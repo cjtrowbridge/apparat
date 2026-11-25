@@ -29,6 +29,19 @@ func (n *Runtime) workspaceAgentChat(ctx context.Context, location, user string,
 		if s.Scope != domain.ProjectChat {
 			return false, errors.New("expected a project session")
 		}
+		if q.Action == "agent-terminal-result" {
+			if len(q.Argument) > 4096 || !domain.ValidID(q.ID) {
+				return false, errors.New("invalid terminal callback")
+			}
+			if s.TerminalWait() == nil {
+				return false, nil
+			}
+			allowed, e := n.database.OwnsChatWork(ctx, user, domain.ChatAddress{Project: q.ProjectID, Session: id, Turn: s.Pending()})
+			if e != nil || !allowed {
+				return false, errors.New("terminal callback belongs to another user")
+			}
+			return s.FinishTerminalWait(q.ID, q.Argument, !q.Approved), nil
+		}
 		if q.Action == "agent-rename" {
 			title := strings.TrimSpace(q.Argument)
 			if s.Description == title {
@@ -68,6 +81,15 @@ func (n *Runtime) workspaceAgentChat(ctx context.Context, location, user string,
 	}
 	if err != nil {
 		return v, err
+	}
+	if s.TerminalWait() != nil {
+		owns, e := n.database.OwnsChatWork(ctx, user, domain.ChatAddress{Project: q.ProjectID, Session: id, Turn: s.Pending()})
+		if e != nil {
+			return v, e
+		}
+		if owns {
+			v.TerminalWait = s.TerminalWait()
+		}
 	}
 	v.Detail = s.Description
 	v.Base = s.ID

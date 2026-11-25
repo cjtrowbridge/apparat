@@ -21,6 +21,8 @@ type chatTool struct {
 
 // Read-only tools may be rerun if the owner crashes before the result is committed.
 var chatTools = []chatTool{
+	{"terminal_screen", "Request the current chat terminal screen from its host. Call this tool alone.", nil, nil},
+	{"terminal_command", "Request user approval for one command in an isolated terminal in this chat. Call alone. Supply command and timeout_seconds as strings (1–1800 seconds).", []string{"command", "timeout_seconds"}, nil},
 	{"projects", "List registered projects visible in this session on this owner. Filter by project ID or name; use cursor to continue.", []string{"project", "cursor"}, func(n *Runtime, ctx context.Context, project, session string, scope domain.ChatScope, args map[string]string) (string, error) {
 		return n.chatProjectList(ctx, project, session, scope, args["project"], args["cursor"])
 	}},
@@ -130,6 +132,10 @@ func (n *Runtime) chatToolBatch(ctx context.Context, project, session string, sc
 			args, valid := t.arguments(c.Arguments)
 			if !valid {
 				r.Content = "Invalid arguments. Use the declared string fields and a valid continuation ID."
+				break
+			}
+			if t.query == nil {
+				r.Content = "Use one terminal operation per tool batch, with the declared arguments."
 				break
 			}
 			content, err := t.query(n, ctx, project, session, scope, args)

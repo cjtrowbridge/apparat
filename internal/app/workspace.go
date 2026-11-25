@@ -30,7 +30,7 @@ func (n *Runtime) workspaceFile(ctx context.Context, location string, q domain.W
 }
 func (n *Runtime) workspaceThread(ctx context.Context, location, user string, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
 	switch q.Action {
-	case "agent-create", "agent-chat", "agent-rename", "agent-post":
+	case "agent-create", "agent-chat", "agent-rename", "agent-terminal-result", "agent-post":
 		return n.workspaceAgentChat(ctx, location, user, q)
 	case "threads":
 		v.Choices, err = n.database.ChatThreads(ctx, q.ProjectID)
@@ -205,7 +205,7 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 	case "transactions":
 		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, "save")
 		return v, err
-	case "threads", "chat", "post", "agent-create", "agent-chat", "agent-rename", "agent-post":
+	case "threads", "chat", "post", "agent-create", "agent-chat", "agent-rename", "agent-terminal-result", "agent-post":
 		var user string
 		if n.Personal != nil {
 			user = n.Personal.Fingerprint()

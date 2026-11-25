@@ -192,6 +192,7 @@ func (game *Game) Update() error {
 	game.trackWindow()
 	game.receiveServices()
 	game.pollPlanning()
+	game.pollChatTerminal()
 	game.pollProjectConversation()
 	game.pollChatPreview()
 	if game.layoutDirty && game.gesture.Owner == gestureNone {

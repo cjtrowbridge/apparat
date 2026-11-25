@@ -58,11 +58,16 @@ func (g *Game) finishWorkspaceLayout() {
 
 func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.PreferredSizeLocateableWidget {
 	box := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{true, false}))), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(g.detailLayoutData())))
+	a, t := g.currentChatTerminal()
+	if t != nil && t.permissionPage {
+		page := planningColumn()
+		g.chatPermissionPage(page, a, t)
+		return g.planningScroll(page)
+	}
 	scroll.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0}
 	box.AddChild(scroll)
 	c := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))))
 	w := &g.projects.workspace
-	g.addModelButton(c)
 	field := g.multilineInput(c, "Message", &w.message)
 	if w.attachment != "" {
 		c.AddChild(g.detailText(w.attachmentLabel))
@@ -88,7 +93,10 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 		}
 		g.workspaceRequest(action)
 	}
-	post := g.projectButton(c, postLabel, field.submit)
+	buttons := chatComposerButtons(c)
+	g.addModelButton(buttons)
+	g.chatPermissionButton(buttons, a, t)
+	post := g.projectButton(buttons, postLabel, field.submit)
 	post.GetWidget().Disabled = !canSend()
 	g.projectButton(c, "Attach a run", func() {
 		g.workspaceGo("attachments", "runs")

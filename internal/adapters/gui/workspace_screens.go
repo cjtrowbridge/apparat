@@ -50,6 +50,9 @@ func (g *Game) workspaceGo(mode, action string) {
 	}
 }
 func (g *Game) workspaceBack() {
+	if g.closeChatPermissionPage() {
+		return
+	}
 	if g.projects.pending != nil {
 		return
 	}

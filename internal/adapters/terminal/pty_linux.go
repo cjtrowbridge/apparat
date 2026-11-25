@@ -19,8 +19,13 @@ func prerequisite() string {
 	}
 	return ""
 }
-func start(location string) (*os.File, *exec.Cmd, error) {
-	args := []string{"--user", "--scope", "--quiet", "--property=TasksMax=64", "--property=MemoryMax=512M", "--", "/usr/bin/prlimit", "--as=536870912", "--nofile=128", "--fsize=16777216", "--", "/usr/bin/bwrap", "--die-with-parent", "--unshare-all", "--unshare-user", "--disable-userns", "--ro-bind", "/usr", "/usr", "--symlink", "usr/bin", "/bin", "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64", "--proc", "/proc", "--dev", "/dev", "--size", "16777216", "--tmpfs", "/tmp", "--ro-bind", location, "/project", "--chdir", "/project", "--clearenv", "--setenv", "HOME", "/tmp", "--setenv", "TERM", "xterm", "--setenv", "PATH", "/usr/bin:/bin", "--", "/bin/sh", "-i"}
+func start(location, command string) (*os.File, *exec.Cmd, error) {
+	args := []string{"--user", "--scope", "--quiet", "--property=TasksMax=64", "--property=MemoryMax=512M", "--", "/usr/bin/prlimit", "--as=536870912", "--nofile=128", "--fsize=16777216", "--", "/usr/bin/bwrap", "--die-with-parent", "--unshare-all", "--unshare-user", "--disable-userns", "--ro-bind", "/usr", "/usr", "--symlink", "usr/bin", "/bin", "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64", "--proc", "/proc", "--dev", "/dev", "--size", "16777216", "--tmpfs", "/tmp", "--ro-bind", location, "/project", "--chdir", "/project", "--clearenv", "--setenv", "HOME", "/tmp", "--setenv", "TERM", "xterm", "--setenv", "PATH", "/usr/bin:/bin", "--", "/bin/sh"}
+	if command == "" {
+		args = append(args, "-i")
+	} else {
+		args = append(args, "-c", command)
+	}
 	cmd := exec.Command("/usr/bin/systemd-run", args...)
 	cmd.Env = []string{"PATH=/usr/bin:/bin", "XDG_RUNTIME_DIR=" + os.Getenv("XDG_RUNTIME_DIR"), "DBUS_SESSION_BUS_ADDRESS=" + os.Getenv("DBUS_SESSION_BUS_ADDRESS")}
 	f, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: 24, Cols: 80})

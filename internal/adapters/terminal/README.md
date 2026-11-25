@@ -11,3 +11,7 @@ Linux hosts run an isolated PTY with a read-only project, private temporary stor
 - `terminal_linux_test.go`: Exercises the isolated PTY through the same session actions used by the GUI.
 
 - `history.go`: Persists terminal bytes in numbered chunks under the session's private directory.
+
+Chat-scoped workspace actions use the `chat-terminal-` prefix and require a canonical chat session ID in `Thread`. The host stores these sessions under the user and project terminal directory in `chats/<thread>/<terminal>`. The original project terminal actions retain their existing directories. Each scope has independent paging, live control and retained screens.
+
+- `chat_policy.go`: Stores the chat's private permission setting and binds a tracked command to its exact bytes and deadline. The job ID names a separate terminal under the chat. An interrupted process with no saved exit status has an unknown outcome.

@@ -31,6 +31,7 @@ func (g *Game) actionCatalog() []catalogAction {
 	}
 	g.bubbleActions(add)
 	g.modelActions(add)
+	g.terminalActions(add)
 	for index, tab := range g.shell.Snapshot().Tabs {
 		if !tab.Descriptor.Enabled || !tab.Descriptor.Visible {
 			continue

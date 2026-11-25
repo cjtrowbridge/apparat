@@ -35,17 +35,10 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.tabRadioGroup = nil
 	game.verticalScrolls = nil
 	game.divider = nil
+	game.planning.divider = nil
 	game.clampSplitWidth()
 	title := snapshot.ActiveTab().Title()
-	bottomInset := diagnosticsHeight
-	if game.inWorkspace() {
-		i := game.selectedSections[hud.TabProjects] - len(projectEntrySections)
-		p := game.projects.rows[i]
-		title = game.projectTitle(p) + " · " + p.Branch
-		if !game.debugOverlayOpen {
-			bottomInset = windowMargin
-		}
-	}
+	title, bottomInset := game.chatLayoutInsets(snapshot, title)
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
 			widget.AnchorLayoutOpts.Padding(&widget.Insets{

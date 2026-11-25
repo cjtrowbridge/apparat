@@ -17,13 +17,14 @@ const (
 )
 
 type ChatHeader struct {
-	Home        string    `yaml:"home,omitempty" json:",omitempty"`
-	Model       ModelRef  `yaml:"model,omitempty"`
-	Version     int       `yaml:"version"`
-	ID          string    `yaml:"session_id"`
-	Scope       ChatScope `yaml:"scope"`
-	Description string    `yaml:"description"`
-	Started     time.Time `yaml:"started_at"`
+	TerminalHost string    `yaml:"terminal_host,omitempty" json:",omitempty"`
+	Home         string    `yaml:"home,omitempty" json:",omitempty"`
+	Model        ModelRef  `yaml:"model,omitempty"`
+	Version      int       `yaml:"version"`
+	ID           string    `yaml:"session_id"`
+	Scope        ChatScope `yaml:"scope"`
+	Description  string    `yaml:"description"`
+	Started      time.Time `yaml:"started_at"`
 }
 
 type ChatTurn struct {

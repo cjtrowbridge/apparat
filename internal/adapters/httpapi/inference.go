@@ -73,7 +73,7 @@ func (c *WorkerClient) Inference(ctx context.Context, q domain.InferenceCommand)
 		return ReadGlobal(ctx, q.Global.Session, c.Access.User, c.Inference)
 	}
 	err = c.call(ctx, "POST", "/v1/inference", q, &v)
-	if err == nil && (q.Operation == "global-post" || q.Operation == "global-rename") {
+	if err == nil && (q.Operation == "global-post" || q.Operation == "global-rename" || q.Operation == "global-terminal-result") {
 		return ReadGlobal(ctx, q.Global.Session, c.Access.User, c.Inference)
 	}
 	return

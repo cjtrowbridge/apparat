@@ -59,6 +59,7 @@ var migrations = []Migration{
 ALTER TABLE claimed_workers ADD COLUMN hardware BLOB;`},
 	{Version: 31, Name: "last_worker_inventory", SQL: `ALTER TABLE claimed_workers ADD COLUMN inventory BLOB; ALTER TABLE claimed_workers ADD COLUMN heard INTEGER NOT NULL DEFAULT 0;`},
 	{Version: 32, Name: "device_inference_usage", SQL: usageSchema},
+	{Version: 33, Name: "chat_terminal_callbacks", SQL: terminalCallbacksSchema},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {

@@ -33,3 +33,5 @@ Files uses the pinned Twemoji page (1f4c4.png) and folder (1f4c1.png) before eac
 Inference types use the speech balloon for text, framed picture (1f5bc), speaker (1f50a), microphone (1f3a4) and clapper board (1f3ac). The four additional PNGs come from the same pinned Twemoji release.
 
 The clipboard (1f4cb) and information (2139) PNGs are from the same pinned Twemoji release and identify contextual chat actions.
+
+- `1f50d.png`, `1f985.png`, `1f512.png`, `2194.png` and `1f5a5.png`: Chat permission and layout glyphs rendered from Google Noto Color Emoji (SIL OFL 1.1).

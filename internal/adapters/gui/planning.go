@@ -24,6 +24,8 @@ type planningSession struct {
 	loading      bool
 }
 type planningUI struct {
+	divider         *widget.Widget
+	terminals       map[modelAddress]*chatTerminalPane
 	bubbles         bubbleSelection
 	info            bubbleDetail
 	sync            planningSync
@@ -51,6 +53,10 @@ func (g *Game) newPlanning() {
 		return
 	}
 	s := &planningSession{ChatSession: domain.ChatSession{ChatHeader: domain.ChatHeader{Version: 1, ID: id, Scope: domain.GlobalChat, Started: now, Description: newPlanningTitle}}, scroll: 1}
+	device, ok := g.runtimeInfo.Queries.(interface{ ChatTerminalDevice() string })
+	if ok {
+		s.TerminalHost = device.ChatTerminalDevice()
+	}
 	g.openPlanning(s)
 }
 
@@ -99,6 +105,9 @@ func (g *Game) planningBackAvailable() bool {
 	return g.shell.Snapshot().ActiveTab().ID() == hud.TabGlobalSession && g.planning.page != "history"
 }
 func (g *Game) planningBack() {
+	if g.closeChatPermissionPage() {
+		return
+	}
 	if g.planning.page == "model-picker" {
 		g.closeModels()
 		return

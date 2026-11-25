@@ -80,12 +80,18 @@ func (p *inferencePool) globalOperation(ctx context.Context, access persistence.
 	if err != nil {
 		return v, err
 	}
-	h := domain.ChatHeader{Version: 1, ID: g.Session, Scope: domain.GlobalChat, Home: writer, Started: start, Description: g.Title, Model: g.Model}
+	h := domain.ChatHeader{Version: 1, ID: g.Session, Scope: domain.GlobalChat, TerminalHost: g.TerminalHost, Home: writer, Started: start, Description: g.Title, Model: g.Model}
 	var initial *domain.ChatHeader
 	if q.Operation == "global-post" {
 		initial = &h
 	}
 	s, err := p.runtime.withChat(ctx, project, g.Session, initial, func(s *domain.ChatSession) (bool, error) {
+		if q.Operation == "global-terminal-result" {
+			if s.TerminalHost != access.Device || !domain.ValidID(g.Turn) || len(g.Input) > 4096 {
+				return false, httpapi.ErrDenied
+			}
+			return s.FinishTerminalWait(g.Turn, g.Input, g.Base == "failed"), nil
+		}
 		if q.Operation == "global-rename" {
 			if s.Description == g.Title {
 				return false, nil
@@ -95,6 +101,9 @@ func (p *inferencePool) globalOperation(ctx context.Context, access persistence.
 			}
 			s.Description = g.Title
 			return true, s.Validate()
+		}
+		if s.TerminalHost == "" && g.TerminalHost != "" {
+			s.TerminalHost = g.TerminalHost
 		}
 		if !g.Model.Valid() {
 			return false, errors.New("select a model")

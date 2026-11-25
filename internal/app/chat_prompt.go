@@ -85,6 +85,9 @@ func chatSystem(p *domain.ChatRequest, policy string, legacy bool) string {
 		prompt.WriteString(chatToolInstructions)
 	}
 	for _, t := range chatTools {
+		if t.query == nil && (legacy || p.Route != "cluster") {
+			continue
+		}
 		_, global := globalUser(p.Project)
 		if global && t.name == "projects" {
 			t.description = "List visible projects across enrolled workers. Filter by project ID or name and use the returned cursor to continue. Missing workers are reported explicitly."

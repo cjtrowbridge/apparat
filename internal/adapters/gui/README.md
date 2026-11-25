@@ -249,3 +249,7 @@ Project conversation pages share the global chat bubble and gear renderer. The w
 - `markdown.go`: maps parsed CommonMark and GitHub Flavored Markdown into headings, paragraphs, lists, quotes, tables and styled text. Links are display-only, image references use alt text and raw HTML is suppressed by the parser.
 - `markdown_layout.go`: measures styled runs against the bubble width and paints completed messages and streaming previews with the same native layout.
 - `markdown_test.go`: verifies visible layout semantics, wrapping and literal code on phone and desktop surfaces. Run `make test-gui-deps` for the native tests, the pinned parser’s CommonMark specification corpus and its GFM extension tests.
+
+- `chat_terminal.go`: Keeps terminal selection, input and asynchronous screen requests separate for each active agent chat. The Chat, Split and Terminal controls select which content appears under the chat toolbar. Terminal input is sent by the user to the workspace owner. Linux hosting uses the workspace PTY prerequisites.
+- `chat_terminal_approval.go`: Presents per-chat permissions and one-time command approvals. Reads, decisions and completion receipts update the associated turn.
+- `chat_terminal_layout.go`: Lays out the resizable chat split with independent mouse and touch ownership and restores the permissions page's parent.

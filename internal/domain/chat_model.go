@@ -35,12 +35,13 @@ type ChatOutput struct {
 }
 
 type ChatStep struct {
-	Primed  bool         `json:"primed,omitempty"`
-	Job     string       `json:"job"`
-	Route   string       `json:"route"`
-	Digest  string       `json:"packet"`
-	Output  *ChatOutput  `json:"output,omitempty"`
-	Results []ToolResult `json:"results,omitempty"`
+	Wait    *ChatTerminalWait `json:"terminalWait,omitempty"`
+	Primed  bool              `json:"primed,omitempty"`
+	Job     string            `json:"job"`
+	Route   string            `json:"route"`
+	Digest  string            `json:"packet"`
+	Output  *ChatOutput       `json:"output,omitempty"`
+	Results []ToolResult      `json:"results,omitempty"`
 }
 
 type ChatMessage struct {

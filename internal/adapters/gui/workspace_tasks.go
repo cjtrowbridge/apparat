@@ -115,6 +115,7 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 		if w.agentThread && !w.chatDraft {
 			bar.AddChild(g.planningIcon("270f", "Edit session title", g.renameProjectChat))
 		}
+		bubbles := planningColumn()
 		g.planning.bubbles = bubbleSelection{}
 		for i, message := range w.choices {
 			id := message.ID
@@ -123,10 +124,17 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 			}
 			info := bubbleDetail{job: message.Job, id: w.id + "/" + w.thread + "/" + id}
 			_ = json.Unmarshal([]byte(message.Detail), &info.steps)
-			g.chatBubble(c, message.Label, !w.agentThread || message.State == "user", message.State == "pending", info)
+			g.chatBubble(bubbles, message.Label, !w.agentThread || message.State == "user", message.State == "pending", info)
 		}
 		if !w.agentThread && len(w.choices) > 0 {
-			g.chatBubble(c, "Saved to project · awaiting queue integration", false, false)
+			g.chatBubble(bubbles, "Saved to project · awaiting queue integration", false, false)
+		}
+		a, t := g.currentChatTerminal()
+		if t != nil {
+			g.chatViewButtons(c, t)
+			g.chatPanes(c, bubbles, a, t)
+		} else {
+			c.AddChild(bubbles)
 		}
 		if w.agentThread && !w.chatDraft {
 			g.projectButton(c, "Refresh conversation", func() {

@@ -21,9 +21,7 @@ func (g *Game) multilineRow(c *widget.Container, label string) *widget.Container
 		widget.RowLayoutOpts.Padding(&widget.Insets{Top: g.prefs.Font / 2, Bottom: g.prefs.Font / 2}),
 	)), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 	c.AddChild(row)
-	if label == "" {
-		g.addModelButton(row)
-	} else {
+	if label != "" {
 		row.AddChild(g.formLabel(label))
 	}
 	return row

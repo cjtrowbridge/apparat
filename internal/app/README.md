@@ -126,3 +126,8 @@ For a queued provider, Dispatch returns a nil output after acceptance. DeliverCh
 - `inference_preview.go`: Keeps transient output and generation phase on the executing node until dispatch completes.
 
 - `preview_client.go`: Resolves a pending job through its authenticated replica and connects viewers directly to the pinned executor.
+
+- `chat_terminal_wait.go`: Validates chat terminal callbacks and limits their owner-side waiting time.
+- `chat_terminal_callback.go`: Reconciles outstanding terminal command receipts into their originating chat after the view closes or the app restarts.
+- `chat_terminal_wait_test.go`: Checks the maximum deadline, invalid requests, stale callbacks, repeat delivery and late completion.
+- `chat_terminal_cluster_test.go`: Exercises both chat scopes through the authenticated worker API and verifies suspension, correlated tool results and resumed inference.
