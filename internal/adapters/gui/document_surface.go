@@ -25,6 +25,7 @@ type documentSurface struct {
 	*widget.TextInput
 	game                             *Game
 	panel                            *workspacePanel
+	submit                           func()
 	draft                            *string
 	body                             string
 	starts                           []int
@@ -326,8 +327,8 @@ func (e *documentSurface) keys() {
 		}
 		e.insert("")
 		return
-	case e.editable() && press(ebiten.KeyEnter):
-		e.insert("\n")
+	case e.editable() && (press(ebiten.KeyEnter) || press(ebiten.KeyNumpadEnter)):
+		e.enter(shift)
 		return
 	default:
 		chars := ebiten.AppendInputChars(nil)

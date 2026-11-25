@@ -125,7 +125,8 @@ func (g *Game) mergePlanning(v domain.PlanningView) {
 		return a.Started.Compare(b.Started)
 	})
 	if p.current != nil && v.Session != nil && p.current.ID == v.Session.ID {
-		if p.current.loading || !reflect.DeepEqual(p.current.ChatSession, *v.Session) || p.current.acknowledged != v.Acknowledged {
+		if p.current.syncReason != v.SyncReason || p.current.loading || !reflect.DeepEqual(p.current.ChatSession, *v.Session) || p.current.acknowledged != v.Acknowledged {
+			p.current.syncReason = v.SyncReason
 			p.current.loading = false
 			p.current.ChatSession = *v.Session
 			p.current.acknowledged = v.Acknowledged

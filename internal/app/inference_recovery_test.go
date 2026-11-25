@@ -111,7 +111,7 @@ func checkPersonalResume(t *testing.T, writer, replica inferenceFixture, user *i
 	mustInference(t, gui.SavePlanning(ctx, user.Fingerprint(), "global-post", q))
 	entries, err := db.PlanningEntries(ctx, user.Fingerprint())
 	mustInference(t, err)
-	roster, clients := gui.planningClients(ctx, user.Fingerprint())
+	roster, clients, _ := gui.planningClients(ctx, user.Fingerprint())
 	gui.syncPlanning(ctx, user.Fingerprint(), entries, roster, clients)
 	entries, err = db.PlanningEntries(ctx, user.Fingerprint())
 	mustInference(t, err)

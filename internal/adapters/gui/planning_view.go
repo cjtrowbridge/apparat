@@ -131,7 +131,11 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 		case s.acknowledged:
 			g.chatBubble(conversation, "Waiting for reply", false, true)
 		default:
-			g.chatBubble(conversation, "Waiting to sync · local only", false, true)
+			status := "Waiting to sync · saved on this device"
+			if s.syncReason != "" {
+				status += "\n" + s.syncReason
+			}
+			g.chatBubble(conversation, status, false, true)
 		}
 	}
 	p.pane = g.planningScroll(conversation)
@@ -141,6 +145,7 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 		form = widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2), widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false}), widget.GridLayoutOpts.Spacing(bodyGap, 0), widget.GridLayoutOpts.Padding(&widget.Insets{Right: 2*pttRadius + pttMargin + pttTravel}))))
 	}
 	surface := g.multilineInput(form, "", &g.globalDraft)
+	surface.submit = g.submitPlanning
 	if p.picker.restore {
 		surface.caret = min(p.picker.caret, len(surface.body))
 		surface.anchor = min(p.picker.anchor, len(surface.body))

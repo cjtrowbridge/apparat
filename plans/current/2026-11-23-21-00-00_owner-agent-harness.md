@@ -170,3 +170,7 @@ Open Chat and New conversation directly into an unsaved session. On first send, 
 ### Global planning transcript (Phases 13–14, HUD Phase 16)
 
 Remove the scrolling-demo transcript from new sessions. Verify the empty composer, durable send, pending state and actual worker response.
+
+### Chat submission and sync feedback (Phases 13–14 and 16)
+
+Route Enter in the global and project composers through the Send action. Keep Shift+Enter for line breaks. Show the writer discovery or enrollment blocker when a global submission remains in the originating device's outbox.

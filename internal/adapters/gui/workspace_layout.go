@@ -63,7 +63,7 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 	c := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))))
 	w := &g.projects.workspace
 	g.addModelButton(c)
-	g.multilineProjectField(c, "Message", &w.message)
+	field := g.multilineInput(c, "Message", &w.message)
 	if w.attachment != "" {
 		c.AddChild(g.detailText(w.attachmentLabel))
 	}
@@ -74,15 +74,22 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 	if w.agentThread {
 		postLabel = "Send"
 	}
-	post := g.projectButton(c, postLabel, func() {
+	canSend := func() bool {
+		return g.projects.pending == nil && g.chatModelReady() && !(w.agentThread && len(w.choices) > 0 && w.choices[len(w.choices)-1].State == "pending")
+	}
+	field.submit = func() {
+		if !canSend() || strings.TrimSpace(w.message) == "" {
+			return
+		}
 		w.argument = w.message
 		action := "post"
 		if w.attachment != "" {
 			action = "post-with-run"
 		}
 		g.workspaceRequest(action)
-	})
-	post.GetWidget().Disabled = !g.chatModelReady() || w.agentThread && len(w.choices) > 0 && w.choices[len(w.choices)-1].State == "pending"
+	}
+	post := g.projectButton(c, postLabel, field.submit)
+	post.GetWidget().Disabled = !canSend()
 	g.projectButton(c, "Attach a run", func() {
 		g.workspaceGo("attachments", "runs")
 	})

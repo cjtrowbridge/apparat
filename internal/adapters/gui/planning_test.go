@@ -87,11 +87,17 @@ func TestPlanningSessionNavigation(t *testing.T) {
 		if g.globalField.GetWidget().Rect != composer {
 			t.Fatal("scroll moved composer", size)
 		}
-		g.globalDraft = "first message"
-		g.submitPlanning()
+		editor := g.globalField.GetWidget().CustomData.(*documentSurface)
+		editor.insert("first")
+		editor.enter(true)
+		editor.insert("message")
+		if g.globalDraft != "first\nmessage" || store.saved.Turn != "" {
+			t.Fatal("Shift+Enter should only insert a newline")
+		}
+		editor.enter(false)
 		g.rebuildUI(g.shell.Snapshot())
 		renderNavigation(g)
-		if store.saved.Input != "first message" || store.saved.Session != original.ID || original.Pending() != store.saved.Turn || len(original.Turns) != 1 {
+		if store.saved.Input != "first\nmessage" || store.saved.Session != original.ID || original.Pending() != store.saved.Turn || len(original.Turns) != 1 {
 			t.Fatal("first prompt did not reach the planning outbox")
 		}
 		g.globalDraft = "next draft"

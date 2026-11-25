@@ -29,6 +29,7 @@ func (r InferenceRoster) GlobalWriter(user, session string) string {
 }
 
 type PlanningView struct {
+	SyncReason   string
 	Headers      []ChatHeader
 	Session      *ChatSession
 	Acknowledged bool

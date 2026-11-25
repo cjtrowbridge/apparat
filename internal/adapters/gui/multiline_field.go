@@ -6,6 +6,14 @@ package gui
 
 import "github.com/ebitenui/ebitenui/widget"
 
+func (e *documentSurface) enter(shift bool) {
+	if e.submit != nil && !shift {
+		e.submit()
+		return
+	}
+	e.insert("\n")
+}
+
 func (g *Game) multilineRow(c *widget.Container, label string) *widget.Container {
 	row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(
 		widget.RowLayoutOpts.Direction(widget.DirectionVertical),

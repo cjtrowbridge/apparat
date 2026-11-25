@@ -23,21 +23,29 @@ func (n *Runtime) SavePlanning(ctx context.Context, user, op string, q domain.Gl
 	return n.database.SavePlanning(ctx, user, op, q)
 }
 
-func (n *Runtime) planningClients(ctx context.Context, user string) (domain.InferenceRoster, map[string]*httpapi.WorkerClient) {
-	workers, _ := n.KnownWorkers(ctx)
+func (n *Runtime) planningClients(ctx context.Context, user string) (domain.InferenceRoster, map[string]*httpapi.WorkerClient, string) {
+	workers, lookup := n.KnownWorkers(ctx)
 	clients := map[string]*httpapi.WorkerClient{}
 	var roster domain.InferenceRoster
+	reason := "No saved worker is available. Connect a cluster worker to sync this conversation."
+	if lookup != nil || len(workers) > 0 {
+		reason = "No worker returned inference status for this identity. Check the worker connection in Cluster Status."
+	}
 	for _, w := range workers {
 		c, e := n.workspaceClient(ctx, "worker-"+w.Fingerprint)
 		if e != nil || c.Access.User != user {
 			continue
 		}
 		v, e := c.Inference(ctx, domain.InferenceCommand{Operation: "status"})
-		if e != nil || len(v.Roster.Peers) == 0 {
+		if e != nil {
+			continue
+		}
+		if len(v.Roster.Peers) == 0 {
+			reason = "No enrolled inference validators reported. An administrator can enroll them in Cluster Status → Inference validators."
 			continue
 		}
 		if len(roster.Peers) > 0 && v.Roster.Revision() != roster.Revision() {
-			return domain.InferenceRoster{}, nil
+			return domain.InferenceRoster{}, nil, "Workers reported conflicting validator rosters. Check their enrollment in Cluster Status."
 		}
 		roster = v.Roster
 		clients[w.Fingerprint] = c
@@ -53,7 +61,10 @@ func (n *Runtime) planningClients(ctx context.Context, user string) (domain.Infe
 			clients[peer.ID] = c
 		}
 	}
-	return roster, clients
+	if len(roster.Peers) > 0 {
+		reason = ""
+	}
+	return roster, clients, reason
 }
 func (n *Runtime) syncPlanning(ctx context.Context, user string, entries []persistence.PlanningEntry, roster domain.InferenceRoster, clients map[string]*httpapi.WorkerClient) {
 	blocked := map[string]bool{}
@@ -79,7 +90,7 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 	if n.PlanningUser() != user || user == "" {
 		return v, errors.New("unlock your personal identity")
 	}
-	_, clients := n.planningClients(ctx, user)
+	roster, clients, reason := n.planningClients(ctx, user)
 
 	headers := map[string]domain.ChatHeader{}
 	known, _ := n.database.GlobalVersion(ctx, user, id)
@@ -158,6 +169,10 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 			}
 			v.Session.Description = h.Description
 			v.Acknowledged = false
+			v.SyncReason = reason
+			if reason == "" && clients[roster.GlobalWriter(user, id)] == nil {
+				v.SyncReason = "The worker assigned to this session is unreachable. Apparat will retry automatically."
+			}
 		}
 	}
 	for _, h := range headers {

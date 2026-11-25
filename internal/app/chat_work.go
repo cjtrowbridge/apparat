@@ -46,7 +46,7 @@ func (n *Runtime) runChatWork(ctx context.Context) {
 			user := n.PlanningUser()
 			entries, e := n.database.PlanningEntries(ctx, user)
 			if user != "" && e == nil && len(entries) > 0 {
-				r, c := n.planningClients(ctx, user)
+				r, c, _ := n.planningClients(ctx, user)
 				n.syncPlanning(ctx, user, entries, r, c)
 			}
 		}
@@ -111,7 +111,7 @@ func (n *Runtime) reconcileChatWork(ctx context.Context, w persistence.ChatWork)
 		if n.Personal == nil || n.Personal.Fingerprint() != w.User {
 			return
 		}
-		roster, clients = n.planningClients(ctx, w.User)
+		roster, clients, _ = n.planningClients(ctx, w.User)
 	}
 	if len(roster.Peers) == 0 {
 		return

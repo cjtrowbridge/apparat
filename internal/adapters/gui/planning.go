@@ -17,6 +17,7 @@ const newPlanningTitle = "New planning session"
 
 type planningSession struct {
 	domain.ChatSession
+	syncReason   string
 	draft        string
 	scroll       float64
 	acknowledged bool
