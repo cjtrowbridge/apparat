@@ -86,7 +86,7 @@ func (g *Game) focusBody(targets []focusTarget, i int) {
 	g.nav.active = true
 	g.nav.strip = false
 	g.nav.target = targets[i]
-	if targets[i].w.GetWidget() != g.divider {
+	if targets[i].w.GetWidget() != g.divider && targets[i].w.GetWidget() != g.planning.divider {
 		g.nav.resizing = false
 	}
 	if g.nav.memory == nil {
@@ -263,11 +263,13 @@ func (g *Game) activateFocus() {
 	if g.nav.target.w == nil || !g.ownsFocus(g.nav.target.w) {
 		return
 	}
-	if g.nav.target.w.GetWidget() == g.divider {
+	if g.nav.target.w.GetWidget() == g.divider || g.nav.target.w.GetWidget() == g.planning.divider {
 		g.nav.resizing = true
 		return
 	}
 	switch w := g.nav.target.w.(type) {
+	case *chatTerminalSurface:
+		g.ui.SetFocusedWidget(w.TextInput)
 	case *documentSurface:
 		g.ui.SetFocusedWidget(w.TextInput)
 		if w.TextInput == g.globalField {

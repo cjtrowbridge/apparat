@@ -67,6 +67,9 @@ func (g *Game) applyChatTerminalCallback(a modelAddress, t *chatTerminalPane, w 
 			t.notice = r.err.Error()
 			t.permission = "unavailable"
 		} else {
+			if !t.initialized && domain.ValidID(r.view.Text) {
+				t.selected = r.view.Text
+			}
 			t.permission = r.view.Detail
 			t.host = r.view.Base
 			t.notice = ""
@@ -77,7 +80,7 @@ func (g *Game) applyChatTerminalCallback(a modelAddress, t *chatTerminalPane, w 
 		} else {
 			t.handled = r.request.ID
 		}
-	case "chat-terminal-approved", "chat-terminal-result", "chat-terminal-observe":
+	case "chat-terminal-shared-command", "chat-terminal-result", "chat-terminal-observe":
 		if w == nil || w.Job != r.request.Correlation && w.Job != r.request.ID {
 			return true
 		}
@@ -110,6 +113,10 @@ func (g *Game) serviceChatTerminalWait(a modelAddress, t *chatTerminalPane, w *d
 	if t.tracking == w.Job {
 		return false
 	}
+	if t.permission == "yolo" && t.environment == "Local host account" {
+		g.terminalResult(a, t, w.Job, "The selected host-account shell requires Always Ask.", true)
+		return true
+	}
 	if t.permission == "yolo" {
 		g.requestChatTerminal(a, t, "approved", w.Job, w.Command)
 		return true
@@ -132,16 +139,15 @@ func (g *Game) chatPermissionButton(row *widget.Container, a modelAddress, t *ch
 		icon = "1f985"
 	}
 	b := g.planningIcon(icon, "Chat permissions", func() {
-		t.permissionPage = true
-		g.layoutDirty = true
+		g.openChatPermissionModal(a, t)
 	})
+	t.permissionButton = b
 	row.AddChild(b)
 }
 
 func (g *Game) chatPermissionPage(c *widget.Container, a modelAddress, t *chatTerminalPane) {
 	c.AddChild(g.planningIcon("1f519", "Back to chat", func() {
-		t.permissionPage = false
-		g.layoutDirty = true
+		g.closeChatPermissionPage()
 	}), g.detailText("Chat permissions"))
 	for _, o := range []struct{ label, icon, mode, help string }{
 		{"Read-Only", "1f512", "read-only", "You control the terminal. The agent can observe its screen."},
@@ -151,12 +157,11 @@ func (g *Game) chatPermissionPage(c *widget.Container, a modelAddress, t *chatTe
 		row := controlRow(c)
 		b := g.planningIcon(o.icon, o.label, func() {
 			g.requestChatTerminal(a, t, "permission-set", "", o.mode)
-			t.permissionPage = false
-			g.layoutDirty = true
+			g.closeChatPermissionPage()
 		})
-		b.GetWidget().Disabled = o.mode == "" || t.pending != nil || a.project == "" && !g.ownsPlanningTerminal()
+		b.GetWidget().Disabled = o.mode == "" || a.project == "" && !g.ownsPlanningTerminal()
 		row.AddChild(b, g.detailText(o.label))
-		c.AddChild(g.detailText(o.help))
+		c.AddChild(widget.NewText(widget.TextOpts.Text(o.help, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(min(g.chatSplitAvailable(a), 620)-24))))
 	}
 }
 
@@ -172,19 +177,33 @@ func (g *Game) approvalControls(c *widget.Container, a modelAddress, t *chatTerm
 	if host == "" {
 		host = "This device · local clone directory"
 	}
-	c.AddChild(g.detailText("Requested command · "+host), g.detailText(fmt.Sprintf("%q", w.Command)))
+	c.AddChild(g.detailText("Requested command · "+host+" · "+t.selected), g.detailText(fmt.Sprintf("%q", w.Command)))
 	if t.tracking == w.Job {
 		c.AddChild(g.detailText("Waiting for command exit"))
 		return
 	}
-	g.projectButton(c, "Approve once", func() {
-		if t.pending == nil && g.currentTerminalWait(a) == w {
-			g.requestChatTerminal(a, t, "approved", w.Job, w.Command)
+	selected := t.selected
+	decide := func(approve bool) {
+		apply := func() {
+			if t.selected != selected || t.permission != "always-ask" || g.currentTerminalWait(a) != w {
+				return
+			}
+			if approve {
+				g.requestChatTerminal(a, t, "approved", w.Job, w.Command)
+			} else {
+				g.terminalResult(a, t, w.Job, "Denied by user.", true)
+			}
 		}
+		if t.pending == nil {
+			apply()
+		} else if t.deferred == nil {
+			t.deferred = apply
+		}
+	}
+	g.projectButton(c, "Approve once", func() {
+		decide(true)
 	})
 	g.projectButton(c, "Deny", func() {
-		if t.pending == nil && g.currentTerminalWait(a) == w {
-			g.terminalResult(a, t, w.Job, "Denied by user.", true)
-		}
+		decide(false)
 	})
 }

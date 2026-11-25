@@ -156,8 +156,8 @@ func TestApprovedChatCommand(t *testing.T) {
 	defer h.Close()
 	thread, _ := domain.NewID(time.Now(), nil)
 	job, _ := domain.NewID(time.Now(), nil)
-	q := domain.WorkspaceRequest{ProjectID: thread, Thread: thread, ID: job, Deadline: time.Now().Add(time.Minute), Approved: true}
-	command := "printf 'verified terminal result\\n'; exit 7"
+	q := domain.WorkspaceRequest{ProjectID: thread, Thread: thread, ID: job, Deadline: time.Now().Add(time.Minute), Approved: true, RelatedRun: thread}
+	command := "printf 'verified terminal result\\n'; (exit 7)"
 	call := func(action, arg string) (domain.WorkspaceView, error) {
 		q.Action = "chat-terminal-" + action
 		q.Argument = arg
@@ -169,7 +169,34 @@ func TestApprovedChatCommand(t *testing.T) {
 	if err != nil || v.Detail != "read-only" {
 		t.Fatal(v, err)
 	}
-	_, err = call("approved", command)
+	q.ID = thread
+	_, err = call("start", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ready := filepath.Join(root, thread, "user", "chats", thread, thread, "integration", "ready")
+	waitPrompt := func(before string) {
+		t.Helper()
+		end := time.Now().Add(5 * time.Second)
+		for time.Now().Before(end) {
+			data, _ := os.ReadFile(ready)
+			if len(data) > 0 && string(data) != before {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatal("shell did not reach its next prompt")
+	}
+	waitPrompt("")
+	first, _ := os.ReadFile(ready)
+	_, err = call("input", "cd /tmp && CHAT_MARKER=shared-shell\r")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitPrompt(string(first))
+	command = "printf 'verified terminal result %s %s\\n' \"$PWD\" \"$CHAT_MARKER\"; (exit 7)"
+	q.ID = job
+	_, err = call("shared-command", command)
 	if err == nil {
 		t.Fatal("read-only accepted a command")
 	}
@@ -178,16 +205,16 @@ func TestApprovedChatCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	q.Approved = false
-	_, err = call("approved", command)
+	_, err = call("shared-command", command)
 	if err == nil {
 		t.Fatal("accepted missing approval")
 	}
 	q.Approved = true
-	_, err = call("approved", command)
+	_, err = call("shared-command", command)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = call("approved", "echo changed")
+	_, err = call("shared-command", "echo changed")
 	if err == nil {
 		t.Fatal("accepted changed command for same invocation")
 	}
@@ -201,10 +228,10 @@ func TestApprovedChatCommand(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	if v.Detail != "Exited 7" || !strings.Contains(v.Report, "verified terminal result") {
+	if v.Detail != "Exited 7" || !strings.Contains(v.Report, "verified terminal result /tmp shared-shell") {
 		t.Fatal(v)
 	}
-	v, err = call("approved", command)
+	v, err = call("shared-command", command)
 	if err != nil || v.Detail != "Exited 7" {
 		t.Fatal("did not return the existing receipt", v, err)
 	}
@@ -212,13 +239,13 @@ func TestApprovedChatCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = call("approved", command)
+	_, err = call("shared-command", command)
 	if err == nil {
 		t.Fatal("accepted revoked permission")
 	}
 	q.Approved = false
 	q.ID, _ = domain.NewID(time.Now(), nil)
-	_, err = call("approved", command)
+	_, err = call("shared-command", command)
 	if err == nil {
 		t.Fatal("read-only accepted automatic dispatch")
 	}
@@ -226,7 +253,7 @@ func TestApprovedChatCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = call("approved", command)
+	_, err = call("shared-command", command)
 	if err != nil {
 		t.Fatal("yolo failed to start", err)
 	}
@@ -240,14 +267,14 @@ func TestApprovedChatCommand(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	if v.Detail != "Exited 7" || !strings.Contains(v.Report, "verified terminal result") {
+	if v.Detail != "Exited 7" || !strings.Contains(v.Report, "verified terminal result /tmp shared-shell") {
 		t.Fatal(v)
 	}
 	_, err = call("permission-set", "always-ask")
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = call("approved", command)
+	_, err = call("shared-command", command)
 	if err == nil {
 		t.Fatal("accepted stale automatic dispatch after switching to Always Ask")
 	}

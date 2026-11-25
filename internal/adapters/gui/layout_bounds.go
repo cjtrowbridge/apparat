@@ -20,6 +20,7 @@ import (
 type boundedPreferredWidget struct {
 	child    widget.PreferredSizeLocateableWidget
 	maxWidth func() int
+	fixed    bool
 }
 
 func boundPreferredWidth(child widget.PreferredSizeLocateableWidget, maxWidth func() int) widget.PreferredSizeLocateableWidget {
@@ -36,7 +37,7 @@ func (b *boundedPreferredWidget) PreferredSize() (int, int) {
 		return width, height
 	}
 	limit := b.maxWidth()
-	if limit > 0 && width > limit {
+	if limit > 0 && (b.fixed || width > limit) {
 		width = limit
 	}
 	return width, height

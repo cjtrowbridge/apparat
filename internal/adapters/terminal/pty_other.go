@@ -13,7 +13,7 @@ import (
 func prerequisite() string {
 	return "Select a Linux host for terminal sessions."
 }
-func start(string, string) (*os.File, *exec.Cmd, error) {
+func start(string, string, bool) (*os.File, *exec.Cmd, error) {
 	return nil, nil, errors.New(prerequisite())
 }
 func setSize(*os.File, int, int) error {

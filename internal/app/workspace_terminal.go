@@ -19,7 +19,7 @@ func terminalScope(action string) string {
 	switch action {
 	case "chat-terminal-permissions", "chat-terminal-result", "chat-terminal-observe":
 		return "terminal-view"
-	case "chat-terminal-permission-set", "chat-terminal-approved":
+	case "chat-terminal-permission-set", "chat-terminal-shared-command":
 		return "terminal-control"
 	}
 	switch strings.TrimPrefix(action, "chat-") {
@@ -79,7 +79,7 @@ func (n *Runtime) ChatTerminal(ctx context.Context, q domain.WorkspaceRequest) (
 	if !strings.HasPrefix(q.Action, "chat-terminal-") || terminalScope(q.Action) == "" && q.Action != "chat-terminal-hosts" && q.Action != "chat-terminal-bind" || !domain.ValidID(q.Thread) {
 		return domain.WorkspaceView{}, errors.New("invalid chat terminal request")
 	}
-	if q.Action == "chat-terminal-approved" {
+	if q.Action == "chat-terminal-shared-command" {
 		user := n.PlanningUser()
 		if user == "" || !domain.ValidID(q.ID) || time.Until(q.Deadline) <= 0 || time.Until(q.Deadline) > 30*time.Minute {
 			return domain.WorkspaceView{}, errors.New("a signed-in user, valid command ID and current deadline are required")
@@ -135,7 +135,7 @@ func (n *Runtime) ChatTerminal(ctx context.Context, q domain.WorkspaceRequest) (
 		return v, err
 	}
 	location := filepath.Join(n.config.RootDir, "data", "repos")
-	if q.Action == "chat-terminal-start" || q.Action == "chat-terminal-approved" {
+	if q.Action == "chat-terminal-start" || q.Action == "chat-terminal-shared-command" {
 		err := os.MkdirAll(location, 0700)
 		if err != nil {
 			return domain.WorkspaceView{}, err

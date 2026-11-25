@@ -3,8 +3,10 @@
 package terminal
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -38,6 +40,7 @@ func setChatPermission(dir, mode string) error {
 }
 
 type commandReceipt struct {
+	Terminal string
 	Command  string
 	Deadline time.Time
 }
@@ -50,7 +53,7 @@ func commandStatus(dir string, q domain.WorkspaceRequest) (domain.WorkspaceView,
 	}
 	var receipt commandReceipt
 	err = json.Unmarshal(data, &receipt)
-	if err != nil || receipt.Command != q.Argument || !receipt.Deadline.Equal(q.Deadline) {
+	if err != nil || receipt.Terminal != q.RelatedRun || receipt.Command != q.Argument || !receipt.Deadline.Equal(q.Deadline) {
 		return v, errors.New("command request changed")
 	}
 	screen, err := os.ReadFile(filepath.Join(dir, "screen"))
@@ -69,9 +72,13 @@ func commandStatus(dir string, q domain.WorkspaceRequest) (domain.WorkspaceView,
 }
 
 func saveCommand(dir string, q domain.WorkspaceRequest) error {
-	data, err := json.Marshal(commandReceipt{q.Argument, q.Deadline})
+	data, err := json.Marshal(commandReceipt{q.RelatedRun, q.Argument, q.Deadline})
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(filepath.Join(dir, "command.json"), data, 0600)
+}
+
+func selectionFile(chat, device string) string {
+	return filepath.Join(chat, fmt.Sprintf("selected-%x", sha256.Sum256([]byte(device))))
 }

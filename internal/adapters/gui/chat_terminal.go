@@ -6,10 +6,11 @@ package gui
 
 import (
 	"context"
-	et "github.com/hajimehoshi/ebiten/v2/text/v2"
-	"image/color"
+	"runtime"
 	"strings"
+
 	"time"
+	"unicode/utf8"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/ebitenui/ebitenui/widget"
@@ -20,6 +21,12 @@ type chatTerminalStore interface {
 }
 
 type chatTerminalPane struct {
+	deferred                                             func()
+	modal                                                *widget.Window
+	permissionButton                                     *widget.Button
+	caret, environment                                   string
+	surface                                              *chatTerminalSurface
+	queue, queueID, size                                 string
 	controls                                             bool
 	history, historyCursor                               string
 	readingHistory                                       bool
@@ -52,6 +59,12 @@ func (g *Game) currentChatTerminal() (modelAddress, *chatTerminalPane) {
 }
 
 func (g *Game) requestChatTerminal(a modelAddress, t *chatTerminalPane, action, id, arg string) {
+	if t.pending != nil && t.deferred == nil && action != "approved" && action != "result" && action != "observe" {
+		t.deferred = func() {
+			g.requestChatTerminal(a, t, action, id, arg)
+		}
+		return
+	}
 	if t.pending != nil {
 		t.notice = "Terminal busy. Try again when the request finishes."
 		g.layoutDirty = true
@@ -70,6 +83,10 @@ func (g *Game) requestChatTerminal(a modelAddress, t *chatTerminalPane, action, 
 	if wait != nil && (action == "approved" || action == "result") {
 		q.Approved = action == "approved" && t.permission == "always-ask"
 		q.Deadline = wait.Deadline
+		q.RelatedRun = t.selected
+		if action == "approved" {
+			q.Action = "chat-terminal-shared-command"
+		}
 	}
 	result := make(chan workspaceReply, 1)
 	t.pending = result
@@ -98,11 +115,12 @@ func (g *Game) pollChatTerminal() {
 		select {
 		case r := <-t.pending:
 			t.pending = nil
-			t.next = time.Now().Add(time.Second)
+			t.next = time.Now().Add(120 * time.Millisecond)
 			if g.applyChatTerminalCallback(a, t, wait, r) {
 				return
 			}
 			if r.err != nil {
+				t.queue = ""
 				t.notice = r.err.Error()
 				g.layoutDirty = true
 				return
@@ -136,11 +154,19 @@ func (g *Game) pollChatTerminal() {
 				g.layoutDirty = true
 				return
 			}
-			if t.screen != v.Report || t.state != v.Detail || t.notice != "" || t.selected != r.request.ID {
+			t.screen = v.Report
+			t.caret = v.Text
+			t.environment = v.ComparedBase
+			if t.selected != r.request.ID {
+				t.size = ""
+				t.queue = ""
+			}
+			if t.state != v.Detail || t.notice != "" || t.selected != r.request.ID {
 				t.screen, t.state, t.notice, t.selected = v.Report, v.Detail, "", r.request.ID
 				g.layoutDirty = true
 			}
 			if r.request.Action == "chat-terminal-start" {
+				t.size = ""
 				t.chooser = false
 				g.layoutDirty = true
 			}
@@ -148,17 +174,40 @@ func (g *Game) pollChatTerminal() {
 		}
 		return
 	}
-	if t.permission == "" && (t.view != "" || t.permissionPage || wait != nil) {
+	if t.deferred != nil {
+		send := t.deferred
+		t.deferred = nil
+		send()
+		return
+	}
+	if t.permission == "" {
 		g.requestChatTerminal(a, t, "permissions", "", "")
+		return
+	}
+
+	if t.permissionPage {
+		return
+	}
+	if !t.initialized {
+		t.initialized = true
+		if t.selected == "" || t.selected == a.session {
+			t.selected = a.session
+			g.requestChatTerminal(a, t, "start", t.selected, "")
+		} else {
+			g.requestChatTerminal(a, t, "screen", t.selected, "")
+		}
 		return
 	}
 	if g.serviceChatTerminalWait(a, t, wait) || t.view == "" {
 		return
 	}
-	if !t.initialized {
-		t.initialized = true
-		t.selected = a.session
-		g.requestChatTerminal(a, t, "start", t.selected, "")
+	if t.queue != "" && t.queueID == t.selected {
+		chunk := min(4096, len(t.queue))
+		for chunk < len(t.queue) && !utf8.RuneStart(t.queue[chunk]) {
+			chunk--
+		}
+		g.requestChatTerminal(a, t, "input", t.selected, t.queue[:chunk])
+		t.queue = t.queue[chunk:]
 		return
 	}
 	if !t.chooser && !t.readingHistory && t.notice == "" && t.state == "Running" && time.Now().After(t.next) {
@@ -173,11 +222,7 @@ func (g *Game) chatViewButtons(c *widget.Container, t *chatTerminalPane) {
 	} {
 		b := g.planningIcon(option.icon, option.label, func() {
 			t.view = option.view
-			a, ok := g.modelAddress()
-			if ok && a.project == "" && option.view != "" {
-				g.planning.current.scroll = 0
-				g.planning.pane = nil
-			}
+
 			g.layoutDirty = true
 		})
 		row.AddChild(b)
@@ -200,6 +245,9 @@ func (g *Game) chatTerminalContent(c *widget.Container, a modelAddress, t *chatT
 	if host == "" {
 		host = "This device · local clone directory"
 	}
+	if t.environment != "" {
+		host += " · " + t.environment
+	}
 	c.AddChild(g.detailText(host))
 	toolbar := controlRow(c)
 	toolbar.AddChild(g.planningIcon("1f519", "Terminal sessions", func() {
@@ -212,6 +260,12 @@ func (g *Game) chatTerminalContent(c *widget.Container, a modelAddress, t *chatT
 			g.requestChatTerminal(a, t, "start", id, "")
 		}
 	}))
+	if !t.chooser && !t.controls && !t.hosts && !t.readingHistory {
+		toolbar.AddChild(g.planningIcon("2699", "Terminal controls", func() {
+			t.controls = true
+			g.layoutDirty = true
+		}))
+	}
 	if t.notice != "" {
 		c.AddChild(g.detailText(t.notice))
 	}
@@ -229,11 +283,19 @@ func (g *Game) chatTerminalContent(c *widget.Container, a modelAddress, t *chatT
 		})
 	}
 	if t.chooser {
+		if localHostTerminalAvailable(a, t) {
+			g.projectButton(c, "New local host-account terminal", func() {
+				id, err := domain.NewID(time.Now(), nil)
+				if err == nil {
+					g.requestChatTerminal(a, t, "start", id, "host-account")
+				}
+			})
+		}
 		for _, item := range t.choices {
 			g.projectButton(c, item.Label, func() {
 				t.chooser = false
 				t.selected, t.screen, t.state = item.ID, "", ""
-				g.requestChatTerminal(a, t, "screen", item.ID, "")
+				g.requestChatTerminal(a, t, "screen", item.ID, "select")
 				g.layoutDirty = true
 			})
 		}
@@ -266,24 +328,10 @@ func (g *Game) chatTerminalContent(c *widget.Container, a modelAddress, t *chatT
 		g.chatTerminalKeys(c, a, t)
 		return
 	}
-	if t.screen != "" {
-		var face et.Face = &et.GoTextFace{Source: terminalFont, Size: float64(max(10, min(16, g.prefs.Font)))}
-		c.AddChild(widget.NewText(widget.TextOpts.Text(strings.TrimRight(t.screen, " \n"), &face, color.White)))
-
-	}
 	if t.state != "Running" {
-		c.AddChild(g.detailText(t.state))
-		return
+		c.AddChild(g.detailText(t.state), g.detailText(t.screen))
 	}
-	field := g.multilineInput(c, "Terminal input", &t.draft)
-	field.submit = func() {
-		g.requestChatTerminal(a, t, "input", t.selected, t.draft+"\r")
-	}
-	g.projectButton(c, "Send line", field.submit)
-	g.projectButton(c, "Terminal controls", func() {
-		t.controls = true
-		g.layoutDirty = true
-	})
+
 }
 func (g *Game) chatTerminalKeys(c *widget.Container, a modelAddress, t *chatTerminalPane) {
 	g.projectButton(c, "Retained output", func() {
@@ -308,26 +356,6 @@ func (g *Game) chatTerminalKeys(c *widget.Container, a modelAddress, t *chatTerm
 	})
 }
 
-func (g *Game) chatPanes(parent *widget.Container, bubbles *widget.Container, a modelAddress, t *chatTerminalPane) {
-	g.approvalControls(parent, a, t)
-	if t.view == "" {
-		parent.AddChild(bubbles)
-		return
-	}
-	term := planningColumn()
-	g.chatTerminalContent(term, a, t)
-	if t.view == "terminal" {
-		parent.AddChild(term)
-		return
-	}
-	width := g.chatSplitAvailable(a)
-	left := g.chatSplitWidth(width, t)
-	bubbles.GetWidget().MinWidth = left
-	split := widget.NewContainer(widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(3), widget.GridLayoutOpts.Stretch([]bool{false, false, true}, []bool{true}), widget.GridLayoutOpts.Spacing(2, 0))))
-	split.AddChild(boundPreferredWidth(bubbles, func() int {
-		return left
-	}), g.chatDivider(), boundPreferredWidth(term, func() int {
-		return max(44, width-left-48)
-	}))
-	parent.AddChild(split)
+func localHostTerminalAvailable(a modelAddress, t *chatTerminalPane) bool {
+	return runtime.GOOS == "linux" && !strings.HasPrefix(a.project, "worker-") && t.host == ""
 }

@@ -147,6 +147,9 @@ func TestCapturePlanning(t *testing.T) {
 		t.Skip("optional rendering")
 	}
 	w, h := 1280, 800
+	if strings.Contains(path, "portrait-desktop") {
+		w, h = 1916, 2124
+	}
 	if strings.Contains(path, "phone") {
 		w, h = 390, 844
 	}
@@ -162,7 +165,7 @@ func TestCapturePlanning(t *testing.T) {
 		selectTabThroughStrip(t, g, hud.TabProjects)
 		g.detailOpen[hud.TabProjects] = true
 		g.selectSection(hud.TabProjects, len(projectEntrySections))
-		g.projects.workspace = workspacePanel{id: "project", mode: "conversation", agentThread: true, thread: "session", threadTitle: "Release planning", choices: []domain.WorkspaceChoice{{State: "user", Label: "What needs my attention?"}, {State: "assistant", Label: "The build is waiting for your review."}, {State: "user", Label: "Show the latest result."}, {State: "pending", Label: "Saved to project · awaiting dispatch"}}}
+		g.projects.workspace = workspacePanel{id: "project", mode: "conversation", agentThread: true, thread: g.planning.current.ID, threadTitle: "Release planning", choices: []domain.WorkspaceChoice{{State: "user", Label: "What needs my attention?"}, {State: "assistant", Label: "The build is waiting for your review."}, {State: "user", Label: "Show the latest result."}, {State: "pending", Label: "Saved to project · awaiting dispatch"}}}
 		if strings.Contains(path, "draft") {
 			g.openWorkspaceTab("chat", "threads")
 		}
@@ -336,5 +339,40 @@ func TestPreviewAboveGear(t *testing.T) {
 			t.Fatal("preview reset the composer")
 		}
 		g.Close()
+	}
+}
+
+func TestChatTerminalWorkspaceGeometry(t *testing.T) {
+	for _, size := range [][2]int{{1916, 2124}, {390, 844}} {
+		g := horizontalGame()
+		g.Layout(size[0], size[1])
+		selectTabThroughStrip(t, g, hud.TabGlobalSession)
+		attachPlanningTestStore(g)
+		g.planning.current.TerminalHost = "test-device"
+		a, pane := g.currentChatTerminal()
+		pane.view = "split"
+		pane.state = "Running"
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		divider := g.planning.divider.Rect
+		surface := pane.surface.GetWidget().Rect
+		composer := g.globalField.GetWidget().Rect
+		if divider.Dy() < g.height/3 || divider.Max.Y != surface.Max.Y || divider.Max.Y > composer.Min.Y || surface.Dx() < 44 {
+			t.Fatalf("viewport %v, divider %v, screen %v, composer %v", size, divider, surface, composer)
+		}
+		pane.split = g.chatSplitWidth(g.chatSplitAvailable(a), pane) + 30
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		if g.planning.divider.Rect.Min.X != divider.Min.X+30 {
+			t.Fatal("divider did not move", divider, g.planning.divider.Rect)
+		}
+		g.openChatPermissionModal(a, pane)
+		if pane.modal == nil || g.planning.divider.Rect.Empty() {
+			t.Fatal("lost split under modal")
+		}
+		g.closeChatPermissionPage()
+		if g.ui.GetFocusedWidget() != pane.permissionButton {
+			t.Fatal("permission focus was not restored")
+		}
 	}
 }

@@ -12,13 +12,15 @@ import (
 )
 
 type workspaceLayout struct {
-	viewport   *widget.ScrollContainer
-	top        float64
-	mode, path string
-	folders    map[string]float64
+	chatBubbles *widget.Container
+	viewport    *widget.ScrollContainer
+	top         float64
+	mode, path  string
+	folders     map[string]float64
 }
 
 func (l *workspaceLayout) begin() {
+	l.chatBubbles = nil
 	if l.viewport != nil {
 		l.top = l.viewport.ScrollTop
 		if l.mode == "files" {
@@ -56,16 +58,20 @@ func (g *Game) finishWorkspaceLayout() {
 	}
 }
 
-func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.PreferredSizeLocateableWidget {
+func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer, header *widget.Container) widget.PreferredSizeLocateableWidget {
 	box := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{true, false}))), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(g.detailLayoutData())))
 	a, t := g.currentChatTerminal()
-	if t != nil && t.permissionPage {
-		page := planningColumn()
-		g.chatPermissionPage(page, a, t)
-		return g.planningScroll(page)
-	}
 	scroll.GetWidget().LayoutData = widget.GridLayoutData{MaxHeight: 0}
-	box.AddChild(scroll)
+	l := &g.projects.workspace.layout
+	if t != nil && l.chatBubbles != nil {
+		box = widget.NewContainer(widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(g.detailLayoutData())), widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}))))
+		pane := g.planningScroll(l.chatBubbles)
+		pane.ScrollTop = l.top
+		l.viewport = pane
+		box.AddChild(header, g.chatWorkspace(pane, a, t))
+	} else {
+		box.AddChild(scroll)
+	}
 	c := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))))
 	w := &g.projects.workspace
 	field := g.multilineInput(c, "Message", &w.message)

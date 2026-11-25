@@ -80,6 +80,10 @@ func (g *Game) editGlobalPrompt() {
 }
 
 func (g *Game) globalTypingPress() {
+	_, terminal := g.currentChatTerminal()
+	if terminal != nil && terminal.permissionPage {
+		return
+	}
 	if g.globalField == nil || g.actions.mode != "" || g.shell.Snapshot().ActiveTab().ID() != hud.TabGlobalSession {
 		return
 	}

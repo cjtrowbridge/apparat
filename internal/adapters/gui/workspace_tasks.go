@@ -129,20 +129,20 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 		if !w.agentThread && len(w.choices) > 0 {
 			g.chatBubble(bubbles, "Saved to project · awaiting queue integration", false, false)
 		}
-		a, t := g.currentChatTerminal()
+		_, t := g.currentChatTerminal()
 		if t != nil {
 			g.chatViewButtons(c, t)
-			g.chatPanes(c, bubbles, a, t)
+			w.layout.chatBubbles = bubbles
 		} else {
 			c.AddChild(bubbles)
 		}
 		if w.agentThread && !w.chatDraft {
-			g.projectButton(c, "Refresh conversation", func() {
+			g.projectButton(bubbles, "Refresh conversation", func() {
 				g.workspaceRequest("chat")
 			})
 		}
 		if len(w.choices) == 0 || w.chatError {
-			c.AddChild(g.detailText(w.report))
+			bubbles.AddChild(g.detailText(w.report))
 		}
 
 		return

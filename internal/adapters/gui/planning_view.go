@@ -154,19 +154,12 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 		}
 	}
 	a, t := g.currentChatTerminal()
-	if t != nil && t.permissionPage {
-		pane := planningColumn()
-		g.chatPermissionPage(pane, a, t)
-		return g.globalChatDetail(s, g.planningScroll(pane))
-	}
-	content := planningColumn()
-	if t != nil {
-		g.chatPanes(content, conversation, a, t)
-	} else {
-		content.AddChild(conversation)
-	}
-	p.pane = g.planningScroll(content)
+	p.pane = g.planningScroll(conversation)
 	p.pane.ScrollTop = s.scroll
+	var workspace widget.PreferredSizeLocateableWidget = p.pane
+	if t != nil {
+		workspace = g.chatWorkspace(p.pane, a, t)
+	}
 	form := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Spacing(gap))))
 	surface := g.multilineInput(form, "", &g.globalDraft)
 	surface.submit = g.submitPlanning
@@ -191,7 +184,7 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	if t != nil {
 		g.chatViewButtons(header, t)
 	}
-	body.AddChild(header, p.pane, form)
+	body.AddChild(header, workspace, form)
 	return body
 }
 

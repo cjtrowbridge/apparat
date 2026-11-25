@@ -88,6 +88,30 @@ func (g *Game) routeNavigation(delta image.Point, back, activate, keyActivate bo
 	if !back && !activate && !keyActivate && !tab && delta == (image.Point{}) {
 		return
 	}
+	_, pane := g.currentChatTerminal()
+	if pane != nil && pane.permissionPage && pane.modal != nil {
+		targets := pane.modal.GetContainer().GetFocusers()
+		if back {
+			g.closeChatPermissionPage()
+		} else if len(targets) > 0 {
+			index := 0
+			for i, target := range targets {
+				if target == g.ui.GetFocusedWidget() {
+					index = i
+				}
+			}
+			if activate {
+				btn, ok := targets[index].(*widget.Button)
+				if ok {
+					btn.Click()
+				}
+			} else if !keyActivate {
+				index = (index + step + delta.Y + delta.X + len(targets)) % len(targets)
+				g.ui.SetFocusedWidget(targets[index])
+			}
+		}
+		return
+	}
 	if g.actions.mode == "" && g.galleryInput(delta, back, activate || keyActivate, tab) {
 		return
 	}
@@ -115,8 +139,15 @@ func (g *Game) routeNavigation(delta image.Point, back, activate, keyActivate bo
 		if back || activate || keyActivate || tab {
 			g.nav.resizing = false
 		} else if delta.X != 0 {
-			g.splitWidth += delta.X * 16
-			g.clampSplitWidth()
+			if g.nav.target.w != nil && g.nav.target.w.GetWidget() == g.planning.divider {
+				a, t := g.currentChatTerminal()
+				if t != nil {
+					t.split = g.chatSplitWidth(g.chatSplitAvailable(a), t) + delta.X*16
+				}
+			} else {
+				g.splitWidth += delta.X * 16
+				g.clampSplitWidth()
+			}
 			g.layoutDirty = true
 		}
 		return

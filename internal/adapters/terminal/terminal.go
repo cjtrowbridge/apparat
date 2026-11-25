@@ -27,7 +27,8 @@ type Session struct {
 	file                             *os.File
 	cmd                              *exec.Cmd
 	vt                               vt10x.Terminal
-	tracked                          bool
+	personal                         bool
+	job, dirtyPrompt                 string
 	ended                            bool
 	revision                         uint64
 	chunk                            int64
@@ -78,13 +79,14 @@ func (h *Host) Do(ctx context.Context, dir, location, user, device string, q dom
 	}
 	if chat && q.Action == "terminal-permissions" {
 		mode, err := chatPermission(dir)
-		return domain.WorkspaceView{Detail: mode}, err
+		selected, _ := os.ReadFile(selectionFile(dir, device))
+		return domain.WorkspaceView{Detail: mode, Text: string(selected)}, err
 	}
 	if chat && q.Action == "terminal-permission-set" {
 		err := setChatPermission(dir, q.Argument)
 		return domain.WorkspaceView{Detail: q.Argument}, err
 	}
-	tracked := chat && q.Action == "terminal-approved"
+	tracked := chat && q.Action == "terminal-shared-command"
 	if tracked {
 		mode, err := chatPermission(dir)
 		allowed := mode == "yolo" && !q.Approved || mode == "always-ask" && q.Approved
@@ -103,7 +105,7 @@ func (h *Host) Do(ctx context.Context, dir, location, user, device string, q dom
 		}
 		v.Cursor = page.Cursor
 		for _, item := range page.Entries {
-			if !item.Directory || !domain.ValidID(item.Name) {
+			if !item.Directory || !domain.ValidID(item.Name) || !canAccessShell(filepath.Join(dir, item.Name), device) {
 				continue
 			}
 			state := "Ended"
@@ -118,30 +120,20 @@ func (h *Host) Do(ctx context.Context, dir, location, user, device string, q dom
 		return v, errors.New("select a terminal session")
 	}
 	dir = filepath.Join(dir, q.ID)
+	if !canAccessShell(dir, device) {
+		return v, os.ErrPermission
+	}
 	s := h.sessions[dir]
 	if s != nil && (s.owner != user || s.project != q.ProjectID) {
 		return v, os.ErrPermission
 	}
 	if tracked || chat && q.Action == "terminal-result" {
-		_, err := os.Stat(dir)
-		if err == nil {
-			prior, e := commandStatus(dir, q)
-			if e != nil {
-				return v, e
-			}
-			if s != nil {
-				live := s.screen()
-				if live.Detail == "Running" {
-					return live, nil
-				}
-			}
-			return prior, nil
+		if !tracked && q.RelatedRun == "" {
+			return commandStatus(dir, q)
 		}
-		if !os.IsNotExist(err) || !tracked {
-			return v, err
-		}
+		return h.sharedCommand(filepath.Dir(dir), q, device, tracked)
 	}
-	if q.Action == "terminal-start" || tracked {
+	if q.Action == "terminal-start" {
 		if s == nil && chat && q.ID == q.Thread {
 			_, err := os.Stat(dir)
 			if err == nil {
@@ -155,8 +147,12 @@ func (h *Host) Do(ctx context.Context, dir, location, user, device string, q dom
 		if s != nil {
 			return s.screen(), nil
 		}
+		personal := q.Argument == "host-account" && chat && device == "local"
+		if q.Argument == "host-account" && !personal {
+			return v, os.ErrPermission
+		}
 		reason := prerequisite()
-		if reason != "" {
+		if reason != "" && !personal {
 			return v, errors.New(reason)
 		}
 		if len(h.sessions) >= 8 {
@@ -169,30 +165,45 @@ func (h *Host) Do(ctx context.Context, dir, location, user, device string, q dom
 		if err != nil {
 			return v, err
 		}
-		command := ""
-		if tracked {
-			err = saveCommand(dir, q)
+		if personal {
+			err = os.WriteFile(filepath.Join(dir, "host-account"), nil, 0600)
 			if err != nil {
 				return v, err
 			}
-			command = q.Argument
 		}
-		f, cmd, err := start(location, command)
+		err = prepareShell(dir, personal)
 		if err != nil {
-			_ = os.Remove(dir)
 			return v, err
 		}
-		s = &Session{tracked: tracked, id: q.ID, owner: user, project: q.ProjectID, control: device, dir: dir, file: f, cmd: cmd, vt: vt10x.New(vt10x.WithSize(80, 24))}
+		f, cmd, err := start(location, dir, personal)
+		if err != nil {
+			_ = os.RemoveAll(dir)
+			return v, err
+		}
+		s = &Session{personal: personal, id: q.ID, owner: user, project: q.ProjectID, control: device, dir: dir, file: f, cmd: cmd, vt: vt10x.New(vt10x.WithSize(80, 24), vt10x.WithWriter(f))}
 		if h.sessions == nil {
 			h.sessions = map[string]*Session{}
 		}
 		h.sessions[dir] = s
+		if chat {
+			_ = os.WriteFile(selectionFile(filepath.Dir(dir), device), []byte(q.ID), 0600)
+		}
 		h.workers.Add(1)
 		go h.supervise(s, alive)
 		return s.screen(), nil
 	}
 	if q.Action == "terminal-history" {
 		return history(dir, q.Argument)
+	}
+	if chat && q.Action == "terminal-screen" && q.Argument == "select" {
+		_, err = os.Stat(dir)
+		if err != nil {
+			return v, err
+		}
+		err = os.WriteFile(selectionFile(filepath.Dir(dir), device), []byte(q.ID), 0600)
+		if err != nil {
+			return v, err
+		}
 	}
 	if s == nil {
 		if q.Action != "terminal-screen" {
@@ -219,6 +230,8 @@ func (h *Host) Do(ctx context.Context, dir, location, user, device string, q dom
 			return v, errors.New("terminal input too large")
 		}
 		_ = s.file.SetWriteDeadline(time.Now().Add(time.Second))
+		ready, _ := os.ReadFile(filepath.Join(s.dir, "integration", "ready"))
+		s.dirtyPrompt = string(ready)
 		_, err = io.WriteString(s.file, q.Argument)
 	case "terminal-resize":
 		err = s.resize(q.Argument)
@@ -234,7 +247,23 @@ func (s *Session) screen() domain.WorkspaceView {
 	if s.ended {
 		detail = "Ended"
 	}
-	return domain.WorkspaceView{Report: s.vt.String(), Detail: detail, Cursor: strconv.FormatUint(s.revision, 10)}
+	environment := "Isolated shell · read-only checkout · offline"
+	if s.personal {
+		environment = "Local host account"
+	}
+	s.vt.Lock()
+	cursor := s.vt.Cursor()
+	caret := ""
+	if s.vt.CursorVisible() {
+		caret = fmt.Sprintf("%d,%d", cursor.X, cursor.Y)
+	}
+	s.vt.Unlock()
+	lines := strings.Split(s.vt.String(), "\n")
+	for i := range lines {
+		lines[i] = strings.TrimRight(lines[i], " ")
+	}
+	report := strings.TrimRight(strings.Join(lines, "\n"), "\n")
+	return domain.WorkspaceView{Text: caret, ComparedBase: environment, Report: report, Detail: detail, Cursor: strconv.FormatUint(s.revision, 10)}
 }
 func (s *Session) resize(value string) error {
 	var cols, rows int
@@ -280,24 +309,29 @@ func (h *Host) supervise(s *Session, alive func() bool) {
 	for {
 		select {
 		case <-done:
-			waitErr := s.cmd.Wait()
+			_ = s.cmd.Wait()
 			_ = s.file.Close()
 			s.mu.Lock()
 			s.ended = true
 			_ = os.WriteFile(filepath.Join(s.dir, "screen"), []byte(s.vt.String()), 0600)
-			if s.tracked {
-				status := "Exited 0"
-				if waitErr != nil {
-					status = fmt.Sprintf("Exited %d", s.cmd.ProcessState.ExitCode())
-				}
-				_ = os.WriteFile(filepath.Join(s.dir, "exit"), []byte(status), 0600)
-			}
 			s.mu.Unlock()
 			h.mu.Lock()
+			if s.job != "" {
+				h.refreshShared(s)
+				if s.job != "" {
+					_ = os.WriteFile(filepath.Join(s.job, "screen"), []byte(s.vt.String()), 0600)
+					_ = os.WriteFile(filepath.Join(s.job, "exit"), []byte("Shell ended before command completion"), 0600)
+				}
+			}
 			delete(h.sessions, s.dir)
 			h.mu.Unlock()
 			return
 		case <-ticker.C:
+			h.mu.Lock()
+			if s.job != "" {
+				h.refreshShared(s)
+			}
+			h.mu.Unlock()
 			if !alive() {
 				s.stop()
 			}

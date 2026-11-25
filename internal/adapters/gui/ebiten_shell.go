@@ -219,6 +219,10 @@ func (game *Game) Update() error {
 	game.advanceTabDragCancellation()
 	game.advanceBodyScrollCancellation()
 	game.applyUpdateStatus()
+	if game.terminalHasFocus() {
+		game.pollSpeech()
+		return nil
+	}
 	startIndex := game.shell.Snapshot().ActiveIndex
 	ctrlPressed := ebiten.IsKeyPressed(ebiten.KeyControl)
 	pageDownPressed := ebiten.IsKeyPressed(ebiten.KeyPageDown)

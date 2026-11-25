@@ -119,6 +119,10 @@ func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 		PrimaryTheme:        game.theme,
 	}
 	game.finishWorkspaceLayout()
+	a, t := game.currentChatTerminal()
+	if t != nil && t.permissionPage {
+		game.openChatPermissionModal(a, t)
+	}
 	game.restoreEditing(old)
 	if changedTab && !game.nav.strip && snapshot.ActiveTab().ID() == hud.TabGlobalSession {
 		game.focusGlobalPrompt()
