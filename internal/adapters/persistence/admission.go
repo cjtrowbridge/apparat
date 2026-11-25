@@ -120,6 +120,15 @@ func (db *DB) CurrentAccess(ctx context.Context, cluster, user, device string) (
 
 // ConfirmOwner is a host-local operation. An established worker can only confirm its original owner.
 func (db *DB) ConfirmOwner(ctx context.Context, worker, user string) error {
+	return db.confirmOwner(ctx, worker, user, false)
+}
+
+// ReserveOwner keeps a previous installation reservation even before the first login.
+func (db *DB) ReserveOwner(ctx context.Context, worker, user string) error {
+	return db.confirmOwner(ctx, worker, user, true)
+}
+
+func (db *DB) confirmOwner(ctx context.Context, worker, user string, reserve bool) error {
 	for _, pin := range []string{worker, user} {
 		raw, err := base64.RawURLEncoding.Strict().DecodeString(pin)
 		if err != nil || len(raw) != 32 || base64.RawURLEncoding.EncodeToString(raw) != pin {
@@ -129,7 +138,7 @@ func (db *DB) ConfirmOwner(ctx context.Context, worker, user string) error {
 	result, err := db.sql.ExecContext(ctx, `INSERT INTO local_runtime(key,value,updated_at_ms)
 	SELECT 'confirmed_worker_owner',?,0 WHERE NOT EXISTS
 	(SELECT 1 FROM worker_cluster WHERE worker<>? OR owner_user<>?)
-	ON CONFLICT(key) DO UPDATE SET value=excluded.value`, worker+"/"+user, worker, user)
+	ON CONFLICT(key) DO UPDATE SET value=excluded.value WHERE NOT ? OR local_runtime.value=excluded.value`, worker+"/"+user, worker, user, reserve)
 	if err != nil {
 		return err
 	}

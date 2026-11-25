@@ -61,7 +61,7 @@ func (node *Runtime) authenticateWorker(ctx context.Context, network, host strin
 		return "Updated the approved worker identity.", node.reviewReplacement(ctx, dialog, pin, observed, address)
 	}
 	if pin == "" {
-		message := "On " + host + ", run apparatd trust-host and compare its fingerprint with:\n" + observed + "\nFor initial setup, authorize your personal identity on the worker with:\napparatd trust-host " + node.Personal.Fingerprint()
+		message := "Compare the worker fingerprint from installation with the one presented by " + host + ":\n" + observed + "\nConnect with your saved Apparat identity?"
 		if !approveTrust(dialog, "Authenticate "+host, message) {
 			return "", errors.New("worker kept disconnected")
 		}

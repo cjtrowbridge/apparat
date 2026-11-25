@@ -42,3 +42,5 @@ apparatd chat --repo . --topic "Release planning"
 Enter a line and press Return. Use /quit to detach. List transcripts with `apparatd chat --repo . --list` and reopen one with `apparatd chat --repo . --session SESSION_ID`. Use --global with the checkout chosen to own a new global transcript. Session listing works offline. An uncertain delivery stays pending, and /cancel abandons it locally. A cloud configuration sends conversation history and selected tool results to its configured endpoint. Use an approved provider and project for that route.
 
 - `chat_test.go`: verifies the terminal entrypoint, actual JSON/HTTP tool round trip, session listing and resumed conversation against a local fixture.
+
+The installer calls `user-fingerprint` locally to verify the stored signed user profile and `trust-host --install OWNER_FINGERPRINT` on the worker to reserve its first login. A repeat with the same admin succeeds. A conflicting reservation stops the installer.

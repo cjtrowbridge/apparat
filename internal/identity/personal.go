@@ -190,3 +190,17 @@ func (p *Personal) ScreenName() string {
 	defer p.mu.Unlock()
 	return p.name
 }
+
+// StoredFingerprint verifies the saved public profile without unlocking the signing key.
+func (p *Personal) StoredFingerprint() (string, error) {
+	data, err := readPrivate(p.path)
+	if err != nil {
+		return "", err
+	}
+	var bundle personalBundle
+	err = strictJSON(data, &bundle)
+	if err != nil || !bundle.Profile.Valid() {
+		return "", errors.New("invalid signed personal profile")
+	}
+	return Fingerprint(bundle.Profile.Profile.Public), nil
+}

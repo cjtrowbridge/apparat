@@ -41,6 +41,20 @@ func TestOnlyOneOwner(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	owner, err := personal.StoredFingerprint()
+	if err != nil || owner != personal.Fingerprint() {
+		t.Fatal("missing verified installer fingerprint", err)
+	}
+	for i := 0; i < 2; i++ {
+		err = db.ReserveOwner(ctx, identity.Fingerprint(worker.Public), owner)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	err = db.ReserveOwner(ctx, identity.Fingerprint(worker.Public), second.Fingerprint())
+	if err == nil {
+		t.Fatal("another installer replaced the reserved admin")
+	}
 	err = db.ConfirmOwner(ctx, identity.Fingerprint(worker.Public), personal.Fingerprint())
 	if err != nil {
 		t.Fatal(err)

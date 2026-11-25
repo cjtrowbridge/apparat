@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
@@ -94,9 +95,28 @@ func setupIdentity(args []string) int {
 	return 0
 }
 
+func userFingerprint() int {
+	cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})
+	if err == nil {
+		var pin string
+		pin, err = identity.NewPersonal(filepath.Join(cfg.RootDir, "user-identity")).StoredFingerprint()
+		if err == nil {
+			fmt.Println(pin)
+			return 0
+		}
+	}
+	fmt.Fprintln(os.Stderr, "Cannot identify the installing admin:", err)
+	return 1
+}
+
 func trustHost(args []string) int {
+	reserve := len(args) == 2 && args[0] == "--install"
+	if reserve {
+		args = args[1:]
+	}
+
 	if len(args) > 1 {
-		fmt.Fprintln(os.Stderr, "Usage: apparatd trust-host [OWNER_FINGERPRINT]")
+		fmt.Fprintln(os.Stderr, "Usage: apparatd trust-host [--install] [OWNER_FINGERPRINT]")
 		return 2
 	}
 	cfg, err := config.Load(config.Options{DefaultMode: config.ModeHeadless})
@@ -116,7 +136,11 @@ func trustHost(args []string) int {
 	db, err := persistence.Open(ctx, cfg.DatabasePath)
 	if err == nil {
 		defer db.Close()
-		err = db.ConfirmOwner(ctx, pin, args[0])
+		if reserve {
+			err = db.ReserveOwner(ctx, pin, args[0])
+		} else {
+			err = db.ConfirmOwner(ctx, pin, args[0])
+		}
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
