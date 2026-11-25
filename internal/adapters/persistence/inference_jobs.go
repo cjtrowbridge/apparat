@@ -17,14 +17,30 @@ CREATE INDEX inference_pending ON inference_jobs(state,id);`
 
 // InferenceCounts scopes task totals to the admitted user viewing the status page.
 func (db *DB) InferenceCounts(ctx context.Context, user string, s *domain.InferenceStatus) error {
-	return db.sql.QueryRowContext(ctx, `SELECT count(*) FILTER(WHERE state='queued'),
+	err := db.sql.QueryRowContext(ctx, `SELECT count(*) FILTER(WHERE state='queued'),
 	count(*) FILTER(WHERE state='owned'),count(*) FILTER(WHERE state='dispatching'),
 	count(*) FILTER(WHERE state='finished') FROM inference_jobs WHERE json_extract(CAST(body AS TEXT),'$.User')=?`, user).Scan(&s.Queued, &s.Owned, &s.Dispatching, &s.Finished)
+	if err != nil {
+		return err
+	}
+	var oldest string
+	err = db.sql.QueryRowContext(ctx, `SELECT count(*),coalesce(min(received_ms),0) FROM inference_intake WHERE user=? AND applied=0`, user).Scan(&s.Received, &s.OldestQueuedMS)
+	if err != nil {
+		return err
+	}
+	err = db.sql.QueryRowContext(ctx, `SELECT coalesce(min(id),'') FROM inference_jobs WHERE state='queued' AND json_extract(body,'$.User')=?`, user).Scan(&oldest)
+	if oldest != "" {
+		at, e := domain.ChatTime(oldest)
+		if e == nil && (s.OldestQueuedMS == 0 || at.UnixMilli() < s.OldestQueuedMS) {
+			s.OldestQueuedMS = at.UnixMilli()
+		}
+	}
+	return err
 }
 
 func (db *DB) InferenceRoster(ctx context.Context) (r domain.InferenceRoster, err error) {
 	var b []byte
-	err = db.sql.QueryRowContext(ctx, "SELECT body FROM inference_roster WHERE singleton=1").Scan(&b)
+	err = db.sql.QueryRowContext(ctx, "SELECT body FROM inference_membership WHERE singleton=1").Scan(&b)
 	if err == nil {
 		err = json.Unmarshal(b, &r)
 	}
@@ -35,14 +51,7 @@ func (db *DB) InstallInferenceRoster(ctx context.Context, r domain.InferenceRost
 	if err != nil {
 		return err
 	}
-	result, err := db.sql.ExecContext(ctx, "INSERT INTO inference_roster VALUES(1,?,?) ON CONFLICT(singleton) DO UPDATE SET body=excluded.body WHERE revision=excluded.revision", r.Revision(), b)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err == nil && n != 1 {
-		return errors.New("inference roster change requires an explicit handoff")
-	}
+	_, err = db.sql.ExecContext(ctx, "INSERT INTO inference_membership VALUES(1,?,?) ON CONFLICT(singleton) DO UPDATE SET body=excluded.body,revision=excluded.revision", r.Revision(), b)
 	return err
 }
 func (db *DB) AdmitInference(ctx context.Context, j domain.InferenceJob) error {
@@ -50,7 +59,7 @@ func (db *DB) AdmitInference(ctx context.Context, j domain.InferenceJob) error {
 	if err != nil {
 		return err
 	}
-	result, err := db.sql.ExecContext(ctx, "INSERT INTO inference_jobs(id,digest,body) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM inference_roster WHERE revision=?) ON CONFLICT(id) DO UPDATE SET id=excluded.id WHERE digest=excluded.digest", j.Packet.Job, domain.InferenceDigest(j), b, j.Revision)
+	result, err := db.sql.ExecContext(ctx, "INSERT INTO inference_jobs(id,digest,body) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET id=excluded.id WHERE digest=excluded.digest", j.Packet.Job, domain.InferenceDigest(j), b)
 	if err != nil {
 		return err
 	}
@@ -150,8 +159,8 @@ func (db *DB) InferenceAccess(ctx context.Context, cluster, user, pool, worker s
 	var yes bool
 	err := db.sql.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM cluster_users u WHERE u.cluster=? AND u.user_id=? AND u.admission='approved'
  AND (u.admin=1 OR EXISTS(SELECT 1 FROM effective_pool_grants g WHERE g.cluster=u.cluster AND g.pool=? AND g.service='text-generation' AND g.principal IN (u.user_id,'public')))
- AND (?='' OR EXISTS(SELECT 1 FROM pool_services s WHERE s.cluster=u.cluster AND s.worker=? AND s.pool=? AND s.service=?))
- AND (?='' OR NOT EXISTS(SELECT 1 FROM local_runtime WHERE (key='worker_update_installing' OR (key='worker_update_drain_requested' AND ?=0)) AND value='1')))`, cluster, user, pool, worker, worker, pool, HashService, worker, owned).Scan(&yes)
+
+ AND (?='' OR NOT EXISTS(SELECT 1 FROM local_runtime WHERE (key='worker_update_installing' OR (key='worker_update_drain_requested' AND ?=0)) AND value='1')))`, cluster, user, pool, worker, owned).Scan(&yes)
 	return yes, err
 }
 
@@ -187,7 +196,12 @@ func (db *DB) InferenceDelivered(ctx context.Context, c domain.InferenceClaim) e
 
 // Tasks returns a bounded user-scoped metadata page for the pool browser.
 func (db *DB) InferenceTasks(ctx context.Context, user, pool, cursor string) ([]domain.PoolTaskRow, error) {
-	rows, err := db.sql.QueryContext(ctx, `SELECT id,state FROM inference_jobs WHERE json_extract(body,'$.User')=? AND json_extract(body,'$.Pool')=? AND (?='' OR id<?) ORDER BY id DESC LIMIT 64`, user, pool, cursor, cursor)
+	rows, err := db.sql.QueryContext(ctx, `SELECT id,state FROM (
+ SELECT id,state FROM inference_jobs WHERE json_extract(body,'$.User')=?1 AND json_extract(body,'$.Pool')=?2
+ UNION ALL
+ SELECT turn,'queued' FROM inference_intake r WHERE user=?1 AND ?2='Chat Pool' AND (applied=0 OR EXISTS(SELECT 1 FROM chat_work w WHERE w.user=r.user AND w.session=r.session AND w.turn=r.turn))
+ AND NOT EXISTS(SELECT 1 FROM inference_jobs j WHERE json_extract(j.body,'$.User')=r.user AND json_extract(j.body,'$.Packet.Turn')=r.turn))
+ WHERE (?3='' OR id<?3) ORDER BY id DESC LIMIT 64`, user, pool, cursor)
 	if err != nil {
 		return nil, err
 	}

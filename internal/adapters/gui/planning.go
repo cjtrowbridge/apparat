@@ -127,7 +127,11 @@ func (g *Game) submitPlanning() {
 		return
 	}
 	model := g.planning.picker.settings.Session
-	if !g.savePlanningOperation("global-post", domain.GlobalRequest{Session: s.ID, Turn: id, Input: g.globalDraft, Title: s.Description, Model: model}) {
+	parent := ""
+	if len(s.Turns) > 0 {
+		parent = s.Turns[len(s.Turns)-1].ID
+	}
+	if !g.savePlanningOperation("global-post", domain.GlobalRequest{Parent: &parent, Session: s.ID, Turn: id, Input: g.globalDraft, Title: s.Description, Model: model}) {
 		return
 	}
 	s.Model = model

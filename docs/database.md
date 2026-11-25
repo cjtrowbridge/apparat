@@ -106,3 +106,5 @@ Schema 20 adds per-project and per-user workspace grants, client-side remote dra
 ### Chat inference recovery
 
 Migration 22 retires the Personal pool from active views. Migrations 23–27 add the pinned inference roster, immutable job packets, per-attempt ownership and terminal receipts, owner outboxes, user-scoped global sessions, client send and rename outboxes, and publication cursors. Schema checksums remain part of startup validation. The worker reconstructs its hot vote table before confirming any claim. An interrupted local dispatch becomes an indeterminate result. Offline clients replay stable turn IDs. Include the worker artifact root and each project checkout alongside SQLite in backups.
+
+Migration 28 preserves the previous participant identities in `inference_membership`. Session homes, worker intake receipts, originating-device acknowledgements and update generations survive restarts. Older unsent entries retain their turn IDs. The home commits a pending global transcript and its work in one transaction. Ownership receipts continue to fence provider execution during recovery.

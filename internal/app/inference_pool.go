@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"strings"
 	"sync"
 	"time"
 
@@ -18,22 +19,25 @@ import (
 )
 
 type inferencePool struct {
-	transcripts [64]sync.Mutex
-	lastAttempt time.Time
-	observer    inferenceObserver
-	clientsMu   sync.Mutex
-	clients     map[string]peerConnection
-	runtime     *Runtime
-	mu          sync.RWMutex
-	db          *persistence.DB
-	keys        *identity.Session
-	inventory   *inventory.Monitor
-	self        string
-	roster      domain.InferenceRoster
-	table       *domain.ClaimTable
-	timing      domain.InferenceTiming
-	wake        chan struct{}
-	active      map[string]domain.InferenceClaim
+	maintenanceMu sync.Mutex
+	installing    bool
+	withdrawal    persistence.WorkerWithdrawal
+	transcripts   [64]sync.Mutex
+	lastAttempt   time.Time
+	observer      inferenceObserver
+	clientsMu     sync.Mutex
+	clients       map[string]peerConnection
+	runtime       *Runtime
+	mu            sync.RWMutex
+	db            *persistence.DB
+	keys          *identity.Session
+	inventory     *inventory.Monitor
+	self          string
+	roster        domain.InferenceRoster
+	table         *domain.ClaimTable
+	timing        domain.InferenceTiming
+	wake          chan struct{}
+	active        map[string]domain.InferenceClaim
 }
 
 func newInferencePool(ctx context.Context, db *persistence.DB, keys *identity.Session, inventory *inventory.Monitor) (*inferencePool, error) {
@@ -46,6 +50,10 @@ func newInferencePool(ctx context.Context, db *persistence.DB, keys *identity.Se
 		return nil, err
 	}
 	err = db.RecoverInterrupted(ctx, p.self)
+	if err != nil {
+		return nil, err
+	}
+	p.withdrawal, err = db.Withdrawal(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -64,29 +72,46 @@ func (p *inferencePool) install(ctx context.Context, r domain.InferenceRoster) e
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	r, err = p.mergeMembership(ctx, r)
+	if err != nil {
+		return err
+	}
+	if p.table != nil && domain.InferenceDigest(p.roster) == domain.InferenceDigest(r) {
+		return nil
+	}
 	err = p.db.InstallInferenceRoster(ctx, r)
 	if err != nil {
 		return err
 	}
-	if p.table != nil {
+	if p.table != nil && p.roster.Revision() == r.Revision() {
 		p.roster = r
 		return nil
 	}
+	return p.rebuildLocked(ctx, r)
+}
+
+func (p *inferencePool) rebuildClaimTable(ctx context.Context, r domain.InferenceRoster) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.rebuildLocked(ctx, r)
+}
+func (p *inferencePool) rebuildLocked(ctx context.Context, r domain.InferenceRoster) error {
 	table, err := domain.NewClaimTable(r.Revision(), r.IDs())
 	if err != nil {
 		return err
 	}
 	table.Recovered()
 	err = p.db.InferenceRecords(ctx, func(row domain.InferenceRecord) error {
-		if row.Job.Revision != r.Revision() {
-			return errors.New("job roster mismatch")
-		}
+
 		e := table.Admit(row.Job.Packet.Job, domain.InferenceDigest(row.Job))
 		if e != nil {
 			return e
 		}
 		if row.State != "queued" {
 			c := row.Claim
+			if row.State == "finished" {
+				c.Revision = r.Revision()
+			}
 			table.Transition(c.Executor, "confirm", c)
 			table.Transition(c.Executor, "own", c)
 			if row.State == "finished" {
@@ -105,6 +130,15 @@ func (p *inferencePool) install(ctx context.Context, r domain.InferenceRoster) e
 }
 func (p *inferencePool) InferenceUser(ctx context.Context, a persistence.Access, q domain.InferenceCommand) (v domain.InferenceReply, err error) {
 	switch q.Operation {
+	case "session-home":
+		_, err = p.db.GlobalVersion(ctx, a.User, q.Global.Session)
+		if err == nil {
+			p.mu.RLock()
+			v.State = p.sessionWriter(ctx, a.User, q.Global.Session, p.roster)
+			p.mu.RUnlock()
+		}
+	case "global-intake":
+		return p.receiveTurn(ctx, a, q.Global)
 	case "global-chunk":
 		chunk, e := p.db.GlobalChunk(ctx, a.User, q.Global.Session, q.Chunk.Revision, q.Chunk.Offset)
 		v.Chunk = &chunk
@@ -115,15 +149,18 @@ func (p *inferencePool) InferenceUser(ctx context.Context, a persistence.Access,
 		return v, e
 	case "global-get", "global-list", "global-post", "global-rename":
 		return p.globalOperation(ctx, a, q)
-	case "roster":
-		if !a.Admin || a.Cluster != q.Roster.Cluster {
-			return v, httpapi.ErrDenied
-		}
-		err = p.install(ctx, q.Roster)
 	case "status":
+		if len(q.Roster.Peers) != 0 && a.Admin && q.Roster.Cluster == a.Cluster {
+			err = p.install(ctx, q.Roster)
+			if err != nil {
+				v.State = "membership-pending"
+			}
+		}
 		p.mu.RLock()
+		v.Protocol = 2
 		v.Roster = p.roster
 		v.Status.Validators = len(p.roster.Peers)
+		v.Status.Updating = p.withdrawal.Worker
 		p.mu.RUnlock()
 		p.observer.populate(a.User, &v.Status)
 		v.Status.Timing = p.timing.Snapshot()
@@ -135,13 +172,19 @@ func (p *inferencePool) InferenceUser(ctx context.Context, a persistence.Access,
 		err = p.admit(ctx, q.Job)
 	case "tasks":
 		v.Tasks, err = p.db.InferenceTasks(ctx, a.User, q.Pool, q.ID)
-	case "task", "result":
+	case "task", "result", "job-state":
 		row, e := p.db.InferenceRecord(ctx, q.ID)
+		if errors.Is(e, sql.ErrNoRows) && q.Operation == "task" {
+			v.Task, err = p.db.ReceiptTask(ctx, a.User, q.ID)
+			return v, err
+		}
 		if e != nil || row.Job.User != a.User {
 			return v, httpapi.ErrDenied
 		}
 		v.State = row.State
-		v.Output = row.Output
+		if q.Operation != "job-state" {
+			v.Output = row.Output
+		}
 		if q.Operation == "task" {
 			v.Task = &row
 		}
@@ -153,7 +196,7 @@ func (p *inferencePool) InferenceUser(ctx context.Context, a persistence.Access,
 func (p *inferencePool) admit(ctx context.Context, j domain.InferenceJob) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	if p.table == nil || !j.Valid() || j.Revision != p.roster.Revision() {
+	if p.table == nil || !j.Valid() {
 		return errors.New("incompatible inference job")
 	}
 	ok, err := p.db.InferenceAccess(ctx, p.roster.Cluster, j.User, j.Pool, "", false)
@@ -176,12 +219,18 @@ func (p *inferencePool) InferencePeer(ctx context.Context, caller string, q doma
 	if !valid {
 		return v, httpapi.ErrDenied
 	}
+	if strings.HasPrefix(q.Operation, "maintenance-") {
+		return p.maintenance(ctx, caller, q)
+	}
+	if q.Operation == "forward-turn" {
+		return p.forwardedTurn(ctx, q.ID, q.Global)
+	}
 	if q.Operation == "catalog" {
 		return p.readProjectCatalog(ctx, caller, q)
 	}
 	if q.Operation == "global-chunk" {
 		p.mu.RLock()
-		writer := p.roster.GlobalWriter(q.Chunk.User, q.Global.Session)
+		writer := p.sessionWriter(ctx, q.Chunk.User, q.Global.Session, p.roster)
 		p.mu.RUnlock()
 		if writer != p.self {
 			return v, httpapi.ErrDenied
@@ -192,6 +241,9 @@ func (p *inferencePool) InferencePeer(ctx context.Context, caller string, q doma
 	}
 	if q.Operation == "global-replica" {
 		return v, p.receiveGlobal(ctx, caller, q.Artifact)
+	}
+	if q.Operation == "replicate-queued" {
+		return v, p.admit(ctx, q.Job)
 	}
 	if q.Operation == "replicate" {
 		if caller != q.Job.Owner {
@@ -206,6 +258,11 @@ func (p *inferencePool) InferencePeer(ctx context.Context, caller string, q doma
 	}
 	switch q.Operation {
 	case "confirm", "withdraw", "inspect":
+		p.mu.RLock()
+		defer p.mu.RUnlock()
+		if table != p.table || !p.mayVote(caller) {
+			return v, httpapi.ErrDenied
+		}
 		v.Answer = table.Transition(caller, q.Operation, c)
 	case "recheck":
 		p.mu.RLock()
@@ -225,6 +282,11 @@ func (p *inferencePool) InferencePeer(ctx context.Context, caller string, q doma
 		}
 		return v, nil
 	case "own", "finish":
+		p.mu.RLock()
+		defer p.mu.RUnlock()
+		if table != p.table || !p.mayVote(caller) {
+			return v, httpapi.ErrDenied
+		}
 		// The RAM grant must still match before recording an irrevocable ownership receipt.
 		v.Answer = table.Transition(caller, "inspect", c)
 		if v.Answer.Holder != c {

@@ -108,7 +108,7 @@ For a queued provider, Dispatch returns a nil output after acceptance. DeliverCh
 
 - `planning_client.go`: Reads replicated planning sessions and posts durable commands.
 
-- `inference_roster.go`: Admin enrollment page for a pinned validator roster.
+- `inference_roster.go`: Derives claim participants from authenticated worker registrations and preserves remembered peers across disconnects.
 - `inference_acceptance_test.go`: Exercises independent TLS workers, full-roster agreement, priority, restart, global replication and optional live Ollama execution.
 
 - `inference_views.go`: Shows user-scoped inference task inputs, outputs, status and IDs in each pool.
@@ -118,3 +118,7 @@ For a queued provider, Dispatch returns a nil output after acceptance. DeliverCh
 - `inference_recovery_test.go`: Tests a missing validator, indeterminate provider recovery and a replicated transcript larger than one HTTP envelope.
 
 - `global_projects.go`: Federates visible project metadata across the validator roster and reports unavailable workers in tool results.
+
+- `inference_intake.go`: Accepts global turns durably before writer availability or inference dispatch. Background reconciliation forwards each receipt to the session home and retries interrupted deliveries.
+- `inference_maintenance.go`: Coordinates updater withdrawal with the current peers. A returning worker reconciles durable job receipts before voting again. Missing acknowledgements keep the transition pending.
+- `inference_upgrade_test.go`: Exercises automatic singleton discovery, an existing GUI outbox entry, duplicate submissions, a subsequent worker join and execution during a planned update.

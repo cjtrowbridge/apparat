@@ -187,8 +187,8 @@ func TestClusterStatusCards(t *testing.T) {
 				t.Fatal("status did not explain stalled queue")
 			}
 			links := g.deviceManagementLinks(s.ActionID)
-			if len(links) != 1 || links[0].Route.Page != "inference-roster" {
-				t.Fatal("missing validator setup")
+			if len(links) != 0 {
+				t.Fatal("unexpected manual inference setup")
 			}
 		}
 		if !found {

@@ -109,6 +109,9 @@ type PeerObservation struct {
 	Observed int64
 }
 type InferenceStatus struct {
+	Received                             int
+	OldestQueuedMS                       int64
+	Updating                             string
 	Awaiting                             []string
 	OfflineSince                         int64
 	Busy                                 bool
@@ -120,6 +123,7 @@ type InferenceStatus struct {
 }
 
 type InferenceReply struct {
+	Protocol int `json:",omitempty"`
 	Projects []ChatProject
 	Cursor   string
 	Chunk    *GlobalChunk

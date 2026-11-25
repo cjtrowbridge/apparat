@@ -8,6 +8,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/domain"
+	"time"
 )
 
 func (n *Runtime) PlanningUser() string {
@@ -24,7 +25,7 @@ func (n *Runtime) SavePlanning(ctx context.Context, user, op string, q domain.Gl
 }
 
 func (n *Runtime) planningClients(ctx context.Context, user string) (domain.InferenceRoster, map[string]*httpapi.WorkerClient, string) {
-	workers, lookup := n.KnownWorkers(ctx)
+	_, workers, lookup := n.modelCluster(ctx)
 	clients := map[string]*httpapi.WorkerClient{}
 	var roster domain.InferenceRoster
 	reason := "No saved worker is available. Connect a cluster worker to sync this conversation."
@@ -36,16 +37,21 @@ func (n *Runtime) planningClients(ctx context.Context, user string) (domain.Infe
 		if e != nil || c.Access.User != user {
 			continue
 		}
-		v, e := c.Inference(ctx, domain.InferenceCommand{Operation: "status"})
+		v, e := c.Inference(ctx, domain.InferenceCommand{Operation: "status", Roster: membershipFor(w.Cluster, workers)})
 		if e != nil {
 			continue
 		}
+		if v.Protocol != 2 {
+			reason = "Worker update pending. Apparat will retry automatically."
+			continue
+		}
+		clients[w.Fingerprint] = c
 		if len(v.Roster.Peers) == 0 {
-			reason = "No enrolled inference validators reported. An administrator can enroll them in Cluster Status → Inference validators."
+			reason = "Waiting for authenticated worker membership to synchronize."
 			continue
 		}
 		if len(roster.Peers) > 0 && v.Roster.Revision() != roster.Revision() {
-			return domain.InferenceRoster{}, nil, "Workers reported conflicting validator rosters. Check their enrollment in Cluster Status."
+			continue
 		}
 		roster = v.Roster
 		clients[w.Fingerprint] = c
@@ -70,8 +76,76 @@ func (n *Runtime) syncPlanning(ctx context.Context, user string, entries []persi
 	blocked := map[string]bool{}
 	for _, e := range entries {
 		id := e.Request.Session
-		c := clients[roster.GlobalWriter(user, id)]
-		if c == nil || blocked[id] {
+		home, _ := n.database.SessionHome(ctx, user, id, "")
+		if home == "" {
+			home = roster.GlobalWriter(user, id)
+		}
+		c := clients[home]
+		if blocked[id] {
+			continue
+		}
+		if e.Operation == "global-post" {
+			g := e.Request
+			home := roster.GlobalWriter(user, id)
+			artifact, readErr := n.database.GlobalArtifact(ctx, user, id)
+			if readErr == nil && artifact.Session.Home == "" {
+				for _, worker := range clients {
+					probe, probeErr := worker.Inference(ctx, domain.InferenceCommand{Operation: "session-home", Global: domain.GlobalRequest{Session: id}})
+					if probeErr == nil && probe.State != "" {
+						home = probe.State
+						break
+					}
+				}
+			}
+			if readErr == nil && artifact.Session.Home != "" {
+				home = artifact.Session.Home
+			}
+			if home == "" || g.Parent != nil && *g.Parent == "" && clients[home] == nil {
+				for _, worker := range clients {
+					home = worker.Worker
+					break
+				}
+			}
+			var err error
+			g.Home, err = n.database.SessionHome(ctx, user, id, home)
+			if err != nil {
+				blocked[id] = true
+				continue
+			}
+			accepted := e.Received
+			for _, worker := range clients {
+				if accepted {
+					break
+				}
+				v, sendErr := worker.Inference(ctx, domain.InferenceCommand{Operation: "global-intake", Global: g})
+				if sendErr == nil && v.State == "received" {
+					accepted = true
+					break
+				}
+			}
+			// Retain the local projection until the replicated transcript includes this exact turn.
+			if accepted {
+				err = n.database.MarkPlanningReceived(ctx, user, e.Seq)
+				for _, worker := range clients {
+					v, readErr := worker.Inference(ctx, domain.InferenceCommand{Operation: "global-get", Global: g})
+					if readErr != nil || v.Artifact == nil {
+						continue
+					}
+					for _, turn := range v.Artifact.Session.Turns {
+						if turn.ID == g.Turn && turn.Input == g.Input {
+							err = n.database.PutGlobalArtifact(ctx, *v.Artifact, false)
+							if err == nil {
+								err = n.database.AcknowledgePlanning(ctx, e.Seq, user)
+							}
+							break
+						}
+					}
+				}
+			}
+			blocked[id] = !accepted || err != nil
+			continue
+		}
+		if c == nil {
 			continue
 		}
 		v, err := c.Inference(ctx, domain.InferenceCommand{Operation: e.Operation, Global: e.Request})
@@ -168,10 +242,56 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 				_, _ = v.Session.Apply(g.Turn, g.Input, false)
 			}
 			v.Session.Description = h.Description
-			v.Acknowledged = false
+			v.Acknowledged = entry.Received
 			v.SyncReason = reason
-			if reason == "" && clients[roster.GlobalWriter(user, id)] == nil {
+			if entry.Received {
+				v.SyncReason = "Queued · Chat Pool"
+			}
+			if !entry.Received && reason == "" && clients[roster.GlobalWriter(user, id)] == nil {
 				v.SyncReason = "The worker assigned to this session is unreachable. Apparat will retry automatically."
+			}
+		}
+	}
+	if v.Session != nil && v.Session.Pending() != "" {
+		t := v.Session.Turns[len(v.Session.Turns)-1]
+		if !v.Acknowledged {
+			start, _ := domain.ChatTime(t.ID)
+			v.SyncReason = reason + " Saved " + start.Local().Format("15:04:05") + "."
+		} else if len(t.Steps) > 0 {
+			for _, c := range clients {
+				state, e := c.Inference(ctx, domain.InferenceCommand{Operation: "job-state", ID: t.Steps[len(t.Steps)-1].Job})
+				if e != nil {
+					continue
+				}
+				if state.State == "dispatching" {
+					v.SyncReason = "Generating reply"
+					break
+				}
+				if state.State == "queued" {
+					v.SyncReason = "Queued · Chat Pool"
+				}
+			}
+		}
+		if v.SyncReason == "Queued · Chat Pool" && len(roster.Peers) > 0 {
+			checked, available := 0, false
+			for _, peer := range roster.Peers {
+				cached, ok := n.peerInventory.Load(user + "/" + peer.ID)
+				if !ok {
+					continue
+				}
+				inv := cached.(domain.WorkerInventory)
+				if !inv.Fresh(time.Now()) {
+					continue
+				}
+				checked++
+				for _, m := range inv.Models {
+					if m.Text && m.Name == t.Model.Name && m.Digest == t.Model.Digest {
+						available = true
+					}
+				}
+			}
+			if checked == len(roster.Peers) && !available {
+				v.SyncReason = "Queued · waiting for " + t.Model.Name
 			}
 		}
 	}

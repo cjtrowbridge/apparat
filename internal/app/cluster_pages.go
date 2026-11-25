@@ -32,9 +32,6 @@ func (n *Runtime) ClusterPage(ctx context.Context, r domain.ClusterRoute) (domai
 	if r.Page == "inference-task" {
 		return n.inferenceTaskPage(ctx, r)
 	}
-	if r.Page == "inference-roster" {
-		return n.rosterPage(ctx, r.Target)
-	}
 	if r.Page == "ollama" {
 		return n.inventoryPage(ctx, r)
 	}

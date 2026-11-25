@@ -13,6 +13,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -39,6 +40,9 @@ func (n *Runtime) withGlobal(ctx context.Context, user, id string, h *domain.Cha
 		changed, err = apply(&a.Session)
 	}
 	if err == nil && (changed || fresh) {
+		if a.Session.Home == "" && n.inference != nil {
+			a.Session.Home = n.inference.self
+		}
 		err = a.Session.Validate()
 		if err == nil {
 			a.Version++
@@ -66,9 +70,9 @@ func (p *inferencePool) globalOperation(ctx context.Context, access persistence.
 		return v, e
 	}
 	p.mu.RLock()
-	writer := p.roster.GlobalWriter(access.User, g.Session)
+	writer := p.sessionWriter(ctx, access.User, g.Session, p.roster)
 	p.mu.RUnlock()
-	if writer != p.self {
+	if writer != p.self || g.Home != "" && g.Home != writer {
 		return v, errors.New("session belongs to another worker")
 	}
 	project := "global/" + access.User
@@ -76,7 +80,7 @@ func (p *inferencePool) globalOperation(ctx context.Context, access persistence.
 	if err != nil {
 		return v, err
 	}
-	h := domain.ChatHeader{Version: 1, ID: g.Session, Scope: domain.GlobalChat, Started: start, Description: g.Title, Model: g.Model}
+	h := domain.ChatHeader{Version: 1, ID: g.Session, Scope: domain.GlobalChat, Home: writer, Started: start, Description: g.Title, Model: g.Model}
 	var initial *domain.ChatHeader
 	if q.Operation == "global-post" {
 		initial = &h
@@ -96,6 +100,26 @@ func (p *inferencePool) globalOperation(ctx context.Context, access persistence.
 			return false, errors.New("select a model")
 		}
 		s.Model = g.Model
+		if g.Parent != nil && len(s.Turns) > 0 && s.Turns[len(s.Turns)-1].ID != *g.Parent {
+			for _, t := range s.Turns {
+				if t.ID == g.Turn {
+					return p.runtime.queueChatTurn(ctx, project, access.User, s, g.Turn, g.Input)
+				}
+			}
+			if *g.Parent != "" && !slices.ContainsFunc(s.Turns, func(t domain.ChatTurn) bool {
+				return t.ID == *g.Parent
+			}) {
+				return false, errors.New("waiting for previous turn")
+			}
+			changed, e := s.Apply(g.Turn, g.Input, false)
+			if e == nil && changed {
+				s.Turns[len(s.Turns)-1].Stopped = "Another device advanced this conversation. Review the intervening reply before resending."
+			}
+			return changed, e
+		}
+		if g.Parent != nil && *g.Parent != "" && len(s.Turns) == 0 {
+			return false, errors.New("waiting for previous turn")
+		}
 		return p.runtime.queueChatTurn(ctx, project, access.User, s, g.Turn, g.Input)
 	})
 	if err == nil {
@@ -109,7 +133,10 @@ func (p *inferencePool) receiveGlobal(ctx context.Context, caller string, a *dom
 		return httpapi.ErrDenied
 	}
 	p.mu.RLock()
-	writer := p.roster.GlobalWriter(a.User, a.Session.ID)
+	writer := p.sessionWriter(ctx, a.User, a.Session.ID, p.roster)
+	if a.Session.Home == caller && p.table.Member(caller) {
+		writer, _ = p.db.SessionHome(ctx, a.User, a.Session.ID, caller)
+	}
 	p.mu.RUnlock()
 	if writer != caller {
 		return httpapi.ErrDenied
@@ -153,10 +180,11 @@ func (p *inferencePool) publishGlobals(ctx context.Context) {
 	roster := p.roster
 	p.mu.RUnlock()
 	for _, a := range rows {
-		if roster.GlobalWriter(a.User, a.Session.ID) != p.self {
+		if p.sessionWriter(ctx, a.User, a.Session.ID, roster) != p.self {
 			continue
 		}
 		notice := a
+		notice.Session.Home = p.self
 		notice.Session.Turns = nil
 		v := p.fanout(ctx, roster, domain.InferenceCommand{Operation: "global-replica", Artifact: &notice})
 		if len(v) == len(roster.Peers) {

@@ -29,10 +29,10 @@ func (p *inferencePool) run(ctx context.Context) {
 }
 func (p *inferencePool) dispatchNext(ctx context.Context) bool {
 	p.mu.RLock()
-	roster := p.roster
 	table := p.table
 	p.mu.RUnlock()
-	if table == nil {
+	roster := p.votingRoster()
+	if table == nil || len(roster.Peers) == 0 {
 		return false
 	}
 	inventory := p.inventory.Snapshot()
@@ -122,7 +122,10 @@ func (p *inferencePool) execute(ctx context.Context, roster domain.InferenceRost
 		if err != nil {
 			return false
 		}
-		c = domain.InferenceClaim{Job: r.Job.Packet.Job, Revision: r.Job.Revision, Digest: domain.InferenceDigest(r.Job), Executor: p.self, Attempt: attempt}
+		p.mu.RLock()
+		revision := p.roster.Revision()
+		p.mu.RUnlock()
+		c = domain.InferenceClaim{Job: r.Job.Packet.Job, Revision: revision, Digest: domain.InferenceDigest(r.Job), Executor: p.self, Attempt: attempt}
 	}
 	p.mu.Lock()
 	previous, retained := p.active[c.Job]
@@ -151,6 +154,16 @@ func (p *inferencePool) execute(ctx context.Context, roster domain.InferenceRost
 	}
 	replies := p.fanout(ctx, roster, q)
 	if !allReplies(roster, replies, c, "reserved", "owned") {
+		for _, peer := range roster.Peers {
+			reply, answered := replies[peer.ID]
+			if !answered || reply.Answer.State != "missing" || peer.ID == p.self {
+				continue
+			}
+			client, e := p.peerClient(peer)
+			if e == nil {
+				_, _ = client.Call(ctx, domain.InferenceCommand{Operation: "replicate-queued", Job: r.Job})
+			}
+		}
 		var winner domain.InferenceClaim
 		if r.State == "queued" && len(replies) == len(roster.Peers) {
 			best := c

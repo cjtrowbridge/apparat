@@ -113,6 +113,9 @@ func checkPersonalResume(t *testing.T, writer, replica inferenceFixture, user *i
 	mustInference(t, err)
 	roster, clients, _ := gui.planningClients(ctx, user.Fingerprint())
 	gui.syncPlanning(ctx, user.Fingerprint(), entries, roster, clients)
+	replica.p.applyReceipts(ctx)
+	writer.p.applyReceipts(ctx)
+	gui.syncPlanning(ctx, user.Fingerprint(), entries, roster, clients)
 	entries, err = db.PlanningEntries(ctx, user.Fingerprint())
 	mustInference(t, err)
 	if len(entries) != 0 {

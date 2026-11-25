@@ -174,3 +174,7 @@ Remove the scrolling-demo transcript from new sessions. Verify the empty compose
 ### Chat submission and sync feedback (Phases 13–14 and 16)
 
 Route Enter in the global and project composers through the Send action. Keep Shift+Enter for line breaks. Show the writer discovery or enrollment blocker when a global submission remains in the originating device's outbox.
+
+### Automatic inference participation and durable intake (Phases 13–14)
+
+Remove separate validator enrollment and hash service assignments from inference. Carry authenticated worker membership through ordinary cluster synchronization, preserve existing claims and global histories across upgrades, and decouple turn receipt from executor selection. Verify singleton upgrade, multiple workers, contention, restart, pool visibility and canonical release.

@@ -169,9 +169,6 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			if opt.Route.Page == "ollama" {
 				kind = "configure-ollama"
 			}
-			if opt.Route.Page == "inference-roster" {
-				kind = "inference-roster"
-			}
 			if opt.Route.Page == "performance" {
 				kind = "performance"
 			}

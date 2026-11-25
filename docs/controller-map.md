@@ -107,7 +107,7 @@ On the HUD, drag the PTT circle up to lock recording. Drag the locked circle dow
 
 In a planning or project conversation, activate the model name above the editor to open the model picker. Navigate its text buttons with Tab, Shift+Tab or the D-pad. Choose a model, then Save for this chat or the administrator-only scope default action. Cancel, Back or Escape restores the chat. Selection and the saved scope default have separate labels.
 
-Cluster Status occupies the former Local Services selector. Select it with the normal Cluster navigation to inspect agreement, queue totals and provider slots. Administrators open Inference validators, inspect the listed workers and confirm enrollment. Back returns to the status page. Pool task filters, keyboard and D-pad activation open the same inference input and output details as touch. Global and project conversation refreshes preserve the compose draft.
+Cluster Status occupies the former Local Services selector. Select it with the normal Cluster navigation to inspect agreement, queue totals and provider slots. Worker participation updates automatically. The status cards report outstanding receipts, queued tasks, active updates and claim agreement. Pool task filters, keyboard and D-pad activation open the same inference input and output details as touch. Global and project conversation refreshes preserve the compose draft.
 
 Project Chat opens the message composer directly. Back from the conversation opens its session list. New conversation opens another empty composer. A saved repository session exposes the pencil for title edits.
 

@@ -47,8 +47,15 @@ func (events *updateEvents) run(ctx context.Context, node *app.Runtime) int {
 		}
 		path := node.Config().DatabasePath
 		result, err := checkWorker(ctx, func(stage string) bool {
-			return discovery.Command(ctx, "updates-"+stage, path, mode).Run() == nil
+			eligible := discovery.Command(ctx, "updates-"+stage, path, mode).Run() == nil
+			if eligible && stage == "drain" {
+				return node.PrepareInferenceUpdate(ctx)
+			}
+			return eligible
 		})
+		if result != "installed" {
+			node.CancelInferenceUpdate(ctx)
+		}
 		level := "info"
 		if err != nil {
 			level = "error"

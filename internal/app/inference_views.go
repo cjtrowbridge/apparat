@@ -10,7 +10,7 @@ import (
 )
 
 func (n *Runtime) inferenceRows(ctx context.Context, w domain.ClusterDevice, pool string, seen map[string]bool) []domain.PoolTaskRow {
-	if w.Inference == nil || w.Inference.OfflineSince > 0 {
+	if w.Inference != nil && w.Inference.OfflineSince > 0 {
 		return nil
 	}
 	c, err := n.workspaceClient(ctx, "worker-"+w.Fingerprint)

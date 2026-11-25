@@ -25,7 +25,8 @@ func (n *Runtime) queueChatTurn(ctx context.Context, project, user string, s *do
 	}
 	pool := "Project Pool"
 	if s.Scope == domain.GlobalChat {
-		pool = "Chat Pool"
+		// The transcript transaction records global work atomically.
+		return changed, nil
 	}
 	w := persistence.ChatWork{ChatAddress: domain.ChatAddress{Project: project, Session: s.ID, Turn: id}, User: user, Pool: pool}
 	return changed, n.database.AddChatWork(ctx, w)
@@ -51,6 +52,8 @@ func (n *Runtime) runChatWork(ctx context.Context) {
 			}
 		}
 		if n.inference != nil {
+			n.inference.recoverMaintenance(ctx)
+			n.inference.applyReceipts(ctx)
 			n.mirrorGlobalMarkdown(ctx)
 			n.inference.publishGlobals(ctx)
 		}
@@ -116,11 +119,11 @@ func (n *Runtime) reconcileChatWork(ctx context.Context, w persistence.ChatWork)
 	if len(roster.Peers) == 0 {
 		return
 	}
-	packet, err := n.database.BoundPacket(ctx, job, roster.Revision())
+	packet, revision, err := n.database.BoundPacket(ctx, job, roster.Revision())
 	if err != nil {
 		return
 	}
-	j := domain.InferenceJob{Revision: roster.Revision(), Owner: self, User: w.User, Pool: w.Pool, Packet: packet}
+	j := domain.InferenceJob{Revision: revision, Owner: self, User: w.User, Pool: w.Pool, Packet: packet}
 	admitted, err := n.database.PacketAdmitted(ctx, job)
 	if err != nil {
 		return

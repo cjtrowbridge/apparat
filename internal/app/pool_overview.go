@@ -57,7 +57,7 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 	users := map[string]string{}
 	seenJobs := map[string]bool{}
 	for _, w := range workers {
-		if (r.Worker != "" && r.Worker != w.Fingerprint) || !slices.Contains(w.PoolNames, r.Pool) {
+		if r.Worker != "" && r.Worker != w.Fingerprint {
 			continue
 		}
 		overview.Tasks = append(overview.Tasks, n.inferenceRows(ctx, w, r.Pool, seenJobs)...)

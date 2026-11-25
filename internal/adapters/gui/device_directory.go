@@ -47,15 +47,6 @@ func (g *Game) personalSections() []hud.Section {
 
 func (g *Game) deviceManagementLinks(action string) []domain.ClusterOption {
 	var options []domain.ClusterOption
-	if action == "cluster-status" {
-		seen := map[string]bool{}
-		for _, d := range g.serviceProjection.Devices {
-			if d.Admin && !seen[d.Cluster] {
-				seen[d.Cluster] = true
-				options = append(options, domain.ClusterOption{Label: "Inference validators · " + d.DisplayName(), Route: domain.ClusterRoute{Page: "inference-roster", Target: d.Cluster}})
-			}
-		}
-	}
 	for _, w := range g.serviceProjection.Devices {
 		if !w.Admin {
 			continue

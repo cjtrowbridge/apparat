@@ -14,6 +14,8 @@ type GlobalArtifact struct {
 	Session ChatSession
 }
 type GlobalRequest struct {
+	Parent                                    *string `json:",omitempty"`
+	Home                                      string  `json:",omitempty"`
 	Session, Turn, Input, Title, Base, Cursor string
 	Model                                     ModelRef
 }

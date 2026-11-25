@@ -17,6 +17,7 @@ const (
 )
 
 type ChatHeader struct {
+	Home        string    `yaml:"home,omitempty" json:",omitempty"`
 	Model       ModelRef  `yaml:"model,omitempty"`
 	Version     int       `yaml:"version"`
 	ID          string    `yaml:"session_id"`

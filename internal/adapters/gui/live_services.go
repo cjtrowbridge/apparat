@@ -93,7 +93,10 @@ func (game *Game) liveServicesSection() hud.Section {
 			v := d.Inference
 			health = fmt.Sprintf("%d validators · confirmation %s · propagation %s · recheck %s · %d incomplete rounds", v.Validators, timingLabel(v.Timing.Confirmation), timingLabel(v.Timing.Propagation), v.Timing.Recheck, v.Timing.Incomplete)
 			if v.Validators == 0 {
-				health = "Awaiting roster enrollment"
+				health = "Synchronizing authenticated worker membership"
+			}
+			if v.Updating != "" {
+				health += " · worker update in progress"
 			}
 			if v.Busy {
 				model += " · model slot busy"
@@ -113,6 +116,12 @@ func (game *Game) liveServicesSection() hud.Section {
 				}
 			}
 			tasks = fmt.Sprintf("%d queued · %d owned · %d dispatching · %d finished", v.Queued, v.Owned, v.Dispatching, v.Finished)
+			if v.Received > 0 {
+				tasks += fmt.Sprintf(" · %d received for delivery", v.Received)
+			}
+			if v.OldestQueuedMS > 0 {
+				tasks += " · oldest queued " + time.UnixMilli(v.OldestQueuedMS).Local().Format("15:04:05")
+			}
 		}
 		agreement.Rows = append(agreement.Rows, hud.Row{Label: name, Detail: health})
 		queue.Rows = append(queue.Rows, hud.Row{Label: name, Detail: tasks})

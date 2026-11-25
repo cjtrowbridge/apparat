@@ -16,7 +16,7 @@ func (p *inferencePool) readProjectCatalog(ctx context.Context, caller string, q
 	p.mu.RLock()
 	r := p.roster
 	p.mu.RUnlock()
-	if !domain.ValidID(g.Session) || r.GlobalWriter(q.ID, g.Session) != caller {
+	if !domain.ValidID(g.Session) || p.sessionWriter(ctx, q.ID, g.Session, r) != caller {
 		return v, httpapi.ErrDenied
 	}
 	ok, err := p.db.CatalogMember(ctx, r.Cluster, q.ID)

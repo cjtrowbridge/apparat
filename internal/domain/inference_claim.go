@@ -75,7 +75,13 @@ func (t *ClaimTable) Transition(caller, operation string, c InferenceClaim) Clai
 	defer t.mu.Unlock()
 	member := t.Member(caller)
 	r := t.jobs[c.Job]
-	if !member || caller != c.Executor || c.Revision != t.revision || !ValidID(c.Attempt) || r == nil || r.digest != c.Digest {
+	if !member || caller != c.Executor || c.Revision != t.revision || !ValidID(c.Attempt) {
+		return ClaimAnswer{State: "invalid"}
+	}
+	if r == nil {
+		return ClaimAnswer{State: "missing"}
+	}
+	if r.digest != c.Digest {
 		return ClaimAnswer{State: "invalid"}
 	}
 	if !t.ready {
@@ -128,4 +134,15 @@ func CompareClaim(a, b InferenceClaim) int {
 // Member checks the immutable identity set without acquiring the reservation mutex.
 func (t *ClaimTable) Member(id string) bool {
 	return t.members[id]
+}
+
+func (t *ClaimTable) Reserved() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	for _, r := range t.jobs {
+		if r.state == "reserved" {
+			return true
+		}
+	}
+	return false
 }

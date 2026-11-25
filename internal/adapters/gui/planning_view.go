@@ -129,7 +129,11 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 		case turn.Stopped != "":
 			g.chatBubble(conversation, turn.Stopped, false, false)
 		case s.acknowledged:
-			g.chatBubble(conversation, "Waiting for reply", false, true)
+			label := "Waiting for reply"
+			if s.syncReason != "" {
+				label = s.syncReason
+			}
+			g.chatBubble(conversation, label, false, true)
 		default:
 			status := "Waiting to sync · saved on this device"
 			if s.syncReason != "" {

@@ -2082,7 +2082,7 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 - [x] Wire global planning and filesystem project sessions through the four-priority scheduler to loopback Ollama. Replicate global revisions, apply results on the session owner and expose user-scoped inputs and outputs.
 - [x] Exercise two pinned workers, gated admission, concurrent claims, restart, mixed priorities and one real trashcan0 model result through the same provider adapter.
-- [ ] Qualify a coordinated validator membership change, extended partitions and operator recovery across device replacement. Add historical downtime and capacity analysis after the live status baseline.
+- [ ] Qualify extended partitions and operator recovery across permanent worker identity replacement. Add historical downtime and capacity analysis after the live status baseline.
 
 
 - [x] Accept claim proposals on any node. Require authenticated confirmation of the same job, attempt, executor, input digest and membership revision from every inference node before provider invocation.
@@ -2158,7 +2158,7 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 ### Pools
 
-- [x] Implement a pinned membership revision and multi-writer claims with full inference-roster confirmation. Coordinated replacement of an existing membership revision remains open.
+- [x] Use authenticated cluster membership for multi-writer claims. Accept global turns at a reachable worker, preserve the session home and fence execution across automatic joins and planned updates.
 - [ ] Support heterogeneous members while leasing only to currently compatible services.
 - [ ] Persist membership revision, authorization, workload allowlist, priorities, availability, and owner policy.
 - [ ] Have members collect confirmations from all inference nodes and replicate signed results bound to the confirmed claim.

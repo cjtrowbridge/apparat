@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -31,6 +32,9 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 		workers, err := n.KnownWorkers(ctx)
 		if err == nil {
 			var group errgroup.Group
+			var mu sync.Mutex
+			views := map[string]domain.InferenceRoster{}
+			clients := map[string]*httpapi.WorkerClient{}
 			group.SetLimit(4)
 			for _, w := range workers {
 				group.Go(func() error {
@@ -43,9 +47,15 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 						err = readErr
 						key := client.Access.User + "/" + w.Fingerprint
 						if readErr == nil {
-							reply, statusErr := client.Inference(call, domain.InferenceCommand{Operation: "status"})
+							reply, statusErr := client.Inference(call, domain.InferenceCommand{Operation: "status", Roster: membershipFor(w.Cluster, workers)})
 							if statusErr == nil {
 								n.peerInference.Store(key, reply.Status)
+								if reply.Protocol == 2 {
+									mu.Lock()
+									views[w.Fingerprint] = reply.Roster
+									clients[w.Fingerprint] = client
+									mu.Unlock()
+								}
 							} else {
 								n.inferenceOffline(key)
 							}
@@ -64,6 +74,7 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 				})
 			}
 			_ = group.Wait()
+			n.convergeMemberships(ctx, views, clients)
 			n.mu.Lock()
 			if n.serviceManager != nil && len(workers) > 0 {
 				n.serviceManager.notify()

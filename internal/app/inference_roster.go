@@ -1,54 +1,100 @@
-// Presents the administrator's explicit validator roster, including offline saved workers.
-// The same pinned identities and revision must be accepted on every worker.
+// Derives inference membership from existing authenticated cluster registrations.
+// Missing endpoints do not remove a previously authenticated worker from claim rounds.
 package app
 
 import (
 	"context"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
+	"slices"
+	"strings"
+
 	"github.com/cjtrowbridge/apparat/internal/domain"
 )
 
-func (n *Runtime) rosterPage(ctx context.Context, cluster string) (p domain.ClusterPage, err error) {
-	devices, err := n.KnownWorkers(ctx)
-	if err != nil {
-		return p, err
-	}
+func membershipFor(cluster string, workers []domain.ClusterDevice) domain.InferenceRoster {
 	r := domain.InferenceRoster{Cluster: cluster}
-	p.Title = "Inference validators"
-	p.Detail = "Every listed worker must confirm a claim before inference starts. An offline worker holds new work in the queue."
-	for _, d := range devices {
-		if d.Cluster != cluster {
+	for _, w := range workers {
+		if w.Cluster == cluster {
+			r.Peers = append(r.Peers, domain.InferencePeer{ID: w.Fingerprint, Address: w.Address})
+		}
+	}
+	return r
+}
+
+// Called under the inference lock. Never rewrite the participants of an owned attempt.
+func (p *inferencePool) mergeMembership(ctx context.Context, r domain.InferenceRoster) (domain.InferenceRoster, error) {
+	if p.table == nil {
+		return r, nil
+	}
+	if r.Cluster != p.roster.Cluster {
+		return r, errors.New("cluster identity mismatch")
+	}
+	seen := map[string]bool{}
+	peers := slices.Clone(r.Peers)
+	for _, peer := range peers {
+		seen[peer.ID] = true
+	}
+	for _, peer := range p.roster.Peers {
+		if !seen[peer.ID] {
+			peers = append(peers, peer)
+		}
+	}
+	slices.SortFunc(peers, func(a, b domain.InferencePeer) int {
+		return strings.Compare(a.ID, b.ID)
+	})
+	r.Peers = peers
+	if r.Revision() != p.roster.Revision() {
+		if p.withdrawal.Phase != "" || len(p.active) != 0 || p.table.Reserved() {
+			return r, errors.New("retry membership after active claim")
+		}
+		err := p.db.PrepareMembershipChange(ctx, p.roster)
+		if err != nil {
+			return r, err
+		}
+	}
+	return r, nil
+}
+
+// Relay independently verified peers across overlapping GUI directories. An offline peer
+// remains in each worker's durable membership until an authenticated lifecycle transition.
+func (n *Runtime) convergeMemberships(ctx context.Context, views map[string]domain.InferenceRoster, clients map[string]*httpapi.WorkerClient) {
+	known := map[string]domain.InferencePeer{}
+	for _, r := range views {
+		for _, p := range r.Peers {
+			known[p.ID] = p
+		}
+	}
+	for _, r := range views {
+		for _, p := range r.Peers {
+			if clients[p.ID] != nil {
+				continue
+			}
+			c, e := n.cachedWorker(ctx, p.ID+"/"+p.Address, func() (*httpapi.WorkerClient, error) {
+				return httpapi.OpenWorker(ctx, p.Address, p.ID, n.Personal, n.Keys, &n.observations)
+			})
+			if e == nil && c.Access.Cluster == r.Cluster && c.Access.Admission == "approved" {
+				clients[p.ID] = c
+			}
+		}
+	}
+	for id, c := range clients {
+		if !c.Access.Admin {
 			continue
 		}
-		if !d.Admin {
-			return p, errors.New("administrator access required on each worker")
+		combined := views[id]
+		if combined.Cluster == "" {
+			combined.Cluster = c.Access.Cluster
 		}
-		r.Peers = append(r.Peers, domain.InferencePeer{ID: d.Fingerprint, Address: d.Address})
-		p.Detail += "\n" + d.DisplayName() + " · " + d.Address
-	}
-	if len(r.Peers) == 0 {
-		return p, errors.New("no saved workers for this cluster")
-	}
-	err = r.Validate(r.Peers[0].ID)
-	if err != nil {
-		return p, err
-	}
-	p.Options = append(p.Options, domain.ClusterOption{Label: "Enroll listed validators", Confirm: "Pin these workers for inference claims?", Run: func(ctx context.Context, _ string) error {
-		for _, peer := range r.Peers {
-			c, e := n.workspaceClient(ctx, "worker-"+peer.ID)
-			if e != nil {
-				return e
-			}
-			_, e = c.Inference(ctx, domain.InferenceCommand{Operation: "roster", Roster: r})
-			if e != nil {
-				return e
+		combined.Peers = slices.Clone(combined.Peers)
+		for other, peer := range known {
+			v := clients[other]
+			if v != nil && v.Access.Cluster == c.Access.Cluster && !slices.Contains(combined.IDs(), other) {
+				combined.Peers = append(combined.Peers, peer)
 			}
 		}
-		select {
-		case n.inventoryHint <- struct{}{}:
-		default:
+		if len(combined.Peers) > len(views[id].Peers) {
+			_, _ = c.Inference(ctx, domain.InferenceCommand{Operation: "status", Roster: combined})
 		}
-		return nil
-	}})
-	return p, nil
+	}
 }

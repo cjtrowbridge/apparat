@@ -25,10 +25,25 @@ func (db *DB) PutGlobalArtifact(ctx context.Context, a domain.GlobalArtifact, pe
 	if err != nil {
 		return err
 	}
-	r, err := db.sql.ExecContext(ctx, `INSERT INTO global_chats(user,session,revision,digest,body,pending) VALUES(?,?,?,?,?,?) ON CONFLICT(user,session) DO UPDATE SET
+	tx, err := db.sql.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	r, err := tx.ExecContext(ctx, `INSERT INTO global_chats(user,session,revision,digest,body,pending) VALUES(?,?,?,?,?,?) ON CONFLICT(user,session) DO UPDATE SET
 	revision=excluded.revision,digest=excluded.digest,body=excluded.body,pending=excluded.pending
 	WHERE excluded.revision>revision OR (excluded.revision=revision AND excluded.digest=digest)`, a.User, a.Session.ID, a.Version, domain.InferenceDigest(a.Session), b, pending)
-	return inferenceChange(r, err)
+	err = inferenceChange(r, err)
+	if err != nil {
+		return err
+	}
+	if pending && a.Session.Pending() != "" {
+		_, err = tx.ExecContext(ctx, "INSERT OR IGNORE INTO chat_work VALUES(?,?,?,?,?)", "global/"+a.User, a.Session.ID, a.Session.Pending(), a.User, "Chat Pool")
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (db *DB) GlobalHeaders(ctx context.Context, user, cursor string) ([]domain.ChatHeader, error) {

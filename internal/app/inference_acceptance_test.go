@@ -3,7 +3,6 @@
 package app
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/inventory"
@@ -67,15 +66,6 @@ func workerFixture(t *testing.T, owner *identity.Personal, device *identity.Sess
 	})
 	client, err := httpapi.OpenWorker(ctx, peer.Address, self, owner, device)
 	mustInference(t, err)
-	fixture, err := sql.Open("sqlite", path)
-	mustInference(t, err)
-	defer func() {
-		_ = fixture.Close()
-	}()
-	for _, pool := range domain.DefaultPools() {
-		_, err = fixture.ExecContext(ctx, "INSERT OR IGNORE INTO pool_services VALUES(?,?,?,?)", client.Access.Cluster, pool.Name, self, persistence.HashService)
-		mustInference(t, err)
-	}
 	return inferenceFixture{p, client, peer}
 }
 func TestInferenceAgreement(t *testing.T) {
@@ -123,7 +113,7 @@ func TestInferenceAgreement(t *testing.T) {
 	nodes := []inferenceFixture{a, b}
 	r := domain.InferenceRoster{Cluster: a.c.Access.Cluster, Peers: []domain.InferencePeer{a.peer, b.peer}}
 	for _, w := range nodes {
-		_, err := w.c.Inference(ctx, domain.InferenceCommand{Operation: "roster", Roster: r})
+		_, err := w.c.Inference(ctx, domain.InferenceCommand{Operation: "status", Roster: r})
 		mustInference(t, err)
 	}
 	ref := domain.ModelRef{Provider: "ollama", Name: model}
