@@ -179,3 +179,5 @@ Worker inventory resources optionally include `PhysicalCores`, `CPUFP32PerSecond
 For an initial project workspace `agent-post`, use the same new ID for the thread and the first turn. The owner creates the Markdown session with the opening sentence as its title. Retry with the same IDs and input after a lost response. Subsequent turns use new turn IDs.
 
 Authenticated inference operation `model-speed` takes a ModelRef and returns the responding executor’s aggregate prefill and eval tokens per second across completed jobs for that model. Each missing rate is null. The response contains no job inputs or outputs.
+
+`POST /v1/inventory/hardware` exchanges installed capacity on the existing authenticated worker connection. A GUI can update only the device bound to its session. The worker returns reports for visible approved GUI devices, excluding revoked devices. Live utilization and model availability still use timestamped inventory.

@@ -15,6 +15,7 @@ import (
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/inventory"
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
@@ -56,6 +57,9 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 	requireWorkspaceOK(t, db.ConfirmOwner(ctx, pin, actor.person.Fingerprint()))
 	first, err := httpapi.OpenWorker(ctx, addr, pin, actor.person, actor.device)
 	requireWorkspaceOK(t, err)
+	firstID := identity.Fingerprint(actor.device.Public())
+	_, err = first.MemberHardware(ctx, domain.HardwareCapacity{Threads: 24})
+	requireWorkspaceOK(t, err)
 	_, err = first.TryOllama(ctx, port)
 	requireWorkspaceOK(t, err)
 	requireWorkspaceOK(t, server.Close())
@@ -83,6 +87,11 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 	}()
 	secondClient, err := httpapi.OpenWorker(ctx, addr, pin, actor.person, second.Keys)
 	requireWorkspaceOK(t, err)
+	reports, err := secondClient.MemberHardware(ctx, domain.HardwareCapacity{Threads: 8})
+	requireWorkspaceOK(t, err)
+	if reports[firstID].Threads != 24 || reports[secondClient.Access.Device].Threads != 8 {
+		t.Fatal("paired device capacities missing after restart", reports)
+	}
 	requireWorkspaceOK(t, secondDB.SaveWorkerAccess(ctx, "worker", addr, pin, secondClient.Access))
 	second.RequestSync()
 	deadline := time.Now().Add(4 * time.Second)
@@ -91,7 +100,7 @@ func TestInventoryRestoredAcrossDevices(t *testing.T) {
 		requireWorkspaceOK(t, err)
 		if len(rows) == 1 && rows[0].Inventory != nil {
 			v := rows[0].Inventory
-			if v.Configured && v.Port == port && v.HasText(time.Now()) && v.Models[0].Name == "shared" {
+			if rows[0].Hardware[firstID].Threads == 24 && rows[0].Hardware[pin].Threads > 0 && v.Configured && v.Port == port && v.HasText(time.Now()) && v.Models[0].Name == "shared" {
 				return
 			}
 		}

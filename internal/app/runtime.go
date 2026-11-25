@@ -37,6 +37,7 @@ const (
 type Runtime struct {
 	inference           *inferencePool
 	inventory           *inventory.Monitor
+	rosterHardware      sync.Map
 	peerInventory       sync.Map
 	peerInference       sync.Map
 	workspaceConnection ownerConnection

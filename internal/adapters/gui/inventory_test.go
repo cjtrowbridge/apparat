@@ -218,3 +218,26 @@ func TestClusterHardwareTotals(t *testing.T) {
 		t.Fatal("tera scaling")
 	}
 }
+
+func TestHardwareMembershipChanges(t *testing.T) {
+	now := time.Now()
+	gui := domain.HardwareCapacity{Boot: "gui", Threads: 4}
+	worker := domain.HardwareCapacity{Boot: "worker", Threads: 40}
+	p := ServiceProjection{LocalDevice: domain.PoolDevice{ID: "local"}, LocalInventory: domain.WorkerInventory{Observed: now.Unix(), Resources: domain.NodeResources{CPUs: 8}}}
+	threads := func(want string) {
+		t.Helper()
+		card := hardwareCard(p, now)
+		if len(card.Rows) < 2 || card.Rows[1].Detail != want {
+			t.Fatalf("want %s threads: %+v", want, card)
+		}
+	}
+	threads("8")
+	p.Devices = []domain.ClusterDevice{{Fingerprint: "worker", Hardware: map[string]domain.HardwareCapacity{"worker": worker, "gui": gui}, Roster: []domain.PoolDevice{{ID: "gui"}}}}
+	threads("52")
+	p.Devices[0].RosterHardware = map[string]domain.HardwareCapacity{"worker": worker, "other": {Boot: "other", Threads: 24}}
+	threads("76")
+	p.Devices[0].Roster = nil
+	threads("72")
+	p.Devices = nil
+	threads("8")
+}

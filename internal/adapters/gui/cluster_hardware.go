@@ -1,6 +1,6 @@
 //go:build gui
 
-// Builds a screenshot-friendly scorecard from fresh local and authenticated worker inventory.
+// Totals installed capacity across the current local and authenticated cluster directory.
 // Metric captions give reporting coverage when only some hosts supplied a measurement.
 package gui
 
@@ -18,42 +18,54 @@ import (
 )
 
 func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
-	devices := map[string]domain.WorkerInventory{}
-	add := func(id string, v *domain.WorkerInventory) {
+	devices := map[string]domain.HardwareCapacity{}
+	add := func(id string, h domain.HardwareCapacity) {
 		if id == "" {
 			return
 		}
-		current := devices[id]
-		if v != nil && v.Fresh(now) && v.Observed > current.Observed {
-			current = *v
+		_, exists := devices[id]
+		if !exists || h.Threads > 0 {
+			devices[id] = h
 		}
-		devices[id] = current
 	}
-	local := p.LocalDevice.ID
-	if local == "" && p.LocalInventory.Observed != 0 {
-		local = "local"
-	}
-	add(local, &p.LocalInventory)
-	for _, peer := range p.Peers {
-		add(peer.ID, nil)
+	// Consult cached capacity only for current members of the reporting directory.
+	for _, d := range p.Devices {
+		for id, h := range d.RosterHardware {
+			add(id, h)
+		}
+		add(d.Fingerprint, d.Hardware[d.Fingerprint])
+		for _, peer := range d.Roster {
+			add(peer.ID, d.Hardware[peer.ID])
+		}
 	}
 	for _, d := range p.Devices {
-		add(d.Fingerprint, d.Inventory)
+		add(d.Fingerprint, domain.HardwareCapacity{})
+		if d.Inventory != nil && d.Inventory.Fresh(now) {
+			add(d.Fingerprint, d.Inventory.Capacity())
+		}
 	}
-	hosts := map[string]domain.WorkerInventory{}
+	for _, peer := range p.Peers {
+		add(peer.ID, domain.HardwareCapacity{})
+	}
+	local := p.LocalDevice.ID
+	if local == "" && p.LocalInventory.Observed > 0 {
+		local = "local"
+	}
+	add(local, p.LocalInventory.Capacity())
+	hosts := map[string]domain.HardwareCapacity{}
 	missing := 0
-	for id, v := range devices {
-		if v.Observed == 0 {
+	for id, h := range devices {
+		if h.Threads == 0 {
 			missing++
 			continue
 		}
 		key := id
-		if v.Resources.HostBootDigest != "" {
-			key = "boot/" + v.Resources.HostBootDigest
+		if h.Boot != "" {
+			key = "boot/" + h.Boot
 		}
 		prior := hosts[key]
-		if prior.Observed < v.Observed || prior.Observed == v.Observed && prior.Resources.CPUFP32PerSecond < v.Resources.CPUFP32PerSecond {
-			hosts[key] = v
+		if prior.Threads < h.Threads || prior.Threads == h.Threads && prior.INT8 < h.INT8 {
+			hosts[key] = h
 		}
 	}
 	card := hud.Section{ContentKind: "cluster-hardware", Title: "Cluster hardware", Description: fmt.Sprintf("%d reporting hosts", len(hosts))}
@@ -61,7 +73,7 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 		card.Description = "1 reporting host"
 	}
 	if missing > 0 {
-		card.Description += fmt.Sprintf(" · %d devices without fresh inventory", missing)
+		card.Description += fmt.Sprintf(" · %d devices awaiting hardware reports", missing)
 	}
 	if len(hosts) == 0 {
 		return card
@@ -69,20 +81,9 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 	var totals [6]float64
 	var reports [6]int
 	unknownGPU := 0
-	for _, v := range hosts {
-		r := v.Resources
-		values := [6]float64{float64(r.PhysicalCores), float64(r.CPUs)}
-		if r.RAM != nil {
-			values[2] = float64(r.RAM.Total)
-		}
-		for _, gpu := range r.GPUs {
-			values[3] += float64(gpu.Total)
-		}
-		for _, disk := range r.Disks {
-			values[4] += float64(disk.Total)
-		}
-		values[5] = 4 * (r.CPUFP32PerSecond + r.GPUFP32PerSecond)
-		unknownGPU += max(0, len(r.GPUs)-r.GPUComputeReports)
+	for _, h := range hosts {
+		values := [6]float64{float64(h.Cores), float64(h.Threads), float64(h.RAM), float64(h.VRAM), float64(h.Disk), h.INT8}
+		unknownGPU += h.UnratedGPUs
 		for i, value := range values {
 			if value > 0 && !math.IsNaN(value) && !math.IsInf(value, 0) {
 				totals[i] += value

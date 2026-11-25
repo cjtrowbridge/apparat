@@ -94,6 +94,12 @@ func (n *Runtime) syncOne(ctx context.Context, db *persistence.DB, w domain.Clus
 				if seconds > 0 {
 					return time.Duration(seconds) * time.Second, nil
 				}
+				// A new replica can add or remove devices while Status is open.
+				n.notifyInventory()
+				select {
+				case n.inventoryHint <- struct{}{}:
+				default:
+				}
 			}
 			if err == nil {
 				return time.Second, nil

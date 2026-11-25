@@ -2082,7 +2082,7 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 ### Distributed inference claims
 
 - [x] Stream in-progress Ollama output directly to open global and project conversations with generation-phase feedback.
-- [x] Show fresh cluster hardware totals and an estimated INT8-equivalent CPU and GPU score above live claim telemetry.
+- [x] Show membership-based cluster hardware totals and an estimated INT8-equivalent CPU and GPU score above live claim telemetry.
 
 - [x] Wire global planning and filesystem project sessions through the four-priority scheduler to loopback Ollama. Replicate global revisions, apply results on the session owner and expose user-scoped inputs and outputs.
 - [x] Exercise two pinned workers, gated admission, concurrent claims, restart, mixed priorities and one real trashcan0 model result through the same provider adapter.

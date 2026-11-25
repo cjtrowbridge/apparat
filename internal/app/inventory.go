@@ -7,6 +7,7 @@ import (
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/inventory"
+	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/adapters/telemetry"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"golang.org/x/sync/errgroup"
@@ -47,6 +48,9 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 						err = readErr
 						key := client.Access.User + "/" + w.Fingerprint
 						if readErr == nil {
+							n.peerInventory.Store(key, v)
+							n.notifyInventory()
+							n.refreshCapacity(call, client, w, v)
 							reply, statusErr := client.Inference(call, domain.InferenceCommand{Operation: "status", Roster: membershipFor(w.Cluster, workers)})
 							if statusErr == nil {
 								n.peerInference.Store(key, reply.Status)
@@ -59,7 +63,6 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 							} else {
 								n.inferenceOffline(key)
 							}
-							n.peerInventory.Store(key, v)
 						} else {
 							n.peerInventory.Delete(key)
 							n.inferenceOffline(key)
@@ -69,12 +72,20 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 						n.peerInventory.Delete(key)
 						n.inferenceOffline(key)
 					}
+					if errors.Is(err, httpapi.ErrDenied) {
+						n.rosterHardware.Delete(n.Personal.Fingerprint() + "/" + w.Fingerprint)
+						n.mu.Lock()
+						if n.database != nil {
+							_ = n.database.SaveHardware(ctx, w.Fingerprint, persistence.Access{User: n.Personal.Fingerprint(), Cluster: w.Cluster}, nil)
+						}
+						n.mu.Unlock()
+					}
 					n.observations.Observe(telemetry.Event{Operation: "worker-inventory", Peer: w.Fingerprint, Failed: err != nil, Elapsed: time.Since(started).Microseconds()})
 					return nil
 				})
 			}
 			_ = group.Wait()
-			n.convergeMemberships(ctx, views, clients)
+			n.convergeMemberships(ctx, views, clients, workers)
 			n.mu.Lock()
 			if n.serviceManager != nil && len(workers) > 0 {
 				n.serviceManager.notify()
@@ -143,4 +154,36 @@ func (n *Runtime) inventoryPage(ctx context.Context, r domain.ClusterRoute) (dom
 	}}}
 	p.InitialValue = strconv.Itoa(port)
 	return p, nil
+}
+
+func (n *Runtime) notifyInventory() {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.serviceManager != nil {
+		n.serviceManager.notify()
+	}
+}
+
+func (n *Runtime) refreshCapacity(ctx context.Context, c *httpapi.WorkerClient, w domain.ClusterDevice, v domain.WorkerInventory) {
+	reports, err := c.MemberHardware(ctx, n.LocalInventory().Capacity())
+	if err != nil && !errors.Is(err, httpapi.ErrDenied) {
+		reports = w.Hardware
+	}
+	if reports == nil {
+		reports = map[string]domain.HardwareCapacity{}
+	}
+	capacity := v.Capacity()
+	if capacity.Threads == 0 {
+		capacity = w.Hardware[w.Fingerprint]
+	}
+	reports[w.Fingerprint] = capacity
+	n.mu.Lock()
+	db := n.database
+	n.mu.Unlock()
+	if db != nil {
+		err = db.SaveHardware(ctx, w.Fingerprint, c.Access, reports)
+		if err == nil {
+			n.notifyInventory()
+		}
+	}
 }

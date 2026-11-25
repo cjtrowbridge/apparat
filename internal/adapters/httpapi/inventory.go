@@ -5,6 +5,7 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"net/http"
 	"time"
@@ -78,4 +79,24 @@ func (c *WorkerClient) TryOllama(ctx context.Context, port int) (domain.WorkerIn
 		err = errors.New(reply.Error)
 	}
 	return reply.Inventory, err
+}
+
+func (a *workerAuth) hardwareRoute(w http.ResponseWriter, r *http.Request, access persistence.Access) {
+	var h domain.HardwareCapacity
+	if r.Method != http.MethodPost || !boundedJSON(w, r, &h) || len(h.Boot) > 64 || h.Cores < 0 || h.Threads < 0 || h.INT8 < 0 || h.UnratedGPUs < 0 {
+		respond(w, 400, map[string]string{"error": "invalid_hardware_report"})
+		return
+	}
+	reports, err := a.db.MemberHardware(r.Context(), access, h)
+	if err != nil {
+		respond(w, 503, map[string]string{"error": "hardware_unavailable"})
+		return
+	}
+	respond(w, 200, reports)
+}
+
+func (c *WorkerClient) MemberHardware(ctx context.Context, local domain.HardwareCapacity) (map[string]domain.HardwareCapacity, error) {
+	var reports map[string]domain.HardwareCapacity
+	err := c.call(ctx, "POST", "/v1/inventory/hardware", local, &reports)
+	return reports, err
 }

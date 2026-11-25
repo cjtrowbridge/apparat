@@ -58,7 +58,7 @@ func (p *inferencePool) mergeMembership(ctx context.Context, r domain.InferenceR
 
 // Relay independently verified peers across overlapping GUI directories. An offline peer
 // remains in each worker's durable membership until an authenticated lifecycle transition.
-func (n *Runtime) convergeMemberships(ctx context.Context, views map[string]domain.InferenceRoster, clients map[string]*httpapi.WorkerClient) {
+func (n *Runtime) convergeMemberships(ctx context.Context, views map[string]domain.InferenceRoster, clients map[string]*httpapi.WorkerClient, workers []domain.ClusterDevice) {
 	known := map[string]domain.InferencePeer{}
 	for _, r := range views {
 		for _, p := range r.Peers {
@@ -77,6 +77,40 @@ func (n *Runtime) convergeMemberships(ctx context.Context, views map[string]doma
 				clients[p.ID] = c
 			}
 		}
+	}
+	// A second GUI can learn a worker through a pinned roster before it has a
+	// direct registration. Count it only while an authenticated roster lists it.
+	local := map[string]bool{}
+	for _, w := range workers {
+		local[w.Fingerprint] = true
+	}
+	samples := map[string]domain.HardwareCapacity{}
+	for id, c := range clients {
+		if local[id] {
+			continue
+		}
+		report, e := c.Inventory(ctx)
+		if e == nil && report.Resources.CPUs > 0 {
+			samples[id] = report.Capacity()
+		}
+	}
+	for id, r := range views {
+		c := clients[id]
+		key := c.Access.User + "/" + id
+		old, _ := n.rosterHardware.Load(key)
+		previous, _ := old.(map[string]domain.HardwareCapacity)
+		members := map[string]domain.HardwareCapacity{}
+		for _, peer := range r.Peers {
+			if local[peer.ID] {
+				continue
+			}
+			members[peer.ID] = previous[peer.ID]
+			sample, ok := samples[peer.ID]
+			if ok && clients[peer.ID].Access.Cluster == r.Cluster {
+				members[peer.ID] = sample
+			}
+		}
+		n.rosterHardware.Store(key, members)
 	}
 	for id, c := range clients {
 		if !c.Access.Admin {

@@ -78,3 +78,5 @@ The hash queue remains a worker-local proof. Inference proposals require indepen
 Cluster Status now replaces Local Services on the cluster selector. The local device retains its service card. An administrator pins the full set of validator identities before first use. All votes are served from the recovered in-memory table, and a second all-member durable ownership acknowledgement gates the sole provider start.
 
 - [x] Phase 10 Chat Pool Devices shows measured prefill/eval throughput for the effective global chat default. Preserve device navigation, order numerically and exercise narrow and wide layouts and historical metrics.
+
+- [x] Phase 10 Cluster Status recomputes installed hardware from member identities and their last reported capacity. Publish inventory changes independently of inference status, include reporting GUI members and verify join, withdrawal, stale reports and host deduplication.

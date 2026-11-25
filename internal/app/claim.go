@@ -150,6 +150,10 @@ func (node *Runtime) KnownWorkers(ctx context.Context) ([]domain.ClusterDevice, 
 	user := node.Personal.Fingerprint()
 	rows, err := node.database.WorkerSummaries(ctx, user, identity.Fingerprint(node.Keys.Public()))
 	for i, w := range rows {
+		hw, ok := node.rosterHardware.Load(user + "/" + w.Fingerprint)
+		if ok {
+			rows[i].RosterHardware = hw.(map[string]domain.HardwareCapacity)
+		}
 		status, present := node.peerInference.Load(user + "/" + w.Fingerprint)
 		if present {
 			v := status.(domain.InferenceStatus)

@@ -50,3 +50,28 @@ func (v WorkerInventory) HasText(now time.Time) bool {
 	}
 	return false
 }
+
+// HardwareCapacity contains installed totals only. Live utilization and model routing
+// continue to use timestamped WorkerInventory observations.
+type HardwareCapacity struct {
+	Boot                        string
+	Cores, Threads, UnratedGPUs int
+	RAM, VRAM, Disk             uint64
+	INT8                        float64
+}
+
+func (v WorkerInventory) Capacity() HardwareCapacity {
+	r := v.Resources
+	h := HardwareCapacity{Boot: r.HostBootDigest, Cores: r.PhysicalCores, Threads: r.CPUs,
+		UnratedGPUs: max(0, len(r.GPUs)-r.GPUComputeReports), INT8: 4 * (r.CPUFP32PerSecond + r.GPUFP32PerSecond)}
+	if r.RAM != nil {
+		h.RAM = r.RAM.Total
+	}
+	for _, g := range r.GPUs {
+		h.VRAM += g.Total
+	}
+	for _, d := range r.Disks {
+		h.Disk += d.Total
+	}
+	return h
+}

@@ -79,3 +79,5 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `inference_maintenance.go`: Persists update generations and recovery phases, and restores missed jobs and completion receipts before the worker resumes.
 
 - `model_speed_test.go`: verifies executor and model isolation and weighted prefill/eval telemetry from stored inference results.
+
+- `hardware.go`: Records device-bound capacity in the approved GUI directory and saves each authenticated worker’s capacity snapshot on its client. Directory membership governs aggregation.
