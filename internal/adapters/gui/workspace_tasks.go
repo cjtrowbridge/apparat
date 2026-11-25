@@ -121,7 +121,7 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 			if id == "" {
 				id = strconv.Itoa(i)
 			}
-			info := bubbleDetail{id: w.id + "/" + w.thread + "/" + id}
+			info := bubbleDetail{job: message.Job, id: w.id + "/" + w.thread + "/" + id}
 			_ = json.Unmarshal([]byte(message.Detail), &info.steps)
 			g.chatBubble(c, message.Label, !w.agentThread || message.State == "user", message.State == "pending", info)
 		}

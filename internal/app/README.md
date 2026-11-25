@@ -122,3 +122,7 @@ For a queued provider, Dispatch returns a nil output after acceptance. DeliverCh
 - `inference_intake.go`: Accepts global turns durably before writer availability or inference dispatch. Background reconciliation forwards each receipt to the session home and retries interrupted deliveries.
 - `inference_maintenance.go`: Coordinates updater withdrawal with the current peers. A returning worker reconciles durable job receipts before voting again. Missing acknowledgements keep the transition pending.
 - `inference_upgrade_test.go`: Exercises automatic singleton discovery, an existing GUI outbox entry, duplicate submissions, a subsequent worker join and execution during a planned update.
+
+- `inference_preview.go`: Keeps transient output and generation phase on the executing node until dispatch completes.
+
+- `preview_client.go`: Resolves a pending job through its authenticated replica and connects viewers directly to the pinned executor.

@@ -19,6 +19,7 @@ import (
 )
 
 type inferencePool struct {
+	previews      sync.Map
 	maintenanceMu sync.Mutex
 	installing    bool
 	withdrawal    persistence.WorkerWithdrawal
@@ -182,6 +183,16 @@ func (p *inferencePool) InferenceUser(ctx context.Context, a persistence.Access,
 			return v, httpapi.ErrDenied
 		}
 		v.State = row.State
+		if q.Operation == "job-state" && row.Claim.Executor != "" {
+			p.mu.RLock()
+			for _, peer := range p.roster.Peers {
+				if peer.ID == row.Claim.Executor {
+					v.Executor = peer
+					break
+				}
+			}
+			p.mu.RUnlock()
+		}
 		if q.Operation != "job-state" {
 			v.Output = row.Output
 		}

@@ -73,13 +73,7 @@ func (c *WorkerClient) WatchInference(ctx context.Context, hint func()) error {
 	return c.watchChanges(ctx, "/v1/inference/live", hint)
 }
 func (c *WorkerClient) watchChanges(ctx context.Context, path string, hint func()) error {
-	config, err := websocket.NewConfig("wss"+strings.TrimPrefix(c.base, "https")+path, "https://apparat.invalid")
-	if err != nil {
-		return err
-	}
-	config.TlsConfig = c.http.Transport.(*http.Transport).TLSClientConfig.Clone()
-	config.Header.Set("Authorization", "Bearer "+c.token)
-	ws, err := config.DialContext(ctx)
+	ws, err := c.openSocket(ctx, path)
 	if err != nil {
 		return err
 	}
@@ -99,4 +93,18 @@ func (c *WorkerClient) watchChanges(ctx context.Context, path string, hint func(
 			hint()
 		}
 	}
+}
+
+func (c *WorkerClient) openSocket(ctx context.Context, path string) (*websocket.Conn, error) {
+	config, err := websocket.NewConfig("wss"+strings.TrimPrefix(c.base, "https")+path, "https://apparat.invalid")
+	if err != nil {
+		return nil, err
+	}
+	config.TlsConfig = c.http.Transport.(*http.Transport).TLSClientConfig.Clone()
+	config.Header.Set("Authorization", "Bearer "+c.token)
+	ws, err := config.DialContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return ws, nil
 }

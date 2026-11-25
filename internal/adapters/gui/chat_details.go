@@ -17,6 +17,7 @@ import (
 )
 
 type bubbleDetail struct {
+	job   string
 	id    string
 	user  bool
 	steps []domain.ChatMeasurement
@@ -81,6 +82,9 @@ func (g *Game) bubbleControls(b *widget.Container, source, label string, user, w
 	face := widget.NewButton(widget.ButtonOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor), widget.ButtonOpts.TextPadding(&widget.Insets{}), widget.ButtonOpts.Image(skin), widget.ButtonOpts.TextPosition(widget.TextPositionStart, widget.TextPositionCenter), widget.ButtonOpts.ClickedHandler(func(*widget.ButtonClickedEventArgs) {
 		selectBubble()
 	}))
+	if waiting && detail.job != "" {
+		g.attachChatPreview(b, detail.job, face, label)
+	}
 	content := controlRow(b)
 	if waiting {
 		content.AddChild(planningGear())

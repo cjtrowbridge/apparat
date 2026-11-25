@@ -3,6 +3,7 @@
 package chatprovider
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -47,30 +48,66 @@ func (p *Completions) ollama(ctx context.Context, r domain.ChatRequest) (*domain
 	for _, t := range r.Tools {
 		tools = append(tools, map[string]any{"type": "function", "function": map[string]any{"name": t.Name, "description": t.Description, "parameters": t.Parameters}})
 	}
-	body, err := json.Marshal(map[string]any{"model": p.model, "messages": messages, "tools": tools, "stream": false, "options": map[string]int{"num_predict": r.MaxOutputTokens}})
+	body, err := json.Marshal(map[string]any{"model": p.model, "messages": messages, "tools": tools, "stream": true, "options": map[string]int{"num_predict": r.MaxOutputTokens}})
 	if err != nil {
 		return nil, err
 	}
-	raw, rejected, err := p.send(ctx, body)
+	resp, rejected, err := p.open(ctx, body)
 	if err != nil || rejected != nil {
 		return rejected, err
 	}
-	var reply struct {
-		Message nativeMessage
-		Done    bool
-		Finish  string `json:"done_reason"`
+	defer resp.Body.Close()
+	scan := bufio.NewScanner(resp.Body)
+	const limit = 4 << 20
+	scan.Buffer(make([]byte, 8192), limit)
+	var out domain.ChatOutput
+	var text strings.Builder
+	callBytes := 0
+	for scan.Scan() {
+		raw := scan.Bytes()
+		var chunk struct {
+			Message struct {
+				nativeMessage
+				Thinking string
+			}
+			Done   bool
+			Finish string `json:"done_reason"`
+			Error  string
+		}
+		if json.Unmarshal(raw, &chunk) != nil || chunk.Error != "" || chunk.Message.Role != "assistant" {
+			return nil, errors.New("invalid Ollama stream")
+		}
+		m := chunk.Message
+		text.WriteString(m.Content)
+		stage := ""
+		if m.Thinking != "" {
+			stage = "Thinking"
+		}
+		if m.Content != "" {
+			stage = "Generating reply"
+		}
+		for _, c := range m.Calls {
+			stage = "Preparing tool call"
+			callBytes += len(c.Function.Name) + len(c.Function.Arguments) + 32
+			out.Calls = append(out.Calls, domain.ToolCall{ID: fmt.Sprintf("%s-%d", r.Job, len(out.Calls)), Name: c.Function.Name, Arguments: string(c.Function.Arguments)})
+		}
+		if text.Len()+callBytes > limit {
+			return nil, errors.New("Ollama output exceeds size limit")
+		}
+		if p.Preview != nil && stage != "" {
+			p.Preview(stage, m.Content)
+		}
+		if chunk.Done {
+			out.Text = text.String()
+			out.Metrics = nativeMetrics(raw)
+			out.Finish = chunk.Finish
+			if len(out.Calls) > 0 {
+				out.Finish = "tool_calls"
+			}
+			return &out, nil
+		}
 	}
-	if json.Unmarshal(raw, &reply) != nil || !reply.Done || reply.Message.Role != "assistant" {
-		return nil, errors.New("incomplete Ollama response")
-	}
-	out := &domain.ChatOutput{Text: reply.Message.Content, Finish: reply.Finish, Metrics: nativeMetrics(raw)}
-	for i, c := range reply.Message.Calls {
-		out.Calls = append(out.Calls, domain.ToolCall{ID: fmt.Sprintf("%s-%d", r.Job, i), Name: c.Function.Name, Arguments: string(c.Function.Arguments)})
-	}
-	if len(out.Calls) > 0 {
-		out.Finish = "tool_calls"
-	}
-	return out, nil
+	return nil, errors.New("incomplete Ollama stream")
 }
 
 func nativeMetrics(raw []byte) map[string]float64 {

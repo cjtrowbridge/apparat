@@ -131,7 +131,7 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	}
 	p.bubbles = bubbleSelection{}
 	for _, turn := range s.Turns {
-		info := bubbleDetail{id: s.ID + "/" + turn.ID, steps: turn.Measurements()}
+		info := bubbleDetail{job: turn.PendingJob(), id: s.ID + "/" + turn.ID, steps: turn.Measurements()}
 		g.chatBubble(conversation, turn.Input, true, false, info)
 		switch {
 		case turn.Reply != "":

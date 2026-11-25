@@ -18,6 +18,7 @@ import (
 )
 
 type Completions struct {
+	Preview              func(stage, text string)
 	endpoint, model, key string
 	client               http.Client
 }
@@ -105,6 +106,20 @@ func (p *Completions) Dispatch(ctx context.Context, r domain.ChatRequest) (*doma
 }
 
 func (p *Completions) send(ctx context.Context, body []byte) ([]byte, *domain.ChatOutput, error) {
+	resp, rejected, err := p.open(ctx, body)
+	if err != nil || rejected != nil {
+		return nil, rejected, err
+	}
+	defer resp.Body.Close()
+	const limit = 4 << 20
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if err != nil || len(raw) > limit {
+		return nil, nil, errors.New("invalid provider response size")
+	}
+	return raw, nil, nil
+}
+
+func (p *Completions) open(ctx context.Context, body []byte) (*http.Response, *domain.ChatOutput, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, nil, err
@@ -117,20 +132,15 @@ func (p *Completions) send(ctx context.Context, body []byte) ([]byte, *domain.Ch
 	if err != nil {
 		return nil, nil, errors.New("provider connection interrupted; reconcile outstanding job")
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+
 	switch resp.StatusCode {
 	case 400, 401, 403, 404, 405, 413, 415, 422, 429:
+		resp.Body.Close()
 		return nil, &domain.ChatOutput{Finish: "error", Text: fmt.Sprintf("Request rejected (HTTP %d)", resp.StatusCode)}, nil
 	}
 	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
 		return nil, nil, fmt.Errorf("provider returned HTTP %d", resp.StatusCode)
 	}
-	const limit = 4 << 20
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
-	if err != nil || len(raw) > limit {
-		return nil, nil, errors.New("invalid provider response size")
-	}
-	return raw, nil, nil
+	return resp, nil, nil
 }

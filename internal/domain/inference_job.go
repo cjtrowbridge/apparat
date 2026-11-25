@@ -123,7 +123,8 @@ type InferenceStatus struct {
 }
 
 type InferenceReply struct {
-	Protocol int `json:",omitempty"`
+	Executor InferencePeer `json:",omitzero"`
+	Protocol int           `json:",omitempty"`
 	Projects []ChatProject
 	Cursor   string
 	Chunk    *GlobalChunk

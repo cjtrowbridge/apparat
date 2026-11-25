@@ -216,7 +216,7 @@ func (p *inferencePool) execute(ctx context.Context, roster domain.InferenceRost
 	}
 	p.observer.slot(true)
 	defer p.observer.slot(false)
-	output, err := provider.Dispatch(ctx, r.Job.Packet)
+	output, err := p.dispatchPreview(ctx, r, provider)
 	if err != nil || output == nil {
 		output = &domain.ChatOutput{Finish: "indeterminate"}
 	}

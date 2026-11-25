@@ -14,6 +14,7 @@ import (
 )
 
 func (game *Game) Close() {
+	game.preview.stop()
 	for _, copy := range game.projects.externalCopies {
 		os.RemoveAll(copy.dir)
 	}

@@ -186,3 +186,7 @@ Show a four-column desktop scorecard and an INT8-equivalent CPU plus accelerator
 ### Persist the Phase 14 CPU baseline
 
 Reuse one successful CPU measurement per node database across inventory refreshes, concurrent startup and restarts. Verify by counting measurements across two database connections and a reopen.
+
+### Live chat previews (Phases 13, 14 and 16)
+
+Use the original Ollama dispatch to accumulate the final result and publish ephemeral previews directly to authorized open chats. Distinguish waiting, prefill, thinking, reply and tool generation. Verify incremental delivery, disconnect, visibility and finalization; qualify and publish the canonical build.

@@ -90,3 +90,20 @@ func (t ChatTurn) Measurements() []ChatMeasurement {
 	}
 	return rows
 }
+
+// PreviewFrame is a per-connection delta. Reconnecting starts from byte zero.
+type PreviewFrame struct {
+	Stage, Text string
+	Done        bool
+}
+
+func (t ChatTurn) PendingJob() string {
+	if len(t.Steps) == 0 || t.Reply != "" || t.Stopped != "" {
+		return ""
+	}
+	s := t.Steps[len(t.Steps)-1]
+	if s.Output != nil {
+		return ""
+	}
+	return s.Job
+}

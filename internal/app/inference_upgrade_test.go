@@ -18,6 +18,9 @@ import (
 
 func TestAutomaticWorkerAndStrandedTurn(t *testing.T) {
 	ctx := t.Context()
+	entered := make(chan struct{}, 2)
+	firstChunk := make(chan struct{})
+	finish := make(chan struct{})
 	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/api/version":
@@ -29,7 +32,20 @@ func TestAutomaticWorkerAndStrandedTurn(t *testing.T) {
 		case "/api/show":
 			fmt.Fprint(w, `{"capabilities":["completion"]}`)
 		case "/api/chat":
-			fmt.Fprint(w, `{"message":{"role":"assistant","content":"one reply"},"done_reason":"stop","done":true,"eval_count":2,"eval_duration":100000000}`)
+			entered <- struct{}{}
+			select {
+			case <-firstChunk:
+			case <-time.After(6 * time.Second):
+				return
+			}
+			fmt.Fprintln(w, `{"message":{"role":"assistant","content":"one "},"done":false}`)
+			w.(http.Flusher).Flush()
+			select {
+			case <-finish:
+			case <-time.After(6 * time.Second):
+				return
+			}
+			fmt.Fprint(w, `{"message":{"role":"assistant","content":"reply"},"done_reason":"stop","done":true,"eval_count":2,"eval_duration":100000000}`)
 		}
 	}))
 	defer provider.Close()
@@ -77,7 +93,20 @@ func TestAutomaticWorkerAndStrandedTurn(t *testing.T) {
 	if len(entries) != 0 {
 		t.Fatal("worker did not acknowledge the pending turn")
 	}
-	if !node.p.dispatchNext(ctx) {
+	session, err := node.p.runtime.Chat(ctx, work[0].Project, id)
+	mustInference(t, err)
+	job := session.Turns[0].PendingJob()
+	dispatched := make(chan bool, 1)
+	go func() {
+		dispatched <- node.p.dispatchNext(ctx)
+	}()
+	select {
+	case <-entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("provider not started")
+	}
+	checkLivePreview(t, gui, user, job, firstChunk, finish)
+	if !<-dispatched {
 		t.Fatal("singleton did not dispatch")
 	}
 	node.p.runtime.reconcileChatWork(ctx, work[0])
@@ -127,4 +156,52 @@ func checkMaintenanceDispatch(t *testing.T, ctx context.Context, node, peer infe
 	if record.State != "finished" || peer.p.dispatchNext(ctx) {
 		t.Fatal("missing completion fence after rejoin")
 	}
+}
+
+func checkLivePreview(t *testing.T, gui *Runtime, user, job string, generate, finish chan struct{}) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	watch, leave := context.WithCancel(ctx)
+	defer leave()
+	frames := make(chan domain.PreviewFrame, 8)
+	done := make(chan error, 1)
+	start := func(watch context.Context) {
+		go func() {
+			done <- gui.WatchChatPreview(watch, user, job, func(f domain.PreviewFrame) {
+				frames <- f
+			})
+		}()
+	}
+	next := func() domain.PreviewFrame {
+		select {
+		case f := <-frames:
+			return f
+		case e := <-done:
+			t.Fatalf("preview ended early: %v", e)
+		case <-ctx.Done():
+			t.Fatal("preview timed out")
+		}
+		return domain.PreviewFrame{}
+	}
+	start(watch)
+	f := next()
+	if f.Stage != "Evaluating prompt" || f.Text != "" {
+		t.Fatal("incorrect initial stage", f.Stage)
+	}
+	close(generate)
+	f = next()
+	if f.Stage != "Generating reply" || f.Text != "one " {
+		t.Fatal("missing partial output")
+	}
+	leave()
+	<-done
+	start(ctx)
+	f = next()
+	if f.Text != "one " {
+		t.Fatal("late subscriber missing prefix")
+	}
+	close(finish)
+	err := <-done
+	mustInference(t, err)
 }

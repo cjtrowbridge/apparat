@@ -29,7 +29,10 @@ type WorkspaceEntry struct {
 	Name      string
 	Directory bool
 }
-type WorkspaceChoice struct{ ID, Label, Detail, State string }
+type WorkspaceChoice struct {
+	ID, Label, Detail, State string
+	Job                      string `json:",omitempty"`
+}
 type WorkspaceChange struct {
 	Marker                     string
 	Path                       string

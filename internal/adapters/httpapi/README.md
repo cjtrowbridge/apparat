@@ -47,3 +47,5 @@ Worker clients probe TLS without client credentials and require an approved devi
 - `inference.go`: transports user-scoped inference submissions and worker claim transitions. User operations use the existing bound login. Peer operations require a verified device certificate and membership in the agreed roster.
 
 - `global_chunks.go`: Verifies offsets, session identity and revision while reading large global transcripts in bounded chunks.
+
+- `preview.go`: Streams private per-job text deltas with live authorization and reconnect snapshots.

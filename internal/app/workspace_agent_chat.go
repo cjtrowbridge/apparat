@@ -82,11 +82,13 @@ func (n *Runtime) workspaceAgentChat(ctx context.Context, location, user string,
 		case t.Stopped != "":
 			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Detail: string(metrics), Label: t.Stopped, State: "stopped"})
 		default:
+			job := t.PendingJob()
 			label := "Saved to project · awaiting dispatch"
 			if len(t.Steps) > 0 {
-				label = "Waiting for reply"
+
+				label = "Waiting for a worker · Project Pool"
 			}
-			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Detail: string(metrics), Label: label, State: "pending"})
+			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Detail: string(metrics), Job: job, Label: label, State: "pending"})
 		}
 	}
 	return v, nil

@@ -137,7 +137,7 @@ func (a *workerAuth) route(w http.ResponseWriter, r *http.Request, keys *identit
 		respond(w, 200, map[string]any{"access": access, "token": token})
 	case "/v1/inference/peer":
 		a.inferenceRoute(w, r, nil)
-	case "/v1/inference/live", "/v1/inference", "/v1/chat/models/live", "/v1/chat/models", "/v1/inventory", "/v1/admin/inventory/ollama", "/v1/workspace/catalog", "/v1/workspace/live", "/v1/workspace", "/v1/admin/git/projects", "/v1/admin/git/providers", "/v1/admin/git/operation", "/v1/admin/git/accounts", "/v1/sync", "/v1/admin/view", "/v1/tasks/submit", "/v1/tasks/changes", "/v1/tasks/cancel", "/v1/tasks/result", "/v1/me", "/v1/admin/propose", "/v1/admin/order-on-worker", "/v1/admin/policy":
+	case "/v1/inference/preview", "/v1/inference/live", "/v1/inference", "/v1/chat/models/live", "/v1/chat/models", "/v1/inventory", "/v1/admin/inventory/ollama", "/v1/workspace/catalog", "/v1/workspace/live", "/v1/workspace", "/v1/admin/git/projects", "/v1/admin/git/providers", "/v1/admin/git/operation", "/v1/admin/git/accounts", "/v1/sync", "/v1/admin/view", "/v1/tasks/submit", "/v1/tasks/changes", "/v1/tasks/cancel", "/v1/tasks/result", "/v1/me", "/v1/admin/propose", "/v1/admin/order-on-worker", "/v1/admin/policy":
 		raw := r.Header.Get("Authorization")
 		token, ok := strings.CutPrefix(raw, "Bearer ")
 		a.Lock()
@@ -158,6 +158,10 @@ func (a *workerAuth) route(w http.ResponseWriter, r *http.Request, keys *identit
 		}
 		if r.URL.Path == "/v1/chat/models" {
 			a.chatModels(w, r, access, worker)
+			return true
+		}
+		if r.URL.Path == "/v1/inference/preview" {
+			a.previewSocket(w, r, record)
 			return true
 		}
 		if r.URL.Path == "/v1/inference/live" {

@@ -252,7 +252,7 @@ func (n *Runtime) PlanningView(ctx context.Context, user, id string) (domain.Pla
 					continue
 				}
 				if state.State == "dispatching" {
-					v.SyncReason = "Generating reply"
+					v.SyncReason = "Worker processing request"
 					break
 				}
 				if state.State == "queued" {

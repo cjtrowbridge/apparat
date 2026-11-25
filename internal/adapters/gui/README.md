@@ -243,3 +243,5 @@ Project conversation pages share the global chat bubble and gear renderer. The w
 - `cluster_hardware.go`: Builds the leading Cluster Status hardware scorecard and responsive metric grid. Counts use fresh reports and per-metric reporting coverage.
 
 - `chat_details.go`: implements selected and hovered bubble actions, exact-source clipboard copy and per-step metric tables for global and project conversations. Missing provider counters are omitted. Prefill throughput excludes cached prompt tokens when Ollama supplies that count.
+
+- `chat_preview.go`: Follows only the open global or project chat and updates preview text above its progress gear.

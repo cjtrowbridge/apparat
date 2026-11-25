@@ -46,6 +46,7 @@ type Game struct {
 	actions                        actionScreen
 	nav                            navigation
 	voice                          voiceState
+	preview                        chatPreviewUI
 	planning                       planningUI
 	globalDraft                    string
 	globalVoiceFocus               bool
@@ -192,6 +193,7 @@ func (game *Game) Update() error {
 	game.receiveServices()
 	game.pollPlanning()
 	game.pollProjectConversation()
+	game.pollChatPreview()
 	if game.layoutDirty && game.gesture.Owner == gestureNone {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())

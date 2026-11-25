@@ -281,3 +281,34 @@ func TestBubbleActionsAndReturn(t *testing.T) {
 		g.Close()
 	}
 }
+
+func TestPreviewAboveGear(t *testing.T) {
+	for _, size := range [][2]int{{390, 844}, {1920, 1080}} {
+		g := horizontalGame()
+		g.Layout(size[0], size[1])
+		selectTabThroughStrip(t, g, hud.TabGlobalSession)
+		s := g.planning.current
+		s.Turns = []domain.ChatTurn{{ID: "turn", Input: "test", Steps: []domain.ChatStep{{Job: "job"}}}}
+		s.acknowledged = true
+		g.globalDraft = "next question"
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		p := &g.preview
+		if p.body == nil || p.body.GetWidget().GetVisibility() != widget.Visibility_Hide {
+			t.Fatal("queued preview should be hidden")
+		}
+		p.job, p.stage = "job", "Evaluating prompt"
+		g.paintChatPreview()
+		field := g.globalField
+		p.stage, p.text = "Generating reply", "First words of the reply."
+		g.paintChatPreview()
+		renderNavigation(g)
+		if p.body.Label != p.text || p.status.Text().Label != p.stage || p.body.GetWidget().Rect.Max.Y > p.status.GetWidget().Rect.Min.Y {
+			t.Fatal("preview did not appear above progress row", size, p.body.GetWidget().Rect, p.status.GetWidget().Rect)
+		}
+		if g.globalField != field || g.globalDraft != "next question" {
+			t.Fatal("preview reset the composer")
+		}
+		g.Close()
+	}
+}
