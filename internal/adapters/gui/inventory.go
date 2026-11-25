@@ -60,7 +60,7 @@ func inventoryDetail(v *domain.WorkerInventory, configure string) []hud.Section 
 		capacity.Rows = append(capacity.Rows, hud.Row{Label: "Processor", Detail: cpu})
 		add := func(label string, c *domain.Capacity) {
 			detail := "Unavailable"
-			if c != nil {
+			if c != nil && c.Total > 0 {
 				const gib = 1 << 30
 				detail = fmt.Sprintf("%.2f GiB used · %.2f GiB available · %.2f GiB total", float64(c.Used)/gib, float64(c.Available)/gib, float64(c.Total)/gib)
 			}

@@ -227,7 +227,11 @@ func (game *Game) buildSectionContainer(section hud.Section) *widget.Container {
 		game.projectControls(sectionContainer, section)
 		return sectionContainer
 	}
-	if section.ProjectID != "" || projectEntryAction(section.ContentKind) {
+	if section.ActionID == "cluster-status" {
+		row := widget.NewContainer(widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2), widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false}))))
+		row.AddChild(game.detailText(section.Title), game.planningIcon("2699", "Cluster settings", game.openClusterSettings))
+		sectionContainer.AddChild(row)
+	} else if section.ProjectID != "" || projectEntryAction(section.ContentKind) {
 		sectionContainer.AddChild(widget.NewText(widget.TextOpts.Text(section.Title, game.pageTitleFace, game.theme.ButtonTheme.TextColor.Idle)))
 	} else {
 		sectionContainer.AddChild(game.detailText(strings.ToUpper(section.Title)))

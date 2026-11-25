@@ -17,14 +17,14 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
-func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
+func hardwareMembers(p ServiceProjection) map[string]domain.HardwareCapacity {
 	devices := map[string]domain.HardwareCapacity{}
 	add := func(id string, h domain.HardwareCapacity) {
 		if id == "" {
 			return
 		}
 		_, exists := devices[id]
-		if !exists || h.Threads > 0 {
+		if !exists || h != (domain.HardwareCapacity{}) {
 			devices[id] = h
 		}
 	}
@@ -40,7 +40,7 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 	}
 	for _, d := range p.Devices {
 		add(d.Fingerprint, domain.HardwareCapacity{})
-		if d.Inventory != nil && d.Inventory.Fresh(now) {
+		if d.Inventory != nil && d.Inventory.Observed > 0 {
 			add(d.Fingerprint, d.Inventory.Capacity())
 		}
 	}
@@ -52,10 +52,15 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 		local = "local"
 	}
 	add(local, p.LocalInventory.Capacity())
+	return devices
+}
+
+func hardwareCard(p ServiceProjection, _ time.Time) hud.Section {
+	devices := hardwareMembers(p)
 	hosts := map[string]domain.HardwareCapacity{}
 	missing := 0
 	for id, h := range devices {
-		if h.Threads == 0 {
+		if h == (domain.HardwareCapacity{}) {
 			missing++
 			continue
 		}
@@ -64,9 +69,17 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 			key = "boot/" + h.Boot
 		}
 		prior := hosts[key]
-		if prior.Threads < h.Threads || prior.Threads == h.Threads && prior.INT8 < h.INT8 {
-			hosts[key] = h
-		}
+		// One physical host may report different counters through its GUI and worker.
+		h.Cores = max(prior.Cores, h.Cores)
+		h.Threads = max(prior.Threads, h.Threads)
+		h.RAM = max(prior.RAM, h.RAM)
+		h.VRAM = max(prior.VRAM, h.VRAM)
+		h.Disk = max(prior.Disk, h.Disk)
+		h.INT8 = max(prior.INT8, h.INT8)
+		rated := max(prior.GPUs-prior.UnratedGPUs, h.GPUs-h.UnratedGPUs)
+		h.GPUs = max(prior.GPUs, h.GPUs, prior.UnratedGPUs, h.UnratedGPUs)
+		h.UnratedGPUs = h.GPUs - rated
+		hosts[key] = h
 	}
 	card := hud.Section{ContentKind: "cluster-hardware", Title: "Cluster hardware", Description: fmt.Sprintf("%d reporting hosts", len(hosts))}
 	if len(hosts) == 1 {
@@ -80,10 +93,11 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 	}
 	var totals [6]float64
 	var reports [6]int
-	unknownGPU := 0
+	unknownGPU, gpuCount := 0, 0
 	for _, h := range hosts {
 		values := [6]float64{float64(h.Cores), float64(h.Threads), float64(h.RAM), float64(h.VRAM), float64(h.Disk), h.INT8}
 		unknownGPU += h.UnratedGPUs
+		gpuCount += max(h.GPUs, h.UnratedGPUs)
 		for i, value := range values {
 			if value > 0 && !math.IsNaN(value) && !math.IsInf(value, 0) {
 				totals[i] += value
@@ -91,8 +105,11 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 			}
 		}
 	}
+	if gpuCount > 0 {
+		card.Description += fmt.Sprintf(" · %d GPUs", gpuCount)
+	}
 	if unknownGPU > 0 {
-		card.Description += fmt.Sprintf(" · compute estimate excludes %d unreported GPU(s)", unknownGPU)
+		card.Description += fmt.Sprintf(" · %d GPU(s) awaiting compute measurements", unknownGPU)
 	}
 	for i, label := range []string{"CPU cores", "CPU threads", "RAM", "GPU VRAM", "Disk capacity", "Est. INT8 compute"} {
 		value := "—"

@@ -111,6 +111,10 @@ func (c *WorkerClient) call(ctx context.Context, method, path string, input, out
 		return err
 	}
 	req.Header.Set("Apparat-Device-Directory", "1")
+	cursor, isSync := input.(persistence.SyncCursor)
+	if isSync && cursor.UsageHead != "" {
+		req.Header.Set("Apparat-Device-Usage", cursor.UsageHead)
+	}
 	if id != "" {
 		req.Header.Set("Apparat-Operation-ID", id)
 	}

@@ -32,9 +32,14 @@ type InventoryModel struct {
 	Loaded       bool
 	Text         bool
 }
+type DeviceUsage struct {
+	Tokens, Prompts uint64
+}
+
 type WorkerInventory struct {
-	LastContact      int64 `json:"-"`
-	Retrying         bool  `json:"-"`
+	Usage            *DeviceUsage `json:",omitempty"`
+	LastContact      int64        `json:"-"`
+	Retrying         bool         `json:"-"`
 	Configured       bool
 	Observed         int64
 	Resources        NodeResources
@@ -67,6 +72,7 @@ func (v WorkerInventory) ReportedText() bool {
 // HardwareCapacity contains installed totals only. Live utilization and model routing
 // continue to use timestamped WorkerInventory observations.
 type HardwareCapacity struct {
+	GPUs                        int `json:",omitempty"`
 	Boot                        string
 	Cores, Threads, UnratedGPUs int
 	RAM, VRAM, Disk             uint64
@@ -75,7 +81,7 @@ type HardwareCapacity struct {
 
 func (v WorkerInventory) Capacity() HardwareCapacity {
 	r := v.Resources
-	h := HardwareCapacity{Boot: r.HostBootDigest, Cores: r.PhysicalCores, Threads: r.CPUs,
+	h := HardwareCapacity{GPUs: len(r.GPUs), Boot: r.HostBootDigest, Cores: r.PhysicalCores, Threads: r.CPUs,
 		UnratedGPUs: max(0, len(r.GPUs)-r.GPUComputeReports), INT8: 4 * (r.CPUFP32PerSecond + r.GPUFP32PerSecond)}
 	if r.RAM != nil {
 		h.RAM = r.RAM.Total

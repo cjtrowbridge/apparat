@@ -182,7 +182,7 @@ func (a *workerAuth) route(w http.ResponseWriter, r *http.Request, keys *identit
 			return true
 		}
 		if r.URL.Path == "/v1/inventory" || r.URL.Path == "/v1/admin/inventory/ollama" {
-			a.inventoryRoute(w, r, access.Admin)
+			a.inventoryRoute(w, r, access.Admin, worker)
 			return true
 		}
 		if r.URL.Path == "/v1/workspace/catalog" {

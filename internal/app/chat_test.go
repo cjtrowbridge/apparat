@@ -108,7 +108,7 @@ func TestWorkspaceAgentSession(t *testing.T) {
 	q.Action = "threads"
 	v, err = node.Workspace(ctx, q)
 	requireSuccess(t, err)
-	if len(v.Choices) != 1 || v.Choices[0].ID != session {
+	if len(v.Choices) != 0 {
 		t.Fatal(v)
 	}
 	q.Thread = session
@@ -123,6 +123,12 @@ func TestWorkspaceAgentSession(t *testing.T) {
 		if len(v.Choices) != 2 || v.Choices[1].State != "pending" {
 			t.Fatal(v)
 		}
+	}
+	q.Action = "threads"
+	v, err = node.Workspace(ctx, q)
+	requireSuccess(t, err)
+	if len(v.Choices) != 1 || v.Choices[0].ID != session {
+		t.Fatal(v)
 	}
 	_, err = node.CompleteChatTurn(ctx, q.ProjectID, session, q.ID, "Review needed.")
 	requireSuccess(t, err)

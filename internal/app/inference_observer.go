@@ -129,7 +129,9 @@ func (n *Runtime) inferenceOffline(key string) {
 	if ok && old.(domain.InferenceStatus).OfflineSince > 0 {
 		return
 	}
-	n.peerInference.Store(key, domain.InferenceStatus{OfflineSince: now})
+	v, _ := old.(domain.InferenceStatus)
+	v.OfflineSince = now
+	n.peerInference.Store(key, v)
 }
 
 func (o *inferenceObserver) prune(pending map[string]bool) {

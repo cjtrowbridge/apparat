@@ -47,7 +47,7 @@ func (db *DB) PutGlobalArtifact(ctx context.Context, a domain.GlobalArtifact, pe
 }
 
 func (db *DB) GlobalHeaders(ctx context.Context, user, cursor string) ([]domain.ChatHeader, error) {
-	rows, err := db.sql.QueryContext(ctx, "SELECT json_remove(CAST(body AS TEXT),'$.Turns') FROM global_chats WHERE user=? AND (?='' OR session<?) ORDER BY session DESC LIMIT 32", user, cursor, cursor)
+	rows, err := db.sql.QueryContext(ctx, "SELECT json_remove(CAST(body AS TEXT),'$.Turns') FROM global_chats WHERE user=? AND json_array_length(body,'$.Turns')>0 AND (?='' OR session<?) ORDER BY session DESC LIMIT 32", user, cursor, cursor)
 	if err != nil {
 		return nil, err
 	}

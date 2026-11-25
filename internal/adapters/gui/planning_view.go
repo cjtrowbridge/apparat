@@ -89,9 +89,6 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 		for i := len(p.sessions) - 1; i >= 0; i-- {
 			session := p.sessions[i]
 			name := session.Description + " · " + session.Started.Local().Format("Jan 2 15:04:05")
-			if len(session.Turns) == 0 {
-				name += " · Draft"
-			}
 			g.projectButton(list, wrapSelectorLabel(name, *g.theme.ButtonTheme.TextFace, g.hudPreferredWidth()-32), func() {
 				g.openPlanning(session)
 			})

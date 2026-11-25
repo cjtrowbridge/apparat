@@ -271,6 +271,16 @@ func (g *Game) clusterContent(c *widget.Container) {
 		return
 	}
 	c.AddChild(widget.NewText(widget.TextOpts.Text(f.page.Title, g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle), widget.TextOpts.MaxWidth(float64(max(1, g.detailPanePreferredWidth()-24)))))
+	if f.route.Page == "settings" {
+		card := g.detailCard()
+		card.AddChild(g.detailText("Cloud APIs"), g.detailText("Cloud connections are planned."))
+		for _, provider := range []string{"OpenAI", "Cerebras"} {
+			button := g.projectButton(card, provider, func() {
+			})
+			button.GetWidget().Disabled = true
+		}
+		c.AddChild(card)
+	}
 	if f.page.Detail != "" {
 		c.AddChild(g.detailText(f.page.Detail))
 	}

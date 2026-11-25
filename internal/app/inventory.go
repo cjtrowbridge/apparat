@@ -98,10 +98,12 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 						n.notifyInventory()
 					}
 					if errors.Is(err, httpapi.ErrDenied) && !errors.Is(err, domain.ErrWorkerSessionExpired) {
-						n.rosterHardware.Delete(n.Personal.Fingerprint() + "/" + w.Fingerprint)
+						n.peerInference.Delete(key)
 						n.mu.Lock()
 						if n.database != nil {
-							_ = n.database.SaveHardware(ctx, w.Fingerprint, persistence.Access{User: n.Personal.Fingerprint(), Cluster: w.Cluster}, nil)
+							access := persistence.Access{User: user, Cluster: w.Cluster}
+							_ = n.database.SaveHardware(ctx, w.Fingerprint, access, nil)
+							_ = n.database.SaveRosterInventory(ctx, w.Fingerprint, access, domain.RosterInventory{})
 						}
 						n.mu.Unlock()
 					}

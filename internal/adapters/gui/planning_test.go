@@ -48,6 +48,9 @@ func TestPlanningSessionNavigation(t *testing.T) {
 		selectTabThroughStrip(t, g, hud.TabGlobalSession)
 		store := attachPlanningTestStore(g)
 		original := g.planning.current
+		if len(g.planning.sessions) != 0 {
+			t.Fatal("empty composer appeared in history")
+		}
 		original.Description = strings.Repeat("planning ", 24)
 		g.rebuildUI(g.shell.Snapshot())
 		renderNavigation(g)
@@ -99,6 +102,9 @@ func TestPlanningSessionNavigation(t *testing.T) {
 		renderNavigation(g)
 		if store.saved.Input != "first\nmessage" || store.saved.Session != original.ID || original.Pending() != store.saved.Turn || len(original.Turns) != 1 {
 			t.Fatal("first prompt did not reach the planning outbox")
+		}
+		if len(g.planning.sessions) != 1 || g.planning.sessions[0] != original {
+			t.Fatal("missing submitted session")
 		}
 		g.globalDraft = "next draft"
 		g.submitPlanning()

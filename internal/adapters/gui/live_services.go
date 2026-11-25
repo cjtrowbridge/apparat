@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
+	"maps"
 	"os"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -73,11 +75,11 @@ func (game *Game) receiveServices() {
 func (game *Game) liveServicesSection() hud.Section {
 	section := hud.Section{ActionID: "cluster-status", Title: "Cluster Status"}
 	agreement := hud.Section{Title: "Claim agreement"}
-	queue := hud.Section{Title: "Inference tasks", Description: "Counts for your tasks on each replica."}
+	queue := taskStatusCard(game.serviceProjection.Devices)
 	providers := hud.Section{Title: "Text inference providers"}
 	for _, d := range game.serviceProjection.Devices {
 		name := d.DisplayName()
-		health, tasks, model := "Worker status unavailable", "Worker status unavailable", "Awaiting inventory"
+		health, model := "Worker status unavailable", "Awaiting inventory"
 		if d.Inventory != nil {
 			switch {
 			case !d.Inventory.Fresh(time.Now()):
@@ -90,7 +92,6 @@ func (game *Game) liveServicesSection() hud.Section {
 		}
 		if d.Inventory != nil && d.Inventory.Retrying {
 			health = workerRetryMessage(name, d.Inventory, time.Now())
-			tasks = "Waiting for the next worker update."
 			model = health
 			if d.Inventory.ReportedText() {
 				model = "Text generation last reported · " + health
@@ -123,22 +124,14 @@ func (game *Game) liveServicesSection() hud.Section {
 					health += " · missing reply from " + d.DisplayName()
 				}
 			}
-			tasks = fmt.Sprintf("%d queued · %d owned · %d dispatching · %d finished", v.Queued, v.Owned, v.Dispatching, v.Finished)
-			if v.Received > 0 {
-				tasks += fmt.Sprintf(" · %d received for delivery", v.Received)
-			}
-			if v.OldestQueuedMS > 0 {
-				tasks += " · oldest queued " + time.UnixMilli(v.OldestQueuedMS).Local().Format("15:04:05")
-			}
 		}
 		agreement.Rows = append(agreement.Rows, hud.Row{Label: name, Detail: health})
-		queue.Rows = append(queue.Rows, hud.Row{Label: name, Detail: tasks})
 		providers.Rows = append(providers.Rows, hud.Row{Label: name, Detail: model})
 	}
 	if len(game.serviceProjection.Devices) == 0 {
 		section.Description = "No saved inference workers."
 	}
-	section.DetailSections = []hud.Section{hardwareCard(game.serviceProjection, time.Now()), agreement, queue, providers}
+	section.DetailSections = []hud.Section{hardwareCard(game.serviceProjection, time.Now()), queue, deviceUsageCard(game.serviceProjection), agreement, providers}
 	return section
 }
 
@@ -202,4 +195,115 @@ func (g *Game) workerAction(action string, callback func(string)) func() {
 		}
 	}
 	return nil
+}
+
+func taskStatusCard(devices []domain.ClusterDevice) hud.Section {
+	card := hud.Section{Title: "Inference tasks", Description: "Latest 32 tasks visible to you across the cluster."}
+	tasks := map[string]domain.TaskObservation{}
+	turns := map[string]bool{}
+	rank := map[string]int{"received": 1, "queued": 2, "owned": 3, "dispatching": 4, "finished": 5}
+	reported := false
+	for _, d := range devices {
+		if d.Inference == nil {
+			continue
+		}
+		if d.Inference.OfflineSince == 0 {
+			reported = true
+		}
+		for _, t := range d.Inference.Recent {
+			if t.State != "received" {
+				turns[t.Turn] = true
+			}
+			if rank[t.State] > rank[tasks[t.ID].State] {
+				tasks[t.ID] = t
+			}
+		}
+	}
+	ids := slices.Sorted(maps.Keys(tasks))
+	slices.Reverse(ids)
+	for _, id := range ids {
+		t := tasks[id]
+		if t.State == "received" && turns[t.Turn] {
+			continue
+		}
+		card.Rows = append(card.Rows, hud.Row{Label: t.Pool + " · " + t.State, Detail: t.ID})
+		if len(card.Rows) == 32 {
+			break
+		}
+	}
+	if len(card.Rows) == 0 {
+		card.Description = "Waiting for a worker task report."
+		if reported {
+			card.Description = "No recent tasks reported for your account."
+		}
+	}
+	return card
+}
+
+func deviceUsageCard(p ServiceProjection) hud.Section {
+	card := hud.Section{Title: "Devices", Description: "Installed hardware and lifetime inference totals."}
+	members := hardwareMembers(p)
+	names := map[string]string{}
+	details := map[string]string{}
+	indirect := map[string]domain.DeviceUsage{}
+	for _, d := range p.Devices {
+		for id, usage := range d.RosterUsage {
+			prior, ok := indirect[id]
+			if !ok || usage.Prompts > prior.Prompts {
+				indirect[id] = usage
+			}
+		}
+	}
+	for id, usage := range indirect {
+		details[id] = fmt.Sprintf("%d tokens generated · %d prompts served", usage.Tokens, usage.Prompts)
+	}
+	for _, peer := range p.Peers {
+		names[peer.ID] = peer.DisplayName("")
+	}
+	names[p.LocalDevice.ID] = p.LocalDevice.DisplayName("")
+	for _, d := range p.Devices {
+		for _, peer := range d.Roster {
+			names[peer.ID] = peer.DisplayName(d.Host)
+		}
+	}
+	for _, d := range p.Devices {
+		names[d.Fingerprint] = d.DisplayName()
+		usage := d.Usage
+		if d.Inventory != nil && d.Inventory.Usage != nil && (usage == nil || usage.Prompts < d.Inventory.Usage.Prompts) {
+			usage = d.Inventory.Usage
+		}
+		if usage != nil {
+			details[d.Fingerprint] = fmt.Sprintf("%d tokens generated · %d prompts served", usage.Tokens, usage.Prompts)
+		}
+		if d.Inventory != nil && d.Inventory.Retrying {
+			details[d.Fingerprint] = strings.TrimSpace(details[d.Fingerprint] + " " + workerRetryMessage(d.DisplayName(), d.Inventory, time.Now()))
+		}
+	}
+	ids := slices.Sorted(maps.Keys(members))
+	for _, id := range ids {
+		h := members[id]
+		name := names[id]
+		if name == "" {
+			name = "Device " + id[:min(8, len(id))]
+		}
+		desc := "Awaiting hardware report"
+		if h != (domain.HardwareCapacity{}) {
+			desc = fmt.Sprintf("%d CPU threads", h.Threads)
+			if h.GPUs > 0 || h.UnratedGPUs > 0 {
+				desc += fmt.Sprintf(" · %d GPUs", max(h.GPUs, h.UnratedGPUs))
+			}
+			if h.UnratedGPUs > 0 {
+				desc += fmt.Sprintf(" (%d awaiting compute measurements)", h.UnratedGPUs)
+			}
+		}
+		detail := details[id]
+		if detail == "" {
+			detail = "Inference totals unreported"
+		}
+		card.Rows = append(card.Rows, hud.Row{Label: name, Detail: desc + " · " + detail})
+	}
+	slices.SortStableFunc(card.Rows, func(a, b hud.Row) int {
+		return strings.Compare(a.Label, b.Label)
+	})
+	return card
 }

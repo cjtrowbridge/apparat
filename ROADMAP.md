@@ -2092,7 +2092,7 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 - [x] Accept claim proposals on any node. Require authenticated confirmation of the same job, attempt, executor, input digest and membership revision from every inference node before provider invocation.
 - [ ] Specify durable conflict arbitration, restart and retry handling, withdrawal before dispatch, terminal receipts and membership transitions. Prove that two conflicting attempts cannot both start under reordered delivery, partitions or roster changes.
-- [x] Keep peer reservation lookup and insertion in RAM. Measure all-peer confirmation and applied-event propagation separately. Adapt reservation rechecks without granting execution on expiry. Replace Local Services with a snapshot-driven Cluster Status; defer historical analysis.
+- [x] Keep peer reservation lookup and insertion in RAM. Measure all-peer confirmation and applied-event propagation separately. Adapt reservation rechecks without granting execution on expiry. Show one cluster task list, installed device hardware, executor usage and a settings shortcut with reserved cloud provider controls. Replace Local Services with a snapshot-driven Cluster Status; defer historical analysis.
 - [ ] Expose outstanding confirmations separately from time spent queued or generating. Reconcile an uncertain provider call before authorizing a replacement.
 
 ### Worker pull and lease lifecycle (owner-hosted queues)

@@ -61,7 +61,14 @@ func ValidateService(service Service) error {
 }
 
 // ClusterDevice is the last authenticated worker record saved by this user.
+type RosterInventory struct {
+	Hardware map[string]HardwareCapacity
+	Usage    map[string]DeviceUsage
+}
+
 type ClusterDevice struct {
+	RosterUsage     map[string]DeviceUsage      `json:"-"`
+	Usage           *DeviceUsage                `json:"-"`
 	RosterHardware  map[string]HardwareCapacity `json:"-"`
 	Hardware        map[string]HardwareCapacity `json:"-"`
 	Inference       *InferenceStatus            `json:"-"`

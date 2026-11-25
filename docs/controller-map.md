@@ -114,3 +114,5 @@ Project Chat opens the message composer directly. Back from the conversation ope
 With the global or project message editor focused, Enter or keypad Enter invokes Send. Shift+Enter inserts a newline. A pending turn keeps the next draft editable.
 
 Activate a conversation bubble to reveal Copy and Message information. The same row appears on hover. Navigate its buttons with Tab or D-pad. Back from Message information returns to the same chat.
+
+The gear beside Cluster Status opens the same Cluster settings page as the Cluster tab gear. Back returns to the selected status view. OpenAI and Cerebras are disabled placeholders.

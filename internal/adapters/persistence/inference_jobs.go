@@ -35,7 +35,27 @@ func (db *DB) InferenceCounts(ctx context.Context, user string, s *domain.Infere
 			s.OldestQueuedMS = at.UnixMilli()
 		}
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	rows, err := db.sql.QueryContext(ctx, `SELECT id,turn,pool,state FROM (
+ SELECT id,json_extract(body,'$.Packet.Turn') AS turn,json_extract(body,'$.Pool') AS pool,state
+ FROM inference_jobs WHERE json_extract(body,'$.User')=?1
+ UNION ALL SELECT turn,turn,'Chat Pool','received' FROM inference_intake WHERE user=?1 AND applied=0)
+ ORDER BY id DESC LIMIT 32`, user)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var t domain.TaskObservation
+		err = rows.Scan(&t.ID, &t.Turn, &t.Pool, &t.State)
+		if err != nil {
+			return err
+		}
+		s.Recent = append(s.Recent, t)
+	}
+	return rows.Err()
 }
 
 func (db *DB) InferenceRoster(ctx context.Context) (r domain.InferenceRoster, err error) {
@@ -237,4 +257,26 @@ func (db *DB) ModelSpeed(ctx context.Context, executor string, model domain.Mode
              1e9*total(e) FILTER (WHERE e>0 AND et>0)/total(et) FILTER (WHERE e>0 AND et>0)
       FROM samples`, executor, model.Provider, model.Name, model.Digest, model.Worker).Scan(&v.Prefill, &v.Eval)
 	return
+}
+
+// Maintain one counter per executor from immutable completion receipts, including existing history.
+const usageSchema = `
+ALTER TABLE claimed_workers ADD COLUMN usage BLOB;
+ALTER TABLE claimed_workers ADD COLUMN roster_hardware BLOB;
+CREATE TABLE inference_usage(executor TEXT PRIMARY KEY, prompts INTEGER NOT NULL, tokens INTEGER NOT NULL);
+INSERT INTO inference_usage SELECT json_extract(claim,'$.Executor'),count(*),sum(max(0,coalesce(CAST(json_extract(output,'$.metrics.eval_count') AS INTEGER),0)))
+ FROM inference_jobs WHERE state='finished' AND json_extract(output,'$.finish') NOT IN ('error','indeterminate')
+ AND json_extract(claim,'$.Executor') IS NOT NULL GROUP BY json_extract(claim,'$.Executor');
+CREATE TRIGGER completed_inference_usage AFTER UPDATE OF state ON inference_jobs
+ WHEN OLD.state!='finished' AND NEW.state='finished' AND json_extract(NEW.output,'$.finish') NOT IN ('error','indeterminate')
+ BEGIN INSERT INTO inference_usage VALUES(json_extract(NEW.claim,'$.Executor'),1,max(0,coalesce(CAST(json_extract(NEW.output,'$.metrics.eval_count') AS INTEGER),0)))
+ ON CONFLICT(executor) DO UPDATE SET prompts=prompts+1,tokens=tokens+excluded.tokens; END;`
+
+func (db *DB) DeviceUsage(ctx context.Context, executor string) (*domain.DeviceUsage, error) {
+	var v domain.DeviceUsage
+	err := db.sql.QueryRowContext(ctx, "SELECT prompts,tokens FROM inference_usage WHERE executor=?", executor).Scan(&v.Prompts, &v.Tokens)
+	if errors.Is(err, sql.ErrNoRows) {
+		return &v, nil
+	}
+	return &v, err
 }

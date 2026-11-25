@@ -110,6 +110,7 @@ type PeerObservation struct {
 	Observed int64
 }
 type InferenceStatus struct {
+	Recent                               []TaskObservation `json:",omitempty"`
 	Received                             int
 	OldestQueuedMS                       int64
 	Updating                             string
@@ -121,6 +122,10 @@ type InferenceStatus struct {
 	Validators                           int
 	Queued, Owned, Dispatching, Finished int
 	Timing                               AgreementTiming
+}
+
+type TaskObservation struct {
+	ID, Turn, Pool, State string
 }
 
 type InferenceReply struct {

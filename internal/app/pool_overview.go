@@ -67,10 +67,11 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 			return page, err
 		}
 		overview.GlobalModel = settings.Default.Model
-		if !overview.GlobalModel.Valid() {
-			catalog := domain.ChatModelCatalog(n.LocalInventory(), n.LocalClusterDevice(), workers, time.Now())
-			if len(catalog) > 0 {
-				overview.GlobalModel = catalog[0].Model
+		catalog := domain.ChatModelCatalog(n.LocalInventory(), n.LocalClusterDevice(), workers, time.Now())
+		if len(catalog) > 0 {
+			overview.ProjectModel = catalog[0].Model
+			if !overview.GlobalModel.Valid() {
+				overview.GlobalModel = overview.ProjectModel
 			}
 		}
 	}
@@ -82,7 +83,7 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 		if r.Worker != "" && r.Worker != w.Fingerprint {
 			continue
 		}
-		tasks, speed := n.inferenceRows(ctx, w, r.Pool, seenJobs, overview.GlobalModel)
+		tasks, speeds := n.inferenceRows(ctx, w, r.Pool, seenJobs, overview.GlobalModel, overview.ProjectModel)
 		overview.Tasks = append(overview.Tasks, tasks...)
 		a := persistence.Access{Cluster: w.Cluster, User: user, Device: device}
 		replica, _, err := db.LocalReplica(ctx, w.Fingerprint, a)
@@ -95,7 +96,7 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 		}
 		for _, d := range v.Devices {
 			if d.Worker && d.ID == w.Fingerprint && slices.Contains(d.Pools, r.Pool) {
-				overview.Devices = append(overview.Devices, domain.PoolDeviceRow{ClusterOption: domain.ClusterOption{Label: w.DisplayName(), Route: domain.ClusterRoute{Page: "device-detail", Target: "worker-" + d.ID}}, Speed: speed})
+				overview.Devices = append(overview.Devices, domain.PoolDeviceRow{ClusterOption: domain.ClusterOption{Label: w.DisplayName(), Route: domain.ClusterRoute{Page: "device-detail", Target: "worker-" + d.ID}}, Speed: speeds[overview.GlobalModel], ProjectSpeed: speeds[overview.ProjectModel]})
 			}
 		}
 		if slices.Contains(v.Pools, r.Pool) {

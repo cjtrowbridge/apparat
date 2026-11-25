@@ -244,10 +244,13 @@ func poolTaskPage(t domain.PoolTaskRow) string {
 }
 
 func (g *Game) poolSpeedTable(c *widget.Container, p *domain.PoolOverview) {
-	description := "No global chat default is available."
-	if p.GlobalModel.Valid() {
-		description = "Showing TPS values for the global chat default (" + p.GlobalModel.Name + ")."
+	name := func(m domain.ModelRef) string {
+		if !m.Valid() {
+			return "unavailable"
+		}
+		return m.Name
 	}
+	description := "Global chat default · " + name(p.GlobalModel) + "\nDefault for projects without an override · " + name(p.ProjectModel)
 	c.AddChild(g.detailText(wrapSelectorLabel(description, *g.theme.ButtonTheme.TextFace, int(g.detailTextMaxWidth()))))
 	format := func(v *float64) string {
 		if v == nil {
@@ -258,12 +261,12 @@ func (g *Game) poolSpeedTable(c *widget.Container, p *domain.PoolOverview) {
 	var rows []tableRow
 	for _, d := range p.Devices {
 		cell := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()))
-		label := wrapSelectorLabel(d.Label, *g.theme.ButtonTheme.TextFace, max(60, g.detailPanePreferredWidth()/2-32))
+		label := wrapSelectorLabel(d.Label, *g.theme.ButtonTheme.TextFace, max(60, g.detailPanePreferredWidth()/3-24))
 		button := g.projectButton(cell, label, func() {
 			g.clusterOpen(d.Route)
 		})
 		button.GetWidget().LayoutData = widget.AnchorLayoutData{StretchHorizontal: true, StretchVertical: true}
-		rows = append(rows, tableRow{cell, g.tableText(format(d.Speed.Prefill) + " / " + format(d.Speed.Eval))})
+		rows = append(rows, tableRow{cell, g.tableText(format(d.Speed.Prefill) + " / " + format(d.Speed.Eval)), g.tableText(format(d.ProjectSpeed.Prefill) + " / " + format(d.ProjectSpeed.Eval))})
 	}
-	c.AddChild(g.borderedTable(tableRow{g.tableText("Device"), g.tableText("tps prefill/eval")}, rows...))
+	c.AddChild(g.borderedTable(tableRow{g.tableText("Device"), g.tableText("tps prefill/eval\nGlobal default"), g.tableText("tps prefill/eval\nProject default")}, rows...))
 }

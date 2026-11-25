@@ -8,11 +8,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"golang.org/x/sys/unix"
 	"os"
-	"os/exec"
-	"path/filepath"
+
 	"runtime"
 	"strconv"
 	"strings"
@@ -93,42 +93,8 @@ func resources(ctx context.Context) domain.NodeResources {
 		r.Disks = append(r.Disks, domain.Capacity{Name: label, Total: st.Blocks * unit, Used: (st.Blocks - st.Bfree) * unit, Available: st.Bavail * unit})
 		seen[f[2]] = true
 	}
-	rates := amdComputeRates()
-	files, _ := filepath.Glob("/sys/class/drm/card*/device/mem_info_vram_total")
-	for _, file := range files {
-		totalBytes, _ := os.ReadFile(file)
-		usedBytes, _ := os.ReadFile(filepath.Join(filepath.Dir(file), "mem_info_vram_used"))
-		total, tok := number(string(totalBytes))
-		used, uok := number(string(usedBytes))
-		if tok && uok && total > 0 && used <= total {
-			rate := drmFP32(filepath.Dir(file), rates)
-			if rate > 0 {
-				r.GPUFP32PerSecond += rate
-				r.GPUComputeReports++
-			}
-			name := filepath.Base(filepath.Dir(filepath.Dir(file)))
-			r.GPUs = append(r.GPUs, domain.Capacity{Name: name, Total: total, Used: used, Available: total - used})
-		}
-	}
-	gpuCtx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(gpuCtx, "nvidia-smi", "--query-gpu=index,memory.total,memory.used,memory.free", "--format=csv,noheader,nounits")
-	output, err := cmd.Output()
-	if err == nil {
-		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-			f := strings.Split(line, ",")
-			if len(f) != 4 {
-				continue
-			}
-			idx, iok := number(f[0])
-			t, tok := number(f[1])
-			u, uok := number(f[2])
-			a, aok := number(f[3])
-			if iok && tok && uok && aok && u <= t && a <= t {
-				r.GPUs = append(r.GPUs, domain.Capacity{Name: fmt.Sprintf("NVIDIA GPU %d", idx), Total: t << 20, Used: u << 20, Available: a << 20})
-			}
-		}
-	}
+	readGPUs(ctx, &r)
+
 	select {
 	case <-ctx.Done():
 		return r

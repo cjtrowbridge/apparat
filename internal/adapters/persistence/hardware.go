@@ -50,3 +50,12 @@ func (db *DB) SaveHardware(ctx context.Context, worker string, a Access, reports
 	_, err = db.sql.ExecContext(ctx, "UPDATE claimed_workers SET hardware=? WHERE worker=? AND owner=? AND cluster=? AND hardware IS NOT ?", raw, worker, a.User, a.Cluster, raw)
 	return err
 }
+
+func (db *DB) SaveRosterInventory(ctx context.Context, worker string, a Access, reports domain.RosterInventory) error {
+	raw, err := json.Marshal(reports)
+	if err != nil {
+		return err
+	}
+	_, err = db.sql.ExecContext(ctx, "UPDATE claimed_workers SET roster_hardware=? WHERE worker=? AND owner=? AND cluster=? AND roster_hardware IS NOT ?", raw, worker, a.User, a.Cluster, raw)
+	return err
+}

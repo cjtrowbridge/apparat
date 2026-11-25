@@ -1,5 +1,5 @@
 // Batches one reader's policy snapshot and pool queue cursors over authenticated TLS.
-// The no-change response is an empty JSON object; queue pages are bounded per request.
+// Unchanged cursors return an empty object, including when executor usage is unchanged.
 package httpapi
 
 import (
@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"github.com/cjtrowbridge/apparat/internal/adapters/persistence"
 	"github.com/cjtrowbridge/apparat/internal/identity"
@@ -49,6 +50,17 @@ func (a *workerAuth) reconcile(w http.ResponseWriter, r *http.Request, access pe
 			}
 		}
 	}
+	usageHead := r.Header.Get("Apparat-Device-Usage")
+	if usageHead != "" {
+		page.Usage, err = a.db.DeviceUsage(r.Context(), identity.Fingerprint(keys.Public()))
+		if err != nil {
+			respond(w, 503, map[string]string{"error": "usage_unavailable"})
+			return
+		}
+		if strconv.FormatUint(page.Usage.Prompts, 10) == usageHead {
+			page.Usage = nil
+		}
+	}
 	respond(w, 200, page)
 }
 
@@ -61,6 +73,10 @@ func (c *WorkerClient) Sync(ctx context.Context, db *persistence.DB) (int, error
 	sort.Strings(pools)
 	for start := 0; start == 0 || start < len(pools); start += 32 {
 		batch := persistence.SyncCursor{Revision: cursor.Revision, Queues: map[string]int64{}}
+		batch.UsageHead = cursor.UsageHead
+		if batch.UsageHead == "" {
+			batch.UsageHead = "unknown"
+		}
 		if c.directory && len(r.View.Devices) == 0 {
 			batch.Revision = 0
 		}

@@ -80,37 +80,48 @@ func (n *Runtime) convergeMemberships(ctx context.Context, views map[string]doma
 	}
 	// A second GUI can learn a worker through a pinned roster before it has a
 	// direct registration. Count it only while an authenticated roster lists it.
-	local := map[string]bool{}
+	local := map[string]domain.ClusterDevice{}
 	for _, w := range workers {
-		local[w.Fingerprint] = true
+		local[w.Fingerprint] = w
 	}
-	samples := map[string]domain.HardwareCapacity{}
+	samples := map[string]domain.WorkerInventory{}
 	for id, c := range clients {
-		if local[id] {
+		if local[id].Fingerprint != "" {
 			continue
 		}
 		report, e := c.Inventory(ctx)
-		if e == nil && report.Resources.CPUs > 0 {
-			samples[id] = report.Capacity()
+		if e == nil {
+			samples[id] = report
 		}
 	}
 	for id, r := range views {
 		c := clients[id]
-		key := c.Access.User + "/" + id
-		old, _ := n.rosterHardware.Load(key)
-		previous, _ := old.(map[string]domain.HardwareCapacity)
-		members := map[string]domain.HardwareCapacity{}
+		previous := local[id]
+		members := domain.RosterInventory{Hardware: map[string]domain.HardwareCapacity{}, Usage: map[string]domain.DeviceUsage{}}
 		for _, peer := range r.Peers {
-			if local[peer.ID] {
+			if local[peer.ID].Fingerprint != "" {
 				continue
 			}
-			members[peer.ID] = previous[peer.ID]
+			members.Hardware[peer.ID] = previous.RosterHardware[peer.ID]
+			prior, ok := previous.RosterUsage[peer.ID]
+			if ok {
+				members.Usage[peer.ID] = prior
+			}
 			sample, ok := samples[peer.ID]
 			if ok && clients[peer.ID].Access.Cluster == r.Cluster {
-				members[peer.ID] = sample
+				if sample.Resources.CPUs > 0 {
+					members.Hardware[peer.ID] = sample.Capacity()
+				}
+				if sample.Usage != nil {
+					members.Usage[peer.ID] = *sample.Usage
+				}
 			}
 		}
-		n.rosterHardware.Store(key, members)
+		n.mu.Lock()
+		if n.database != nil {
+			_ = n.database.SaveRosterInventory(ctx, id, c.Access, members)
+		}
+		n.mu.Unlock()
 	}
 	for id, c := range clients {
 		if !c.Access.Admin {

@@ -38,7 +38,7 @@ func TestInventoryAuthorization(t *testing.T) {
 		r := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
 		r.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
-		auth.inventoryRoute(w, r, tc.admin)
+		auth.inventoryRoute(w, r, tc.admin, "worker")
 		if w.Code != tc.want {
 			t.Fatal(tc, w.Code)
 		}

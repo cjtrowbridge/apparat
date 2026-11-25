@@ -30,8 +30,9 @@ CREATE TABLE replica_queue(worker TEXT NOT NULL,user TEXT NOT NULL,device TEXT N
 `
 
 type SyncCursor struct {
-	Revision uint64
-	Queues   map[string]int64
+	UsageHead string `json:"-"`
+	Revision  uint64
+	Queues    map[string]int64
 }
 type Replica struct {
 	Domain, Worker, Cluster, User, Device string
@@ -121,7 +122,7 @@ func (db *DB) LocalReplica(ctx context.Context, w string, a Access) (SignedRepli
 	var r SignedReplica
 	cursor := SyncCursor{Queues: map[string]int64{}}
 	var raw []byte
-	err := db.sql.QueryRowContext(ctx, "SELECT body FROM worker_replicas WHERE worker=? AND user=? AND device=?", w, a.User, a.Device).Scan(&raw)
+	err := db.sql.QueryRowContext(ctx, `SELECT r.body,coalesce(CAST(json_extract(w.usage,'$.Prompts') AS TEXT),'') FROM worker_replicas r LEFT JOIN claimed_workers w ON w.worker=r.worker AND w.owner=r.user WHERE r.worker=? AND r.user=? AND r.device=?`, w, a.User, a.Device).Scan(&raw, &cursor.UsageHead)
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, cursor, nil
 	}

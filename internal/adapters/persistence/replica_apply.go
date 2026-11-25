@@ -7,16 +7,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"slices"
 )
 
 type SyncPage struct {
+	Usage    *domain.DeviceUsage      `json:",omitempty"`
 	Snapshot *SignedReplica           `json:",omitempty"`
 	Queues   map[string][]QueueChange `json:",omitempty"`
 }
 
 func (db *DB) ApplyReplica(ctx context.Context, w string, a Access, cursor SyncCursor, page SyncPage) error {
-	if page.Snapshot == nil && len(page.Queues) == 0 {
+	if page.Snapshot == nil && len(page.Queues) == 0 && page.Usage == nil {
 		return nil
 	}
 	tx, err := db.sql.BeginTx(ctx, nil)
@@ -91,6 +93,16 @@ func (db *DB) ApplyReplica(ctx context.Context, w string, a Access, cursor SyncC
 			head = e.Revision
 		}
 	}
+	if page.Usage != nil {
+		raw, err := json.Marshal(page.Usage)
+		if err != nil {
+			return err
+		}
+		_, err = tx.ExecContext(ctx, "UPDATE claimed_workers SET usage=? WHERE worker=? AND owner=? AND cluster=? AND usage IS NOT ?", raw, w, a.User, a.Cluster, raw)
+		if err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
 }
 
@@ -106,7 +118,7 @@ func (db *DB) ForgetReplica(ctx context.Context, w string, a Access) error {
 			return err
 		}
 	}
-	_, err = tx.ExecContext(ctx, "UPDATE claimed_workers SET hardware=NULL,inventory=NULL,heard=0 WHERE worker=? AND owner=?", w, a.User)
+	_, err = tx.ExecContext(ctx, "UPDATE claimed_workers SET hardware=NULL,roster_hardware=NULL,usage=NULL,inventory=NULL,heard=0 WHERE worker=? AND owner=?", w, a.User)
 	if err != nil {
 		return err
 	}

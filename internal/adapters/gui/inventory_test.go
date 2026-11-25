@@ -6,6 +6,7 @@ package gui
 
 import (
 	"context"
+	"github.com/ebitenui/ebitenui/event"
 	"image"
 	"image/png"
 	"os"
@@ -189,9 +190,24 @@ func TestClusterStatusCards(t *testing.T) {
 			found = true
 			g.selectSection(hud.TabCluster, i)
 			renderNavigation(g)
-			if len(s.DetailSections) != 4 || s.DetailSections[0].Title != "Cluster hardware" || !strings.Contains(s.DetailSections[3].Rows[0].Detail, "idle with eligible work") {
+			if len(s.DetailSections) != 5 || s.DetailSections[0].Title != "Cluster hardware" || !strings.Contains(s.DetailSections[4].Rows[0].Detail, "idle with eligible work") {
 				t.Fatal("status did not explain stalled queue")
 			}
+			var gear *widget.Button
+			for _, target := range g.bodyTargets() {
+				if focusLabel(target.w) == "Cluster settings" {
+					gear, _ = target.w.(*widget.Button)
+				}
+			}
+			if gear == nil {
+				t.Fatal("missing status settings button", size)
+			}
+			gear.Click()
+			event.ExecuteDeferred()
+			if g.clusterTop() == nil || g.clusterTop().route.Page != "settings" {
+				t.Fatal("gear did not open settings")
+			}
+			g.clusterBack()
 			links := g.deviceManagementLinks(s.ActionID)
 			if len(links) != 0 {
 				t.Fatal("unexpected manual inference setup")
@@ -282,5 +298,19 @@ func TestInterruptedWorkerPresentation(t *testing.T) {
 		if !g.clusterTop().retryAt.IsZero() || g.clusterTop().page.Title != "Configure Ollama" {
 			t.Fatal("failed to recover detail")
 		}
+	}
+}
+
+func TestSharedTaskStatus(t *testing.T) {
+	receipt := domain.TaskObservation{ID: "turn", Turn: "turn", Pool: "Chat Pool", State: "received"}
+	queued := domain.TaskObservation{ID: "job", Turn: "turn", Pool: "Chat Pool", State: "queued"}
+	done := queued
+	done.State = "finished"
+	card := taskStatusCard([]domain.ClusterDevice{
+		{Inference: &domain.InferenceStatus{Recent: []domain.TaskObservation{receipt, queued}}},
+		{Inference: &domain.InferenceStatus{Recent: []domain.TaskObservation{done}}},
+	})
+	if len(card.Rows) != 1 || card.Rows[0].Detail != "job" || !strings.Contains(card.Rows[0].Label, "finished") {
+		t.Fatal(card)
 	}
 }

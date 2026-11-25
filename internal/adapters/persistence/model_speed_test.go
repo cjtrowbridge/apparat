@@ -43,6 +43,11 @@ func TestModelSpeed(t *testing.T) {
 	other.Digest = "other"
 	record("other-model", "worker", other, m)
 	record("missing", "worker", model, nil)
+	record("a", "worker", model, m)
+	usage, err := db.DeviceUsage(ctx, "worker")
+	if err != nil || usage.Prompts != 4 || usage.Tokens != 30 {
+		t.Fatal("executor usage after replay", usage, err)
+	}
 	v, err := db.ModelSpeed(ctx, "worker", model)
 	if err != nil || v.Prefill == nil || *v.Prefill != 30 || v.Eval == nil || *v.Eval != 6 {
 		t.Fatalf("wrong measured rates: %+v %v", v, err)

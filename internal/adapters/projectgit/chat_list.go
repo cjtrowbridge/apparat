@@ -60,7 +60,9 @@ func ChatHeaders(location, before string) ([]domain.ChatHeader, error) {
 		if err != nil {
 			return nil, err
 		}
-		headers = append(headers, s.ChatHeader)
+		if len(data) > end+5 {
+			headers = append(headers, s.ChatHeader)
+		}
 	}
 	return headers, nil
 }

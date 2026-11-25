@@ -20,7 +20,7 @@ type probeReply struct {
 	Error     string
 }
 
-func (a *workerAuth) inventoryRoute(w http.ResponseWriter, r *http.Request, admin bool) {
+func (a *workerAuth) inventoryRoute(w http.ResponseWriter, r *http.Request, admin bool, worker string) {
 	if r.URL.Path == "/v1/inventory" {
 		if r.Method != http.MethodGet {
 			respond(w, 405, map[string]string{"error": "method_not_allowed"})
@@ -31,6 +31,14 @@ func (a *workerAuth) inventoryRoute(w http.ResponseWriter, r *http.Request, admi
 			return
 		}
 		v := a.inventory.Snapshot()
+		if a.db != nil {
+			var err error
+			v.Usage, err = a.db.DeviceUsage(r.Context(), worker)
+			if err != nil {
+				respond(w, 503, map[string]string{"error": "usage_unavailable"})
+				return
+			}
+		}
 		if !admin {
 			v.Port = 0
 			if v.Problem != "" {
@@ -83,7 +91,7 @@ func (c *WorkerClient) TryOllama(ctx context.Context, port int) (domain.WorkerIn
 
 func (a *workerAuth) hardwareRoute(w http.ResponseWriter, r *http.Request, access persistence.Access) {
 	var h domain.HardwareCapacity
-	if r.Method != http.MethodPost || !boundedJSON(w, r, &h) || len(h.Boot) > 64 || h.Cores < 0 || h.Threads < 0 || h.INT8 < 0 || h.UnratedGPUs < 0 {
+	if r.Method != http.MethodPost || !boundedJSON(w, r, &h) || len(h.Boot) > 64 || h.Cores < 0 || h.Threads < 0 || h.INT8 < 0 || h.UnratedGPUs < 0 || h.GPUs < 0 {
 		respond(w, 400, map[string]string{"error": "invalid_hardware_report"})
 		return
 	}

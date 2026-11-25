@@ -51,7 +51,6 @@ func (g *Game) newPlanning() {
 		return
 	}
 	s := &planningSession{ChatSession: domain.ChatSession{ChatHeader: domain.ChatHeader{Version: 1, ID: id, Scope: domain.GlobalChat, Started: now, Description: newPlanningTitle}}, scroll: 1}
-	p.sessions = append(p.sessions, s)
 	g.openPlanning(s)
 }
 
@@ -140,6 +139,9 @@ func (g *Game) submitPlanning() {
 	_, err = s.Apply(id, g.globalDraft, false)
 	if err != nil {
 		return
+	}
+	if len(s.Turns) == 1 {
+		g.planning.sessions = append(g.planning.sessions, s)
 	}
 	g.globalDraft = ""
 	s.draft = ""

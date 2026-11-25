@@ -82,3 +82,5 @@ Cluster Status now replaces Local Services on the cluster selector. The local de
 - [x] Phase 10 Cluster Status recomputes installed hardware from member identities and their last reported capacity. Publish inventory changes independently of inference status, include reporting GUI members and verify join, withdrawal, stale reports and host deduplication.
 
 - [x] Phase 10 worker presence: retain authenticated service listings during transport loss, show elapsed contact time and retry failed detail reads while open. Verify reconnection, catalog stability and distinct access failures.
+
+- [x] Phase 10 cluster overview and chat history. List submitted conversations, compare the global and unconfigured-project model rates, retain known hardware offline, present one user-visible task overview, synchronize executor odometers and expose cloud settings placeholders. Verify replica replay and responsive HUD paths before the canonical build.
