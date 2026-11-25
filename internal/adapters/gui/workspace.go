@@ -26,6 +26,9 @@ type workspaceReply struct {
 	err     error
 }
 type workspacePanel struct {
+	lastChatRequest                              domain.WorkspaceRequest
+	agentThread, chatDraft                       bool
+	threadTitle                                  string
 	cursor                                       string
 	virtualDirs                                  map[string]bool
 	outputDetails                                string
@@ -35,7 +38,7 @@ type workspacePanel struct {
 	choiceAction                                 string
 	selected                                     domain.WorkspaceChoice
 	attachment, attachmentLabel, message         string
-	readOnly, editing                            bool
+	readOnly, editing, chatError                 bool
 	change                                       domain.WorkspaceChange
 	changes                                      []domain.WorkspaceChange
 	id, dir, path, base, report, argument, runID string
@@ -65,7 +68,21 @@ func (g *Game) workspaceRequest(action string) {
 		q.Action = "post"
 		q.RelatedRun = w.attachment
 	}
+	if w.chatDraft && !w.agentThread && q.Action == "post" {
+		q.Thread += " " + domain.PromptTitle(q.Argument, 100-len(q.Thread)-1)
+	}
+	if w.agentThread {
+		switch q.Action {
+		case "chat":
+			q.Action = "agent-chat"
+		case "post":
+			q.Action = "agent-post"
+		}
+	}
 	switch action {
+	case "older-sessions":
+		q.Action = "threads"
+		q.Known = w.cursor
 	case "list":
 		q.Argument = ""
 		q.Path = w.dir
@@ -73,7 +90,9 @@ func (g *Game) workspaceRequest(action string) {
 		q.Argument = w.compared
 	case "create", "mkdir":
 		q.Path = path.Join(w.dir, w.argument)
-	case "save", "post", "post-with-run", "run":
+	case "agent-rename":
+		q.Base = w.threadTitle
+	case "agent-create", "save", "post", "post-with-run", "run":
 		q.ID, _ = domain.NewID(time.Now(), nil)
 	case "artifact", "delete-artifact":
 		q.ID = strings.TrimSpace(w.argument)
@@ -88,6 +107,16 @@ func (g *Game) workspaceRequest(action string) {
 		q.Action = "list"
 		q.Argument = w.cursor
 		q.Path = w.dir
+	}
+	if w.chatDraft && q.Action == "agent-post" {
+		q.ID = w.thread
+	}
+	if q.Action == "agent-create" || q.Action == "agent-post" || q.Action == "post" {
+		previous := w.lastChatRequest
+		if previous.Action == q.Action && previous.Thread == q.Thread && previous.Argument == q.Argument && previous.RelatedRun == q.RelatedRun && previous.Model == q.Model {
+			q.ID = previous.ID
+		}
+		w.lastChatRequest = q
 	}
 	if strings.HasPrefix(action, "terminal-") {
 		q.ID = w.runID
@@ -117,6 +146,7 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	if w.id != r.request.ProjectID {
 		return
 	}
+	w.chatError = r.err != nil
 	if r.err != nil {
 		if r.request.Action == "list" || r.request.Action == "read" && errors.Is(r.err, httpapi.ErrDenied) {
 			g.stopFolderCheck()
@@ -131,10 +161,16 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 				w.readOnly = true
 			}
 		}
+		if errors.Is(r.err, httpapi.ErrDenied) {
+			w.choices = nil
+		}
 		w.report = r.err.Error()
 		return
 	}
 	q, v := r.request, r.view
+	if q.Action == "agent-create" || q.Action == "agent-post" || q.Action == "post" {
+		w.lastChatRequest = domain.WorkspaceRequest{}
+	}
 	w.report = v.Report
 	if v.Editing {
 		w.readOnly = v.ReadOnly
@@ -173,14 +209,35 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	case "threads", "tasks", "runs":
 		w.cursor = v.Cursor
 		w.choices = v.Choices
+	case "agent-create":
+		w.setThread(v.Base)
+		w.agentThread = true
+		w.threadTitle = v.Detail
+		w.mode = "conversation"
+		w.choices = v.Choices
+	case "agent-chat", "agent-rename", "agent-post":
+		w.mode = "conversation"
+		w.choices = v.Choices
+		w.threadTitle = v.Detail
+		if q.Action == "agent-post" {
+			w.chatDraft = false
+			w.message = ""
+			w.attachment = ""
+		}
+	case "chat":
+		w.choices = v.Choices
 	case "post":
+		w.chatDraft = false
+		w.thread = q.Thread
+		w.threadTitle = domain.LocalThreadChoice(q.Thread).Label
+		w.choices = v.Choices
 		for i, p := range g.projects.rows {
 			if p.ID == q.ProjectID {
 				thread := q.Thread
 				if thread == "" {
 					thread = "General"
 				}
-				item := domain.WorkspaceChoice{ID: thread, Label: thread}
+				item := domain.LocalThreadChoice(thread)
 				if !slices.Contains(p.Threads, item) {
 					g.projects.rows[i].Threads = append(p.Threads, item)
 				}

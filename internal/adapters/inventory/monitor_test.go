@@ -5,6 +5,7 @@ package inventory
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -73,5 +74,12 @@ func TestOllamaInventory(t *testing.T) {
 	v, err = m.Refresh(t.Context(), 0)
 	if err == nil || !v.Configured || v.HasText(time.Now()) || len(v.Models) != 0 || v.Problem == "" {
 		t.Fatal("stale inventory after outage", v, err)
+	}
+}
+
+func TestCPUThroughputSample(t *testing.T) {
+	first := cpuFP32()
+	if first <= 0 || math.IsNaN(first) || math.IsInf(first, 0) || cpuFP32() != first {
+		t.Fatal("invalid cached CPU throughput", first)
 	}
 }

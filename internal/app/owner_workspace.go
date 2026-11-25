@@ -39,7 +39,7 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 	}
 	if q.Action == "performance-capture" && caller.Admin {
 		var data strings.Builder
-		err = n.capture(0).Write(&data)
+		err = n.capture(ctx, 0).Write(&data)
 		v.Detail = data.String()
 		return v, err
 	}
@@ -48,11 +48,11 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 	}
 	scope := "read"
 	switch q.Action {
-	case "save", "post":
+	case "save", "post", "agent-create", "agent-rename", "agent-post":
 		scope = "write"
 	case "run":
 		scope = "tasks"
-	case "chat", "threads", "list", "read", "tasks", "runs", "artifact", "directory-status":
+	case "chat", "agent-chat", "threads", "list", "read", "tasks", "runs", "artifact", "directory-status":
 	default:
 		return v, httpapi.ErrDenied
 	}
@@ -67,8 +67,10 @@ func (n *Runtime) serveWorkspace(ctx context.Context, caller persistence.Access,
 		}
 	}
 	switch q.Action {
-	case "chat", "threads", "post":
-		return n.workspaceThread(ctx, q)
+	case "chat", "threads", "post", "agent-chat", "agent-create", "agent-rename", "agent-post":
+		n.workspaceMu.Lock()
+		defer n.workspaceMu.Unlock()
+		return n.workspaceThread(ctx, location, caller.User, q)
 	case "list":
 		v, err = n.pages.Page(caller.Device+"/"+q.ProjectID, location, q.Path, q.Argument)
 		return conditional(q, v, err)
@@ -179,8 +181,10 @@ func (n *Runtime) remoteWorkspace(ctx context.Context, q domain.WorkspaceRequest
 	if errors.Is(err, httpapi.ErrDenied) {
 		connection := &n.workspaceConnection
 		connection.mu.Lock()
-		if connection.client == c {
-			connection.client = nil
+		for k, v := range connection.entries {
+			if v.client == c {
+				delete(connection.entries, k)
+			}
 		}
 		connection.mu.Unlock()
 	}

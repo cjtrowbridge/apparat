@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
@@ -35,6 +36,8 @@ type projectResult struct {
 	reload                  bool
 }
 type projectForm struct {
+	chatRead                                                   chan workspaceReply
+	nextChatRead                                               time.Time
 	olderPages                                                 map[string]bool
 	live                                                       liveDirectory
 	wizard                                                     newProjectState

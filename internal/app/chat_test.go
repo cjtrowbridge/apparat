@@ -87,3 +87,49 @@ func TestOwnerChatRestartAndRedelivery(t *testing.T) {
 		t.Fatal("damaged external edit")
 	}
 }
+
+func TestWorkspaceAgentSession(t *testing.T) {
+	ctx := context.Background()
+	repo := t.TempDir()
+	gitFixtureCommand(t, repo, "init", "-b", "main")
+	node := nodeFor(t, t.TempDir(), false)
+	requireSuccess(t, node.Initialize(ctx))
+	requireSuccess(t, node.StoreProject(ctx, "", repo, ""))
+	projects, err := node.Projects(ctx)
+	requireSuccess(t, err)
+	session, err := domain.NewID(time.Now(), nil)
+	requireSuccess(t, err)
+	q := domain.WorkspaceRequest{ProjectID: projects[0].ID, Action: "agent-create", Path: ".", ID: session, Argument: "Planning"}
+	v, err := node.Workspace(ctx, q)
+	requireSuccess(t, err)
+	if v.Base != session || v.Detail != "Planning" {
+		t.Fatal(v)
+	}
+	q.Action = "threads"
+	v, err = node.Workspace(ctx, q)
+	requireSuccess(t, err)
+	if len(v.Choices) != 1 || v.Choices[0].ID != session {
+		t.Fatal(v)
+	}
+	q.Thread = session
+	q.ID, err = domain.NewID(time.Now(), nil)
+	requireSuccess(t, err)
+	q.Action = "agent-post"
+	q.Model = domain.ModelRef{Provider: "ollama", Name: "demo", Digest: "one"}
+	q.Argument = "What is happening?"
+	for range 2 {
+		v, err = node.Workspace(ctx, q)
+		requireSuccess(t, err)
+		if len(v.Choices) != 2 || v.Choices[1].State != "pending" {
+			t.Fatal(v)
+		}
+	}
+	_, err = node.CompleteChatTurn(ctx, q.ProjectID, session, q.ID, "Review needed.")
+	requireSuccess(t, err)
+	q.Action = "agent-chat"
+	v, err = node.Workspace(ctx, q)
+	requireSuccess(t, err)
+	if len(v.Choices) != 2 || v.Choices[1].Label != "Review needed." || v.Choices[1].State != "assistant" {
+		t.Fatal(v)
+	}
+}

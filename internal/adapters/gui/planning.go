@@ -1,6 +1,6 @@
 //go:build gui
 
-// Owns local planning-session navigation and unsynchronized turns.
+// Owns planning-session navigation, local drafts and durable submission staging.
 // All state changes run on the HUD thread; session and turn IDs survive navigation.
 package gui
 
@@ -20,8 +20,10 @@ type planningSession struct {
 	draft        string
 	scroll       float64
 	acknowledged bool
+	loading      bool
 }
 type planningUI struct {
+	sync            planningSync
 	modelButton     *widget.Button
 	picker          modelPicker
 	sessions        []*planningSession
@@ -76,12 +78,14 @@ func (g *Game) detachPlanning() {
 func (g *Game) openPlanning(s *planningSession) {
 	g.detachPlanning()
 	g.planning.current = s
+	g.planning.sync.next = time.Time{}
 	g.globalDraft = s.draft
 	g.planning.page = ""
 	g.layoutDirty = true
 }
 func (g *Game) planningPage(page string) {
 	g.detachPlanning()
+	g.planning.sync.next = time.Time{}
 	g.planning.page = page
 	if page == "rename" {
 		g.planning.title = g.planning.current.Description
@@ -114,13 +118,18 @@ func (g *Game) enterPlanningVoice() {
 
 func (g *Game) submitPlanning() {
 	s := g.planning.current
-	if s == nil || !g.chatModelReady() || s.Pending() != "" || strings.TrimSpace(g.globalDraft) == "" {
+	if s == nil || s.loading || !g.chatModelReady() || s.Pending() != "" || strings.TrimSpace(g.globalDraft) == "" {
 		return
 	}
 	id, err := domain.NewID(time.Now(), nil)
 	if err != nil {
 		return
 	}
+	model := g.planning.picker.settings.Session
+	if !g.savePlanningOperation("global-post", domain.GlobalRequest{Session: s.ID, Turn: id, Input: g.globalDraft, Title: s.Description, Model: model}) {
+		return
+	}
+	s.Model = model
 	_, err = s.Apply(id, g.globalDraft, false)
 	if err != nil {
 		return
@@ -185,7 +194,7 @@ func (g *Game) updatePlanningControls() {
 		return
 	}
 	if p.send != nil {
-		p.send.GetWidget().Disabled = !g.chatModelReady() || strings.TrimSpace(g.globalDraft) == "" || p.current.Pending() != ""
+		p.send.GetWidget().Disabled = p.current.loading || !g.chatModelReady() || strings.TrimSpace(g.globalDraft) == "" || p.current.Pending() != ""
 	}
 	if p.saveTitle != nil {
 		title := strings.TrimSpace(p.title)

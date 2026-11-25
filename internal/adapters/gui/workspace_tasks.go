@@ -5,8 +5,10 @@
 package gui
 
 import (
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/ebitenui/ebitenui/widget"
 	"strings"
+	"time"
 )
 
 func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
@@ -83,7 +85,7 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 	case "chat":
 		for _, item := range w.choices {
 			g.workspaceRow(c, item.Label, func() {
-				g.openConversation(item.ID)
+				g.openProjectConversation(item)
 			})
 		}
 		if len(w.choices) == 0 {
@@ -91,19 +93,40 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 				g.openConversation("General")
 			})
 		}
-		goTo("New conversation", "new-thread", "")
-	case "new-thread":
-		g.projectField(c, "Conversation name", &w.argument)
-		g.projectButton(c, "Open", func() {
-			name := strings.TrimSpace(w.argument)
-			if name != "" {
-				w.setThread(name)
-				g.workspaceGo("conversation", "chat")
+		if w.cursor != "" {
+			g.projectButton(c, "Older sessions", func() {
+				g.workspaceRequest("older-sessions")
+			})
+		}
+		g.projectButton(c, "New conversation", g.newProjectChat)
+	case "rename-thread":
+		g.projectField(c, "Session title", &w.argument)
+		g.projectButton(c, "Save title", func() {
+			if strings.TrimSpace(w.argument) != "" {
+				g.workspaceRequest("agent-rename")
 			}
 		})
 	case "conversation":
-		c.AddChild(g.detailText(w.thread))
-		c.AddChild(g.detailText(w.report))
+		title := w.threadTitle
+		bar := controlRow(c)
+		bar.AddChild(g.planningIcon("2795", "New conversation", g.newProjectChat), g.detailText(g.planningTitle(title, max(50, g.detailPanePreferredWidth()-170))))
+		if w.agentThread && !w.chatDraft {
+			bar.AddChild(g.planningIcon("270f", "Edit session title", g.renameProjectChat))
+		}
+		for _, message := range w.choices {
+			g.chatBubble(c, message.Label, !w.agentThread || message.State == "user", message.State == "pending")
+		}
+		if !w.agentThread && len(w.choices) > 0 {
+			g.chatBubble(c, "Saved to project · awaiting queue integration", false, false)
+		}
+		if w.agentThread && !w.chatDraft {
+			g.projectButton(c, "Refresh conversation", func() {
+				g.workspaceRequest("chat")
+			})
+		}
+		if len(w.choices) == 0 || w.chatError {
+			c.AddChild(g.detailText(w.report))
+		}
 
 		return
 	}
@@ -119,4 +142,40 @@ func (w *workspacePanel) setThread(name string) {
 		w.attachmentLabel = ""
 	}
 	w.thread = name
+}
+
+func (f *projectForm) documentProject(id string) bool {
+	for _, p := range f.rows {
+		if p.ID == id {
+			return strings.HasPrefix(p.Location, "content://")
+		}
+	}
+	return false
+}
+
+func (g *Game) renameProjectChat() {
+	if g.projects.pending != nil {
+		return
+	}
+	g.workspaceGo("rename-thread", "")
+	g.projects.workspace.argument = g.projects.workspace.threadTitle
+}
+
+func (g *Game) newProjectChat() {
+	if g.projects.pending != nil {
+		return
+	}
+	w := &g.projects.workspace
+	id, err := domain.NewID(time.Now(), nil)
+	if err != nil {
+		w.report = err.Error()
+		g.layoutDirty = true
+		return
+	}
+	w.setThread(id)
+	w.threadTitle = "New conversation"
+	w.agentThread = !g.projects.documentProject(w.id)
+	w.chatDraft = true
+	w.chatError = false
+	g.workspaceGo("conversation", "")
 }

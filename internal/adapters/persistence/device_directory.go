@@ -59,7 +59,7 @@ func readDirectory(ctx context.Context, db directoryReader, a Access, worker str
 		if len(devices) == 0 || devices[len(devices)-1].ID != d.ID {
 			devices = append(devices, d)
 		}
-		if pool != "" {
+		if pool != "" && !domain.RetiredPool(pool) {
 			last := &devices[len(devices)-1]
 			last.Pools = append(last.Pools, pool)
 		}

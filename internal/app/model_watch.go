@@ -27,6 +27,29 @@ func (n *Runtime) watchModelWorkers(ctx context.Context) {
 			}
 			watch, cancel := context.WithCancel(ctx)
 			active[key] = cancel
+			group.Go(func() {
+				for watch.Err() == nil {
+					c, e := n.openSavedWorker(watch, row)
+					if e == nil {
+						_ = c.WatchInference(watch, func() {
+							v, err := c.Inference(watch, domain.InferenceCommand{Operation: "status"})
+							if err == nil && c.Access.User == n.Personal.Fingerprint() {
+								n.peerInference.Store(key, v.Status)
+								n.mu.Lock()
+								if n.serviceManager != nil {
+									n.serviceManager.notify()
+								}
+								n.mu.Unlock()
+							}
+						})
+					}
+					select {
+					case <-watch.Done():
+						return
+					case <-time.After(10 * time.Second):
+					}
+				}
+			})
 			group.Add(1)
 			go func(w domain.ClusterDevice) {
 				defer group.Done()

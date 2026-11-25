@@ -6,10 +6,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
+	"golang.org/x/sync/singleflight"
 	"sync"
 	"time"
 )
@@ -70,28 +72,67 @@ func conditional(q domain.WorkspaceRequest, v domain.WorkspaceView, err error) (
 	return v, nil
 }
 
-// Active workspace operations share a short-lived device-bound credential for the selected host.
+// All callers for a device share its short-lived credential, including concurrent sessions.
 type ownerConnection struct {
-	mu     sync.Mutex
+	mu      sync.Mutex
+	entries map[string]cachedCredential
+	open    singleflight.Group
+}
+type cachedCredential struct {
 	client *httpapi.WorkerClient
 	until  time.Time
 }
 
 func (n *Runtime) workspaceClient(ctx context.Context, host string) (*httpapi.WorkerClient, error) {
-	c := &n.workspaceConnection
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	return n.cachedWorker(ctx, host, func() (*httpapi.WorkerClient, error) {
+		return n.projectHost(ctx, host)
+	})
+}
+func (n *Runtime) cachedWorker(ctx context.Context, host string, connect func() (*httpapi.WorkerClient, error)) (*httpapi.WorkerClient, error) {
 	user := n.Personal.Fingerprint()
 	if user == "" || n.Keys.State() != "unlocked" {
 		return nil, httpapi.ErrWorkspaceLocked
 	}
-	if c.client != nil && "worker-"+c.client.Worker == host && c.client.Access.User == user && c.client.Access.Device == identity.Fingerprint(n.Keys.Public()) && time.Now().Before(c.until) {
-		return c.client, nil
+	key := user + "/" + identity.Fingerprint(n.Keys.Public()) + "/" + host
+	cache := &n.workspaceConnection
+	cache.mu.Lock()
+	v := cache.entries[key]
+	cache.mu.Unlock()
+	if v.client != nil && time.Now().Before(v.until) {
+		return v.client, nil
 	}
-	client, err := n.projectHost(ctx, host)
-	if err == nil {
-		c.client = client
-		c.until = time.Now().Add(4 * time.Minute)
+	value, err, _ := cache.open.Do(key, func() (any, error) {
+		cache.mu.Lock()
+		old := cache.entries[key]
+		cache.mu.Unlock()
+		if old.client != nil && time.Now().Before(old.until) {
+			return old.client, nil
+		}
+		c, err := connect()
+		if err != nil {
+			return nil, err
+		}
+		if c.Access.User != user {
+			return nil, httpapi.ErrWorkspaceLocked
+		}
+		cache.mu.Lock()
+		if cache.entries == nil {
+			cache.entries = map[string]cachedCredential{}
+		}
+		for k, r := range cache.entries {
+			if !time.Now().Before(r.until) {
+				delete(cache.entries, k)
+			}
+		}
+		cache.entries[key] = cachedCredential{c, time.Now().Add(4 * time.Minute)}
+		cache.mu.Unlock()
+		return c, nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	return client, err
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	return value.(*httpapi.WorkerClient), nil
 }

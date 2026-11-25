@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"context"
 	"os"
 	"strings"
 	"testing"
@@ -17,12 +18,35 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+type planningTestStore struct {
+	ServiceQueries
+	planningStore
+	saved domain.GlobalRequest
+}
+
+func (s *planningTestStore) PlanningUser() string {
+	return "test-user"
+}
+
+func (s *planningTestStore) SavePlanning(_ context.Context, _ string, _ string, q domain.GlobalRequest) error {
+	s.saved = q
+	return nil
+}
+
+func attachPlanningTestStore(g *Game) *planningTestStore {
+	store := &planningTestStore{}
+	g.runtimeInfo.Queries = store
+	g.planning.sync.user = store.PlanningUser()
+	return store
+}
+
 func TestPlanningSessionNavigation(t *testing.T) {
 	for _, size := range [][2]int{{390, 844}, {390, 424}, {1100, 844}} {
 		width := size[0]
 		g := horizontalGame()
 		g.Layout(width, size[1])
 		selectTabThroughStrip(t, g, hud.TabGlobalSession)
+		store := attachPlanningTestStore(g)
 		original := g.planning.current
 		original.Description = strings.Repeat("planning ", 24)
 		g.rebuildUI(g.shell.Snapshot())
@@ -51,8 +75,8 @@ func TestPlanningSessionNavigation(t *testing.T) {
 		pane := g.planning.pane
 		composer := g.globalField.GetWidget().Rect
 		body := g.nav.body.GetWidget().Rect
-		if pane.ContentRect().Dy() <= pane.ViewRect().Dy() || len(original.Turns) != 0 {
-			t.Fatal("expected overflowing presentation-only sample", size, pane.ContentRect(), pane.ViewRect())
+		if pane.ContentRect().Dy() > pane.ViewRect().Dy() || len(original.Turns) != 0 {
+			t.Fatal("expected empty conversation", size, pane.ContentRect(), pane.ViewRect())
 		}
 		gap := body.Max.Y - max(composer.Max.Y, g.planning.send.GetWidget().Rect.Max.Y)
 		if gap > bodyGap {
@@ -67,8 +91,8 @@ func TestPlanningSessionNavigation(t *testing.T) {
 		g.submitPlanning()
 		g.rebuildUI(g.shell.Snapshot())
 		renderNavigation(g)
-		if g.planning.pane.ContentRect().Dy() >= pane.ContentRect().Dy() {
-			t.Fatal("sample bubbles remained after sending")
+		if store.saved.Input != "first message" || store.saved.Session != original.ID || original.Pending() != store.saved.Turn || len(original.Turns) != 1 {
+			t.Fatal("first prompt did not reach the planning outbox")
 		}
 		g.globalDraft = "next draft"
 		g.submitPlanning()
@@ -113,11 +137,22 @@ func TestCapturePlanning(t *testing.T) {
 	g := horizontalGame()
 	g.Layout(w, h)
 	selectTabThroughStrip(t, g, hud.TabGlobalSession)
-	if strings.Contains(path, "picker") {
+	if strings.Contains(path, "project-chat") {
+		g.projects.store = layoutRegistry{}
+		g.projects.rows = []domain.Project{{ID: "project", Name: "Apparat", Available: true}}
+		selectTabThroughStrip(t, g, hud.TabProjects)
+		g.detailOpen[hud.TabProjects] = true
+		g.selectSection(hud.TabProjects, len(projectEntrySections))
+		g.projects.workspace = workspacePanel{id: "project", mode: "conversation", agentThread: true, thread: "session", threadTitle: "Release planning", choices: []domain.WorkspaceChoice{{State: "user", Label: "What needs my attention?"}, {State: "assistant", Label: "The build is waiting for your review."}, {State: "user", Label: "Show the latest result."}, {State: "pending", Label: "Saved to project · awaiting dispatch"}}}
+		if strings.Contains(path, "draft") {
+			g.openWorkspaceTab("chat", "threads")
+		}
+	} else if strings.Contains(path, "picker") {
 		m := domain.ModelRef{Provider: "ollama", Name: "qwen3.5:4b", Digest: "build-a"}
 		g.planning.picker = modelPicker{address: modelAddress{"", g.planning.current.ID}, loaded: true, settings: domain.ModelSettings{CanDefault: true, Session: m, Default: domain.ModelDefault{Model: m}}, options: []domain.ModelOption{{Model: m, Nodes: []string{"trashcan0"}}, {Model: domain.ModelRef{Provider: "ollama", Name: "qwen3.8-flash-next:125b-a6b-q4_K_M", Digest: "build-b"}, Nodes: []string{"trashcan0"}}}}
 		g.openModels()
-	} else if !strings.Contains(path, "sample") {
+	} else if !strings.Contains(path, "empty") {
+		attachPlanningTestStore(g)
 		s := g.planning.current
 		s.Description = "Review the cluster inference inventory and next steps"
 		g.globalDraft = "What should I check before adding another model?"

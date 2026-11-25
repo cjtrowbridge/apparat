@@ -35,8 +35,10 @@ const (
 )
 
 type Runtime struct {
+	inference           *inferencePool
 	inventory           *inventory.Monitor
 	peerInventory       sync.Map
+	peerInference       sync.Map
 	workspaceConnection ownerConnection
 	workspaceCache      workspaceCache
 	terminals           terminal.Host
@@ -240,13 +242,24 @@ func (node *Runtime) Initialize(ctx context.Context) (result error) {
 	}
 	node.inventory = inventory.New(port, node.database.SaveOllamaPort)
 	if runtime.GOOS == "linux" && node.WorkerEvents != nil && node.Keys.State() == "unlocked" {
-		node.claimServer, result = httpapi.ListenWorkerClaims(filepath.Join(filepath.Dir(node.config.DatabasePath), "worker-claims.sock"), filepath.Join(node.config.ArtifactsDir, "pool"), node.database, node.Keys, httpapi.WorkerSurface{Inventory: node.inventory, Workspace: node.serveWorkspace, Metrics: &node.observations})
+		node.inference, result = newInferencePool(ctx, node.database, node.Keys, node.inventory)
+		if result != nil {
+			return result
+		}
+		node.inference.runtime = node
+		node.claimServer, result = httpapi.ListenWorkerClaims(filepath.Join(filepath.Dir(node.config.DatabasePath), "worker-claims.sock"), filepath.Join(node.config.ArtifactsDir, "pool"), node.database, node.Keys, httpapi.WorkerSurface{Inference: node.inference, Inventory: node.inventory, Workspace: node.serveWorkspace, Metrics: &node.observations})
 		if result != nil {
 			return result
 		}
 	}
 	workCtx, cancel := context.WithCancel(ctx)
 	node.cancel = cancel
+	node.startChatWork(workCtx)
+	if node.inference != nil {
+		node.discoveryWorkers.Go(func() {
+			node.inference.run(workCtx)
+		})
+	}
 	if !node.config.SmokeTest && !node.config.Inspect && !node.config.Doctor {
 		node.discoveryWorkers.Go(func() {
 			node.inventory.Run(workCtx)
@@ -333,7 +346,9 @@ func (node *Runtime) closeLocked() error {
 	var result error
 	node.LockIdentities()
 	node.terminals.Close()
+	node.mu.Unlock()
 	node.stopCapture()
+	node.mu.Lock()
 	node.pages.Close()
 	if node.cancel != nil {
 		node.cancel()

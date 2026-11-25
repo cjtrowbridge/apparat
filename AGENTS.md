@@ -49,6 +49,8 @@ Supporting ownership:
 
 ## Apparat Build Pipeline Scope
 
+- Finish app fixes by running the canonical build, qualification and publication pipeline before reporting completion, unless the user explicitly requests otherwise.
+
 - Treat each target reported by `scripts/build.py` as a deterministic build entity and the script's existing no-flag orchestration as the main build pipeline.
 - The Apparat build path does not select model inference, PDF conversion, semantic review, rejected-candidate evidence, remote execution unless an approved plan explicitly adds that separate concern.
 - An ordinary build request authorizes committing reviewed staged changes with every qualified host artifact and pushing to origin/main. Completion requires read-back verification from authenticated GitHub main. Use the same entrypoint for retries. This overrides manual checkpoint prompts for this delivery only.

@@ -42,6 +42,9 @@ func (g *Game) workspaceGo(mode, action string) {
 	w.argument = ""
 	w.choices = nil
 	g.layoutDirty = true
+	if mode == "conversation" && w.chatDraft && action == "chat" {
+		return
+	}
 	if action != "" {
 		g.workspaceRequest(action)
 	}
@@ -85,7 +88,7 @@ func (g *Game) workspaceBack() {
 		return
 	case "conversation":
 		g.workspaceGo("chat", "threads")
-	case "attachments":
+	case "rename-thread", "attachments":
 		g.workspaceGo("conversation", "chat")
 	case "move", "file-options":
 		g.workspaceGo("file", "read")
@@ -100,6 +103,10 @@ var workspaceDestinations = []struct{ label, mode, action, icon string }{
 
 func (g *Game) openWorkspaceTab(mode, action string) {
 	w := &g.projects.workspace
+	if mode == "chat" {
+		g.newProjectChat()
+		return
+	}
 	if mode == "editor" && w.path != "" && w.base != "" {
 		mode = "file"
 	}
@@ -139,7 +146,7 @@ func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
 	roots := w.mode != "registration"
 	if roots {
 		for _, dest := range workspaceDestinations {
-			g.workspaceNavButton(nav, dest.icon, w.mode == dest.mode || dest.mode == "editor" && w.mode == "file", func() {
+			g.workspaceNavButton(nav, dest.icon, w.mode == dest.mode || dest.mode == "chat" && w.mode == "conversation" || dest.mode == "editor" && w.mode == "file", func() {
 				g.openWorkspaceTab(dest.mode, dest.action)
 			})
 		}

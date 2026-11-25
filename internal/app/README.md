@@ -78,11 +78,13 @@ workspace.go resolves every command by registered project ID and coordinates dra
 
 ### Shared chat sessions
 
-- `chat.go`: exposes trusted in-process create, inspect, submit and complete operations on an initialized GUI or headless Runtime. Pass a registered filesystem checkout ID, stable session/turn ULIDs and the project or global scope. Global sessions require the caller to select the owning repository. Duplicate delivery returns the original turn. A changed payload or a second outstanding turn on the same session returns an error. Other sessions can independently await replies. A pending turn holds no execution slot.
+- `chat.go`: exposes trusted in-process create, inspect, submit and complete operations on an initialized GUI or headless Runtime. Pass a registered filesystem checkout ID, stable session/turn ULIDs and the project or global scope. The owner-local terminal interface accepts an explicit repository. Cluster planning uses a private user-scoped artifact store. Duplicate delivery returns the original turn. A changed payload or a second outstanding turn on the same session returns an error. Other sessions can independently await replies. A pending turn holds no execution slot.
 - `chat_test.go`: exercises owner registration, concurrent retries, restart, reply correlation and preservation of externally changed transcripts. Run through the governed Go test entrypoint for this package. Remote grants, provider dispatch and presentation belong to later harness work.
 
 - `chat_model.go`: claims a new inference job before dispatch, resumes the turn on a correlated result, and fences cancellation and conflicting redelivery. DriveChat performs no provider I/O while holding the workspace lock. If it returns a pending session, inspect the last step for its job ID. A queue adapter can return nil on acceptance and later call DeliverChatOutput and DriveChat for continuation. Use a stable route per endpoint/model/policy. Only trusted owner-local code should invoke these methods.
-- `chat_tools.go`: builds the shared static prompt, function declaration and ordered conversation history, including earlier tool results. The initial read-only projects tool reports registered IDs, names and owners, scoped to the current checkout or the global session's local registry. Tool lookup, argument failures and output remain correlated to each call.
+- `chat_prompt_test.go`: verifies stable instructions, file selection and the readiness exchange.
+- `chat_prompt.go`: constructs the stable prompt, project-root instruction loading and fixed readiness exchange. The owner prefers AGENTS.md over agents.md. Missing instructions are optional. Read or size errors stop dispatch. Changed instructions invalidate the packet digest for reconstruction of a pending job. Reconcile by its original job ID.
+- `chat_tools.go`: builds function declarations and ordered conversation history, including earlier tool results. The initial read-only projects tool reports registered IDs, names and owners, scoped to the current checkout or the owner-local terminal registry. Cluster global sessions query the member-visible catalogs on enrolled workers. Tool lookup, argument failures and output remain correlated to each call.
 - `chat_model_test.go`: exercises duplicate dispatch, asynchronous recovery, tool visibility, multi-turn replay and cancellation against a temporary registered checkout.
 
 
@@ -95,3 +97,24 @@ For a queued provider, Dispatch returns a nil output after acceptance. DeliverCh
 - `model_choices.go`: Resolves chat choices at the project owner or from a user's cluster default replica.
 
 - `model_watch.go`: Follows model invalidations on currently accessible workers and repairs dropped watches.
+
+- `workspace_agent_chat.go`: creates and reads project-scoped repository transcripts and accepts model-bound turns through the local and authorized remote workspace command. Filesystem checkouts support these sessions. Legacy threads and document-provider checkouts retain their existing workspace records.
+- `inference_pool.go`: handles authenticated inference commands, worker roster installation, RAM claim checks and durable ownership/result transitions.
+- `inference_worker.go`: selects model-compatible work, confirms with every roster member, records applied ownership and dispatches through loopback Ollama. Interrupted generation remains indeterminate; no elapsed-time retry can duplicate it.
+
+- `chat_work.go`: Reconciles pending owner turns and delivers correlated results.
+
+- `global_artifact.go`: Authenticates global session mutations and publishes transcript revisions.
+
+- `planning_client.go`: Reads replicated planning sessions and posts durable commands.
+
+- `inference_roster.go`: Admin enrollment page for a pinned validator roster.
+- `inference_acceptance_test.go`: Exercises independent TLS workers, full-roster agreement, priority, restart, global replication and optional live Ollama execution.
+
+- `inference_views.go`: Shows user-scoped inference task inputs, outputs, status and IDs in each pool.
+
+- `inference_observer.go`: Tracks slot occupancy, waiting eligible jobs and peer round observations and emits coalesced WebSocket hints.
+
+- `inference_recovery_test.go`: Tests a missing validator, indeterminate provider recovery and a replicated transcript larger than one HTTP envelope.
+
+- `global_projects.go`: Federates visible project metadata across the validator roster and reports unavailable workers in tool results.

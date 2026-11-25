@@ -9,8 +9,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strconv"
 
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/identity"
 )
 
@@ -228,6 +230,15 @@ func (db *DB) recordPolicy(ctx context.Context, event PolicyEvent, signer *ident
 	}
 	if p.Edit.Kind == "order_on_worker" && (p.Edit.Value != identity.Fingerprint(p.Device.Binding.User) || p.Edit.Service != authority) {
 		return empty, errors.New("owner and current authority required for handoff")
+	}
+	if signer != nil && p.Edit.Kind == "device_pools" {
+		var selected []string
+		if json.Unmarshal([]byte(p.Edit.Value), &selected) != nil || slices.ContainsFunc(selected, domain.RetiredPool) {
+			return empty, errors.New("invalid pool selection")
+		}
+	}
+	if signer != nil && domain.RetiredPool(p.Edit.Pool) {
+		return empty, errors.New("personal pool is retired")
 	}
 	err = applyEdit(ctx, tx, p.Edit)
 	if err != nil {

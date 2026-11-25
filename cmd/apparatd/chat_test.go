@@ -34,7 +34,7 @@ func TestTerminalConversation(t *testing.T) {
 			Tools []json.RawMessage
 		}
 		err := json.NewDecoder(r.Body).Decode(&packet)
-		if err != nil || r.Method != "POST" || r.Header.Get("Authorization") != "Bearer test-only" || packet.Model != "test-model" || len(packet.Tools) != 2 || len(packet.Messages) < 2 {
+		if err != nil || r.Method != "POST" || r.Header.Get("Authorization") != "Bearer test-only" || packet.Model != "test-model" || len(packet.Tools) != 2 || len(packet.Messages) < 3 || packet.Messages[1].Role != "assistant" || packet.Messages[1].Content != "Ready for prompt." {
 			t.Error("invalid request")
 			return
 		}
@@ -43,7 +43,7 @@ func TestTerminalConversation(t *testing.T) {
 			fmt.Fprint(w, `{"choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"c1","type":"function","function":{"name":"projects","arguments":"{}"}}]}}]}`)
 			return
 		}
-		if i == 2 && (packet.Messages[3].Role != "tool" || packet.Messages[3].CallID != "c1") {
+		if i == 2 && (len(packet.Messages) != 5 || packet.Messages[4].Role != "tool" || packet.Messages[4].CallID != "c1") {
 			t.Error("uncorrelated result")
 		}
 		fmt.Fprint(w, `{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"Reply from fixture"}}]}`)

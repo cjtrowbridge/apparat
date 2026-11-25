@@ -1,4 +1,5 @@
 /third_party/salvagecore/
+/third_party/system_prompts/*/
 /artifacts/
 /.agentic-pipelines/
 /.tools/

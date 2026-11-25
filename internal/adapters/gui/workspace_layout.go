@@ -71,6 +71,9 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 	if strings.HasPrefix(w.id, "worker-") {
 		postLabel = "Post to project"
 	}
+	if w.agentThread {
+		postLabel = "Send"
+	}
 	post := g.projectButton(c, postLabel, func() {
 		w.argument = w.message
 		action := "post"
@@ -79,7 +82,7 @@ func (g *Game) workspaceChatPane(scroll *widget.ScrollContainer) widget.Preferre
 		}
 		g.workspaceRequest(action)
 	})
-	post.GetWidget().Disabled = !g.chatModelReady()
+	post.GetWidget().Disabled = !g.chatModelReady() || w.agentThread && len(w.choices) > 0 && w.choices[len(w.choices)-1].State == "pending"
 	g.projectButton(c, "Attach a run", func() {
 		g.workspaceGo("attachments", "runs")
 	})

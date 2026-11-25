@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/png"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -142,6 +143,20 @@ func TestCaptureInventoryDevice(t *testing.T) {
 		w, h = 390, 844
 	}
 	g := inventoryGame(t, w, h)
+	if strings.Contains(path, "hardware") {
+		v := g.serviceProjection.Devices[0].Inventory
+		v.Resources.PhysicalCores = 6
+		v.Resources.CPUFP32PerSecond = 56e9
+		v.Resources.GPUs = []domain.Capacity{{Total: 6 << 30}, {Total: 6 << 30}}
+		v.Resources.Disks = []domain.Capacity{{Total: 1 << 40}}
+		for i, s := range g.presentedTab(g.shell.Snapshot().ActiveTab()).Sections {
+			if s.ActionID == "cluster-status" {
+				g.selectSection(hud.TabCluster, i)
+				renderNavigation(g)
+				break
+			}
+		}
+	}
 	if strings.Contains(path, "models") {
 		g.verticalScrolls[len(g.verticalScrolls)-1].ScrollTop = 0.72
 	}
@@ -150,5 +165,51 @@ func TestCaptureInventoryDevice(t *testing.T) {
 	err := ebiten.RunGame(c)
 	if err != nil || c.err != nil {
 		t.Fatal(err, c.err)
+	}
+}
+
+func TestClusterStatusCards(t *testing.T) {
+	for _, size := range []image.Point{{390, 844}, {1280, 800}} {
+		g := inventoryGame(t, size.X, size.Y)
+		now := time.Now().UnixMilli()
+		d := &g.serviceProjection.Devices[0]
+		d.Inference = &domain.InferenceStatus{Queued: 1, Validators: 2, BlockedSince: now, Timing: domain.AgreementTiming{Recheck: 3 * time.Second}}
+		tab := g.presentedTab(g.shell.Snapshot().ActiveTab())
+		found := false
+		for i, s := range tab.Sections {
+			if s.ActionID != "cluster-status" {
+				continue
+			}
+			found = true
+			g.selectSection(hud.TabCluster, i)
+			renderNavigation(g)
+			if len(s.DetailSections) != 4 || s.DetailSections[0].Title != "Cluster hardware" || !strings.Contains(s.DetailSections[3].Rows[0].Detail, "idle with eligible work") {
+				t.Fatal("status did not explain stalled queue")
+			}
+			links := g.deviceManagementLinks(s.ActionID)
+			if len(links) != 1 || links[0].Route.Page != "inference-roster" {
+				t.Fatal("missing validator setup")
+			}
+		}
+		if !found {
+			t.Fatal("missing cluster status destination")
+		}
+	}
+}
+
+func TestClusterHardwareTotals(t *testing.T) {
+	now := time.Unix(1000, 0)
+	v := domain.WorkerInventory{Observed: 1000, Resources: domain.NodeResources{HostBootDigest: "same-host", CPUs: 16, PhysicalCores: 8, RAM: &domain.Capacity{Total: 32 << 30}, GPUs: []domain.Capacity{{Total: 6 << 30}, {Total: 6 << 30}}, Disks: []domain.Capacity{{Total: 2 << 40}}, CPUFP32PerSecond: 9e14}}
+	other := domain.WorkerInventory{Observed: 995, Resources: domain.NodeResources{CPUs: 8, CPUFP32PerSecond: 1e14}}
+	stale := v
+	stale.Observed = 800
+	p := ServiceProjection{LocalDevice: domain.PoolDevice{ID: "gui"}, LocalInventory: v, Devices: []domain.ClusterDevice{{Fingerprint: "daemon", Inventory: &v}, {Fingerprint: "other", Inventory: &other}, {Fingerprint: "old", Inventory: &stale}}}
+	s := hardwareCard(p, now)
+	want := []hud.Row{{Label: "CPU cores (1/2)", Detail: "8"}, {Label: "CPU threads", Detail: "24"}, {Label: "RAM (1/2)", Detail: "32 GiB"}, {Label: "GPU VRAM (1/2)", Detail: "12 GiB"}, {Label: "Disk capacity (1/2)", Detail: "2 TiB"}, {Label: "CPU FP32", Detail: "1 PFLOP/s"}}
+	if !slices.Equal(s.Rows, want) || !strings.HasPrefix(s.Description, "2 reporting hosts") {
+		t.Fatal(s)
+	}
+	if hardwareUnits(2e12, 1000, []string{"FLOP/s", "kFLOP/s", "MFLOP/s", "GFLOP/s", "TFLOP/s"}) != "2 TFLOP/s" {
+		t.Fatal("tera scaling")
 	}
 }

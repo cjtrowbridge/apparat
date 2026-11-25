@@ -102,3 +102,7 @@ Migration 7 adds project-scoped drafts and durable entries for pending messages 
 ### Owner workspace storage
 
 Schema 20 adds per-project and per-user workspace grants, client-side remote drafts and owner-side save receipts. A save receipt binds the operation ID, path, base and result digest. Run-history traversal uses the project, kind and sortable entry ID. Physical terminal history and diagnostic captures live in separate private directories under the node root. Telemetry never opens a database transaction.
+
+### Chat inference recovery
+
+Migration 22 retires the Personal pool from active views. Migrations 23–27 add the pinned inference roster, immutable job packets, per-attempt ownership and terminal receipts, owner outboxes, user-scoped global sessions, client send and rename outboxes, and publication cursors. Schema checksums remain part of startup validation. The worker reconstructs its hot vote table before confirming any claim. An interrupted local dispatch becomes an indeterminate result. Offline clients replay stable turn IDs. Include the worker artifact root and each project checkout alongside SQLite in backups.

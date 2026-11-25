@@ -63,6 +63,9 @@ func (m *Monitor) Refresh(ctx context.Context, trial int) (domain.WorkerInventor
 	}
 	v.Configured = err == nil || configured
 	v.Resources = resources(ctx)
+	if ctx.Err() == nil {
+		v.Resources.CPUFP32PerSecond = cpuFP32()
+	}
 	v.Observed = time.Now().Unix()
 	m.mu.Lock()
 	m.view = v

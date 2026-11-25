@@ -28,10 +28,24 @@ func (n *Runtime) workspaceFile(ctx context.Context, location string, q domain.W
 	}
 	return projectgit.Files(location, q)
 }
-func (n *Runtime) workspaceThread(ctx context.Context, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
+func (n *Runtime) workspaceThread(ctx context.Context, location, user string, q domain.WorkspaceRequest) (v domain.WorkspaceView, err error) {
 	switch q.Action {
+	case "agent-create", "agent-chat", "agent-rename", "agent-post":
+		return n.workspaceAgentChat(ctx, location, user, q)
 	case "threads":
 		v.Choices, err = n.database.ChatThreads(ctx, q.ProjectID)
+		if err != nil || strings.HasPrefix(location, "content://") {
+			return v, err
+		}
+		headers, err := projectgit.ChatHeaders(location, q.Known)
+		for _, h := range headers {
+			if h.Scope == domain.ProjectChat {
+				v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: h.ID, Label: h.Description, State: "session"})
+			}
+		}
+		if len(headers) == 32 {
+			v.Cursor = headers[len(headers)-1].ID
+		}
 		return v, err
 	case "chat", "post":
 		thread := strings.TrimSpace(q.Thread)
@@ -68,7 +82,10 @@ func (n *Runtime) workspaceThread(ctx context.Context, q domain.WorkspaceRequest
 		messages, _, readErr := n.database.EntryPage(ctx, q.ProjectID, kind, "")
 		err = readErr
 		for i := len(messages) - 1; i >= 0; i-- {
-			v.Report += messages[i].Label + "\n"
+			message := messages[i]
+			v.Report += message.Label + "\n"
+			message.Label = strings.TrimPrefix(message.Label, "Pending on this device · ")
+			v.Choices = append(v.Choices, message)
 		}
 		if v.Report == "" {
 			v.Report = "No pending project messages"
@@ -188,8 +205,12 @@ func (n *Runtime) Workspace(ctx context.Context, q domain.WorkspaceRequest) (v d
 	case "transactions":
 		v.Report, err = n.database.ProjectEntries(ctx, q.ProjectID, "save")
 		return v, err
-	case "threads", "chat", "post":
-		return n.workspaceThread(ctx, q)
+	case "threads", "chat", "post", "agent-create", "agent-chat", "agent-rename", "agent-post":
+		var user string
+		if n.Personal != nil {
+			user = n.Personal.Fingerprint()
+		}
+		return n.workspaceThread(ctx, location, user, q)
 	case "tasks":
 		return n.workspaceCatalog(ctx, location, q)
 	case "run", "runs", "artifact", "delete-artifact":

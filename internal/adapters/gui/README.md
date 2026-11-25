@@ -101,7 +101,7 @@ Android GUI APKs use the `cmd/apparatmobile` binding package plus the tracked `a
 
 - `settings_test.go`: Settings diagnostics and update callback/status regressions split from shell layout tests to retain the 400-line bound.
 
-- `live_services.go`: Projects live local services into Cluster Routing without HTTP or SQL.
+- `live_services.go`: Projects live agreement, queue and slot observations into the Cluster Status cards.
 
 - `services.go`: Loads immutable service projections outside the render/update goroutine.
 
@@ -230,8 +230,14 @@ The embedded gallery starts with one 48-unit toolbar containing STMPCK, the star
 
 - `inventory_test.go`: renders a worker fixture on wide and phone layouts and checks fresh badges, model rows, expiry and administrator controls. To capture the device detail, run the GUI test named TestCaptureInventoryDevice on a display and set APPARAT_INVENTORY_PNG to a writable PNG path. Include “narrow” in its name for the phone layout.
 
-- `planning.go`: owns global planning drafts, history, local turn staging and session navigation actions during the current app run.
+- `planning.go`: owns planning drafts, stable submission IDs, session navigation and the HUD projection of replicated history.
 - `planning_view.go`: renders the responsive planning conversation, scrollable history, title editor and rotating Apparat wait indicator.
 - `planning_test.go`: verifies toolbar spacing and session behavior at two widths. Set APPARAT_PLANNING_PNG for the optional screenshot fixture, using “phone” in its filename for the narrow layout.
 
 - `model_picker.go`: Drives one asynchronous, scope-addressed model picker on the HUD thread.
+
+Project conversation pages share the global chat bubble and gear renderer. The workspace owns navigation, model selection, run attachments, title edits and pending state. Repo sessions can be refreshed from the owner. Capture narrow and wide examples with the planning screenshot fixture using a filename containing `project-chat`.
+
+- `planning_sync.go`: Saves private planning commands and merges worker session revisions while keeping the active draft.
+
+- `cluster_hardware.go`: Builds the leading Cluster Status hardware scorecard and responsive metric grid. Counts use fresh reports and per-metric reporting coverage.

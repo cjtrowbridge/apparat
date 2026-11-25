@@ -47,6 +47,12 @@ var migrations = []Migration{
 	{Version: 19, Name: "worker_only_pool_directory", SQL: "UPDATE view_revision SET revision=revision+1"},
 	{Version: 20, Name: "remote_workspace_access", SQL: remoteWorkspaceSchema},
 	{Version: 21, Name: "chat_model_choices", SQL: modelSchema},
+	{Version: 22, Name: "retire_personal_pool_view", SQL: "UPDATE view_revision SET revision=revision+1"},
+	{Version: 23, Name: "distributed_inference_jobs", SQL: inferenceSchema},
+	{Version: 24, Name: "chat_inference_outbox", SQL: chatWorkSchema},
+	{Version: 25, Name: "global_session_artifacts", SQL: globalSchema},
+	{Version: 26, Name: "planning_outbox", SQL: planningOutboxSchema},
+	{Version: 27, Name: "inference_publication_cursors", SQL: "ALTER TABLE chat_packets ADD COLUMN admitted INTEGER NOT NULL DEFAULT 0; ALTER TABLE global_chats ADD COLUMN markdown_revision INTEGER NOT NULL DEFAULT 0;"},
 }
 
 func (db *DB) Migrate(ctx context.Context) error {

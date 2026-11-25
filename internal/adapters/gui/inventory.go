@@ -145,6 +145,13 @@ func (g *Game) inventorySections(sections []hud.Section) []hud.Section {
 		d, ok := devices[s.ActionID]
 		if ok || len(s.ActionID) > 4 && s.ActionID[:4] == "gui-" {
 			s.DetailSections = inventoryDetail(d.v, d.configure)
+			if local.ID != "" && s.ActionID == "gui-"+local.ID {
+				services := hud.Section{Title: "Local services", Description: g.serviceProjection.State}
+				for _, svc := range g.serviceProjection.Services {
+					services.Rows = append(services.Rows, hud.Row{Label: svc.Name, Detail: fmt.Sprintf("%s · %s · revision %d", svc.Driver, svc.Health, svc.Revision)})
+				}
+				s.DetailSections = append(s.DetailSections, services)
+			}
 			if d.v != nil && d.v.HasText(time.Now()) {
 				s.CapabilityIcon = inferenceKinds[0].icon
 				textRows = append(textRows, hud.Row{Label: d.name, Detail: "Ollama " + d.v.Version})
@@ -206,6 +213,11 @@ func (g *Game) addInventoryCards(pane *widget.Container, sections []hud.Section)
 		card := g.detailCard()
 		card.AddChild(widget.NewText(widget.TextOpts.Text(s.Title, g.pageTitleFace, g.theme.ButtonTheme.TextColor.Idle)))
 		card.AddChild(g.detailText(s.Description))
+		if s.ContentKind == "cluster-hardware" {
+			card.AddChild(g.hardwareGrid(s.Rows))
+			pane.AddChild(card)
+			continue
+		}
 		g.addInventoryControl(card, s.ActionID)
 		for _, row := range s.Rows {
 			label := wrapSelectorLabel(row.Label, *g.formLabelFace, int(g.detailTextMaxWidth()))

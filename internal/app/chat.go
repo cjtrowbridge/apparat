@@ -35,16 +35,20 @@ func (n *Runtime) SubmitChatTurn(ctx context.Context, project, id, turn, text st
 		if !s.Model.Valid() {
 			s.Model = n.initialChatModel(ctx, project, s.Scope)
 		}
-		changed, err := s.Apply(turn, text, false)
-		if err != nil || !changed || !strings.EqualFold(strings.TrimSpace(text), "list projects") {
-			return changed, err
-		}
-		result, err := n.chatProjectList(ctx, project, s.Scope, "", "")
-		if err != nil {
-			return false, err
-		}
-		return s.Apply(turn, result, true)
+		return n.applyChatInput(ctx, project, s, turn, text)
 	})
+}
+
+func (n *Runtime) applyChatInput(ctx context.Context, project string, s *domain.ChatSession, turn, text string) (bool, error) {
+	changed, err := s.Apply(turn, text, false)
+	if err != nil || !changed || !strings.EqualFold(strings.TrimSpace(text), "list projects") {
+		return changed, err
+	}
+	result, err := n.chatProjectList(ctx, project, s.ID, s.Scope, "", "")
+	if err != nil {
+		return false, err
+	}
+	return s.Apply(turn, result, true)
 }
 
 func (n *Runtime) CompleteChatTurn(ctx context.Context, project, id, turn, reply string) (domain.ChatSession, error) {
@@ -54,6 +58,16 @@ func (n *Runtime) CompleteChatTurn(ctx context.Context, project, id, turn, reply
 }
 
 func (n *Runtime) withChat(ctx context.Context, project, id string, h *domain.ChatHeader, apply func(*domain.ChatSession) (bool, error)) (domain.ChatSession, error) {
+	user, ok := globalUser(project)
+	if ok {
+		if n.inference == nil || !domain.ValidID(id) {
+			return domain.ChatSession{}, domain.ErrUnavailable
+		}
+		lock := &n.inference.transcripts[id[len(id)-1]%64]
+		lock.Lock()
+		defer lock.Unlock()
+		return n.withGlobal(ctx, user, id, h, apply)
+	}
 	n.workspaceMu.Lock()
 	defer n.workspaceMu.Unlock()
 	location, err := n.chatLocation(ctx, project)
@@ -65,6 +79,10 @@ func (n *Runtime) withChat(ctx context.Context, project, id string, h *domain.Ch
 
 // Chats returns up to 32 repository-owned sessions, newest first.
 func (n *Runtime) Chats(ctx context.Context, project, before string) ([]domain.ChatHeader, error) {
+	user, ok := globalUser(project)
+	if ok {
+		return n.database.GlobalHeaders(ctx, user, before)
+	}
 	location, err := n.chatLocation(ctx, project)
 	if err != nil {
 		return nil, err

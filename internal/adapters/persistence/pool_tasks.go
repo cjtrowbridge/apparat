@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/cjtrowbridge/apparat/internal/domain"
 )
 
 const queueSchema = `
@@ -47,6 +49,9 @@ type Task struct {
 }
 
 func (db *DB) SubmitHash(ctx context.Context, a Access, pool, id, prompt string) error {
+	if domain.RetiredPool(pool) {
+		return errors.New("personal pool is retired")
+	}
 	if len(prompt) > 4096 || len(id) == 0 || len(id) > 128 {
 		return errors.New("invalid hash task")
 	}
@@ -92,7 +97,7 @@ func (db *DB) SubmitHash(ctx context.Context, a Access, pool, id, prompt string)
 	return db.commitQueue(ctx, tx, queueView{a.Cluster, pool, a.User})
 }
 
-func (db *DB) LeaseHash(ctx context.Context, cluster, pool, worker string, now time.Time) (Task, error) {
+func (db *DB) LeaseHash(ctx context.Context, cluster, worker string, now time.Time) (Task, error) {
 	var t Task
 	db.queueMu.Lock()
 	defer db.queueMu.Unlock()
@@ -103,20 +108,21 @@ func (db *DB) LeaseHash(ctx context.Context, cluster, pool, worker string, now t
 	defer tx.Rollback()
 	at := now.UnixMilli()
 	until := now.Add(time.Minute).UnixMilli()
+	pools := domain.DefaultPools()
 	err = tx.QueryRowContext(ctx, `UPDATE pool_tasks SET fence=fence+1,state='running',lease_worker=?,lease_until=?,updated_ms=?
 	WHERE rowid=(SELECT t.rowid FROM pool_tasks t JOIN cluster_users u ON u.cluster=t.cluster AND u.user_id=t.creator
-	WHERE t.cluster=? AND t.pool=? AND t.service=? AND (t.state='queued' OR (t.state='running' AND t.lease_until<=?))
+	WHERE t.cluster=? AND lower(trim(t.pool)) NOT IN ('personal','personal pool') AND t.service=? AND (t.state='queued' OR (t.state='running' AND t.lease_until<=?))
 	AND NOT EXISTS(SELECT 1 FROM local_runtime WHERE key IN ('worker_update_drain_requested','worker_update_installing') AND value='1')
  AND u.admission='approved' AND (u.admin=1 OR EXISTS(SELECT 1 FROM effective_pool_grants WHERE cluster=t.cluster AND pool=t.pool AND service=t.service AND principal IN(t.creator,'public')))
 	AND EXISTS(SELECT 1 FROM pool_services WHERE cluster=t.cluster AND pool=t.pool AND worker=? AND service=t.service)
-	ORDER BY t.created_ms,t.id LIMIT 1) RETURNING cluster,pool,id,creator,service,prompt,state,fence,created_ms,updated_ms`,
-		worker, until, at, cluster, pool, HashService, at, worker).Scan(&t.Cluster, &t.Pool, &t.ID, &t.Creator, &t.Service, &t.Prompt, &t.State, &t.Fence, &t.Created, &t.Updated)
+	ORDER BY CASE t.pool WHEN ? THEN 0 WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 ELSE 4 END, t.created_ms,t.id,t.pool LIMIT 1) RETURNING cluster,pool,id,creator,service,prompt,state,fence,created_ms,updated_ms`,
+		worker, until, at, cluster, HashService, at, worker, pools[0].Name, pools[1].Name, pools[2].Name, pools[3].Name).Scan(&t.Cluster, &t.Pool, &t.ID, &t.Creator, &t.Service, &t.Prompt, &t.State, &t.Fence, &t.Created, &t.Updated)
 	if err != nil {
 		return t, err
 	}
-	_, err = tx.ExecContext(ctx, "UPDATE pool_task_attempts SET outcome='expired' WHERE cluster=? AND pool=? AND task=? AND outcome='active'", cluster, pool, t.ID)
+	_, err = tx.ExecContext(ctx, "UPDATE pool_task_attempts SET outcome='expired' WHERE cluster=? AND pool=? AND task=? AND outcome='active'", cluster, t.Pool, t.ID)
 	if err == nil {
-		_, err = tx.ExecContext(ctx, "INSERT INTO pool_task_attempts VALUES(?,?,?,?,?,?,?,'active')", cluster, pool, t.ID, t.Fence, worker, at, until)
+		_, err = tx.ExecContext(ctx, "INSERT INTO pool_task_attempts VALUES(?,?,?,?,?,?,?,'active')", cluster, t.Pool, t.ID, t.Fence, worker, at, until)
 	}
 	if err != nil {
 		return Task{}, err

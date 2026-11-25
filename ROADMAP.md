@@ -2076,7 +2076,21 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 - [ ] Validate authentication, scope, idempotency, schema, workload/capability requirements, policy, quota, size, deadline, retention, and queue state before durable accept/reject.
 - [ ] Keep requester outbound state and authorized cached status/result separate from owner authority.
 
-### Worker pull and lease lifecycle
+### Distributed inference claims
+
+- [x] Show fresh cluster hardware totals and a measured FP32 CPU score above live claim telemetry.
+
+- [x] Wire global planning and filesystem project sessions through the four-priority scheduler to loopback Ollama. Replicate global revisions, apply results on the session owner and expose user-scoped inputs and outputs.
+- [x] Exercise two pinned workers, gated admission, concurrent claims, restart, mixed priorities and one real trashcan0 model result through the same provider adapter.
+- [ ] Qualify a coordinated validator membership change, extended partitions and operator recovery across device replacement. Add historical downtime and capacity analysis after the live status baseline.
+
+
+- [x] Accept claim proposals on any node. Require authenticated confirmation of the same job, attempt, executor, input digest and membership revision from every inference node before provider invocation.
+- [ ] Specify durable conflict arbitration, restart and retry handling, withdrawal before dispatch, terminal receipts and membership transitions. Prove that two conflicting attempts cannot both start under reordered delivery, partitions or roster changes.
+- [x] Keep peer reservation lookup and insertion in RAM. Measure all-peer confirmation and applied-event propagation separately. Adapt reservation rechecks without granting execution on expiry. Replace Local Services with a snapshot-driven Cluster Status; defer historical analysis.
+- [ ] Expose outstanding confirmations separately from time spent queued or generating. Reconcile an uncertain provider call before authorizing a replacement.
+
+### Worker pull and lease lifecycle (owner-hosted queues)
 
 - [ ] Let authorized workers claim/long-poll with current device/service/capability identity, accepted classes, availability, and bounded wait.
 - [ ] Select only compatible work and issue owner-created attempt, lease, fencing token, deadline, and bounded payload/artifact references.
@@ -2116,7 +2130,7 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 **Exit criteria**
 
-- [ ] Requesters submit only to owners and workers pull only owner-issued leases.
+- [ ] Owner-hosted queues use owner-issued leases. Inference workers execute only fully confirmed distributed claims.
 - [ ] A worker result becomes authoritative only after owner validation.
 - [ ] Restart, reassignment, duplicate delivery, and ambiguous completion never double-complete a logical job.
 - [ ] Artifacts resume and validate before accepted completion.
@@ -2144,10 +2158,10 @@ The [owner-hosted Go harness plan](plans/current/2026-11-23-21-00-00_owner-agent
 
 ### Pools
 
-- [ ] Implement pool membership and one owner per pool queue.
+- [x] Implement a pinned membership revision and multi-writer claims with full inference-roster confirmation. Coordinated replacement of an existing membership revision remains open.
 - [ ] Support heterogeneous members while leasing only to currently compatible services.
 - [ ] Persist membership revision, authorization, workload allowlist, priorities, availability, and owner policy.
-- [ ] Have members pull leases and return signed results to the pool owner.
+- [ ] Have members collect confirmations from all inference nodes and replicate signed results bound to the confirmed claim.
 - [ ] Preserve owner validation and authoritative completion.
 - [ ] Handle member offline, stale advertisement, removal, revocation, and partial capability change.
 

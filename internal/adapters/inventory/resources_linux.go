@@ -6,6 +6,7 @@ package inventory
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"golang.org/x/sys/unix"
@@ -41,6 +42,11 @@ func cpu() (uint64, uint64) {
 }
 func resources(ctx context.Context) domain.NodeResources {
 	r := domain.NodeResources{OS: runtime.GOOS, Arch: runtime.GOARCH, CPUs: runtime.NumCPU()}
+	r.PhysicalCores = physicalCores()
+	boot, err := os.ReadFile("/proc/sys/kernel/random/boot_id")
+	if err == nil && len(strings.TrimSpace(string(boot))) == 36 {
+		r.HostBootDigest = fmt.Sprintf("%x", sha256.Sum256(boot))
+	}
 	start, idle := cpu()
 	data, _ := os.ReadFile("/proc/meminfo")
 	mem := map[string]uint64{}
@@ -128,4 +134,26 @@ func resources(ctx context.Context) domain.NodeResources {
 		r.CPUPercent = &v
 	}
 	return r
+}
+
+// Count distinct SMT sibling sets among CPUs available to the current process.
+func physicalCores() int {
+	var affinity unix.CPUSet
+	if unix.SchedGetaffinity(0, &affinity) != nil {
+		return 0
+	}
+	cores := map[string]bool{}
+	for id := 0; affinity.Count() > 0; id++ {
+		if !affinity.IsSet(id) {
+			continue
+		}
+		affinity.Clear(id)
+		b, err := os.ReadFile(fmt.Sprintf("/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", id))
+		key := strings.TrimSpace(string(b))
+		if err != nil || key == "" {
+			return 0
+		}
+		cores[key] = true
+	}
+	return len(cores)
 }

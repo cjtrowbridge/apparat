@@ -114,7 +114,10 @@ func (g *Game) openPoolAdd(f *clusterFrame) {
 }
 func poolTaskMatches(state, filter string) bool {
 	if filter == "" || filter == "Completed" {
-		return state == "succeeded"
+		return state == "succeeded" || state == "finished"
+	}
+	if filter == "Running" && (state == "owned" || state == "dispatching") {
+		return true
 	}
 	return filter == "All" || strings.EqualFold(filter, state)
 }
@@ -158,7 +161,7 @@ func (g *Game) poolTaskRows(c *widget.Container, f *clusterFrame) {
 		count++
 		label := time.UnixMilli(t.Changed).Local().Format("2006-01-02 15:04") + " · " + t.State + " · " + t.Host + " · " + t.ID
 		g.projectButton(c, wrapSelectorLabel(label, *g.theme.ButtonTheme.TextFace, max(1, g.detailPanePreferredWidth()-52)), func() {
-			g.clusterOpen(domain.ClusterRoute{Page: "task", Pool: f.route.Pool, Worker: t.Worker, Target: t.ID})
+			g.clusterOpen(domain.ClusterRoute{Page: poolTaskPage(t), Pool: f.route.Pool, Worker: t.Worker, Target: t.ID})
 		})
 	}
 	if count == 0 {
@@ -221,9 +224,16 @@ func (g *Game) poolActions(add registerAction, index int, f *clusterFrame) {
 		for _, t := range p.Tasks {
 			if poolTaskMatches(t.State, f.taskFilter) {
 				nav("pool-task", t.Worker+"/"+t.ID, "Task "+t.ID, func() {
-					g.clusterOpen(domain.ClusterRoute{Page: "task", Worker: t.Worker, Pool: f.route.Pool, Target: t.ID})
+					g.clusterOpen(domain.ClusterRoute{Page: poolTaskPage(t), Worker: t.Worker, Pool: f.route.Pool, Target: t.ID})
 				})
 			}
 		}
 	}
+}
+
+func poolTaskPage(t domain.PoolTaskRow) string {
+	if t.Inference {
+		return "inference-task"
+	}
+	return "task"
 }

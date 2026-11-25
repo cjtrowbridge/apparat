@@ -77,7 +77,7 @@ func TestAsynchronousChatToolRecovery(t *testing.T) {
 	requireSuccess(t, err)
 	recovered, err := node.OutstandingChatRequest(ctx, a)
 	requireSuccess(t, err)
-	if recovered.Model != firstModel || recovered.Job != first.Job || len(recovered.Messages) != 1 {
+	if recovered.Model != firstModel || recovered.Job != first.Job || len(recovered.Messages) != 2 || recovered.Messages[0].Role != "assistant" || recovered.Messages[0].Text != "Ready for prompt." || recovered.Messages[1].Text != "What project is this?" {
 		t.Fatal("lost claimed packet")
 	}
 	if count.Load() != 1 {
@@ -91,7 +91,7 @@ func TestAsynchronousChatToolRecovery(t *testing.T) {
 	_, err = node.DriveChat(ctx, a, "fixture", p)
 	requireSuccess(t, err)
 	next := <-requests
-	if next.Job == first.Job || len(next.Messages) != 4 || next.Messages[2].CallID != "c1" || !strings.Contains(next.Messages[2].Text, a.Project) || strings.Contains(next.Messages[2].Text, projects[1].ID) || !strings.Contains(next.Messages[3].Text, "Unknown tool") {
+	if next.Job == first.Job || len(next.Messages) != 5 || next.Messages[3].CallID != "c1" || !strings.Contains(next.Messages[3].Text, a.Project) || strings.Contains(next.Messages[3].Text, projects[1].ID) || !strings.Contains(next.Messages[4].Text, "Unknown tool") {
 		t.Fatal("incorrect correlated tool history", next.Messages)
 	}
 	answer := domain.ChatOutput{Finish: "stop", Text: "Found your project."}
@@ -107,7 +107,7 @@ func TestAsynchronousChatToolRecovery(t *testing.T) {
 	_, err = node.DriveChat(ctx, a, "fixture", p)
 	requireSuccess(t, err)
 	last := <-requests
-	if len(last.Messages) != 6 || last.Messages[4].Text != answer.Text {
+	if len(last.Messages) != 7 || last.Messages[5].Text != answer.Text {
 		t.Fatal("lost conversation history")
 	}
 	_, err = node.StopChatTurn(ctx, a)

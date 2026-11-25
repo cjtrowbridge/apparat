@@ -43,3 +43,7 @@ Worker clients probe TLS without client credentials and require an approved devi
 - `chat_models.go`: Exchanges scoped model choices over the worker's authenticated, device-bound API.
 
 - `model_live.go`: Emits invalidation hints without project IDs, model names or message contents.
+
+- `inference.go`: transports user-scoped inference submissions and worker claim transitions. User operations use the existing bound login. Peer operations require a verified device certificate and membership in the agreed roster.
+
+- `global_chunks.go`: Verifies offsets, session identity and revision while reading large global transcripts in bounded chunks.

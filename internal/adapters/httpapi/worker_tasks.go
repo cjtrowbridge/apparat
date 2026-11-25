@@ -41,11 +41,11 @@ func (a *workerAuth) tasks(w http.ResponseWriter, r *http.Request, access persis
 		if err == nil {
 			// The first capability is bounded and local. Resume queued work when the
 			// submitter retries or checks its pool after a worker restart.
-			_ = a.runOne(ctx, access.Cluster, q.Pool, keys)
+			_ = a.runOne(ctx, access.Cluster, keys)
 		}
 	case "/v1/tasks/changes":
 		if a.db.MayDispatch(ctx, access, q.Pool, worker) {
-			_ = a.runOne(ctx, access.Cluster, q.Pool, keys)
+			_ = a.runOne(ctx, access.Cluster, keys)
 		}
 		result, err = a.db.QueueAfter(ctx, access, q.Pool, q.After)
 	case "/v1/tasks/cancel":
@@ -72,9 +72,9 @@ func (a *workerAuth) tasks(w http.ResponseWriter, r *http.Request, access persis
 	respond(w, 200, result)
 }
 
-func (a *workerAuth) runOne(ctx context.Context, cluster, pool string, keys *identity.Session) error {
+func (a *workerAuth) runOne(ctx context.Context, cluster string, keys *identity.Session) error {
 	worker := identity.Fingerprint(keys.Public())
-	task, err := a.db.LeaseHash(ctx, cluster, pool, worker, time.Now())
+	task, err := a.db.LeaseHash(ctx, cluster, worker, time.Now())
 	if err != nil {
 		return err
 	}

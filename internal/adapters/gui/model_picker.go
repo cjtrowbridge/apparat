@@ -58,6 +58,12 @@ func (g *Game) modelAddress() (modelAddress, bool) {
 			if thread == "" {
 				thread = "General"
 			}
+			if !w.agentThread {
+				id, _, _ := strings.Cut(thread, " ")
+				if domain.ValidID(id) {
+					thread = id
+				}
+			}
 			return modelAddress{w.id, thread}, true
 		}
 	}

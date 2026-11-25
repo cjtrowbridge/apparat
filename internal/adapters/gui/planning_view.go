@@ -1,10 +1,11 @@
 //go:build gui
 
 // Builds the planning history, session toolbar and fixed prompt around a scrollable transcript.
-// Local submissions remain visibly unsynchronized until a future queue supplies acknowledgement.
+// The rotating indicator distinguishes a locally staged turn from an acknowledged submission.
 package gui
 
 import (
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"sort"
 	"strings"
 	"time"
@@ -99,6 +100,9 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 			if title == "" || len(title) > 512 || strings.ContainsAny(title, "\r\n") {
 				return
 			}
+			if len(s.Turns) > 0 && !g.savePlanningOperation("global-rename", domain.GlobalRequest{Session: s.ID, Title: title, Base: s.Description}) {
+				return
+			}
 			s.Description = title
 			g.openPlanning(s)
 		})
@@ -111,11 +115,11 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	compact := g.height < 590
 	body := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}), widget.GridLayoutOpts.Spacing(0, bodyGap))))
 	conversation := planningColumn()
-	if len(s.Turns) == 0 {
-		conversation.AddChild(g.hudText("Sample conversation"))
-		for i, message := range planningSamples {
-			g.chatBubble(conversation, message, i%2 == 0, false)
-		}
+	if p.sync.notice != "" {
+		conversation.AddChild(g.hudText(p.sync.notice))
+	}
+	if s.loading {
+		conversation.AddChild(g.hudText("Loading conversation…"))
 	}
 	for _, turn := range s.Turns {
 		g.chatBubble(conversation, turn.Input, true, false)
@@ -157,18 +161,6 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	return body
 }
 
-// Empty sessions show presentation-only examples. Sending the first turn replaces them.
-var planningSamples = [...]string{
-	"Lorem ipsum dolor sit amet, consectetur adipiscing elit?",
-	"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.",
-	"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris?",
-	"Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.",
-	"Aliquam erat volutpat. Nulla facilisi?",
-	"Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae. Integer posuere erat a ante venenatis dapibus posuere velit aliquet.",
-	"Maecenas sed diam eget risus varius blandit sit amet non magna?",
-	"Curabitur blandit tempus porttitor. Donec ullamcorper nulla non metus auctor fringilla. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.",
-}
-
 func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting bool) {
 	row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 	position := widget.AnchorLayoutPositionStart
@@ -182,7 +174,11 @@ func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting b
 		b.AddChild(planningGear())
 	}
 	lines := strings.Split(body, "\n")
-	width := max(60, min(540, (g.hudPreferredWidth()*4/5)-24))
+	paneWidth := g.hudPreferredWidth()
+	if g.inWorkspace() {
+		paneWidth = g.detailPanePreferredWidth()
+	}
+	width := max(60, min(540, (paneWidth*4/5)-24))
 	for i, line := range lines {
 		lines[i] = wrapSelectorLabel(line, *g.theme.ButtonTheme.TextFace, width)
 	}

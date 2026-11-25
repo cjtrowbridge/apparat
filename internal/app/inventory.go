@@ -7,6 +7,7 @@ import (
 	"errors"
 	"github.com/cjtrowbridge/apparat/internal/adapters/httpapi"
 	"github.com/cjtrowbridge/apparat/internal/adapters/inventory"
+	"github.com/cjtrowbridge/apparat/internal/adapters/telemetry"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"golang.org/x/sync/errgroup"
 	"strconv"
@@ -33,20 +34,32 @@ func (n *Runtime) refreshInventoryPeers(ctx context.Context) {
 			group.SetLimit(4)
 			for _, w := range workers {
 				group.Go(func() error {
+					started := time.Now()
 					call, cancel := context.WithTimeout(ctx, 25*time.Second)
 					defer cancel()
 					client, err := n.workspaceClient(call, "worker-"+w.Fingerprint)
 					if err == nil {
 						v, readErr := client.Inventory(call)
+						err = readErr
 						key := client.Access.User + "/" + w.Fingerprint
 						if readErr == nil {
+							reply, statusErr := client.Inference(call, domain.InferenceCommand{Operation: "status"})
+							if statusErr == nil {
+								n.peerInference.Store(key, reply.Status)
+							} else {
+								n.inferenceOffline(key)
+							}
 							n.peerInventory.Store(key, v)
 						} else {
 							n.peerInventory.Delete(key)
+							n.inferenceOffline(key)
 						}
 					} else {
-						n.peerInventory.Delete(n.Personal.Fingerprint() + "/" + w.Fingerprint)
+						key := n.Personal.Fingerprint() + "/" + w.Fingerprint
+						n.peerInventory.Delete(key)
+						n.inferenceOffline(key)
 					}
+					n.observations.Observe(telemetry.Event{Operation: "worker-inventory", Peer: w.Fingerprint, Failed: err != nil, Elapsed: time.Since(started).Microseconds()})
 					return nil
 				})
 			}

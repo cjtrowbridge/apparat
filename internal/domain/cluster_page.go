@@ -2,7 +2,10 @@
 // Each command belongs to its displayed revision and runs only on activation.
 package domain
 
-import "context"
+import (
+	"context"
+	"strings"
+)
 
 type ClusterRoute struct {
 	Worker, Page, Pool, Target string
@@ -24,6 +27,11 @@ type ClusterPage struct {
 }
 
 type PoolDefault struct{ Name, Priority string }
+
+func RetiredPool(name string) bool {
+	name = strings.TrimSpace(name)
+	return strings.EqualFold(name, "personal") || strings.EqualFold(name, "personal pool")
+}
 
 func DefaultPools() []PoolDefault {
 	return []PoolDefault{{"Chat Pool", "High"}, {"Project Pool", "Medium"}, {"Comrade Pool", "Low"}, {"Research Pool", "Last"}}
@@ -58,6 +66,16 @@ type PoolOverview struct {
 	Users                []string
 }
 type PoolTaskRow struct {
+	Inference               bool
 	ID, State, Worker, Host string
 	Changed                 int64
+}
+
+// QueueHealth is a timestamped, payload-free observation of this worker's hash queue.
+type QueueHealth struct {
+	ObservedMS                                         int64
+	Queued, Eligible, Running, Expired                 int
+	OldestEligibleMS                                   int64
+	Draining                                           bool
+	OllamaConfigured, OllamaFresh, OllamaTextAvailable bool
 }

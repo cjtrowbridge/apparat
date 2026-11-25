@@ -29,6 +29,12 @@ type clusterPageBuilder struct {
 }
 
 func (n *Runtime) ClusterPage(ctx context.Context, r domain.ClusterRoute) (domain.ClusterPage, error) {
+	if r.Page == "inference-task" {
+		return n.inferenceTaskPage(ctx, r)
+	}
+	if r.Page == "inference-roster" {
+		return n.rosterPage(ctx, r.Target)
+	}
 	if r.Page == "ollama" {
 		return n.inventoryPage(ctx, r)
 	}
@@ -170,7 +176,7 @@ func (b *clusterPageBuilder) settingsPage() error {
 			}
 		}
 		for _, p := range v.Pools {
-			if !slices.ContainsFunc(domain.DefaultPools(), func(d domain.PoolDefault) bool {
+			if !domain.RetiredPool(p) && !slices.ContainsFunc(domain.DefaultPools(), func(d domain.PoolDefault) bool {
 				return d.Name == p
 			}) {
 				b.link(p, "pool", p, "")
@@ -221,10 +227,12 @@ func toggle(on bool, add, remove string) (string, string) {
 func (b *clusterPageBuilder) poolAccess() {
 	v, r := b.view, b.route
 	option := func(label, id string) {
-		m := persistence.Membership{Pool: r.Pool, Service: persistence.HashService, Principal: id}
-		action, value := toggle(slices.Contains(v.Grants, m), "Grant", "Remove")
-		description := action + " hash-text access · " + label
-		b.edit(description, "", description+" in "+r.Pool+"?", identity.PolicyEdit{Kind: "pool_grant", Pool: r.Pool, Service: m.Service, Target: id, Value: value})
+		for _, svc := range []string{persistence.HashService, "text-generation"} {
+			m := persistence.Membership{Pool: r.Pool, Service: svc, Principal: id}
+			action, value := toggle(slices.Contains(v.Grants, m), "Grant", "Remove")
+			description := action + " " + svc + " access · " + label
+			b.edit(description, "", description+" in "+r.Pool+"?", identity.PolicyEdit{Kind: "pool_grant", Pool: r.Pool, Service: m.Service, Target: id, Value: value})
+		}
 	}
 	option("Public", "public")
 	for _, g := range v.Groups {
@@ -304,8 +312,8 @@ func (b *clusterPageBuilder) devicePools() error {
 		}
 		b.Title = d.DisplayName(b.worker.DisplayName()) + " · Pools"
 		b.Detail = "Select the pools this device should take requests from."
-		b.Pools = b.view.Pools
-		b.Assigned = d.Pools
+		b.Pools = slices.DeleteFunc(slices.Clone(b.view.Pools), domain.RetiredPool)
+		b.Assigned = slices.DeleteFunc(slices.Clone(d.Pools), domain.RetiredPool)
 		v := b.view
 		id := commandID()
 		b.SavePools = func(ctx context.Context, pools []string) error {

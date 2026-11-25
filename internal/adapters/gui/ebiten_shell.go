@@ -190,6 +190,8 @@ func (game *Game) Update() error {
 	game.updatePlanningControls()
 	game.trackWindow()
 	game.receiveServices()
+	game.pollPlanning()
+	game.pollProjectConversation()
 	if game.layoutDirty && game.gesture.Owner == gestureNone {
 		game.layoutDirty = false
 		game.rebuildUI(game.shell.Snapshot())

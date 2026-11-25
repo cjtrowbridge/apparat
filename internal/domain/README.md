@@ -40,3 +40,10 @@ The canonical delivery allocates the number in release.txt before compilation. R
 - `inventory.go`: typed timestamped worker observations, installed model metadata, capacity counters and fresh text capability checks.
 
 - `model_choice.go`: Identifies a chat model independently of the worker chosen to serve a turn.
+
+- `inference_claim.go`: binds jobs and digests to an inference roster and arbitrates in-memory reservations. The table starts in recovery. Authenticated transitions reject conflicting claims, stale withdrawals and attempts to withdraw an owned job.
+- `inference_timing.go`: records bounded full-roster confirmation and applied-event timing samples. Failed rounds have a separate counter. Five samples of each type enable a three-times-p99 recheck interval, with a 250 ms floor and gradual decreases.
+- `inference_job.go`: defines roster identities, model-step records, canonical digests and the four-priority ordering.
+
+- `global_artifact.go`: Global session replica envelope and deterministic transcript writer.
+- `inference_claim_test.go`: Checks adaptive timing, cold-start votes, withdrawal replay and owner fencing.

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"io"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 )
 
 type Event struct {
+	Peer        string `json:"worker,omitempty"`
 	Seq         uint64 `json:"seq"`
 	At          int64  `json:"utc_ms"`
 	Operation   string `json:"operation"`
@@ -34,16 +36,18 @@ type Ring struct {
 	next   uint64
 }
 type Capture struct {
-	Schema int     `json:"schema"`
-	Role   string  `json:"role"`
-	Build  string  `json:"build"`
-	Lost   uint64  `json:"overwritten"`
-	Events []Event `json:"-"`
+	Inference *domain.InferenceStatus `json:"inference,omitempty"`
+	Queue     *domain.QueueHealth     `json:"hash_queue,omitempty"`
+	Schema    int                     `json:"schema"`
+	Role      string                  `json:"role"`
+	Build     string                  `json:"build"`
+	Lost      uint64                  `json:"overwritten"`
+	Events    []Event                 `json:"-"`
 }
 
 func (r *Ring) Observe(e Event) {
 	switch e.Operation {
-	case "http-other", "http-workspace", "http-auth", "http-sync", "http-catalog", "list", "read", "save", "tasks", "run", "directory-status", "terminal", "sync", "catalog", "draft", "subscribe":
+	case "worker-inventory", "http-other", "http-workspace", "http-auth", "http-sync", "http-catalog", "list", "read", "save", "tasks", "run", "directory-status", "terminal", "sync", "catalog", "draft", "subscribe":
 	default:
 		return
 	}

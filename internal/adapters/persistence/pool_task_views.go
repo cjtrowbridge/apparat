@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"time"
 )
 
@@ -105,4 +106,22 @@ func (db *DB) LocalPoolTasks(ctx context.Context, worker string, a Access, pool 
 		tasks = append(tasks, change)
 	}
 	return tasks, rows.Err()
+}
+
+// QueueHealth samples admission, worker assignment and leases in one SQLite snapshot.
+func (db *DB) QueueHealth(ctx context.Context, now time.Time) (domain.QueueHealth, error) {
+	h := domain.QueueHealth{ObservedMS: now.UnixMilli()}
+	err := db.sql.QueryRowContext(ctx, `WITH rows AS (
+ SELECT t.*, u.admission='approved' AND (u.admin=1 OR EXISTS(
+ SELECT 1 FROM effective_pool_grants g WHERE g.cluster=t.cluster AND g.pool=t.pool AND g.service=t.service AND g.principal IN(t.creator,'public')))
+ AND EXISTS(SELECT 1 FROM pool_services s JOIN worker_cluster w ON s.worker=w.worker AND s.cluster=w.cluster
+ WHERE s.cluster=t.cluster AND s.pool=t.pool AND s.service=t.service) AS allowed
+ FROM pool_tasks t JOIN cluster_users u ON u.cluster=t.cluster AND u.user_id=t.creator
+ WHERE t.service=? AND t.state IN ('running','queued') AND lower(trim(t.pool)) NOT IN ('personal','personal pool'))
+ SELECT count(*) FILTER(WHERE state='queued'),count(*) FILTER(WHERE state='queued' AND allowed),
+ count(*) FILTER(WHERE state='running' AND lease_until>?),count(*) FILTER(WHERE state='running' AND lease_until<=?),
+ coalesce(min(created_ms) FILTER(WHERE state='queued' AND allowed),0),
+ EXISTS(SELECT 1 FROM local_runtime WHERE key IN ('worker_update_drain_requested','worker_update_installing') AND value='1')
+ FROM rows`, HashService, h.ObservedMS, h.ObservedMS).Scan(&h.Queued, &h.Eligible, &h.Running, &h.Expired, &h.OldestEligibleMS, &h.Draining)
+	return h, err
 }

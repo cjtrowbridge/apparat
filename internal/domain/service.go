@@ -62,6 +62,7 @@ func ValidateService(service Service) error {
 
 // ClusterDevice is the last authenticated worker record saved by this user.
 type ClusterDevice struct {
+	Inference       *InferenceStatus `json:"-"`
 	Inventory       *WorkerInventory `json:"-"`
 	Fingerprint     string
 	Host            string

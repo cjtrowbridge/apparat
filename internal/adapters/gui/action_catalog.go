@@ -169,6 +169,9 @@ func (g *Game) registerSectionActions(add registerAction, index int, tab hud.Tab
 			if opt.Route.Page == "ollama" {
 				kind = "configure-ollama"
 			}
+			if opt.Route.Page == "inference-roster" {
+				kind = "inference-roster"
+			}
 			if opt.Route.Page == "performance" {
 				kind = "performance"
 			}
@@ -269,25 +272,53 @@ func (g *Game) registerWorkspaceActions(add registerAction, index, i int, p doma
 			g.workspaceGo("changes", "changes")
 		})
 	}
+	if g.projects.pending == nil {
+		add("workspace", p.ID, "new-thread", "New conversation for "+p.Name, path+" / Chat / New conversation", func() {
+			selectWorkspace()
+			g.newProjectChat()
+		})
+	}
+	if file.id == p.ID && file.mode == "conversation" && file.agentThread && !file.chatDraft && g.projects.pending == nil {
+		add("workspace", p.ID, "rename-thread", "Edit session title", path+" / Chat / Edit session title", g.renameProjectChat)
+		add("workspace", p.ID, "refresh-chat", "Refresh conversation", path+" / Chat / Refresh conversation", func() {
+			g.workspaceRequest("chat")
+		})
+	}
+	if file.id == p.ID && file.mode == "chat" && file.cursor != "" && g.projects.pending == nil {
+		add("workspace", p.ID, "older-chats", "Older sessions", path+" / Chat / Older sessions", func() {
+			g.workspaceRequest("older-sessions")
+		})
+	}
 	threads := p.Threads
+	if file.id == p.ID && file.mode == "chat" && file.choices != nil {
+		threads = file.choices
+	}
 	if len(threads) == 0 {
 		threads = []domain.WorkspaceChoice{{ID: "General", Label: "General"}}
 	}
 	w := &g.projects.workspace
-	if w.id == p.ID && w.mode == "conversation" && w.thread != "" && !slices.ContainsFunc(threads, func(t domain.WorkspaceChoice) bool {
+	if w.id == p.ID && w.mode == "conversation" && !w.chatDraft && w.thread != "" && !slices.ContainsFunc(threads, func(t domain.WorkspaceChoice) bool {
 		return t.ID == w.thread
 	}) {
-		threads = append(slices.Clone(threads), domain.WorkspaceChoice{ID: w.thread, Label: w.thread})
+		current := domain.LocalThreadChoice(w.thread)
+		if w.agentThread {
+			current.Label = w.threadTitle
+			current.State = "session"
+		}
+		threads = append(slices.Clone(threads), current)
 	}
 	for _, thread := range threads {
 		add("chat", p.ID, thread.ID, thread.Label, path+" / Chat / "+thread.Label, func() {
 			selectWorkspace()
-			g.openConversation(thread.ID)
+			g.openProjectConversation(thread)
 		})
 	}
 }
 
 func (g *Game) openConversation(id string) {
+	g.projects.workspace.chatDraft = false
+	g.projects.workspace.threadTitle = domain.LocalThreadChoice(id).Label
+	g.projects.workspace.agentThread = false
 	g.projects.workspace.setThread(id)
 	g.workspaceGo("conversation", "chat")
 }
@@ -329,4 +360,12 @@ func (g *Game) awaitProjectCatalog() bool {
 		})
 	}
 	return true
+}
+
+func (g *Game) openProjectConversation(item domain.WorkspaceChoice) {
+	g.projects.workspace.chatDraft = false
+	g.projects.workspace.setThread(item.ID)
+	g.projects.workspace.agentThread = item.State == "session"
+	g.projects.workspace.threadTitle = item.Label
+	g.workspaceGo("conversation", "chat")
 }

@@ -28,6 +28,9 @@ func (a *workerAuth) modelSignal() <-chan struct{} {
 	return a.modelChanged
 }
 func (a *workerAuth) modelLive(w http.ResponseWriter, r *http.Request, c credential) {
+	a.watchChanges(w, r, c, a.modelSignal)
+}
+func (a *workerAuth) watchChanges(w http.ResponseWriter, r *http.Request, c credential, changed func() <-chan struct{}) {
 	if r.Method != "GET" {
 		respond(w, 405, "GET required")
 		return
@@ -42,7 +45,7 @@ func (a *workerAuth) modelLive(w http.ResponseWriter, r *http.Request, c credent
 		end := time.NewTimer(time.Until(c.until))
 		defer end.Stop()
 		for {
-			signal := a.modelSignal()
+			signal := changed()
 			_, err := a.db.CurrentAccess(r.Context(), c.access.Cluster, c.access.User, c.access.Device)
 			if err != nil {
 				return
@@ -64,7 +67,13 @@ func (a *workerAuth) modelLive(w http.ResponseWriter, r *http.Request, c credent
 	}}.ServeHTTP(w, r)
 }
 func (c *WorkerClient) WatchModels(ctx context.Context, hint func()) error {
-	config, err := websocket.NewConfig("wss"+strings.TrimPrefix(c.base, "https")+"/v1/chat/models/live", "https://apparat.invalid")
+	return c.watchChanges(ctx, "/v1/chat/models/live", hint)
+}
+func (c *WorkerClient) WatchInference(ctx context.Context, hint func()) error {
+	return c.watchChanges(ctx, "/v1/inference/live", hint)
+}
+func (c *WorkerClient) watchChanges(ctx context.Context, path string, hint func()) error {
+	config, err := websocket.NewConfig("wss"+strings.TrimPrefix(c.base, "https")+path, "https://apparat.invalid")
 	if err != nil {
 		return err
 	}

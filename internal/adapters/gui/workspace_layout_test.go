@@ -82,7 +82,24 @@ func TestOwnerTitleAndCatalogNavigation(t *testing.T) {
 		g.Layout(width, 640)
 		for _, dst := range workspaceDestinations {
 			g.openWorkspaceTab(dst.mode, "")
-			if g.projects.workspace.mode != dst.mode || emojiIcon(dst.icon) == nil {
+			mode := dst.mode
+			if mode == "chat" {
+				mode = "conversation"
+				w := &g.projects.workspace
+				if !w.chatDraft || !domain.ValidID(w.thread) || len(w.choices) != 0 || w.message != "" {
+					t.Fatal("Chat must open an empty draft directly")
+				}
+				id := w.thread
+				g.workspaceBack()
+				if w.mode != "chat" {
+					t.Fatal("Back must open session history")
+				}
+				g.newProjectChat()
+				if w.thread == id {
+					t.Fatal("New conversation reused a draft ID")
+				}
+			}
+			if g.projects.workspace.mode != mode || emojiIcon(dst.icon) == nil {
 				t.Fatal(dst)
 			}
 		}

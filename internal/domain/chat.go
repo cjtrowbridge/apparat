@@ -110,3 +110,27 @@ func (s *ChatSession) Apply(id, text string, reply bool) (bool, error) {
 	s.Turns = append(s.Turns, ChatTurn{ID: id, Input: text, Model: s.Model})
 	return true, nil
 }
+
+// PromptTitle fits the opening sentence into a single-line UTF-8 title.
+func PromptTitle(prompt string, limit int) string {
+	line := strings.Join(strings.Fields(prompt), " ")
+	for i, r := range line {
+		end := i + utf8.RuneLen(r)
+		if end > limit {
+			return strings.TrimSpace(line[:i])
+		}
+		if strings.ContainsRune("。！？", r) || strings.ContainsRune(".!?", r) && (end == len(line) || line[end] == ' ') {
+			return line[:end]
+		}
+	}
+	return line
+}
+
+// LocalThreadChoice decodes the stable draft ID and title of a document-provider thread.
+func LocalThreadChoice(key string) WorkspaceChoice {
+	id, title, found := strings.Cut(key, " ")
+	if !found || !ValidID(id) {
+		title = key
+	}
+	return WorkspaceChoice{ID: key, Label: title}
+}

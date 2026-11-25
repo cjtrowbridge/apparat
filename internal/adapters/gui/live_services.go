@@ -6,9 +6,11 @@ package gui
 
 import (
 	"fmt"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/cjtrowbridge/apparat/internal/hud"
 	"os"
 	"slices"
+	"time"
 )
 
 func (game *Game) Close() {
@@ -68,14 +70,66 @@ func (game *Game) receiveServices() {
 	}
 }
 func (game *Game) liveServicesSection() hud.Section {
-	section := hud.Section{ActionID: "local-services", Title: "Local services", Description: game.serviceProjection.State}
-	for _, service := range game.serviceProjection.Services {
-		section.Rows = append(section.Rows, hud.Row{Label: service.Name, Detail: fmt.Sprintf("%s | %s | %s | revision %d", service.ID, service.Driver, service.Health, service.Revision)})
+	section := hud.Section{ActionID: "cluster-status", Title: "Cluster Status"}
+	agreement := hud.Section{Title: "Claim agreement"}
+	queue := hud.Section{Title: "Inference tasks", Description: "Counts for your tasks on each replica."}
+	providers := hud.Section{Title: "Text inference providers"}
+	for _, d := range game.serviceProjection.Devices {
+		name := d.DisplayName()
+		health, tasks, model := "Worker status unavailable", "Worker status unavailable", "Awaiting inventory"
+		if d.Inventory != nil {
+			switch {
+			case !d.Inventory.Fresh(time.Now()):
+				model = "Inventory stale"
+			case d.Inventory.HasText(time.Now()):
+				model = "Text generation available"
+			default:
+				model = "Text generation unavailable"
+			}
+		}
+		if d.Inference != nil && d.Inference.OfflineSince > 0 {
+			health = "Status unavailable since " + time.UnixMilli(d.Inference.OfflineSince).Local().Format("15:04:05")
+		} else if d.Inference != nil {
+			v := d.Inference
+			health = fmt.Sprintf("%d validators · confirmation %s · propagation %s · recheck %s · %d incomplete rounds", v.Validators, timingLabel(v.Timing.Confirmation), timingLabel(v.Timing.Propagation), v.Timing.Recheck, v.Timing.Incomplete)
+			if v.Validators == 0 {
+				health = "Awaiting roster enrollment"
+			}
+			if v.Busy {
+				model += " · model slot busy"
+			} else if v.BlockedSince > 0 && v.Queued > 0 {
+				model += " · idle with eligible work since " + time.UnixMilli(v.BlockedSince).Local().Format("15:04:05")
+			} else {
+				model += " · model slot idle"
+			}
+			for _, d := range game.serviceProjection.Devices {
+				if slices.Contains(v.Awaiting, d.Fingerprint) {
+					health += " · awaiting " + d.DisplayName()
+					continue
+				}
+				o, ok := v.Peers[d.Fingerprint]
+				if ok && !o.Received {
+					health += " · missing reply from " + d.DisplayName()
+				}
+			}
+			tasks = fmt.Sprintf("%d queued · %d owned · %d dispatching · %d finished", v.Queued, v.Owned, v.Dispatching, v.Finished)
+		}
+		agreement.Rows = append(agreement.Rows, hud.Row{Label: name, Detail: health})
+		queue.Rows = append(queue.Rows, hud.Row{Label: name, Detail: tasks})
+		providers.Rows = append(providers.Rows, hud.Row{Label: name, Detail: model})
 	}
-	if len(section.Rows) == 0 {
-		section.Rows = []hud.Row{{Label: "Services", Detail: game.serviceProjection.State}}
+	if len(game.serviceProjection.Devices) == 0 {
+		section.Description = "No saved inference workers."
 	}
+	section.DetailSections = []hud.Section{hardwareCard(game.serviceProjection, time.Now()), agreement, queue, providers}
 	return section
+}
+
+func timingLabel(s domain.TimingSummary) string {
+	if s.Count == 0 {
+		return "awaiting samples"
+	}
+	return fmt.Sprintf("p99 %s (%d samples)", s.P99.Round(time.Microsecond), s.Count)
 }
 
 func (game *Game) presentedTab(tab hud.Tab) hud.Tab {

@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"slices"
 	"strings"
+	"time"
 )
 
 type liveDirectory struct {
@@ -101,4 +102,41 @@ func (g *Game) pollWorkspaceLive() {
 		}
 	default:
 	}
+}
+
+// Refreshes active agent turns without stealing focus or touching the compose buffer.
+func (g *Game) pollProjectConversation() {
+	f := &g.projects
+	w := &f.workspace
+	if !g.inWorkspace() || w.mode != "conversation" || !w.agentThread || w.chatDraft || f.ctx == nil || f.pending != nil {
+		return
+	}
+	if f.chatRead != nil {
+		select {
+		case r := <-f.chatRead:
+			f.chatRead = nil
+			if r.err == nil && r.request.ProjectID == w.id && r.request.Thread == w.thread && (!slices.Equal(r.view.Choices, w.choices) || r.view.Detail != w.threadTitle) {
+				w.choices = r.view.Choices
+				w.threadTitle = r.view.Detail
+				g.layoutDirty = true
+			}
+		default:
+		}
+		return
+	}
+	if time.Now().Before(f.nextChatRead) {
+		return
+	}
+	store, ok := g.runtimeInfo.Queries.(workspaceStore)
+	if !ok {
+		return
+	}
+	f.nextChatRead = time.Now().Add(2 * time.Second)
+	q := domain.WorkspaceRequest{Path: ".", ProjectID: w.id, Thread: w.thread, Action: "agent-chat"}
+	read := make(chan workspaceReply, 1)
+	f.chatRead = read
+	f.workers.Go(func() {
+		v, e := store.Workspace(f.ctx, q)
+		read <- workspaceReply{q, v, e}
+	})
 }

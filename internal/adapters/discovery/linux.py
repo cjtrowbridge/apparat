@@ -118,6 +118,12 @@ def worker_idle(db, drain=False):
             (state='running' AND (lease_until>? OR ?=0)) OR (state='queued' AND ?=0))""",
             (int(time.time()*1000), int(drain), int(drain))).fetchone()[0]:
             return False
+    if db.execute("SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='inference_jobs')").fetchone()[0]:
+        active = db.execute("""SELECT EXISTS(SELECT 1 FROM inference_jobs WHERE
+            (state='queued' AND ?=0) OR (state IN ('owned','dispatching') AND
+            json_extract(claim,'$.Executor')=(SELECT worker FROM worker_cluster WHERE singleton=1)))""", (int(drain),)).fetchone()[0]
+        if active:
+            return False
     return not db.execute("""SELECT EXISTS(SELECT 1 FROM project_entries WHERE kind='run'
         AND json_extract(body,'$.State') IN ('pending','queued','running','assigned'))""").fetchone()[0]
 

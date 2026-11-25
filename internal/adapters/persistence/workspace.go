@@ -142,7 +142,7 @@ func (db *DB) ChatThreads(ctx context.Context, project string) ([]domain.Workspa
 			return nil, err
 		}
 		name := strings.TrimPrefix(kind, "chat:")
-		threads = append(threads, domain.WorkspaceChoice{ID: name, Label: name})
+		threads = append(threads, domain.LocalThreadChoice(name))
 	}
 	return threads, rows.Err()
 }

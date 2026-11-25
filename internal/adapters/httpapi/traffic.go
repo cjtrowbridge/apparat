@@ -12,6 +12,7 @@ import (
 )
 
 type WorkerSurface struct {
+	Inference InferenceAPI
 	Inventory InventorySource
 	Workspace OwnerWorkspace
 	Metrics   *telemetry.Ring

@@ -53,7 +53,7 @@ func (n *Runtime) DriveChat(ctx context.Context, a domain.ChatAddress, route str
 			if err != nil {
 				return false, err
 			}
-			request, err = chatPacket(a, route, job, *s)
+			request, err = n.chatPacket(ctx, a, route, job, *s, false)
 			if err != nil {
 				return false, err
 			}
@@ -61,7 +61,13 @@ func (n *Runtime) DriveChat(ctx context.Context, a domain.ChatAddress, route str
 			if err != nil {
 				return false, err
 			}
-			t.Steps = append(t.Steps, domain.ChatStep{Job: job, Route: route, Digest: projectgit.Digest(string(data))})
+			if route == "cluster" {
+				err = n.database.FreezeChatPacket(ctx, job, data)
+				if err != nil {
+					return false, err
+				}
+			}
+			t.Steps = append(t.Steps, domain.ChatStep{Primed: true, Job: job, Route: route, Digest: projectgit.Digest(string(data))})
 			return true, nil
 		})
 		if err != nil || request.Job == "" {
@@ -113,11 +119,13 @@ func (n *Runtime) DeliverChatOutput(ctx context.Context, a domain.ChatAddress, j
 					}
 					t.Reply = out.Text
 				case "tool_calls":
-					results, err := n.chatToolBatch(ctx, a.Project, s.Scope, out.Calls)
+					results, err := n.chatToolBatch(ctx, a.Project, s.ID, s.Scope, out.Calls)
 					if err != nil {
 						return false, err
 					}
 					step.Results = results
+				case "indeterminate":
+					t.Stopped = "Provider outcome unknown after interruption. This attempt will not be repeated."
 				case "length", "error", "cancelled":
 					t.Stopped = "Provider finished: " + out.Finish
 				default:
@@ -163,7 +171,7 @@ func (n *Runtime) OutstandingChatRequest(ctx context.Context, a domain.ChatAddre
 		return domain.ChatRequest{}, errors.New("turn has no outstanding provider job")
 	}
 	step := t.Steps[len(t.Steps)-1]
-	request, err := chatPacket(a, step.Route, step.Job, s)
+	request, err := n.chatPacket(ctx, a, step.Route, step.Job, s, !step.Primed)
 	if err != nil {
 		return domain.ChatRequest{}, err
 	}

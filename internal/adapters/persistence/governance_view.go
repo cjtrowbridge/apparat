@@ -93,6 +93,9 @@ func (db *DB) Governance(ctx context.Context, a Access) (GovernanceView, error) 
 		if err != nil {
 			return GovernanceView{}, err
 		}
+		if domain.RetiredPool(name) {
+			continue
+		}
 		if v.Limits == nil {
 			v.Limits = map[string]int{}
 		}
@@ -114,6 +117,9 @@ func (db *DB) Governance(ctx context.Context, a Access) (GovernanceView, error) 
 		err = rows.Scan(&m.Pool, &m.Service, &m.Principal, &grant)
 		if err != nil {
 			return GovernanceView{}, err
+		}
+		if domain.RetiredPool(m.Pool) {
+			continue
 		}
 		if grant {
 			v.Grants = append(v.Grants, m)

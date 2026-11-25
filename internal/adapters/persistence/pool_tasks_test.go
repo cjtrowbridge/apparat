@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/cjtrowbridge/apparat/internal/domain"
 	"testing"
 	"time"
 )
@@ -43,12 +44,12 @@ func TestHashTaskFencing(t *testing.T) {
 		t.Fatal("duplicate submission changed prompt")
 	}
 	now := time.Now()
-	first, err := db.LeaseHash(ctx, "c", "p", "w", now)
+	first, err := db.LeaseHash(ctx, "c", "w", now)
 	if err != nil {
 		t.Fatal(err)
 	}
 	next := now.Add(2 * time.Minute)
-	second, err := db.LeaseHash(ctx, "c", "p", "w", next)
+	second, err := db.LeaseHash(ctx, "c", "w", next)
 	if err != nil || second.Fence <= first.Fence {
 		t.Fatal("expired job was not re-leased", err)
 	}
@@ -101,7 +102,7 @@ func TestHashTaskFencing(t *testing.T) {
 	if err != nil {
 		t.Fatal("draining broke exact retry", err)
 	}
-	_, err = db.LeaseHash(ctx, "c", "p", "w", next)
+	_, err = db.LeaseHash(ctx, "c", "w", next)
 	if err == nil {
 		t.Fatal("new lease during worker update")
 	}
@@ -147,5 +148,70 @@ func TestLocalPoolTaskLatestVisibleState(t *testing.T) {
 	}
 	if got["one"] != "succeeded" || got["two"] != "running" {
 		t.Fatal(got)
+	}
+}
+
+func TestPriorityClaimsAcrossPools(t *testing.T) {
+	ctx := context.Background()
+	db := serviceDB(t)
+	a := Access{Cluster: "c", User: "u", Device: "d"}
+	_, err := db.sql.ExecContext(ctx, `INSERT INTO worker_cluster(singleton,cluster,worker,owner_user,authority_device) VALUES(1,'c','w','u','d');
+	INSERT INTO cluster_users VALUES('c','u',X'00','approved',1);
+	INSERT INTO cluster_devices_authorized(cluster,user_id,device_id,public_binding) VALUES('c','u','d',X'00')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pools := domain.DefaultPools()
+	for i := len(pools) - 1; i >= 0; i-- {
+		name := pools[i].Name
+		_, err = db.sql.ExecContext(ctx, "INSERT INTO cluster_pools VALUES('c',?)", name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, worker := range []string{"w", "other"} {
+			_, err = db.sql.ExecContext(ctx, "INSERT INTO pool_services VALUES('c',?,?,?)", name, worker, HashService)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		for _, id := range []string{"a", "b"} {
+			err = db.SubmitHash(ctx, a, name, id, id)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	_, err = db.sql.ExecContext(ctx, "INSERT INTO cluster_pools VALUES('c','Personal'); INSERT INTO pool_services VALUES('c','Personal','w','hash-text')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if db.SubmitHash(ctx, a, "Personal", "retired", "old") == nil {
+		t.Fatal("retired pool admitted work")
+	}
+	now := time.Now()
+	h, err := db.QueueHealth(ctx, now)
+	if err != nil || h.Eligible != 8 || h.Running != 0 || h.OldestEligibleMS == 0 {
+		t.Fatal(h, err)
+	}
+	type claim struct {
+		task Task
+		err  error
+	}
+	for _, pool := range pools {
+		results := make(chan claim, 2)
+		for _, worker := range []string{"w", "other"} {
+			go func() {
+				task, err := db.LeaseHash(ctx, "c", worker, now)
+				results <- claim{task, err}
+			}()
+		}
+		first, second := <-results, <-results
+		if first.err != nil || second.err != nil || first.task.Pool != pool.Name || second.task.Pool != pool.Name || first.task.ID == second.task.ID {
+			t.Fatal(first, second)
+		}
+	}
+	h, err = db.QueueHealth(ctx, now.Add(2*time.Minute))
+	if err != nil || h.Expired != 8 || h.Eligible != 0 {
+		t.Fatal(h, err)
 	}
 }

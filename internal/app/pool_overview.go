@@ -55,10 +55,12 @@ func (n *Runtime) poolOverview(ctx context.Context, r domain.ClusterRoute) (doma
 	user := n.Personal.Fingerprint()
 	device := n.LocalClusterDevice().ID
 	users := map[string]string{}
+	seenJobs := map[string]bool{}
 	for _, w := range workers {
 		if (r.Worker != "" && r.Worker != w.Fingerprint) || !slices.Contains(w.PoolNames, r.Pool) {
 			continue
 		}
+		overview.Tasks = append(overview.Tasks, n.inferenceRows(ctx, w, r.Pool, seenJobs)...)
 		a := persistence.Access{Cluster: w.Cluster, User: user, Device: device}
 		replica, _, err := db.LocalReplica(ctx, w.Fingerprint, a)
 		if err != nil {

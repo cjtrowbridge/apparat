@@ -7,6 +7,9 @@ import (
 	"encoding/json"
 )
 
+// ChatReadyReply is the fixed assistant prefix replayed before actual chat history.
+const ChatReadyReply = "Ready for prompt."
+
 type ChatAddress struct {
 	Project, Session, Turn string
 }
@@ -31,6 +34,7 @@ type ChatOutput struct {
 }
 
 type ChatStep struct {
+	Primed  bool         `json:"primed,omitempty"`
 	Job     string       `json:"job"`
 	Route   string       `json:"route"`
 	Digest  string       `json:"packet"`

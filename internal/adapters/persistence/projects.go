@@ -93,7 +93,7 @@ func (db *DB) RegisteredThreads(ctx context.Context) (map[string][]domain.Worksp
 			return nil, err
 		}
 		name := strings.TrimPrefix(kind, "chat:")
-		threads[id] = append(threads[id], domain.WorkspaceChoice{ID: name, Label: name})
+		threads[id] = append(threads[id], domain.LocalThreadChoice(name))
 	}
 	return threads, rows.Err()
 }
@@ -122,4 +122,11 @@ func (db *DB) ChatCatalog(ctx context.Context, project, selector, cursor string)
 		projects = append(projects, p)
 	}
 	return projects, "", rows.Err()
+}
+
+// CatalogMember enforces the same approved-member read policy as the worker workspace.
+func (db *DB) CatalogMember(ctx context.Context, cluster, user string) (bool, error) {
+	var allowed bool
+	err := db.sql.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM cluster_users WHERE cluster=? AND user_id=? AND admission='approved')", cluster, user).Scan(&allowed)
+	return allowed, err
 }

@@ -27,9 +27,38 @@ type captureSession struct {
 func (n *Runtime) captureDir() string {
 	return filepath.Join(n.config.RootDir, "telemetry")
 }
-func (n *Runtime) capture(after uint64) telemetry.Capture {
-	return n.observations.Snapshot(string(n.mode), domain.ReleaseVersion(), after)
+func (n *Runtime) capture(ctx context.Context, after uint64) telemetry.Capture {
+	c := n.observations.Snapshot(string(n.mode), domain.ReleaseVersion(), after)
+	c.Queue = n.queueHealth(ctx)
+	if n.inference != nil {
+		v := domain.InferenceStatus{Timing: n.inference.timing.Snapshot()}
+		n.inference.observer.populate("", &v)
+		n.inference.mu.RLock()
+		v.Validators = len(n.inference.roster.Peers)
+		n.inference.mu.RUnlock()
+		c.Inference = &v
+	}
+	return c
 }
+func (n *Runtime) queueHealth(ctx context.Context) *domain.QueueHealth {
+	n.mu.Lock()
+	db := n.database
+	n.mu.Unlock()
+	if db == nil {
+		return nil
+	}
+	now := time.Now()
+	h, err := db.QueueHealth(ctx, now)
+	if err != nil {
+		return nil
+	}
+	v := n.LocalInventory()
+	h.OllamaConfigured = v.Configured
+	h.OllamaFresh = v.Fresh(now)
+	h.OllamaTextAvailable = v.HasText(now)
+	return &h
+}
+
 func (n *Runtime) stopCapture() {
 	r := &n.recording
 	r.mu.Lock()
@@ -92,7 +121,7 @@ func (n *Runtime) recordWindow(ctx context.Context, cancel context.CancelFunc, d
 		return os.Rename(f.Name(), strings.TrimSuffix(f.Name(), ".partial")+".ndjson")
 	}
 	for {
-		c := n.capture(cursor)
+		c := n.capture(ctx, cursor)
 		var batch bytes.Buffer
 		err = c.Write(&batch)
 		if total+batch.Len() > 4<<20 {
@@ -149,8 +178,17 @@ func (n *Runtime) performance(ctx context.Context, r domain.ClusterRoute) (domai
 	running := n.recording.cancel != nil
 	p.Detail = n.recording.message
 	n.recording.mu.Unlock()
+	health := n.queueHealth(ctx)
+	if health != nil {
+		p.Detail += fmt.Sprintf("\nLocal hash queue · %d queued · %d eligible · %d running · %d expired leases", health.Queued, health.Eligible, health.Running, health.Expired)
+		if health.Draining {
+			p.Detail += "\nWorker is draining for update."
+		} else if health.Eligible > 0 && health.Running == 0 {
+			p.Detail += fmt.Sprintf("\nEligible work waiting with no active lease. Oldest wait %s.", (time.Duration(health.ObservedMS-health.OldestEligibleMS) * time.Millisecond).Round(time.Second))
+		}
+	}
 	p.Options = append(p.Options, domain.ClusterOption{Label: "Save recent telemetry", Run: func(ctx context.Context, _ string) error {
-		_, err := telemetry.Save(ctx, dir, n.capture(0))
+		_, err := telemetry.Save(ctx, dir, n.capture(ctx, 0))
 		return err
 	}})
 	workers, _ := n.KnownWorkers(ctx)
@@ -159,7 +197,7 @@ func (n *Runtime) performance(ctx context.Context, r domain.ClusterRoute) (domai
 			continue
 		}
 		p.Options = append(p.Options, domain.ClusterOption{Label: "Save capture with " + worker.DisplayName(), Run: func(ctx context.Context, _ string) error {
-			local := n.capture(0)
+			local := n.capture(ctx, 0)
 			client, err := n.openSavedWorker(ctx, worker)
 			var peer domain.WorkspaceView
 			if err == nil {

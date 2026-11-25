@@ -110,7 +110,9 @@ func (db *DB) ReadReplica(ctx context.Context, a Access, w string, after uint64,
 		if err != nil {
 			return nil, err
 		}
-		v.Pools = append(v.Pools, pool)
+		if !domain.RetiredPool(pool) {
+			v.Pools = append(v.Pools, pool)
+		}
 	}
 	return &v, rows.Err()
 }

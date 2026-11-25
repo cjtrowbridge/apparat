@@ -5,6 +5,7 @@ package httpapi
 import (
 	"context"
 	"crypto/tls"
+	"strings"
 
 	"net"
 	"net/http"
@@ -19,12 +20,13 @@ func workerClaims(db *persistence.DB, keys *identity.Session, artifacts string, 
 	auth := newWorkerAuth(db, artifacts)
 	auth.gitContext = ctx
 	if len(handlers) > 0 {
+		auth.inference = handlers[0].Inference
 		auth.workspace = handlers[0].Workspace
 		auth.inventory = handlers[0].Inventory
 		auth.metrics = handlers[0].Metrics
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(handlers) > 0 && handlers[0].Metrics != nil && r.URL.Path != "/v1/workspace/live" {
+		if len(handlers) > 0 && handlers[0].Metrics != nil && !strings.HasSuffix(r.URL.Path, "/live") {
 			start := time.Now()
 			body := &countedBody{ReadCloser: r.Body}
 			r.Body = body

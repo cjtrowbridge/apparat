@@ -144,6 +144,11 @@ func (node *Runtime) KnownWorkers(ctx context.Context) ([]domain.ClusterDevice, 
 	user := node.Personal.Fingerprint()
 	rows, err := node.database.WorkerSummaries(ctx, user, identity.Fingerprint(node.Keys.Public()))
 	for i, w := range rows {
+		status, present := node.peerInference.Load(user + "/" + w.Fingerprint)
+		if present {
+			v := status.(domain.InferenceStatus)
+			rows[i].Inference = &v
+		}
 		cached, ok := node.peerInventory.Load(user + "/" + w.Fingerprint)
 		if ok {
 			v := cached.(domain.WorkerInventory)

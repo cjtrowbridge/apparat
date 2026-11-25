@@ -70,3 +70,9 @@ Phase 10 pool details open on completed tasks, newest first. Provide status and 
 
 ### Worker trust and host account selection (Phases 9 and 10)
 Probe the worker without identifying the client, compare its identity fingerprint during setup, and pin it before login. Require explicit local review for a changed key. Keep replica history scoped to its signing identity. Limit host GitHub account discovery to authenticated administrators over pinned TLS and list only validated usernames. Verify first contact, changed pins, and the authorization boundary using isolated identities.
+
+### Inference-pool handoff
+
+The hash queue remains a worker-local proof. Inference proposals require independent authenticated validators, a roster revision shared across the cluster, and an explicit recovery barrier. The owner-agent-harness plan tracks the implementation and live qualification. Device inventory freshness and availability must never implicitly remove a validator.
+
+Cluster Status now replaces Local Services on the cluster selector. The local device retains its service card. An administrator pins the full set of validator identities before first use. All votes are served from the recovered in-memory table, and a second all-member durable ownership acknowledgement gates the sole provider start.

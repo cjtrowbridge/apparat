@@ -66,3 +66,11 @@ workspace.go owns migration 7 and stores project-scoped drafts, local pending me
 - `catalog_page.go`: Pages registered checkouts by insertion order without inspecting their trees.
 
 - `chat_models.go`: Persists revisioned scope defaults and session choices together.
+
+- `inference_jobs.go`: stores the agreed inference roster, immutable job inputs, exclusive ownership receipts, dispatch intent and terminal output. A conflicting roster or attempt is rejected. An interrupted dispatch requires reconciliation.
+
+- `chat_work.go`: Durable owner outbox and immutable model packets.
+
+- `global_artifact.go`: Revisioned private global transcript replicas and publication receipts.
+
+- `planning_outbox.go`: Stores signed-in planning commands until acknowledged.
