@@ -80,7 +80,7 @@ func (p *inferencePool) tryInference(ctx context.Context, roster domain.Inferenc
 	if e != nil || !allowed {
 		return false
 	}
-	provider, e := chatprovider.NewCompletions(fmt.Sprintf("http://127.0.0.1:%d/v1/chat/completions", inventory.Port), j.Packet.Model.Name, "")
+	provider, e := chatprovider.NewCompletions(fmt.Sprintf("http://127.0.0.1:%d/api/chat", inventory.Port), j.Packet.Model.Name, "")
 	if e != nil {
 		return false
 	}

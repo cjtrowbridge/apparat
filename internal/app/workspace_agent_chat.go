@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"strings"
@@ -73,18 +74,19 @@ func (n *Runtime) workspaceAgentChat(ctx context.Context, location, user string,
 	// Keep the rendered page bounded independently of the full repository transcript.
 	start := max(0, len(s.Turns)-30)
 	for _, t := range s.Turns[start:] {
-		v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Label: t.Input, State: "user"})
+		metrics, _ := json.Marshal(t.Measurements())
+		v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Detail: string(metrics), Label: t.Input, State: "user"})
 		switch {
 		case t.Reply != "":
-			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Label: t.Reply, State: "assistant"})
+			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Detail: string(metrics), Label: t.Reply, State: "assistant"})
 		case t.Stopped != "":
-			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Label: t.Stopped, State: "stopped"})
+			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Detail: string(metrics), Label: t.Stopped, State: "stopped"})
 		default:
 			label := "Saved to project · awaiting dispatch"
 			if len(t.Steps) > 0 {
 				label = "Waiting for reply"
 			}
-			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Label: label, State: "pending"})
+			v.Choices = append(v.Choices, domain.WorkspaceChoice{ID: t.ID, Detail: string(metrics), Label: label, State: "pending"})
 		}
 	}
 	return v, nil

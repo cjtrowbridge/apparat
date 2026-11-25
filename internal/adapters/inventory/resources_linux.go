@@ -93,6 +93,7 @@ func resources(ctx context.Context) domain.NodeResources {
 		r.Disks = append(r.Disks, domain.Capacity{Name: label, Total: st.Blocks * unit, Used: (st.Blocks - st.Bfree) * unit, Available: st.Bavail * unit})
 		seen[f[2]] = true
 	}
+	rates := amdComputeRates()
 	files, _ := filepath.Glob("/sys/class/drm/card*/device/mem_info_vram_total")
 	for _, file := range files {
 		totalBytes, _ := os.ReadFile(file)
@@ -100,6 +101,11 @@ func resources(ctx context.Context) domain.NodeResources {
 		total, tok := number(string(totalBytes))
 		used, uok := number(string(usedBytes))
 		if tok && uok && total > 0 && used <= total {
+			rate := drmFP32(filepath.Dir(file), rates)
+			if rate > 0 {
+				r.GPUFP32PerSecond += rate
+				r.GPUComputeReports++
+			}
 			name := filepath.Base(filepath.Dir(filepath.Dir(file)))
 			r.GPUs = append(r.GPUs, domain.Capacity{Name: name, Total: total, Used: used, Available: total - used})
 		}

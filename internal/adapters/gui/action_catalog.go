@@ -29,6 +29,7 @@ func (g *Game) actionCatalog() []catalogAction {
 		key := hud.ActionAddress{Operation: "open", Kind: kind, Owner: owner, Target: id}
 		actions = append(actions, catalogAction{hud.Destination{Address: key, Name: name, Path: path}, open})
 	}
+	g.bubbleActions(add)
 	g.modelActions(add)
 	for index, tab := range g.shell.Snapshot().Tabs {
 		if !tab.Descriptor.Enabled || !tab.Descriptor.Visible {

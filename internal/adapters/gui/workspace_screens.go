@@ -83,6 +83,10 @@ func (g *Game) workspaceBack() {
 		g.workspaceGo("runs", "runs")
 	case "output", "output-options":
 		g.workspaceGo("result", "")
+	case "bubble-info":
+		w.mode = "conversation"
+		g.layoutDirty = true
+		return
 	case "model-picker":
 		g.closeModels()
 		return
@@ -114,6 +118,11 @@ func (g *Game) openWorkspaceTab(mode, action string) {
 }
 
 func (g *Game) workspaceScreen(c *widget.Container, w *workspacePanel) {
+	if w.mode == "bubble-info" {
+		c.AddChild(g.planningIcon("1f519", "Back to conversation", g.workspaceBack))
+		g.bubbleTable(c, g.planning.info)
+		return
+	}
 	btn := func(label string, fn func()) {
 		g.projectButton(c, label, func() {
 			if g.projects.pending == nil {

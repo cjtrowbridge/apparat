@@ -31,3 +31,5 @@ Workspace navigation uses the pinned Twemoji speech balloon (1f4ac.png) and fold
 Files uses the pinned Twemoji page (1f4c4.png) and folder (1f4c1.png) before each row’s Git marker and name.
 
 Inference types use the speech balloon for text, framed picture (1f5bc), speaker (1f50a), microphone (1f3a4) and clapper board (1f3ac). The four additional PNGs come from the same pinned Twemoji release.
+
+The clipboard (1f4cb) and information (2139) PNGs are from the same pinned Twemoji release and identify contextual chat actions.

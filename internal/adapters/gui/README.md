@@ -241,3 +241,5 @@ Project conversation pages share the global chat bubble and gear renderer. The w
 - `planning_sync.go`: Saves private planning commands and merges worker session revisions while keeping the active draft.
 
 - `cluster_hardware.go`: Builds the leading Cluster Status hardware scorecard and responsive metric grid. Counts use fresh reports and per-metric reporting coverage.
+
+- `chat_details.go`: implements selected and hovered bubble actions, exact-source clipboard copy and per-step metric tables for global and project conversations. Missing provider counters are omitted. Prefill throughput excludes cached prompt tokens when Ollama supplies that count.

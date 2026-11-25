@@ -24,6 +24,8 @@ type planningSession struct {
 	loading      bool
 }
 type planningUI struct {
+	bubbles         bubbleSelection
+	info            bubbleDetail
 	sync            planningSync
 	modelButton     *widget.Button
 	picker          modelPicker
@@ -102,7 +104,7 @@ func (g *Game) planningBack() {
 		g.closeModels()
 		return
 	}
-	if g.planning.page == "rename" {
+	if g.planning.page == "rename" || g.planning.page == "bubble-info" {
 		g.openPlanning(g.planning.current)
 		return
 	}

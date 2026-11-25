@@ -70,6 +70,14 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	if s == nil {
 		return planningColumn()
 	}
+	if p.page == "bubble-info" {
+		c := planningColumn()
+		back := g.planningIcon("1f519", "Back to conversation", g.planningBack)
+		g.bubbleTable(c, p.info)
+		page := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true}))))
+		page.AddChild(back, g.planningScroll(c))
+		return g.globalChatDetail(s, page)
+	}
 	if p.page == "model-picker" {
 		return g.globalModelPage(s)
 	}
@@ -121,25 +129,27 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	if s.loading {
 		conversation.AddChild(g.hudText("Loading conversation…"))
 	}
+	p.bubbles = bubbleSelection{}
 	for _, turn := range s.Turns {
-		g.chatBubble(conversation, turn.Input, true, false)
+		info := bubbleDetail{id: s.ID + "/" + turn.ID, steps: turn.Measurements()}
+		g.chatBubble(conversation, turn.Input, true, false, info)
 		switch {
 		case turn.Reply != "":
-			g.chatBubble(conversation, turn.Reply, false, false)
+			g.chatBubble(conversation, turn.Reply, false, false, info)
 		case turn.Stopped != "":
-			g.chatBubble(conversation, turn.Stopped, false, false)
+			g.chatBubble(conversation, turn.Stopped, false, false, info)
 		case s.acknowledged:
 			label := "Waiting for reply"
 			if s.syncReason != "" {
 				label = s.syncReason
 			}
-			g.chatBubble(conversation, label, false, true)
+			g.chatBubble(conversation, label, false, true, info)
 		default:
 			status := "Waiting to sync · saved on this device"
 			if s.syncReason != "" {
 				status += "\n" + s.syncReason
 			}
-			g.chatBubble(conversation, status, false, true)
+			g.chatBubble(conversation, status, false, true, info)
 		}
 	}
 	p.pane = g.planningScroll(conversation)
@@ -170,7 +180,7 @@ func (g *Game) globalSessionBody(_ hud.Tab) *widget.Container {
 	return body
 }
 
-func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting bool) {
+func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting bool, details ...bubbleDetail) {
 	row := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewAnchorLayout()), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})))
 	position := widget.AnchorLayoutPositionStart
 	color := panelColor
@@ -178,10 +188,8 @@ func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting b
 		position = widget.AnchorLayoutPositionEnd
 		color = activeTabColor
 	}
-	b := widget.NewContainer(widget.ContainerOpts.BackgroundImage(uiimage.NewNineSliceColor(color)), widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionHorizontal), widget.RowLayoutOpts.Spacing(8), widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 8, Bottom: 8}))), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{HorizontalPosition: position})))
-	if waiting {
-		b.AddChild(planningGear())
-	}
+	b := widget.NewContainer(widget.ContainerOpts.BackgroundImage(uiimage.NewNineSliceColor(color)), widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical), widget.RowLayoutOpts.Spacing(4), widget.RowLayoutOpts.Padding(&widget.Insets{Left: 12, Right: 12, Top: 8, Bottom: 8}))), widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{HorizontalPosition: position})))
+
 	lines := strings.Split(body, "\n")
 	paneWidth := g.hudPreferredWidth()
 	if g.inWorkspace() {
@@ -191,7 +199,16 @@ func (g *Game) chatBubble(parent *widget.Container, body string, user, waiting b
 	for i, line := range lines {
 		lines[i] = wrapSelectorLabel(line, *g.theme.ButtonTheme.TextFace, width)
 	}
-	b.AddChild(widget.NewText(widget.TextOpts.Text(strings.Join(lines, "\n"), g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor.Idle)))
+	label := strings.Join(lines, "\n")
+	if len(details) > 0 {
+		g.bubbleControls(b, body, label, user, waiting, details[0])
+	} else {
+		content := controlRow(b)
+		if waiting {
+			content.AddChild(planningGear())
+		}
+		content.AddChild(widget.NewText(widget.TextOpts.Text(label, g.theme.ButtonTheme.TextFace, g.theme.ButtonTheme.TextColor.Idle)))
+	}
 	row.AddChild(b)
 	parent.AddChild(row)
 }

@@ -28,8 +28,8 @@ func TestAutomaticWorkerAndStrandedTurn(t *testing.T) {
 			fmt.Fprint(w, `{"models":[]}`)
 		case "/api/show":
 			fmt.Fprint(w, `{"capabilities":["completion"]}`)
-		case "/v1/chat/completions":
-			fmt.Fprint(w, `{"choices":[{"message":{"role":"assistant","content":"one reply"},"finish_reason":"stop"}]}`)
+		case "/api/chat":
+			fmt.Fprint(w, `{"message":{"role":"assistant","content":"one reply"},"done_reason":"stop","done":true,"eval_count":2,"eval_duration":100000000}`)
 		}
 	}))
 	defer provider.Close()
@@ -86,6 +86,10 @@ func TestAutomaticWorkerAndStrandedTurn(t *testing.T) {
 	mustInference(t, err)
 	if cached.Session.Turns[0].Reply != "one reply" {
 		t.Fatal("reply missing from originating device with chat closed")
+	}
+	measurements := cached.Session.Turns[0].Measurements()
+	if len(measurements) != 1 || measurements[0].Metrics["eval_count"] != 2 {
+		t.Fatal("provider measurements missing from originating device")
 	}
 	view, err := gui.PlanningView(ctx, user, id)
 	mustInference(t, err)

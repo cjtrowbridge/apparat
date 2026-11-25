@@ -9,14 +9,16 @@ type Capacity struct {
 	Used, Available, Total uint64
 }
 type NodeResources struct {
-	PhysicalCores    int     `json:",omitempty"`
-	CPUFP32PerSecond float64 `json:",omitempty"`
-	HostBootDigest   string  `json:",omitempty"`
-	OS, Arch         string
-	CPUs             int
-	CPUPercent       *float64
-	RAM, Swap        *Capacity
-	Disks, GPUs      []Capacity
+	PhysicalCores     int     `json:",omitempty"`
+	CPUFP32PerSecond  float64 `json:",omitempty"`
+	GPUFP32PerSecond  float64 `json:",omitempty"`
+	GPUComputeReports int     `json:",omitempty"`
+	HostBootDigest    string  `json:",omitempty"`
+	OS, Arch          string
+	CPUs              int
+	CPUPercent        *float64
+	RAM, Swap         *Capacity
+	Disks, GPUs       []Capacity
 }
 type InventoryModel struct {
 	Name, Digest string

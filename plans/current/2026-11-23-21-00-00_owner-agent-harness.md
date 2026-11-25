@@ -178,3 +178,7 @@ Route Enter in the global and project composers through the Send action. Keep Sh
 ### Automatic inference participation and durable intake (Phases 13–14)
 
 Remove separate validator enrollment and hash service assignments from inference. Carry authenticated worker membership through ordinary cluster synchronization, preserve existing claims and global histories across upgrades, and decouple turn receipt from executor selection. Verify singleton upgrade, multiple workers, contention, restart, pool visibility and canonical release.
+
+### Hardware and chat inspection (Phases 14 and 16)
+
+Show a four-column desktop scorecard and an INT8-equivalent CPU plus accelerator estimate with coverage. Share contextual copy and per-step telemetry across both conversation views. Verify partial inventory, tool-call exchange, rates, narrow and wide HUD navigation, then qualify the release. Markdown presentation is a design discussion.

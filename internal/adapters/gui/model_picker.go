@@ -335,17 +335,19 @@ func (g *Game) modelCards(body *widget.Container) {
 func (g *Game) globalModelPage(s *planningSession) *widget.Container {
 	content := planningColumn()
 	g.modelCards(content)
-	scroll := g.planningScroll(content)
+	return g.globalChatDetail(s, g.planningScroll(content))
+}
+func (g *Game) globalChatDetail(s *planningSession, page widget.PreferredSizeLocateableWidget) *widget.Container {
 	if g.collapsed() || runtime.GOOS == "android" {
 		box := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(1), widget.GridLayoutOpts.Stretch([]bool{true}, []bool{true}))))
-		box.AddChild(scroll)
+		box.AddChild(page)
 		return box
 	}
 	box := widget.NewContainer(widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(2), widget.GridLayoutOpts.Stretch([]bool{false, true}, []bool{true}), widget.GridLayoutOpts.Spacing(bodyGap, 0))))
 	left := planningColumn()
 	left.GetWidget().MinWidth = g.masterListWidth()
 	left.AddChild(g.hudText("Current chat"), g.detailText(s.Description))
-	box.AddChild(left, scroll)
+	box.AddChild(left, page)
 	return box
 }
 func (g *Game) modelActions(add registerAction) {

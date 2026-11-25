@@ -54,6 +54,9 @@ type message struct {
 }
 
 func (p *Completions) Dispatch(ctx context.Context, r domain.ChatRequest) (*domain.ChatOutput, error) {
+	if strings.HasSuffix(p.endpoint, "/api/chat") {
+		return p.ollama(ctx, r)
+	}
 	messages := []message{{Role: "system", Content: r.System}}
 	for _, m := range r.Messages {
 		wire := message{Role: m.Role, Content: m.Text, CallID: m.CallID}
@@ -76,32 +79,9 @@ func (p *Completions) Dispatch(ctx context.Context, r domain.ChatRequest) (*doma
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.endpoint, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if p.key != "" {
-		req.Header.Set("Authorization", "Bearer "+p.key)
-	}
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return nil, errors.New("provider connection interrupted; reconcile outstanding job")
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	switch resp.StatusCode {
-	case 400, 401, 403, 404, 405, 413, 415, 422, 429:
-		return &domain.ChatOutput{Finish: "error", Text: fmt.Sprintf("Request rejected (HTTP %d)", resp.StatusCode)}, nil
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("provider returned HTTP %d", resp.StatusCode)
-	}
-	const limit = 4 << 20
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
-	if err != nil || len(raw) > limit {
-		return nil, errors.New("invalid provider response size")
+	raw, rejected, err := p.send(ctx, body)
+	if err != nil || rejected != nil {
+		return rejected, err
 	}
 	var envelope struct {
 		Choices []struct {
@@ -122,4 +102,35 @@ func (p *Completions) Dispatch(ctx context.Context, r domain.ChatRequest) (*doma
 		out.Calls = append(out.Calls, domain.ToolCall{ID: c.ID, Name: c.Function.Name, Arguments: c.Function.Arguments})
 	}
 	return &out, nil
+}
+
+func (p *Completions) send(ctx context.Context, body []byte) ([]byte, *domain.ChatOutput, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if p.key != "" {
+		req.Header.Set("Authorization", "Bearer "+p.key)
+	}
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return nil, nil, errors.New("provider connection interrupted; reconcile outstanding job")
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	switch resp.StatusCode {
+	case 400, 401, 403, 404, 405, 413, 415, 422, 429:
+		return nil, &domain.ChatOutput{Finish: "error", Text: fmt.Sprintf("Request rejected (HTTP %d)", resp.StatusCode)}, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, nil, fmt.Errorf("provider returned HTTP %d", resp.StatusCode)
+	}
+	const limit = 4 << 20
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if err != nil || len(raw) > limit {
+		return nil, nil, errors.New("invalid provider response size")
+	}
+	return raw, nil, nil
 }

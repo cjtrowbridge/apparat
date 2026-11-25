@@ -112,3 +112,5 @@ Cluster Status occupies the former Local Services selector. Select it with the n
 Project Chat opens the message composer directly. Back from the conversation opens its session list. New conversation opens another empty composer. A saved repository session exposes the pencil for title edits.
 
 With the global or project message editor focused, Enter or keypad Enter invokes Send. Shift+Enter inserts a newline. A pending turn keeps the next draft editable.
+
+Activate a conversation bubble to reveal Copy and Message information. The same row appears on hover. Navigate its buttons with Tab or D-pad. Back from Message information returns to the same chat.

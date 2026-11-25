@@ -80,9 +80,9 @@ func TestInferenceAgreement(t *testing.T) {
 			_, _ = fmt.Fprint(w, `{"models":[]}`)
 		case "/api/show":
 			_, _ = fmt.Fprint(w, `{"capabilities":["completion"]}`)
-		case "/v1/chat/completions":
+		case "/api/chat":
 			starts.Add(1)
-			_, _ = fmt.Fprint(w, `{"choices":[{"message":{"role":"assistant","content":"OK"},"finish_reason":"stop"}]}`)
+			_, _ = fmt.Fprint(w, `{"message":{"role":"assistant","content":"OK"},"done_reason":"stop","done":true,"eval_count":2,"eval_duration":100000000}`)
 		default:
 			http.NotFound(w, r)
 		}
@@ -150,7 +150,7 @@ func TestInferenceAgreement(t *testing.T) {
 		for _, node := range nodes {
 			v, err := node.c.Inference(ctx, domain.InferenceCommand{Operation: "result", ID: j.Packet.Job})
 			mustInference(t, err)
-			if v.State != "finished" || v.Output == nil || v.Output.Finish != "stop" || v.Output.Text == "" {
+			if v.State != "finished" || v.Output == nil || v.Output.Finish != "stop" || v.Output.Text == "" || v.Output.Metrics["eval_duration"] <= 0 {
 				t.Fatal("missing provider completion at priority", j.Pool, v.State, v.Output)
 			}
 		}

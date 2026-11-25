@@ -5,8 +5,10 @@
 package gui
 
 import (
+	"encoding/json"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/ebitenui/ebitenui/widget"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -113,8 +115,15 @@ func (g *Game) taskChatScreen(c *widget.Container, w *workspacePanel) {
 		if w.agentThread && !w.chatDraft {
 			bar.AddChild(g.planningIcon("270f", "Edit session title", g.renameProjectChat))
 		}
-		for _, message := range w.choices {
-			g.chatBubble(c, message.Label, !w.agentThread || message.State == "user", message.State == "pending")
+		g.planning.bubbles = bubbleSelection{}
+		for i, message := range w.choices {
+			id := message.ID
+			if id == "" {
+				id = strconv.Itoa(i)
+			}
+			info := bubbleDetail{id: w.id + "/" + w.thread + "/" + id}
+			_ = json.Unmarshal([]byte(message.Detail), &info.steps)
+			g.chatBubble(c, message.Label, !w.agentThread || message.State == "user", message.State == "pending", info)
 		}
 		if !w.agentThread && len(w.choices) > 0 {
 			g.chatBubble(c, "Saved to project · awaiting queue integration", false, false)

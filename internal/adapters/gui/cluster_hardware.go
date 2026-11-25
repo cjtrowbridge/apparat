@@ -68,6 +68,7 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 	}
 	var totals [6]float64
 	var reports [6]int
+	unknownGPU := 0
 	for _, v := range hosts {
 		r := v.Resources
 		values := [6]float64{float64(r.PhysicalCores), float64(r.CPUs)}
@@ -80,7 +81,8 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 		for _, disk := range r.Disks {
 			values[4] += float64(disk.Total)
 		}
-		values[5] = r.CPUFP32PerSecond
+		values[5] = 4 * (r.CPUFP32PerSecond + r.GPUFP32PerSecond)
+		unknownGPU += max(0, len(r.GPUs)-r.GPUComputeReports)
 		for i, value := range values {
 			if value > 0 && !math.IsNaN(value) && !math.IsInf(value, 0) {
 				totals[i] += value
@@ -88,14 +90,17 @@ func hardwareCard(p ServiceProjection, now time.Time) hud.Section {
 			}
 		}
 	}
-	for i, label := range []string{"CPU cores", "CPU threads", "RAM", "GPU VRAM", "Disk capacity", "CPU FP32"} {
+	if unknownGPU > 0 {
+		card.Description += fmt.Sprintf(" · compute estimate excludes %d unreported GPU(s)", unknownGPU)
+	}
+	for i, label := range []string{"CPU cores", "CPU threads", "RAM", "GPU VRAM", "Disk capacity", "Est. INT8 compute"} {
 		value := "—"
 		if reports[i] > 0 {
 			switch i {
 			case 0, 1:
 				value = fmt.Sprintf("%.0f", totals[i])
 			case 5:
-				value = hardwareUnits(totals[i], 1000, []string{"FLOP/s", "kFLOP/s", "MFLOP/s", "GFLOP/s", "TFLOP/s", "PFLOP/s"})
+				value = hardwareUnits(totals[i], 1000, []string{"OP/s", "kOP/s", "MOP/s", "GOP/s", "TOP/s", "POP/s"})
 			default:
 				value = hardwareUnits(totals[i], 1024, []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB"})
 			}
@@ -126,7 +131,7 @@ func (g *Game) hardwareGrid(rows []hud.Row) *widget.Container {
 		h, _ := text.Measure(r.Label, *g.formLabelFace, 0)
 		widest = max(widest, int(math.Ceil(max(w+unitWidth+4, h))))
 	}
-	columns := max(1, min(3, (width+12)/(widest+12)))
+	columns := max(1, min(4, (width+12)/(widest+12)))
 
 	grid := widget.NewContainer(widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{Stretch: true})), widget.ContainerOpts.Layout(widget.NewGridLayout(widget.GridLayoutOpts.Columns(columns), widget.GridLayoutOpts.DefaultStretch(true, false), widget.GridLayoutOpts.Spacing(12, 8))))
 	for _, r := range rows {

@@ -28,9 +28,10 @@ type ToolResult struct {
 }
 
 type ChatOutput struct {
-	Finish string     `json:"finish"`
-	Text   string     `json:"text,omitempty"`
-	Calls  []ToolCall `json:"calls,omitempty"`
+	Finish  string             `json:"finish"`
+	Metrics map[string]float64 `json:"metrics,omitempty"`
+	Text    string             `json:"text,omitempty"`
+	Calls   []ToolCall         `json:"calls,omitempty"`
 }
 
 type ChatStep struct {
@@ -71,4 +72,21 @@ type ChatProject struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Owner string `json:"owner"`
+}
+
+// ChatMeasurement carries only display metadata across the workspace boundary.
+type ChatMeasurement struct {
+	Step    int
+	Finish  string
+	Metrics map[string]float64
+}
+
+func (t ChatTurn) Measurements() []ChatMeasurement {
+	var rows []ChatMeasurement
+	for i, s := range t.Steps {
+		if s.Output != nil {
+			rows = append(rows, ChatMeasurement{i + 1, s.Output.Finish, s.Output.Metrics})
+		}
+	}
+	return rows
 }

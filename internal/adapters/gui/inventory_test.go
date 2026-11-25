@@ -139,6 +139,9 @@ func TestCaptureInventoryDevice(t *testing.T) {
 		t.Skip("optional rendered evidence")
 	}
 	w, h := 1280, 800
+	if strings.Contains(path, "1080") {
+		w, h = 1920, 1080
+	}
 	if strings.Contains(path, "narrow") {
 		w, h = 390, 844
 	}
@@ -147,6 +150,8 @@ func TestCaptureInventoryDevice(t *testing.T) {
 		v := g.serviceProjection.Devices[0].Inventory
 		v.Resources.PhysicalCores = 6
 		v.Resources.CPUFP32PerSecond = 56e9
+		v.Resources.GPUComputeReports = 2
+		v.Resources.GPUFP32PerSecond = 7e12
 		v.Resources.GPUs = []domain.Capacity{{Total: 6 << 30}, {Total: 6 << 30}}
 		v.Resources.Disks = []domain.Capacity{{Total: 1 << 40}}
 		for i, s := range g.presentedTab(g.shell.Snapshot().ActiveTab()).Sections {
@@ -199,13 +204,13 @@ func TestClusterStatusCards(t *testing.T) {
 
 func TestClusterHardwareTotals(t *testing.T) {
 	now := time.Unix(1000, 0)
-	v := domain.WorkerInventory{Observed: 1000, Resources: domain.NodeResources{HostBootDigest: "same-host", CPUs: 16, PhysicalCores: 8, RAM: &domain.Capacity{Total: 32 << 30}, GPUs: []domain.Capacity{{Total: 6 << 30}, {Total: 6 << 30}}, Disks: []domain.Capacity{{Total: 2 << 40}}, CPUFP32PerSecond: 9e14}}
+	v := domain.WorkerInventory{Observed: 1000, Resources: domain.NodeResources{HostBootDigest: "same-host", CPUs: 16, PhysicalCores: 8, RAM: &domain.Capacity{Total: 32 << 30}, GPUs: []domain.Capacity{{Total: 6 << 30}, {Total: 6 << 30}}, Disks: []domain.Capacity{{Total: 2 << 40}}, GPUComputeReports: 2, GPUFP32PerSecond: 1e15, CPUFP32PerSecond: 9e14}}
 	other := domain.WorkerInventory{Observed: 995, Resources: domain.NodeResources{CPUs: 8, CPUFP32PerSecond: 1e14}}
 	stale := v
 	stale.Observed = 800
 	p := ServiceProjection{LocalDevice: domain.PoolDevice{ID: "gui"}, LocalInventory: v, Devices: []domain.ClusterDevice{{Fingerprint: "daemon", Inventory: &v}, {Fingerprint: "other", Inventory: &other}, {Fingerprint: "old", Inventory: &stale}}}
 	s := hardwareCard(p, now)
-	want := []hud.Row{{Label: "CPU cores (1/2)", Detail: "8"}, {Label: "CPU threads", Detail: "24"}, {Label: "RAM (1/2)", Detail: "32 GiB"}, {Label: "GPU VRAM (1/2)", Detail: "12 GiB"}, {Label: "Disk capacity (1/2)", Detail: "2 TiB"}, {Label: "CPU FP32", Detail: "1 PFLOP/s"}}
+	want := []hud.Row{{Label: "CPU cores (1/2)", Detail: "8"}, {Label: "CPU threads", Detail: "24"}, {Label: "RAM (1/2)", Detail: "32 GiB"}, {Label: "GPU VRAM (1/2)", Detail: "12 GiB"}, {Label: "Disk capacity (1/2)", Detail: "2 TiB"}, {Label: "Est. INT8 compute", Detail: "8 POP/s"}}
 	if !slices.Equal(s.Rows, want) || !strings.HasPrefix(s.Description, "2 reporting hosts") {
 		t.Fatal(s)
 	}

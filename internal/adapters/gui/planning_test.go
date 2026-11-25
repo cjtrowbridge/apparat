@@ -228,3 +228,56 @@ func TestPickerCatalogUsesStableTextModelIdentities(t *testing.T) {
 		t.Fatal(catalog)
 	}
 }
+
+func TestBubbleActionsAndReturn(t *testing.T) {
+	for _, size := range [][2]int{{390, 844}, {1920, 1080}} {
+		g := horizontalGame()
+		g.Layout(size[0], size[1])
+		selectTabThroughStrip(t, g, hud.TabGlobalSession)
+		s := g.planning.current
+		source := "**Keep**  both spaces\n    and indentation."
+		s.Turns = []domain.ChatTurn{{ID: "turn", Input: "question", Reply: source, Steps: []domain.ChatStep{{Output: &domain.ChatOutput{Finish: "stop", Metrics: map[string]float64{"eval_count": 5, "eval_duration": 1e9}}}}}}
+		var copied string
+		g.runtimeInfo.CopyText = func(s string) {
+			copied = s
+		}
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		var button *widget.Button
+		for _, f := range g.bodyTargets() {
+			if strings.HasPrefix(focusLabel(f.w), "**Keep**") {
+				button = f.w.(*widget.Button)
+			}
+			if focusLabel(f.w) == "Copy message" {
+				t.Fatal("actions visible before activation")
+			}
+		}
+		if button == nil {
+			t.Fatal("missing message")
+		}
+		button.Click()
+		event.ExecuteDeferred()
+		tools := g.planning.bubbles.current
+		if tools == nil || tools.row.GetWidget().GetVisibility() != widget.Visibility_Show {
+			t.Fatal("missing message actions")
+		}
+		tools.copy()
+		if copied != source {
+			t.Fatal("copy changed original text")
+		}
+		g.globalDraft = "draft"
+		tools.open()
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		if g.planning.page != "bubble-info" || len(g.planning.info.steps) != 1 {
+			t.Fatal("missing info page")
+		}
+		g.planningBack()
+		g.rebuildUI(g.shell.Snapshot())
+		renderNavigation(g)
+		if g.planning.current != s || g.globalDraft != "draft" {
+			t.Fatal("back lost conversation")
+		}
+		g.Close()
+	}
+}
