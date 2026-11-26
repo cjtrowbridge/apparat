@@ -106,6 +106,11 @@ func (g *Game) hostAccountPicker(c *widget.Container, host string, value *string
 	c.AddChild(g.formLabel("Credentials"))
 	w := &g.projects.wizard
 	if w.accountHost == host {
+		selected := "Using public access without credentials."
+		if *value != "" {
+			selected = "Using the saved GitHub account @" + *value + "."
+		}
+		c.AddChild(g.formDescription(selected))
 		if w.providerError != "" {
 			c.AddChild(g.formDescription(w.providerError))
 		}
@@ -113,14 +118,26 @@ func (g *Game) hostAccountPicker(c *widget.Container, host string, value *string
 			if host != "local" && p.CanEnroll {
 				c.AddChild(g.formDescription("Administrators of " + g.projectHostName(host) + " can use accounts added here to clone private repositories."))
 			}
-			if p.Reason != "" {
-				c.AddChild(g.formDescription(p.Name + " · " + p.Reason))
+			reason, enrollment := credentialReasons(p)
+			if reason != "" {
+				c.AddChild(g.formDescription(p.Name + " · " + reason))
+			}
+			if enrollment != "" && w.enrollmentHelp == p.ID && host != "local" {
+				c.AddChild(g.formDescription("Adding a new " + p.Name + " account on " + g.projectHostName(host) + ". " + enrollment))
 			}
 		}
 	}
 	for _, option := range g.accountOptions(host, value) {
 		g.projectButton(c, option.label, option.run)
 	}
+}
+
+// Workers predating EnrollmentReason placed this specific capability notice in Reason.
+func credentialReasons(p domain.GitProvider) (string, string) {
+	if p.ID == "github" && strings.HasPrefix(p.Reason, "Remote enrollment requires an unlocked Linux Secret Service") {
+		return "", p.Reason
+	}
+	return p.Reason, p.EnrollmentReason
 }
 
 type accountOption struct {
@@ -150,6 +167,7 @@ func (g *Game) accountOptions(host string, value *string) []accountOption {
 	selectAccount := func(name string) {
 		*value = name
 		w.accountHost = ""
+		w.enrollmentHelp = ""
 		w.providers = nil
 		w.preview = domain.LocalProjectSetup{}
 		g.layoutDirty = true
@@ -161,6 +179,13 @@ func (g *Game) accountOptions(host string, value *string) []accountOption {
 		for _, name := range p.Accounts {
 			add(p.ID+"-"+name, "Use "+p.Name+" as @"+name, func() {
 				selectAccount(name)
+			})
+		}
+		_, enrollment := credentialReasons(p)
+		if host != "local" && !p.CanEnroll && enrollment != "" {
+			add("enrollment-help-"+p.ID, "How to add a "+p.Name+" account on "+g.projectHostName(host), func() {
+				w.enrollmentHelp = p.ID
+				g.layoutDirty = true
 			})
 		}
 		if p.CanInstall {

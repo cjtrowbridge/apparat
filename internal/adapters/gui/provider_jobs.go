@@ -39,6 +39,7 @@ func (g *Game) refreshProviders(host string) {
 	}
 	w.providers = nil
 	w.providerError = ""
+	w.enrollmentHelp = ""
 	g.projectWork(func(ctx context.Context) projectResult {
 		providers, err := source.GitProviders(ctx, host)
 		return projectResult{applyField: func() {

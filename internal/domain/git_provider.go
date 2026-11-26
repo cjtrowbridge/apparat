@@ -6,6 +6,7 @@ type GitProvider struct {
 	ID, Name, Tool, Reason           string
 	Installed, CanInstall, CanEnroll bool
 	Accounts                         []string
+	EnrollmentReason                 string `json:",omitempty"`
 }
 type GitRequest struct{ Provider, Operation, ID, Repo, Account string }
 type GitStatus struct {

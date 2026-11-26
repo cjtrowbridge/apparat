@@ -59,3 +59,9 @@ Right-align field labels against their controls. Keep device search compact and 
 - [?] **Hardware coverage.** The worker lacked an unlocked default Secret Service collection. On an eligible host, add an account using the actual GitHub approval page, verify the new chooser entry and previous active CLI account, then clone using the new account. The real private-clone initiator was Linux. Pixel release acceptance covered install, launch and Projects. Qualify other worker operating systems separately.
 
 The broader Phase 9 plan stays open for its real two-account test and Android grant-revocation check. Phase 11 owns signed, cached summaries and offline reconciliation. Phase 11A repeats local workspace acceptance with mixed owners. Phase 11B owns credentials for cloning onto Android itself and Phase 11C owns remote workspace operations.
+
+### Worker clone credential guidance
+
+For the Phase 9 host credential chooser, keep public access and saved-account selection independent of remote enrollment. Scope enrollment diagnostics to users asking about a new account, explain the worker's observed blocker, and preserve compatibility with workers returning the previous combined message. Verify the locked-keyring chooser and canonical delivery.
+
+- [x] Verify public and saved-account choices remain available with a locked keyring and the reason appears only in enrollment help. The chooser tests covered 390- and 1280-pixel layouts and older worker replies. On trashcan0, the worker adapter detected the locked default keyring and cloned cjtrowbridge/trashcan anonymously and as the saved cjtrowbridge account into separate temporary directories.

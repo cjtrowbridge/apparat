@@ -6,6 +6,7 @@ package gui
 
 import (
 	"image"
+	"strings"
 	"testing"
 
 	"github.com/cjtrowbridge/apparat/internal/domain"
@@ -101,5 +102,69 @@ func TestRemoteCloneAcceptsRepositoryAtActivation(t *testing.T) {
 	action.run()
 	if g.projects.message == "" || g.projects.pending != nil {
 		t.Fatal("empty repository requires inline guidance")
+	}
+}
+
+func TestLockedKeyringCloneChooser(t *testing.T) {
+	const oldReason = "Remote enrollment requires an unlocked Linux Secret Service and a private memory-backed staging directory."
+	for _, width := range []int{390, 1280} {
+		g := NewGame()
+		g.Layout(width, 800)
+		w := &g.projects.wizard
+		w.host, w.mode = "worker-example", "clone"
+		p := domain.GitProvider{ID: "github", Name: "GitHub", Installed: true, Accounts: []string{"saved"}}
+		for _, legacy := range []bool{false, true} {
+			problem := "The worker’s default keyring is locked."
+			if legacy {
+				problem = oldReason
+				p.EnrollmentReason = ""
+				p.Reason = problem
+			} else {
+				p.EnrollmentReason = problem
+			}
+			w.accountHost, w.providers = w.host, []domain.GitProvider{p}
+			pickerText := func() string {
+				c := planningColumn()
+				g.hostAccountPicker(c, w.host, &w.remoteAccount)
+				var out []string
+				for _, child := range c.Children() {
+					label, ok := child.(*widget.Text)
+					if ok {
+						out = append(out, label.Label)
+					}
+				}
+				return strings.Join(out, " ")
+			}
+			before := pickerText()
+			if strings.Contains(before, problem) || !strings.Contains(before, "public access") || g.remoteCloneOption() == nil {
+				t.Fatal("enrollment interfered with clone", before)
+			}
+			options := map[string]accountOption{}
+			for _, o := range g.accountOptions(w.host, &w.remoteAccount) {
+				options[o.id] = o
+			}
+			_, ok := options["add-github"]
+			if ok {
+				t.Fatal("secure enrollment offered while locked")
+			}
+			for _, id := range []string{"public", "github-saved", "enrollment-help-github"} {
+				if options[id].run == nil {
+					t.Fatal("missing action", id)
+				}
+			}
+			options["enrollment-help-github"].run()
+			if !strings.Contains(pickerText(), problem) {
+				t.Fatal("missing enrollment explanation")
+			}
+			options["github-saved"].run()
+			if w.remoteAccount != "saved" || w.enrollmentHelp != "" || g.remoteCloneOption() == nil {
+				t.Fatal("saved account unavailable")
+			}
+			options["public"].run()
+			if w.remoteAccount != "" {
+				t.Fatal("anonymous selection unavailable")
+			}
+		}
+		g.Close()
 	}
 }

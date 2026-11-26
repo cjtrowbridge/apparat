@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -71,5 +72,26 @@ esac
 				t.Fatal("staging retained")
 			}
 		})
+	}
+}
+
+// The operator supplies a public test repo and saved account on a locked-keyring worker.
+func TestLockedWorkerCloneAccess(t *testing.T) {
+	repo := os.Getenv("APPARAT_LOCKED_WORKER_TEST_REPO")
+	account := os.Getenv("APPARAT_LOCKED_WORKER_TEST_ACCOUNT")
+	if repo == "" || account == "" {
+		t.Skip("requires a designated worker fixture")
+	}
+	ctx := context.Background()
+	provider := githubProvider(ctx)
+	if provider.Reason != "" || provider.CanEnroll || !strings.Contains(provider.EnrollmentReason, "keyring is locked") || !slices.Contains(provider.Accounts, account) {
+		t.Fatal("expected a saved account and an independent locked-keyring enrollment status", provider.Reason, provider.EnrollmentReason)
+	}
+	for _, user := range []string{"", account} {
+		root := t.TempDir()
+		p, err := Clone(ctx, root, "", repo, user)
+		if err != nil || !p.Available || p.Account != user || p.Revision == "" {
+			t.Fatal("disposable worker clone failed", err)
+		}
 	}
 }

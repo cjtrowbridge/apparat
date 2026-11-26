@@ -87,10 +87,8 @@ func githubProvider(ctx context.Context) domain.GitProvider {
 		p.Reason = "GitHub CLI configuration is unreadable."
 		return p
 	}
-	p.CanEnroll = enrollmentAvailable(ctx)
-	if !p.CanEnroll {
-		p.Reason = "Remote enrollment requires an unlocked Linux Secret Service and a private memory-backed staging directory. You can add an account locally with gh auth login."
-	}
+	p.EnrollmentReason = enrollmentProblem(ctx)
+	p.CanEnroll = p.EnrollmentReason == ""
 	return p
 }
 

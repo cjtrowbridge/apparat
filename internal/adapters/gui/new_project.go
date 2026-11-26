@@ -16,7 +16,7 @@ import (
 
 type newProjectState struct {
 	search, host, source, mode, remoteAccount string
-	accountHost                               string
+	accountHost, enrollmentHelp               string
 	providers                                 []domain.GitProvider
 	providerError                             string
 	jobUpdates                                chan domain.GitStatus
@@ -104,6 +104,7 @@ func (g *Game) chooseProject(c setupChoice) {
 		w.focusStep = "details"
 		w.mode = c.id
 	}
+	w.enrollmentHelp = ""
 	w.preview = domain.LocalProjectSetup{}
 	w.output = nil
 	f.message = ""

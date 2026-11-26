@@ -21,21 +21,38 @@ var deviceCode = regexp.MustCompile(`^[A-Z0-9]{4}-[A-Z0-9]{4}$`)
 
 const verificationURL = "https://github.com/login/device"
 
-func enrollmentAvailable(ctx context.Context) bool {
+func enrollmentProblem(ctx context.Context) string {
 	if runtime.GOOS != "linux" {
-		return false
+		return "Remote account enrollment is supported on Linux workers. Run gh auth login on this host to add an account."
 	}
 	out, err := exec.CommandContext(ctx, "stat", "-f", "-c", "%T", "/dev/shm").Output()
 	if err != nil || strings.TrimSpace(string(out)) != "tmpfs" {
-		return false
+		return "The worker could not verify /dev/shm as memory-backed staging. Configure tmpfs there or run gh auth login on the worker."
 	}
 	cmd := exec.CommandContext(ctx, "/usr/bin/python3", "-I", "-c", `import gi
 gi.require_version("Secret","1")
 from gi.repository import Secret
 s=Secret.Service.get_sync(Secret.ServiceFlags.LOAD_COLLECTIONS,None)
 c=Secret.Collection.for_alias_sync(s,"default",Secret.CollectionFlags.NONE,None)
-raise SystemExit(0 if c and not c.get_locked() else 1)`)
-	return cmd.Run() == nil
+if c is None: raise SystemExit(20)
+raise SystemExit(21 if c.get_locked() else 0)`)
+	err = cmd.Run()
+	if err == nil {
+		return ""
+	}
+	if ctx.Err() != nil {
+		return "The worker did not finish checking secure storage. Refresh credential providers to retry."
+	}
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
+		switch exit.ExitCode() {
+		case 20:
+			return "The worker has no default keyring. Create one for the worker service user and refresh, or run gh auth login on the worker."
+		case 21:
+			return "The worker’s default keyring is locked. Unlock it in the worker service user’s session and refresh, or run gh auth login on the worker."
+		}
+	}
+	return "The worker could not check its default keyring through Linux Secret Service. Check the service user’s keyring session or run gh auth login on the worker."
 }
 
 func stagedGH(ctx context.Context, dir string, isolated bool, args ...string) *exec.Cmd {
@@ -53,8 +70,9 @@ func stagedGH(ctx context.Context, dir string, isolated bool, args ...string) *e
 }
 
 func Enroll(ctx context.Context, authorized func() bool, progress func(string, string)) (string, error) {
-	if !enrollmentAvailable(ctx) {
-		return "", errors.New("secure host enrollment is unavailable")
+	problem := enrollmentProblem(ctx)
+	if problem != "" {
+		return "", errors.New(problem)
 	}
 	return enrollIn(ctx, "/dev/shm", authorized, progress)
 }
