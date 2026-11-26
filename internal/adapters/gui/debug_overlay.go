@@ -140,7 +140,9 @@ func (game *Game) updatePointerState() {
 	game.updateTabStripDrag(x, y)
 	game.chatDividerMouse(x, y)
 	game.updateDividerDrag(x, y)
-	game.updateBodyScrollMouse(x, y)
+	if !game.bubbleMouse(x, y) {
+		game.updateBodyScrollMouse(x, y)
+	}
 }
 
 func (game *Game) updateDebugOverlayDrag(x int, y int) {
@@ -181,7 +183,9 @@ func (game *Game) updateTouchDrag() {
 				game.tabStripDragDistance = 0
 				game.tabStripDragMoved = false
 			default:
-				game.beginBodyTouch(id, x, y)
+				if !game.beginBubble(x, y, true, id) {
+					game.beginBodyTouch(id, x, y)
+				}
 			}
 			if game.gesture.Owner != gestureNone {
 				break
@@ -203,6 +207,8 @@ func (game *Game) updateTouchDrag() {
 		game.updateDebugTouch()
 	case gestureTabs:
 		game.updateTabTouch()
+	case gestureBubble:
+		game.updateBubbleTouch()
 	case gestureBody:
 		game.updateBodyTouch()
 	}

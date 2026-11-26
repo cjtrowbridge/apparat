@@ -80,7 +80,7 @@ func (g *Game) fileDocument(c *widget.Container, w *workspacePanel) {
 			w.surface.history(&w.surface.redo, &w.surface.undo)
 		})
 		g.projectButton(tools, "Paste", func() {
-			w.surface.insert(g.pasteDocument())
+			g.pasteInto(w.surface.insert)
 		})
 	}
 }

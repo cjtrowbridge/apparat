@@ -114,7 +114,7 @@ func (e *chatTerminalSurface) Update(info *widget.UpdateObject) {
 		return
 	}
 	if ctrl && ebiten.IsKeyPressed(ebiten.KeyShift) && inpututil.IsKeyJustPressed(ebiten.KeyV) {
-		e.enqueue(e.g.pasteDocument())
+		e.g.pasteInto(e.enqueue)
 		return
 	}
 	if ctrl {

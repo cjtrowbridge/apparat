@@ -2,7 +2,8 @@
 
 Format: `last_modified | path | title | summary`
 
-2026-11-25-14-46-16 | plans/current/2026-11-25-13-35-07_chat-terminals.md | Integrate terminal sessions into project and global agent chats | Give each chat a terminal chooser, shared live views, explicit agent permissions and bounded command waits.
+2026-11-25-18-47-46 | plans/current/2026-11-25-18-40-37_clipboard-selection.md | Exchange field text and selected chat passages with the system clipboard | Restore ordinary editing shortcuts and add pointer and touch selection to shared chat bubbles.
+2026-11-25-18-19-02 | plans/current/2026-11-25-13-35-07_chat-terminals.md | Integrate terminal sessions into project and global agent chats | Give each chat a terminal chooser, shared live views, explicit agent permissions and bounded command waits.
 2026-11-25-13-10-00 | plans/current/2026-11-23-21-00-00_owner-agent-harness.md | Build the owner-hosted Go chat harness against the pinned Pi tool protocol | Deliver repo-owned conversations, deterministic commands, durable inference waits and a scoped global PTT session with measured Pi compatibility.
 2026-11-25-12-50-42 | plans/current/2026-11-22-15-00-00_personal-cluster.md | Personal identities, replicated policy and first pool queue | Administer the installed worker from either personal device and recover missing policy and job revisions.
 2026-11-25-00-19-33 | plans/current/2026-11-22-12-00-00_node-identity-and-rest.md | Node setup, key protection and authenticated REST | Deliver persistent node identities, optional OS unlock and an authenticated local API before cluster enrollment.

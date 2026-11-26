@@ -220,6 +220,10 @@ func (e *documentSurface) Update(info *widget.UpdateObject) {
 		e.ime.Cancel()
 		return
 	}
+	if shortcutModifier() {
+		e.keys()
+		return
+	}
 	if e.editable() {
 		handled, _ := e.ime.Update()
 		if handled {
@@ -277,10 +281,11 @@ func (e *documentSurface) keys() {
 		case press(ebiten.KeyC):
 			e.game.copyDocument(e.body[min(e.anchor, e.caret):max(e.anchor, e.caret)])
 		case press(ebiten.KeyX) && e.editable():
-			e.game.copyDocument(e.body[min(e.anchor, e.caret):max(e.anchor, e.caret)])
-			e.insert("")
+			if e.game.copyDocument(e.body[min(e.anchor, e.caret):max(e.anchor, e.caret)]) {
+				e.insert("")
+			}
 		case press(ebiten.KeyV) && e.editable():
-			e.insert(e.game.pasteDocument())
+			e.game.pasteInto(e.insert)
 		case press(ebiten.KeyZ) && e.editable() && !shift:
 			e.history(&e.undo, &e.redo)
 		case (press(ebiten.KeyY) || press(ebiten.KeyZ) && shift) && e.editable():

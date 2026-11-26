@@ -10,7 +10,7 @@ import (
 )
 
 type Editor interface {
-	CopyText(value string)
+	CopyText(value string) bool
 	PasteText() string
 	Prompt(title, value string, singleLine bool) string
 }
@@ -40,12 +40,13 @@ func promptValue(title, value string, singleLine bool) (string, bool) {
 	return *result, true
 }
 
-func copyText(text string) {
+func copyText(text string) bool {
 	editor.RLock()
 	defer editor.RUnlock()
 	if editor.host != nil {
-		editor.host.CopyText(text)
+		return editor.host.CopyText(text)
 	}
+	return false
 }
 func pasteText() string {
 	editor.RLock()

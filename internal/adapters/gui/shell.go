@@ -15,7 +15,7 @@ type Adapter struct {
 
 type RuntimeInfo struct {
 	CanvasFitsKeyboard bool
-	CopyText           func(string)
+	CopyText           func(string) bool
 	PasteText          func() string
 	DeviceName         string
 	BrowseLAN          func(bool) string
@@ -39,4 +39,14 @@ func NewAdapter() Adapter {
 
 func (adapter Adapter) Snapshot() hud.Snapshot {
 	return adapter.shell.Snapshot()
+}
+
+func (game *Game) ActiveTabID() string {
+	{
+		id, ok := game.activeTabID.Load().(string)
+		if ok {
+			return id
+		}
+	}
+	return ""
 }

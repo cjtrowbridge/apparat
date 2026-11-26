@@ -15,6 +15,7 @@ const (
 	gestureBody
 	gestureDivider
 	gestureChatDivider
+	gestureBubble
 	gesturePTT
 )
 
@@ -53,6 +54,7 @@ func (game *Game) cancelPointer() {
 	game.finishBodyScroll()
 	game.finishTabStripDrag()
 	game.gesture = pointerGesture{}
+	game.bubbleText.pending = nil
 	game.rightCtrlHeld = false
 	game.l2Held = false
 }

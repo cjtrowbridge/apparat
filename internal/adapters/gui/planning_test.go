@@ -267,8 +267,9 @@ func TestBubbleActionsAndReturn(t *testing.T) {
 		source := "**Keep**  both spaces\n    and indentation."
 		s.Turns = []domain.ChatTurn{{ID: "turn", Input: "question", Reply: source, Steps: []domain.ChatStep{{Output: &domain.ChatOutput{Finish: "stop", Metrics: map[string]float64{"eval_count": 5, "eval_duration": 1e9}}}}}}
 		var copied string
-		g.runtimeInfo.CopyText = func(s string) {
+		g.runtimeInfo.CopyText = func(s string) bool {
 			copied = s
+			return true
 		}
 		g.rebuildUI(g.shell.Snapshot())
 		renderNavigation(g)

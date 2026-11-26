@@ -34,7 +34,7 @@ The document and input dialogs anchor the circular PTT control to the lower-righ
 
 Native speech revisions replace the selected range directly. Cancelling restores the draft.
 
-- `PromptGameView.java`: Sizes the canvas above the Android keyboard and routes printable hardware keys into the focused global prompt. Software-keyboard composition uses the engine IME. Verify rapid typing, keyboard dismissal and visibility of the prompt and PTT on the Pixel.
+- `PromptGameView.java`: Sizes the canvas above the Android keyboard and routes printable hardware keys into the focused global prompt. Physical clipboard chords go directly to the canvas editor once. Native dialog fields handle their own clipboard. Software-keyboard composition uses the engine IME. Verify rapid typing, keyboard dismissal and visibility of the prompt and PTT on the Pixel.
 
 When testing the planning prompt, inspect the first frame that settles after the keyboard opens, before typing. The bottom of the HUD should meet the keyboard and the heading should remain visible. Repeat after typing and after dismissal and reopening. On Android 11 and newer the activity fits the canvas above the IME. Canvas editors use a top-edge vertical IME anchor so the engine keeps the resized surface stationary from the first frame. The editor draws its caret at the current selection.
 

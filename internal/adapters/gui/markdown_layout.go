@@ -57,10 +57,13 @@ func (s mdStyle) face() text.Face {
 type mdRun struct {
 	x, y, w, h float64
 	style      mdStyle
+	start      int
 	value      string
 	fill       color.Color
 }
 type mdLayout struct {
+	plain                             strings.Builder
+	selectionStart, selectionEnd      int
 	runs                              []mdRun
 	left, right, x, y, height, extent float64
 	space                             bool
@@ -75,7 +78,7 @@ func (m *mdLayout) newline() {
 }
 func (m *mdLayout) finish() {
 	if m.height > 0 {
-		m.newline()
+		m.hardBreak()
 	}
 	m.space = false
 }
@@ -84,7 +87,8 @@ func (m *mdLayout) rectangle(x, y, w, h float64, c color.Color) {
 	m.extent = max(m.extent, x+w)
 }
 func (m *mdLayout) run(value string, s mdStyle, w float64) {
-	m.runs = append(m.runs, mdRun{x: m.x, y: m.y, w: w, style: s, value: value})
+	m.runs = append(m.runs, mdRun{x: m.x, y: m.y, w: w, style: s, value: value, start: m.plain.Len()})
+	m.plain.WriteString(value)
 	m.x += w
 	m.height = max(m.height, s.size*1.35)
 	m.extent = max(m.extent, m.x)
@@ -93,6 +97,9 @@ func (m *mdLayout) word(value string, s mdStyle) {
 	face := s.face()
 	width := text.Advance(value, face)
 	gap := 0.0
+	if m.space && m.plain.Len() > 0 && !strings.HasSuffix(m.plain.String(), "\n") {
+		m.plain.WriteByte(' ')
+	}
 	if m.space && m.x > m.left {
 		gap = text.Advance(" ", face)
 	}
@@ -141,6 +148,7 @@ func (m *mdLayout) paint(dst *ebiten.Image, r image.Rectangle) {
 			vector.FillRect(dst, float32(x), float32(y), float32(run.w), float32(run.h), run.fill, false)
 			continue
 		}
+		m.highlight(dst, run, x, y)
 		c := color.Color(color.White)
 		if run.style.link {
 			c = color.RGBA{166, 208, 255, 255}

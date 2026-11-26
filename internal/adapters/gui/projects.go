@@ -44,7 +44,6 @@ type projectForm struct {
 	directoryStatus                                            chan workspaceReply
 	stopDirectoryStatus                                        context.CancelFunc
 	externalCopies                                             map[[2]string]externalCopy
-	copiedText                                                 string
 	workspace                                                  workspacePanel
 	dataRoot                                                   string
 	removeID                                                   string

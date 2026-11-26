@@ -16,11 +16,29 @@ import com.cjtrowbridge.apparat.apparatmobile.Apparatmobile;
 import com.cjtrowbridge.apparat.apparatmobile.EbitenView;
 
 final class PromptGameView extends EbitenView {
+    private final android.util.SparseBooleanArray shortcutKeys = new android.util.SparseBooleanArray();
+
     PromptGameView(Context context) {
         super(context);
     }
 
     @Override public boolean dispatchKeyEventPreIme(KeyEvent event) {
+        int key = event.getKeyCode();
+        boolean editingShortcut = (event.isCtrlPressed() || event.isMetaPressed()) &&
+                (key == KeyEvent.KEYCODE_A || key == KeyEvent.KEYCODE_C ||
+                 key == KeyEvent.KEYCODE_X || key == KeyEvent.KEYCODE_V);
+        // The hidden canvas EditText would otherwise apply the same paste a
+        // second time through the IME. Native dialog fields own their own keys.
+        if (event.getAction() == KeyEvent.ACTION_UP && shortcutKeys.get(key)) {
+            shortcutKeys.delete(key);
+            return onKeyUp(key, event);
+        }
+        if (findFocus() instanceof EditText && editingShortcut) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                shortcutKeys.put(key, true);
+                return event.getRepeatCount() > 0 || onKeyDown(key, event);
+            }
+        }
         int character = event.getUnicodeChar();
         if (findFocus() instanceof EditText && character >= ' ' &&
                 Character.isValidCodePoint(character) && !event.isCtrlPressed() &&

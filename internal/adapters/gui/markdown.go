@@ -82,7 +82,7 @@ func (m *mdLayout) node(n *html.Node, s mdStyle) {
 		}
 		m.children(n, s)
 	case "br":
-		m.newline()
+		m.hardBreak()
 	case "hr":
 		m.finish()
 		m.rectangle(m.left, m.y+3, m.right-m.left, 1, mdBorder)
@@ -106,7 +106,7 @@ func (m *mdLayout) node(n *html.Node, s mdStyle) {
 			value := strings.TrimSuffix(n.FirstChild.FirstChild.Data, "\n")
 			for _, line := range strings.Split(value, "\n") {
 				m.word(strings.ReplaceAll(line, "\t", "    "), s)
-				m.newline()
+				m.hardBreak()
 			}
 		}
 		m.y += 4
@@ -147,6 +147,7 @@ func (m *mdLayout) list(n *html.Node, s mdStyle) {
 			index++
 		}
 		m.word(marker, s)
+		m.space = true
 		m.left = min(m.x+5, max(left, m.right-32))
 		m.x = m.left
 		first := true

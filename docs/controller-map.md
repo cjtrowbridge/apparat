@@ -38,7 +38,7 @@ cancels a held capture rather than submitting it.
 - `PageUp`, `PageDown`, `Home`, `End`: collection navigation.
 - Right `Ctrl`: hold to talk; release submits unless `Escape` cancelled it.
 
-Text fields preserve ordinary Debian editing and clipboard behavior. Global bindings use explicit modifiers so typing does not navigate the app.
+Text fields support Ctrl+A/C/X/V. Drag or touch and hold text in a chat bubble to select a passage. Use Ctrl+C or activate Copy selection in the message controls. Copy message copies the whole original message. Global bindings use explicit modifiers so typing does not navigate the app.
 
 ## Mouse And Touch
 

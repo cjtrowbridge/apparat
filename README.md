@@ -319,6 +319,8 @@ Arrows and the Steam Deck D-pad switch tabs immediately along the tab bar. Move 
 
 When a text editor or text field owns focus, ordinary Debian text-editing and clipboard behavior takes precedence over unmodified navigation keys. Global bindings use explicit modifiers so normal typing does not trigger application navigation.
 
+Use Ctrl+A, Ctrl+C, Ctrl+X and Ctrl+V in focused fields. In project and global chat, drag across a completed message and press Ctrl+C to copy the highlighted passage. On a touchscreen, hold a word, drag to extend the selection, then tap **Copy selection**. **Copy message** copies the entire original Markdown. In the interactive terminal, Ctrl+C sends an interrupt and Ctrl+Shift+V pastes. Linux uses the system clipboard through wl-clipboard on Wayland or an X11/XWayland display.
+
 ### Debian Headless
 
 Debian headless mode has no HUD focus map and must not initialize Ebitengine. It is operated through:

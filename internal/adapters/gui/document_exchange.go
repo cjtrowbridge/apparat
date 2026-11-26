@@ -115,32 +115,3 @@ func (g *Game) importDocument(w *workspacePanel, key [2]string, copy externalCop
 	delete(g.projects.externalCopies, key)
 	os.RemoveAll(copy.dir)
 }
-func (g *Game) copyDocument(s string) {
-	if s == "" {
-		return
-	}
-	g.projects.copiedText = s
-	if g.runtimeInfo.CopyText != nil {
-		g.runtimeInfo.CopyText(s)
-		return
-	}
-	for _, args := range [][]string{{"wl-copy"}, {"xclip", "-selection", "clipboard", "-in"}, {"xsel", "--clipboard", "--input"}, {"pbcopy"}, {"clip.exe"}} {
-		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Stdin = strings.NewReader(s)
-		if cmd.Run() == nil {
-			return
-		}
-	}
-}
-func (g *Game) pasteDocument() string {
-	if g.runtimeInfo.PasteText != nil {
-		return g.runtimeInfo.PasteText()
-	}
-	for _, args := range [][]string{{"wl-paste", "--no-newline"}, {"xclip", "-selection", "clipboard", "-out"}, {"xsel", "--clipboard", "--output"}, {"pbpaste"}} {
-		b, err := exec.Command(args[0], args[1:]...).Output()
-		if err == nil {
-			return string(b)
-		}
-	}
-	return g.projects.copiedText
-}

@@ -43,6 +43,8 @@ const (
 )
 
 type Game struct {
+	bubbleText                     bubbleTextSelection
+	clipboardNotice                clipboardNotice
 	actions                        actionScreen
 	nav                            navigation
 	voice                          voiceState
@@ -213,6 +215,7 @@ func (game *Game) Update() error {
 	game.globalTypingPress()
 	game.cancelSpeechBeforeEditing()
 	game.updatePointerState()
+	game.fieldClipboardKeys()
 	game.ui.Update()
 	game.clampBodyScroll()
 	game.enforceBodyTabScrollLock()
@@ -282,16 +285,6 @@ func (game *Game) applyUpdateStatus() {
 	}
 }
 
-func (game *Game) ActiveTabID() string {
-	{
-		id, ok := game.activeTabID.Load().(string)
-		if ok {
-			return id
-		}
-	}
-	return ""
-}
-
 func (game *Game) updateGamepad() {
 	for _, id := range ebiten.AppendGamepadIDs(nil) {
 		if !ebiten.IsStandardGamepadLayoutAvailable(id) {
@@ -344,6 +337,7 @@ func (game *Game) selectTabWithReveal(index int) {
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
+	defer game.drawClipboardNotice(screen)
 	screen.Fill(backgroundColor)
 	bg := game.actions.background
 	if bg != nil {

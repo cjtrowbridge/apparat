@@ -26,6 +26,7 @@ type bubbleTools struct {
 	row        *widget.Container
 	info       bubbleDetail
 	copy, open func()
+	passage    *selectableBubble
 }
 type bubbleSelection struct {
 	current *bubbleTools
@@ -94,14 +95,24 @@ func (g *Game) bubbleControls(b *widget.Container, source string, width int, use
 		content.AddChild(planningGear(), face)
 	} else {
 		face.GetWidget().CustomData = source
-		content.AddChild(&markdownButton{face, layoutMarkdown(source, width, g.prefs.Font)})
+		view := &markdownButton{face, layoutMarkdown(source, width, g.prefs.Font)}
+		tools.passage = &selectableBubble{view: view, tools: tools}
+		g.bubbleText.views = append(g.bubbleText.views, tools.passage)
+		content.AddChild(view)
 	}
 	tools.row = controlRow(b)
 	tools.row.AddChild(g.planningIcon("1f4cb", "Copy message", tools.copy), g.planningIcon("2139", "Message information", tools.open))
+	p := tools.passage
+	if p != nil {
+		p.copy = g.projectButton(tools.row, "Copy selection", func() {
+			g.copyDocument(p.selected())
+		})
+		p.copy.GetWidget().SetVisibility(widget.Visibility_Hide)
+	}
 	tools.row.GetWidget().SetVisibility(widget.Visibility_Hide)
 	b.GetWidget().CursorEnterEvent.AddHandler(func(any) {
 		s := &g.planning.bubbles
-		if s.current != tools {
+		if s.current != tools && g.bubbleText.active == nil {
 			s.show(tools, false)
 		}
 	})
@@ -123,6 +134,12 @@ func (g *Game) bubbleActions(add registerAction) {
 	project := g.inWorkspace() && w.mode == "conversation" && strings.HasPrefix(t.info.id, w.id+"/"+w.thread+"/")
 	if global || project {
 		add("chat-message", t.info.id, "copy", "Copy message", "Chat / Selected message / Copy", t.copy)
+		p := t.passage
+		if p != nil && p.selected() != "" {
+			add("chat-message", t.info.id, "copy-selection", "Copy selection", "Chat / Selected message / Copy selection", func() {
+				g.copyDocument(p.selected())
+			})
+		}
 		add("chat-message", t.info.id, "info", "Message information", "Chat / Selected message / Information", t.open)
 	}
 }

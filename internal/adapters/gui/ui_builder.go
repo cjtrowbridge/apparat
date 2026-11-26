@@ -13,6 +13,7 @@ import (
 )
 
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
+	game.bubbleText.reset()
 	if game.actions.mode != "" {
 		game.buildActionScreen()
 		return
