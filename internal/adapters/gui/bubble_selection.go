@@ -32,13 +32,24 @@ func (p *selectableBubble) position(x, y int) int {
 	return p.view.layout.position(float64(x-r.Min.X), float64(y-r.Min.Y))
 }
 
+func (p *selectableBubble) showCopy(show bool) {
+	visible := widget.Visibility_Hide
+	if show {
+		visible = widget.Visibility_Show
+	}
+	if p.copy.GetWidget().GetVisibility() != visible {
+		p.copy.GetWidget().SetVisibility(visible)
+		p.tools.row.RequestRelayout()
+	}
+}
+
 type bubbleTextSelection struct {
-	views           []*selectableBubble
-	pending, active *selectableBubble
-	start           image.Point
-	anchor          int
-	held            time.Time
-	dragging        bool
+	views                      []*selectableBubble
+	pending, active            *selectableBubble
+	start                      image.Point
+	anchor, wordStart, wordEnd int
+	held                       time.Time
+	dragging                   bool
 }
 
 func (s *bubbleTextSelection) reset() {
@@ -48,7 +59,7 @@ func (s *bubbleTextSelection) clear() {
 	if s.active != nil {
 		s.active.view.layout.selectionStart = 0
 		s.active.view.layout.selectionEnd = 0
-		s.active.copy.GetWidget().SetVisibility(widget.Visibility_Hide)
+		s.active.showCopy(false)
 		s.active = nil
 	}
 }
@@ -87,15 +98,13 @@ func (g *Game) selectPassage(a, b int) {
 	p := s.pending
 	m := p.view.layout
 	m.selectionStart, m.selectionEnd = min(a, b), max(a, b)
+	if !s.dragging {
+		g.ui.ClearFocus()
+		g.planning.bubbles.show(p.tools, true)
+	}
 	s.active = p
 	s.dragging = true
-	g.ui.ClearFocus()
-	g.planning.bubbles.show(p.tools, true)
-	visible := widget.Visibility_Hide
-	if a != b {
-		visible = widget.Visibility_Show
-	}
-	p.copy.GetWidget().SetVisibility(visible)
+	p.showCopy(a != b)
 }
 func (g *Game) finishBubble() {
 	if g.bubbleText.dragging {
@@ -139,11 +148,12 @@ func (g *Game) updateBubbleTouch() {
 		return
 	}
 	if !s.dragging && time.Since(s.held) >= 450*time.Millisecond {
-		a, b := wordAt(s.pending.view.layout.plain.String(), s.anchor)
-		g.selectPassage(a, b)
+		s.wordStart, s.wordEnd = wordAt(s.pending.view.layout.plain.String(), s.anchor)
+		g.selectPassage(s.wordStart, s.wordEnd)
 		return
 	}
 	if s.dragging && dx*dx+dy*dy > 16 {
-		g.selectPassage(s.anchor, s.pending.position(x, y))
+		pos := s.pending.position(x, y)
+		g.selectPassage(min(s.wordStart, pos), max(s.wordEnd, pos))
 	}
 }

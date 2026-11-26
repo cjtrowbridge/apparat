@@ -295,6 +295,25 @@ func TestBubbleActionsAndReturn(t *testing.T) {
 		if copied != source {
 			t.Fatal("copy changed original text")
 		}
+		g.bubbleText.pending = tools.passage
+		g.selectPassage(0, 4)
+		renderNavigation(g)
+		selected := g.queryActions("Copy selection", false)
+		if len(selected.Choices) != 1 || tools.passage.copy.GetWidget().Rect.Empty() {
+			t.Fatal("selected passage copy unavailable")
+		}
+		tools.passage.copy.Click()
+		event.ExecuteDeferred()
+		if copied != "Keep" {
+			t.Fatal("copied markup or the whole message")
+		}
+		g.bubbleText.clear()
+		selected = g.queryActions("Copy selection", false)
+		for _, match := range selected.Choices {
+			if match.Address.Target == "copy-selection" {
+				t.Fatal("stale selection action")
+			}
+		}
 		g.globalDraft = "draft"
 		tools.open()
 		g.rebuildUI(g.shell.Snapshot())
