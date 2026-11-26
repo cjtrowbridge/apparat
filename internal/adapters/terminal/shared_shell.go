@@ -80,9 +80,6 @@ func (h *Host) sharedCommand(chat string, q domain.WorkspaceRequest, device stri
 	if shell == nil || shell.control != device {
 		return v, errors.New("the selected terminal must be running and controlled by this device")
 	}
-	if shell.personal && !q.Approved {
-		return v, errors.New("host-account terminals require individual command approval")
-	}
 	if shell.job != "" {
 		h.refreshShared(shell)
 		if shell.job != "" {

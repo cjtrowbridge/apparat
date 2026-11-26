@@ -1,6 +1,6 @@
 //go:build linux && !android
 
-// Exercises local account access, shell selection and receipt replay with a disposable checkout.
+// Exercises local account access, shell selection, yolo auto-dispatch and receipt replay with a disposable checkout.
 package terminal
 
 import (
@@ -69,17 +69,35 @@ func TestLocalHostShellGrantsAndRecovery(t *testing.T) {
 	q.ID = job
 	q.Deadline = time.Now().Add(time.Minute)
 	command := "printf x >> receipt-test; sleep 0.1; pwd"
-	_, err = call("local", "shared-command", command)
-	if err == nil {
-		t.Fatal("automatic command reached host account")
+	v, err = call("local", "shared-command", command)
+	if err != nil || v.Detail != "Running" {
+		t.Fatal("yolo automatic command did not run on the host account", v, err)
+	}
+	for time.Now().Before(until) {
+		v, err = call("local", "result", command)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.HasPrefix(v.Detail, "Exited") {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if v.Detail != "Exited 0" {
+		t.Fatal(v)
 	}
 	_, err = call("local", "permission-set", "always-ask")
 	if err != nil {
 		t.Fatal(err)
 	}
+	q.Approved = false
+	_, err = call("local", "shared-command", command)
+	if err == nil {
+		t.Fatal("always-ask accepted a command without approval")
+	}
 	q.Approved = true
 	v, err = call("local", "shared-command", command)
-	if err != nil || v.Detail != "Running" {
+	if err != nil || v.Detail != "Exited 0" {
 		t.Fatal(v, err)
 	}
 	for time.Now().Before(until) {

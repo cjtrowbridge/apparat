@@ -15,5 +15,5 @@ Linux hosts run an isolated PTY with a read-only project, private temporary stor
 Chat-scoped workspace actions use the `chat-terminal-` prefix and require a canonical chat session ID in `Thread`. The host stores these sessions under the user and project terminal directory in `chats/<thread>/<terminal>`. The original project terminal actions retain their existing directories. Each scope has independent paging, live control and retained screens.
 
 - `chat_policy.go`: Stores the chat's private permission setting and binds a tracked command to its exact bytes and deadline. The job ID names a receipt under the chat’s jobs directory and binds the command to its selected terminal. An interrupted process with no saved exit status has an unknown outcome.
-- `shared_shell.go`: Binds a tracked job to the selected interactive shell and records its completion for reconnecting clients.
-- `host_account_linux_test.go`: Checks local host-account shell grants, persisted selection and one-time command delivery using a disposable checkout.
+- `shared_shell.go`: Binds a tracked job to the selected interactive shell and records its completion for reconnecting clients. Permission mode alone gates execution: Yolo dispatches without approval in any selected shell and Always Ask requires it in every shell.
+- `host_account_linux_test.go`: Checks local host-account shell grants, peer denial, Yolo auto-dispatch, Always Ask approval, persisted selection and one-time command delivery using a disposable checkout.

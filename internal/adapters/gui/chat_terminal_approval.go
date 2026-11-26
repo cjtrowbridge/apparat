@@ -113,10 +113,6 @@ func (g *Game) serviceChatTerminalWait(a modelAddress, t *chatTerminalPane, w *d
 	if t.tracking == w.Job {
 		return false
 	}
-	if t.permission == "yolo" && t.environment == "Local host account" {
-		g.terminalResult(a, t, w.Job, "The selected host-account shell requires Always Ask.", true)
-		return true
-	}
 	if t.permission == "yolo" {
 		g.requestChatTerminal(a, t, "approved", w.Job, w.Command)
 		return true
@@ -152,7 +148,7 @@ func (g *Game) chatPermissionPage(c *widget.Container, a modelAddress, t *chatTe
 	for _, o := range []struct{ label, icon, mode, help string }{
 		{"Read-Only", "1f512", "read-only", "You control the terminal. The agent can observe its screen."},
 		{"Always Ask", "1f50d", "always-ask", "Review and approve each agent command or other tool that makes changes."},
-		{"Yolo", "1f985", "yolo", "Run commands automatically in this chat’s isolated terminal. It can read the mounted checkout and write temporary files. Network access is disabled."},
+		{"Yolo", "1f985", "yolo", "Run agent commands automatically in this chat’s selected terminal without per-command approval. The isolated shell stays offline; the host-account shell runs with your account’s privileges and network."},
 	} {
 		row := controlRow(c)
 		b := g.planningIcon(o.icon, o.label, func() {
