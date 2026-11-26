@@ -4,9 +4,11 @@
 // Without an attached Activity there is no foreground clipboard owner.
 package gui
 
-func systemCopy(string) bool {
-	return false
+import "errors"
+
+func systemCopy(string) error {
+	return errors.New("Copy unavailable. Reopen Apparat to reconnect the Android clipboard.")
 }
-func systemPaste() string {
-	return ""
+func systemPaste() (string, error) {
+	return "", errors.New("Paste unavailable. Reopen Apparat to reconnect the Android clipboard.")
 }

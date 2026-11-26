@@ -25,26 +25,11 @@ public final class DocumentEditor implements Editor {
     DocumentEditor(Activity activity) {
         this.activity = activity;
     }
-    @Override public boolean copyText(String value) {
-        android.content.ClipboardManager clipboard = activity.getSystemService(android.content.ClipboardManager.class);
-        try {
-            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Apparat", value));
-            return true;
-        } catch (RuntimeException ex) {
-            return false;
-        }
+    @Override public void copyText(String value) throws Exception {
+        ClipboardTransfer.run(activity, value);
     }
-    @Override public String pasteText() {
-        android.content.ClipboardManager clipboard = activity.getSystemService(android.content.ClipboardManager.class);
-        android.content.ClipData clip;
-        try {
-            clip = clipboard.getPrimaryClip();
-        } catch (RuntimeException ex) {
-            return "";
-        }
-        if (clip == null || clip.getItemCount() == 0) return "";
-        CharSequence text = clip.getItemAt(0).getText();
-        return text == null ? "" : text.toString();
+    @Override public String pasteText() throws Exception {
+        return ClipboardTransfer.run(activity, null);
     }
     public void close() {
         if (active != null) active.dismiss();

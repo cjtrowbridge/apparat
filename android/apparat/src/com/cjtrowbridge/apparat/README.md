@@ -39,3 +39,5 @@ Native speech revisions replace the selected range directly. Cancelling restores
 When testing the planning prompt, inspect the first frame that settles after the keyboard opens, before typing. The bottom of the HUD should meet the keyboard and the heading should remain visible. Repeat after typing and after dismissal and reopening. On Android 11 and newer the activity fits the canvas above the IME. Canvas editors use a top-edge vertical IME anchor so the engine keeps the resized surface stationary from the first frame. The editor draws its caret at the current selection.
 
 LanBrowser resolves saved worker service names directly on the foreground Wi-Fi network. This allows pinned connections to resume after a worker has withdrawn from the new-device browser.
+
+- `ClipboardTransfer.java`: Reads or writes through the focused Activity, retries transient access loss, and reports empty, unsupported and denied transfers without recording clipboard contents.

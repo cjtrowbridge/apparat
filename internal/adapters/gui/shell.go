@@ -15,8 +15,8 @@ type Adapter struct {
 
 type RuntimeInfo struct {
 	CanvasFitsKeyboard bool
-	CopyText           func(string) bool
-	PasteText          func() string
+	CopyText           func(string) error
+	PasteText          func() (string, error)
 	DeviceName         string
 	BrowseLAN          func(bool) string
 	CheckWorker        func(string)

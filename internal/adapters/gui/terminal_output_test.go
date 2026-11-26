@@ -43,9 +43,9 @@ func TestTerminalOutputClipboard(t *testing.T) {
 			t.Fatal("lost selection on refresh")
 		}
 		var copied string
-		g.runtimeInfo.CopyText = func(s string) bool {
+		g.runtimeInfo.CopyText = func(s string) error {
 			copied = s
-			return true
+			return nil
 		}
 		g.bodyScrollCancelUpdates = 0
 		p.copy.Click()
@@ -59,8 +59,8 @@ func TestTerminalOutputClipboard(t *testing.T) {
 		if g.terminalOutput != o || p.selected() != value {
 			t.Fatal("same terminal lost snapshot")
 		}
-		g.runtimeInfo.PasteText = func() string {
-			return "echo café"
+		g.runtimeInfo.PasteText = func() (string, error) {
+			return "echo café", nil
 		}
 		cPressed := func(key ebiten.Key) bool {
 			return key == ebiten.KeyC
@@ -179,9 +179,9 @@ func TestProjectTerminalClipboardViews(t *testing.T) {
 		g.selectPassage(0, 4)
 		g.finishBubble()
 		var copied string
-		g.runtimeInfo.CopyText = func(value string) bool {
+		g.runtimeInfo.CopyText = func(value string) error {
 			copied = value
-			return true
+			return nil
 		}
 		o.copySelection()
 		if copied != "clip" {

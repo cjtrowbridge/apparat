@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"errors"
 	"github.com/hajimehoshi/ebiten/v2"
 	"strings"
 	"testing"
@@ -18,27 +19,27 @@ func TestClipboardFieldRanges(t *testing.T) {
 	for range 3 {
 		f.CursorMoveLeft()
 	}
-	g.runtimeInfo.PasteText = func() string {
-		return "🙂"
+	g.runtimeInfo.PasteText = func() (string, error) {
+		return "🙂", nil
 	}
 	g.fieldClipboard(f, ebiten.KeyV)
 	if f.GetText() != "é foo 🙂foo" {
 		t.Fatal("paste at Unicode caret", f.GetText())
 	}
 	f.SelectAll()
-	g.runtimeInfo.CopyText = func(value string) bool {
+	g.runtimeInfo.CopyText = func(value string) error {
 		if value != f.GetText() {
 			t.Fatal("inexact Unicode copy")
 		}
-		return false
+		return errors.New("Clipboard write refused.")
 	}
 	g.fieldClipboard(f, ebiten.KeyX)
 	a, b, ok := fieldSelection(f)
 	if !ok || a != 0 || b != 10 || f.GetText() != "é foo 🙂foo" {
 		t.Fatal("failed cut mutated field", a, b)
 	}
-	g.runtimeInfo.PasteText = func() string {
-		return ""
+	g.runtimeInfo.PasteText = func() (string, error) {
+		return "", nil
 	}
 	g.fieldClipboard(f, ebiten.KeyV)
 	if f.GetText() != "é foo 🙂foo" {
@@ -58,5 +59,37 @@ func TestClipboardMarkdownOffsets(t *testing.T) {
 				t.Fatal("run offset", r)
 			}
 		}
+	}
+}
+
+func TestPasteDiagnosticsPreserveSelection(t *testing.T) {
+	g := NewGame()
+	defer g.Close()
+	f := g.newProjectInput("keep me", ignoreDocumentTextChange)
+	f.SelectAll()
+	for _, tc := range []struct {
+		value string
+		err   error
+		want  string
+	}{
+		{"", nil, "Nothing to paste."},
+		{"a\x00b", nil, "NUL character"},
+		{"\xff", nil, "invalid UTF-8"},
+		{"", errors.New("Clipboard access denied by policy."), "denied by policy"},
+	} {
+		g.runtimeInfo.PasteText = func() (string, error) {
+			return tc.value, tc.err
+		}
+		g.fieldClipboard(f, ebiten.KeyV)
+		if !strings.Contains(g.clipboardNotice.message, tc.want) || f.GetText() != "keep me" {
+			t.Fatal("incorrect diagnostic or paste changed selection", g.clipboardNotice.message)
+		}
+	}
+	g.runtimeInfo.PasteText = func() (string, error) {
+		return "recovered", nil
+	}
+	g.fieldClipboard(f, ebiten.KeyV)
+	if f.GetText() != "recovered" || g.clipboardNotice.message != "" {
+		t.Fatal("retry lost selection or retained stale error")
 	}
 }

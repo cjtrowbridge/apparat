@@ -24,29 +24,47 @@ type clipboardNotice struct {
 }
 
 func (g *Game) clipboardError(message string) {
-	g.clipboardNotice = clipboardNotice{message, time.Now().Add(4 * time.Second)}
+	g.clipboardNotice = clipboardNotice{message, time.Now().Add(8 * time.Second)}
 }
 
 func (g *Game) drawClipboardNotice(dst *ebiten.Image) {
 	n := g.clipboardNotice
 	if time.Now().Before(n.until) {
-		vector.FillRect(dst, 0, 0, float32(dst.Bounds().Dx()), 28, color.Black, false)
-		ebitenutil.DebugPrintAt(dst, n.message, 8, 5)
+		words := strings.Fields(n.message)
+		width := max(1, (dst.Bounds().Dx()-16)/6)
+		lines := []string{""}
+		for _, word := range words {
+			last := len(lines) - 1
+			if lines[last] != "" && len(lines[last])+1+len(word) > width {
+				lines = append(lines, word)
+			} else {
+				lines[last] = strings.TrimSpace(lines[last] + " " + word)
+			}
+		}
+		vector.FillRect(dst, 0, 0, float32(dst.Bounds().Dx()), float32(len(lines)*16+10), color.Black, false)
+		ebitenutil.DebugPrintAt(dst, strings.Join(lines, "\n"), 8, 5)
 	}
 }
 
 func (g *Game) copyDocument(value string) bool {
 	if value == "" {
+		g.clipboardError("Nothing to copy. Select some text first.")
+		return false
+	}
+	if !utf8.ValidString(value) || strings.ContainsRune(value, 0) {
+		g.clipboardError("Copy failed. The selection contains invalid UTF-8 or a NUL character.")
 		return false
 	}
 	copyText := g.runtimeInfo.CopyText
 	if copyText == nil {
 		copyText = systemCopy
 	}
-	if !copyText(value) {
-		g.clipboardError("Copy failed. Check system clipboard access.")
+	err := copyText(value)
+	if err != nil {
+		g.clipboardError(err.Error())
 		return false
 	}
+	g.clipboardNotice = clipboardNotice{}
 	return true
 }
 
@@ -55,11 +73,22 @@ func (g *Game) pasteInto(insert func(string)) {
 	if paste == nil {
 		paste = systemPaste
 	}
-	value := paste()
-	if value == "" || !utf8.ValidString(value) || strings.ContainsRune(value, 0) {
-		g.clipboardError("Paste needs text from the system clipboard.")
+	value, err := paste()
+	switch {
+	case err != nil:
+		g.clipboardError(err.Error())
+		return
+	case value == "":
+		g.clipboardError("Nothing to paste. Copy some text first.")
+		return
+	case !utf8.ValidString(value):
+		g.clipboardError("Paste failed. The clipboard text contains an invalid UTF-8 sequence.")
+		return
+	case strings.ContainsRune(value, 0):
+		g.clipboardError("Paste failed. The clipboard contains a NUL character. Copy plain text from the source app.")
 		return
 	}
+	g.clipboardNotice = clipboardNotice{}
 	insert(value)
 }
 

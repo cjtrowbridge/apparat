@@ -1,38 +1,41 @@
-//go:build gui && !android
+//go:build gui && !android && !linux
 
-// Exchanges UTF-8 text through the native system clipboard.
-// Wayland sessions prefer the compositor clipboard and fall back to XWayland.
+// Exchanges text with the system clipboard on Windows and macOS.
+// A busy clipboard gets a short retry before an error reaches the editor.
 package gui
 
 import (
-	"os"
-	"os/exec"
-	"runtime"
-	"strings"
+	"errors"
+	"time"
 
 	"golang.design/x/clipboard"
 )
 
-func systemCopy(value string) bool {
-	if runtime.GOOS == "linux" && os.Getenv("WAYLAND_DISPLAY") != "" {
-		cmd := exec.Command("wl-copy", "--type", "text/plain;charset=utf-8")
-		cmd.Stdin = strings.NewReader(value)
-		if cmd.Run() == nil {
-			return true
-		}
+func systemCopy(value string) error {
+	err := clipboard.Init()
+	if err != nil {
+		return errors.New("Copy failed. Apparat could not connect to the desktop clipboard.")
 	}
-	return clipboard.Init() == nil && clipboard.Write(clipboard.FmtText, []byte(value)) != nil
+	for i := 0; i < 3; i++ {
+		if clipboard.Write(clipboard.FmtText, []byte(value)) != nil {
+			return nil
+		}
+		time.Sleep(40 * time.Millisecond)
+	}
+	return errors.New("Copy failed. The desktop refused the clipboard write after three attempts.")
 }
 
-func systemPaste() string {
-	if runtime.GOOS == "linux" && os.Getenv("WAYLAND_DISPLAY") != "" {
-		b, err := exec.Command("wl-paste", "--no-newline", "--type", "text").Output()
-		if err == nil {
-			return string(b)
+func systemPaste() (string, error) {
+	err := clipboard.Init()
+	if err != nil {
+		return "", errors.New("Paste failed. Apparat could not connect to the desktop clipboard.")
+	}
+	for i := 0; i < 3; i++ {
+		b := clipboard.Read(clipboard.FmtText)
+		if b != nil {
+			return string(b), nil
 		}
+		time.Sleep(40 * time.Millisecond)
 	}
-	if clipboard.Init() != nil {
-		return ""
-	}
-	return string(clipboard.Read(clipboard.FmtText))
+	return "", errors.New("Nothing to paste. The desktop supplied no text after three attempts. Copy plain text from the source app.")
 }

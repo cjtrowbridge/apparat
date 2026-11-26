@@ -6,12 +6,13 @@ package apparatmobile
 
 import (
 	"encoding/json"
+	"errors"
 	"sync"
 )
 
 type Editor interface {
-	CopyText(value string) bool
-	PasteText() string
+	CopyText(value string) error
+	PasteText() (string, error)
 	Prompt(title, value string, singleLine bool) string
 }
 
@@ -40,19 +41,21 @@ func promptValue(title, value string, singleLine bool) (string, bool) {
 	return *result, true
 }
 
-func copyText(text string) bool {
+func copyText(text string) error {
 	editor.RLock()
-	defer editor.RUnlock()
-	if editor.host != nil {
-		return editor.host.CopyText(text)
+	host := editor.host
+	editor.RUnlock()
+	if host != nil {
+		return host.CopyText(text)
 	}
-	return false
+	return errors.New("Copy unavailable. Reopen Apparat to reconnect the Android clipboard.")
 }
-func pasteText() string {
+func pasteText() (string, error) {
 	editor.RLock()
-	defer editor.RUnlock()
-	if editor.host != nil {
-		return editor.host.PasteText()
+	host := editor.host
+	editor.RUnlock()
+	if host != nil {
+		return host.PasteText()
 	}
-	return ""
+	return "", errors.New("Paste unavailable. Reopen Apparat to reconnect the Android clipboard.")
 }

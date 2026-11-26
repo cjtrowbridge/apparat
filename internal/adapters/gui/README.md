@@ -257,7 +257,7 @@ Project conversation pages share the global chat bubble and gear renderer. The w
 - `chat_terminal_surface.go`: Renders the live terminal grid and forwards focused keyboard, paste and input-method events to the selected session.
 
 - `clipboard.go`: routes focused field shortcuts, validates clipboard text and reports failed transfers without exposing its contents. The pinned widget keeps its selection coordinates private. The adapter reads those two rune indexes and writes through the validated public text setter.
-- `clipboard_desktop.go`: uses the system text clipboard on desktop and prefers wl-clipboard on Wayland. Linux also supports X11 and XWayland.
+- `clipboard_desktop.go`: retries system clipboard transfers on Windows and macOS when the native call returns no data.
 - `clipboard_android.go`: handles an unavailable Android bridge. The foreground Activity supplies native text clipboard operations.
 - `bubble_selection.go`: arbitrates mouse drag, stationary touch hold and swipe-to-scroll in completed chat messages. Tap Copy selection after a long press or use Ctrl+C.
 - `markdown_selection.go`: maps rendered positions to UTF-8 offsets and highlights ranges. Wrapping does not insert line breaks in copied text.
@@ -265,3 +265,6 @@ Project conversation pages share the global chat bubble and gear renderer. The w
 
 - `terminal_output.go`: Displays literal screen and history text, freezes the selected revision during updates and routes explicitly activated clipboard operations to the current terminal. The shared gesture owner handles drag, long press and scrolling. Copy uses displayed UTF-8 ranges and live paste enters the existing session queue.
 - `terminal_output_test.go`: Checks selection freeze, exact text, shortcut ownership, session changes, rendered clipboard controls and the live input queue.
+
+- `clipboard_linux.go`: Uses wl-clipboard when available and the bundled GTK helper for the desktop session. Copy helpers serve the selection until replaced.
+- `clipboard_linux.py`: Negotiates clipboard text targets, acquires a focused Wayland window when needed, and signals empty, unsupported, and undelivered selections separately.
