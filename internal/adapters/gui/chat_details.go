@@ -26,7 +26,7 @@ type bubbleTools struct {
 	row        *widget.Container
 	info       bubbleDetail
 	copy, open func()
-	passage    *selectableBubble
+	passage    *selectablePassage
 }
 type bubbleSelection struct {
 	current *bubbleTools
@@ -96,7 +96,7 @@ func (g *Game) bubbleControls(b *widget.Container, source string, width int, use
 	} else {
 		face.GetWidget().CustomData = source
 		view := &markdownButton{face, layoutMarkdown(source, width, g.prefs.Font)}
-		tools.passage = &selectableBubble{view: view, tools: tools}
+		tools.passage = &selectablePassage{view: view.GetWidget(), layout: view.layout, tools: tools}
 		g.bubbleText.views = append(g.bubbleText.views, tools.passage)
 		content.AddChild(view)
 	}
@@ -104,6 +104,7 @@ func (g *Game) bubbleControls(b *widget.Container, source string, width int, use
 	tools.row.AddChild(g.planningIcon("1f4cb", "Copy message", tools.copy), g.planningIcon("2139", "Message information", tools.open))
 	p := tools.passage
 	if p != nil {
+		p.row = tools.row
 		p.copy = g.projectButton(tools.row, "Copy selection", func() {
 			g.copyDocument(p.selected())
 		})

@@ -5,7 +5,7 @@ package gui
 
 import (
 	"fmt"
-	uiinput "github.com/ebitenui/ebitenui/input"
+
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/exp/textinput"
@@ -14,7 +14,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"image"
 	"image/color"
-	"strings"
 )
 
 type chatTerminalSurface struct {
@@ -23,7 +22,7 @@ type chatTerminalSurface struct {
 	id      string
 	address modelAddress
 	t       *chatTerminalPane
-	face    text.Face
+	output  *terminalOutput
 	cell    float64
 	line    int
 	ime     textinput.Composer
@@ -32,9 +31,9 @@ type chatTerminalSurface struct {
 func (g *Game) newChatTerminalSurface(a modelAddress, t *chatTerminalPane) *chatTerminalSurface {
 	e := &chatTerminalSurface{TextInput: g.newProjectInput("", ignoreDocumentTextChange), g: g, address: a, id: t.selected, t: t}
 	e.GetWidget().CustomData = e
-	e.face = &text.GoTextFace{Source: terminalFont, Size: float64(max(10, min(16, g.prefs.Font)))}
-	e.cell, _ = text.Measure("M", e.face, 0)
-	e.line = int(e.face.Metrics().HAscent+e.face.Metrics().HDescent) + 2
+	size := float64(max(10, min(16, g.prefs.Font)))
+	e.cell = text.Advance("M", mdStyle{mono: true, size: size}.face())
+	e.line = terminalLineHeight(size)
 	e.ime.OnNewSession = func() *textinput.SessionOptions {
 		r := e.GetWidget().Rect.Inset(4)
 		return &textinput.SessionOptions{CaretBounds: image.Rect(r.Min.X, r.Min.Y, r.Min.X+2, r.Min.Y+e.line)}
@@ -52,6 +51,9 @@ func (e *chatTerminalSurface) PreferredSize() (int, int) {
 }
 func (e *chatTerminalSurface) enqueue(s string) {
 	t := e.t
+	if s == "" || e.id != t.selected {
+		return
+	}
 	if t.queueID != t.selected {
 		t.queue = ""
 		t.queueID = t.selected
@@ -60,6 +62,9 @@ func (e *chatTerminalSurface) enqueue(s string) {
 		t.notice = "Terminal input buffer full."
 		e.g.layoutDirty = true
 		return
+	}
+	if e.output != nil && e.g.bubbleText.active == &e.output.passage {
+		e.g.bubbleText.clear()
 	}
 	t.queue += s
 }
@@ -71,15 +76,13 @@ func (e *chatTerminalSurface) Render(screen *ebiten.Image) {
 	}
 	dst := screen.SubImage(clip).(*ebiten.Image)
 	dst.Fill(panelColor)
-	for i, line := range strings.Split(e.t.screen, "\n") {
-		y := r.Min.Y + 4 + i*e.line
-		if y >= clip.Max.Y {
-			break
-		}
-		op := &text.DrawOptions{}
-		op.GeoM.Translate(float64(r.Min.X+4), float64(y))
-		op.ColorScale.ScaleWithColor(color.White)
-		text.Draw(dst, strings.TrimRight(line, " "), e.face, op)
+	if e.output == nil {
+		return
+	}
+	e.output.update(e.t.screen, r.Dx())
+	e.output.passage.layout.paint(dst, r.Inset(4))
+	if e.output.frozen() {
+		return
 	}
 	var col, row int
 	_, err := fmt.Sscanf(e.t.caret, "%d,%d", &col, &row)
@@ -98,10 +101,6 @@ func (e *chatTerminalSurface) Update(info *widget.UpdateObject) {
 			e.t.size = size
 		}
 	}
-	x, y := uiinput.CursorPosition()
-	if image.Pt(x, y).In(r) && uiinput.MouseButtonJustPressedLayer(ebiten.MouseButtonLeft, e.GetWidget().EffectiveInputLayer()) {
-		e.g.ui.SetFocusedWidget(e.TextInput)
-	}
 	if !e.IsFocused() || e.t.permissionPage {
 		e.ime.Cancel()
 		return
@@ -113,16 +112,8 @@ func (e *chatTerminalSurface) Update(info *widget.UpdateObject) {
 		e.g.setNavTarget(e)
 		return
 	}
-	if ctrl && ebiten.IsKeyPressed(ebiten.KeyShift) && inpututil.IsKeyJustPressed(ebiten.KeyV) {
-		e.g.pasteInto(e.enqueue)
-		return
-	}
 	if ctrl {
-		for k := ebiten.KeyA; k <= ebiten.KeyZ; k++ {
-			if inpututil.IsKeyJustPressed(k) {
-				e.enqueue(string(byte(k - ebiten.KeyA + 1)))
-			}
-		}
+		e.controlKeys(ebiten.IsKeyPressed(ebiten.KeyShift), inpututil.IsKeyJustPressed)
 		return
 	}
 	for _, key := range []struct {
@@ -141,6 +132,26 @@ func (e *chatTerminalSurface) Update(info *widget.UpdateObject) {
 	handled, _ := e.ime.Update()
 	if !handled {
 		e.enqueue(string(ebiten.AppendInputChars(nil)))
+	}
+}
+
+func (e *chatTerminalSurface) controlKeys(shift bool, pressed func(ebiten.Key) bool) {
+	if shift {
+		if pressed(ebiten.KeyC) {
+			if e.output != nil {
+				e.output.copySelection()
+			}
+			return
+		}
+		if pressed(ebiten.KeyV) {
+			e.paste()
+			return
+		}
+	}
+	for k := ebiten.KeyA; k <= ebiten.KeyZ; k++ {
+		if pressed(k) {
+			e.enqueue(string(byte(k - ebiten.KeyA + 1)))
+		}
 	}
 }
 

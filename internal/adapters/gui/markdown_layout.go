@@ -65,6 +65,7 @@ type mdLayout struct {
 	plain                             strings.Builder
 	selectionStart, selectionEnd      int
 	runs                              []mdRun
+	terminalRows                      []int
 	left, right, x, y, height, extent float64
 	space                             bool
 	base                              float64
@@ -149,6 +150,9 @@ func (m *mdLayout) paint(dst *ebiten.Image, r image.Rectangle) {
 			continue
 		}
 		m.highlight(dst, run, x, y)
+		if run.value == "\t" && m.terminalRows != nil {
+			continue
+		}
 		c := color.Color(color.White)
 		if run.style.link {
 			c = color.RGBA{166, 208, 255, 255}

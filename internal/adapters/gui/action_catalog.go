@@ -24,7 +24,7 @@ type catalogAction struct {
 type registerAction func(kind, owner, id, name, path string, open func())
 
 func (g *Game) actionCatalog() []catalogAction {
-	var actions []catalogAction
+	actions := g.terminalClipboardActions()
 	add := func(kind, owner, id, name, path string, open func()) {
 		key := hud.ActionAddress{Operation: "open", Kind: kind, Owner: owner, Target: id}
 		actions = append(actions, catalogAction{hud.Destination{Address: key, Name: name, Path: path}, open})

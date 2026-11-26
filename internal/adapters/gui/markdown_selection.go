@@ -28,10 +28,33 @@ func (m *mdLayout) highlight(dst *ebiten.Image, r mdRun, x, y float64) {
 	face := r.style.face()
 	left := text.Advance(r.value[:a], face)
 	right := text.Advance(r.value[:b], face)
+	if m.terminalRows != nil && r.value == "\t" {
+		right = r.w
+	}
 	vector.FillRect(dst, float32(x+left), float32(y), float32(right-left), float32(r.style.size*1.35), selectionColor, false)
 }
 
 func (m *mdLayout) position(x, y float64) int {
+	rows := m.terminalRows
+	if len(rows) > 0 {
+		height := terminalLineHeight(m.base)
+		row := min(max(0, int(y)/height), len(rows)-1)
+		top := float64(row * height)
+		idx := sort.Search(len(m.runs), func(i int) bool {
+			return m.runs[i].y >= top
+		})
+		pos := rows[row]
+		for _, r := range m.runs[idx:] {
+			if r.y != top {
+				break
+			}
+			if x < r.x+r.w {
+				return runPosition(&r, x)
+			}
+			pos = r.start + len(r.value)
+		}
+		return pos
+	}
 	var best *mdRun
 	nearest := math.Inf(1)
 	for i := range m.runs {
@@ -48,6 +71,16 @@ func (m *mdLayout) position(x, y float64) int {
 	}
 	if best == nil {
 		return 0
+	}
+	return runPosition(best, x)
+}
+
+func runPosition(best *mdRun, x float64) int {
+	if best.value == "\t" {
+		if x < best.x+best.w/2 {
+			return best.start
+		}
+		return best.start + 1
 	}
 	if x <= best.x {
 		return best.start

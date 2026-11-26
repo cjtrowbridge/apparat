@@ -5,29 +5,28 @@
 package gui
 
 import (
-	"bytes"
 	"github.com/cjtrowbridge/apparat/internal/domain"
 	"github.com/ebitenui/ebitenui/widget"
-	et "github.com/hajimehoshi/ebiten/v2/text/v2"
-	"golang.org/x/image/font/gofont/gomono"
-	"image/color"
+
 	"time"
 )
 
-var terminalFont, _ = et.NewGoTextFaceSource(bytes.NewReader(gomono.TTF))
-
 func (g *Game) terminalScreen(c *widget.Container, w *workspacePanel) {
-	if w.report != "" {
-		if w.mode == "terminal-session" {
-			var face et.Face = &et.GoTextFace{Source: terminalFont, Size: max(8, min(15, g.detailTextMaxWidth()/48))}
-			c.AddChild(widget.NewText(widget.TextOpts.Text(w.report, &face, color.White)))
-		} else {
-			c.AddChild(g.detailText(w.report))
+	if w.mode == "terminal-session" || w.mode == "terminal-history" {
+		id := terminalOutputID{chat: modelAddress{project: w.id}, session: w.runID, page: w.mode}
+		if w.mode == "terminal-history" {
+			id.cursor = w.cursor
 		}
+		g.terminalTranscript(c, id, w.report)
+	} else if w.report != "" {
+		c.AddChild(g.detailText(w.report))
 	}
 	if w.mode == "terminal" {
 		for _, choice := range w.choices {
 			g.workspaceRow(c, choice.Label, func() {
+				if w.runID != choice.ID {
+					w.message = ""
+				}
 				w.runID = choice.ID
 				g.workspaceGo("terminal-session", "terminal-screen")
 			})
@@ -40,6 +39,7 @@ func (g *Game) terminalScreen(c *widget.Container, w *workspacePanel) {
 		}
 		if w.report == "" {
 			g.projectButton(c, "Start isolated terminal", func() {
+				w.message = ""
 				w.runID, _ = domain.NewID(time.Now(), nil)
 				g.workspaceRequest("terminal-start")
 			})

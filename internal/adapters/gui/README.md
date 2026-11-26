@@ -262,3 +262,6 @@ Project conversation pages share the global chat bubble and gear renderer. The w
 - `bubble_selection.go`: arbitrates mouse drag, stationary touch hold and swipe-to-scroll in completed chat messages. Tap Copy selection after a long press or use Ctrl+C.
 - `markdown_selection.go`: maps rendered positions to UTF-8 offsets and highlights ranges. Wrapping does not insert line breaks in copied text.
 - `clipboard_test.go`: verifies field edits, selection boundaries, failure recovery and Markdown copying.
+
+- `terminal_output.go`: Displays literal screen and history text, freezes the selected revision during updates and routes explicitly activated clipboard operations to the current terminal. The shared gesture owner handles drag, long press and scrolling. Copy uses displayed UTF-8 ranges and live paste enters the existing session queue.
+- `terminal_output_test.go`: Checks selection freeze, exact text, shortcut ownership, session changes, rendered clipboard controls and the live input queue.

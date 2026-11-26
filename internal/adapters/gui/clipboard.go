@@ -92,7 +92,9 @@ func (g *Game) fieldClipboardKeys() {
 	if !ok {
 		p := g.bubbleText.active
 		if p != nil && g.actions.mode == "" && inpututil.IsKeyJustPressed(ebiten.KeyC) {
-			g.copyDocument(p.selected())
+			if p.tools != nil || ebiten.IsKeyPressed(ebiten.KeyShift) {
+				g.copyDocument(p.selected())
+			}
 		}
 		return
 	}

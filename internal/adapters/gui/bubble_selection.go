@@ -17,35 +17,43 @@ import (
 
 var selectionColor = color.RGBA{R: 92, G: 95, B: 174, A: 255}
 
-type selectableBubble struct {
-	view  *markdownButton
-	tools *bubbleTools
-	copy  *widget.Button
+type selectablePassage struct {
+	view   *widget.Widget
+	layout *mdLayout
+	row    *widget.Container
+	inset  int
+	tap    func()
+	tools  *bubbleTools
+	copy   *widget.Button
 }
 
-func (p *selectableBubble) selected() string {
-	m := p.view.layout
+func (p *selectablePassage) selected() string {
+	m := p.layout
 	return m.plain.String()[m.selectionStart:m.selectionEnd]
 }
-func (p *selectableBubble) position(x, y int) int {
-	r := p.view.GetWidget().Rect
-	return p.view.layout.position(float64(x-r.Min.X), float64(y-r.Min.Y))
+func (p *selectablePassage) position(x, y int) int {
+	r := p.view.Rect
+	return p.layout.position(float64(x-r.Min.X-p.inset), float64(y-r.Min.Y-p.inset))
 }
 
-func (p *selectableBubble) showCopy(show bool) {
+func (p *selectablePassage) showCopy(show bool) {
+	if p.tools == nil {
+		p.copy.GetWidget().Disabled = !show
+		return
+	}
 	visible := widget.Visibility_Hide
 	if show {
 		visible = widget.Visibility_Show
 	}
 	if p.copy.GetWidget().GetVisibility() != visible {
 		p.copy.GetWidget().SetVisibility(visible)
-		p.tools.row.RequestRelayout()
+		p.row.RequestRelayout()
 	}
 }
 
 type bubbleTextSelection struct {
-	views                      []*selectableBubble
-	pending, active            *selectableBubble
+	views                      []*selectablePassage
+	pending, active            *selectablePassage
 	start                      image.Point
 	anchor, wordStart, wordEnd int
 	held                       time.Time
@@ -57,8 +65,8 @@ func (s *bubbleTextSelection) reset() {
 }
 func (s *bubbleTextSelection) clear() {
 	if s.active != nil {
-		s.active.view.layout.selectionStart = 0
-		s.active.view.layout.selectionEnd = 0
+		s.active.layout.selectionStart = 0
+		s.active.layout.selectionEnd = 0
 		s.active.showCopy(false)
 		s.active = nil
 	}
@@ -70,19 +78,18 @@ func (g *Game) beginBubble(x, y int, touch bool, id ebiten.TouchID) bool {
 	pt := image.Pt(x, y)
 	s := &g.bubbleText
 	p := s.active
-	if p != nil && pt.In(p.tools.row.GetWidget().Rect) {
-		return false
-	}
-	s.clear()
-	if g.verticalScrollAt(x, y) == nil {
+	if p != nil && pt.In(p.row.GetWidget().Rect) {
 		return false
 	}
 	for _, p := range s.views {
-		if !pt.In(p.view.GetWidget().Rect) || !p.view.GetWidget().EffectiveInputLayer().ActiveFor(x, y, uiinput.LayerEventTypeMouseButton) {
+		if p.layout == nil || !p.view.IsVisible() || !pt.In(p.view.Rect) || !p.view.EffectiveInputLayer().ActiveFor(x, y, uiinput.LayerEventTypeMouseButton) {
 			continue
 		}
 		if !g.claimGesture(gestureBubble, touch, id) {
 			return false
+		}
+		if !touch || s.active != p {
+			s.clear()
 		}
 		s.pending = p
 		s.start = pt
@@ -91,20 +98,36 @@ func (g *Game) beginBubble(x, y int, touch bool, id ebiten.TouchID) bool {
 		s.dragging = false
 		return true
 	}
+	s.clear()
 	return false
 }
 func (g *Game) selectPassage(a, b int) {
 	s := &g.bubbleText
 	p := s.pending
-	m := p.view.layout
+	m := p.layout
 	m.selectionStart, m.selectionEnd = min(a, b), max(a, b)
 	if !s.dragging {
-		g.ui.ClearFocus()
-		g.planning.bubbles.show(p.tools, true)
+		if p.tap != nil && !g.gesture.Touch {
+			p.tap()
+		} else {
+			g.ui.ClearFocus()
+		}
+		if p.tools != nil {
+			g.planning.bubbles.show(p.tools, true)
+		}
 	}
 	s.active = p
 	s.dragging = true
 	p.showCopy(a != b)
+}
+func (g *Game) tapPassage() {
+	s := &g.bubbleText
+	if s.pending != nil && !s.dragging {
+		s.clear()
+		if s.pending.tap != nil {
+			s.pending.tap()
+		}
+	}
 }
 func (g *Game) finishBubble() {
 	if g.bubbleText.dragging {
@@ -122,6 +145,7 @@ func (g *Game) bubbleMouse(x, y int) bool {
 	}
 	s := &g.bubbleText
 	if s.pending == nil || inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		g.tapPassage()
 		g.finishBubble()
 		return true
 	}
@@ -135,6 +159,7 @@ func (g *Game) updateBubbleTouch() {
 	s := &g.bubbleText
 	id := g.gesture.ID
 	if s.pending == nil || inpututil.IsTouchJustReleased(id) {
+		g.tapPassage()
 		g.finishBubble()
 		return
 	}
@@ -148,7 +173,7 @@ func (g *Game) updateBubbleTouch() {
 		return
 	}
 	if !s.dragging && time.Since(s.held) >= 450*time.Millisecond {
-		s.wordStart, s.wordEnd = wordAt(s.pending.view.layout.plain.String(), s.anchor)
+		s.wordStart, s.wordEnd = wordAt(s.pending.layout.plain.String(), s.anchor)
 		g.selectPassage(s.wordStart, s.wordEnd)
 		return
 	}

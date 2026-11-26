@@ -175,6 +175,12 @@ func (g *Game) chatWorkspace(bubbles *widget.ScrollContainer, a modelAddress, t 
 		} else {
 			reattachEditor(t.surface.TextInput)
 		}
+		e := t.surface
+		row := controlRow(head)
+		id := terminalOutputID{chat: a, session: t.selected, host: t.host, page: "live"}
+		e.output = g.bindOutput(id, e.GetWidget(), row, float64(max(10, min(16, g.prefs.Font))), e)
+		e.output.update(t.screen, g.chatSplitAvailable(a))
+		g.projectButton(row, "Paste", e.paste)
 		live.AddChild(head, t.surface)
 		term = live
 	}

@@ -43,6 +43,7 @@ const (
 )
 
 type Game struct {
+	terminalOutput                 *terminalOutput
 	bubbleText                     bubbleTextSelection
 	clipboardNotice                clipboardNotice
 	actions                        actionScreen

@@ -307,7 +307,7 @@ func (g *Game) chatTerminalContent(c *widget.Container, a modelAddress, t *chatT
 		return
 	}
 	if t.readingHistory {
-		c.AddChild(g.detailText(t.history))
+		g.terminalTranscript(c, terminalOutputID{chat: a, session: t.selected, host: t.host, page: "history", cursor: t.historyCursor}, t.history)
 		g.projectButton(c, "Return to live screen", func() {
 			t.readingHistory = false
 			g.requestChatTerminal(a, t, "screen", t.selected, "")
@@ -329,7 +329,10 @@ func (g *Game) chatTerminalContent(c *widget.Container, a modelAddress, t *chatT
 		return
 	}
 	if t.state != "Running" {
-		c.AddChild(g.detailText(t.state), g.detailText(t.screen))
+		c.AddChild(g.detailText(t.state))
+		if t.screen != "" {
+			g.terminalTranscript(c, terminalOutputID{chat: a, session: t.selected, host: t.host, page: "ended"}, t.screen)
+		}
 	}
 
 }

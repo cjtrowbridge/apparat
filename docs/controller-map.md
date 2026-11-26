@@ -116,3 +116,5 @@ With the global or project message editor focused, Enter or keypad Enter invokes
 Activate a conversation bubble to reveal Copy and Message information. The same row appears on hover. Navigate its buttons with Tab or D-pad. Back from Message information returns to the same chat.
 
 The gear beside Cluster Status opens the same Cluster settings page as the Cluster tab gear. Back returns to the selected status view. OpenAI and Cerebras are disabled placeholders.
+
+Select terminal output by dragging with a mouse or holding a word and dragging on touch. Activate the terminal’s Copy or Copy selection button with the shared keyboard or D-pad route, or use Ctrl+Shift+C. In live chat terminals the Paste button and Ctrl+Shift+V send clipboard text. Ctrl+C sends an interrupt and Ctrl+] returns focus to navigation. The Projects terminal input keeps pasted text as a draft until Send.

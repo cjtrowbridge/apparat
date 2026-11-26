@@ -14,6 +14,7 @@ import (
 
 func (game *Game) rebuildUI(snapshot hud.Snapshot) {
 	game.bubbleText.reset()
+	defer game.detachMissingOutput()
 	if game.actions.mode != "" {
 		game.buildActionScreen()
 		return

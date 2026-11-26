@@ -69,6 +69,44 @@ func TestIsolatedSession(t *testing.T) {
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
+	// Paste a command in two operations. Its side effect must wait for Enter.
+	input := func(value string) {
+		t.Helper()
+		q.Action, q.Argument = "terminal-input", value
+		_, err := call("phone")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	screen := func() string {
+		t.Helper()
+		q.Action = "terminal-screen"
+		view, err := call("phone")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return view.Report
+	}
+	waitFor := func(marker string) {
+		t.Helper()
+		until := time.Now().Add(5 * time.Second)
+		for !strings.Contains(screen(), marker) {
+			if time.Now().After(until) {
+				t.Fatalf("missing %q in disposable shell", marker)
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+	input("printf 'paste-%d\\n' 517; sleep 30")
+	waitFor("sleep 30")
+	if strings.Contains(screen(), "paste-517") {
+		t.Fatal("paste submitted prematurely")
+	}
+	input("\r")
+	waitFor("paste-517")
+	input("\x03")
+	input("printf 'interrupt-%d\\n' 518\r")
+	waitFor("interrupt-518")
 	q.Action = "terminal-resize"
 	q.Argument = "100x28"
 	_, err = call("phone")

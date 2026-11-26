@@ -189,7 +189,9 @@ func (g *Game) applyWorkspace(r *workspaceReply) {
 	case "terminal-start", "terminal-stop", "terminal-take", "terminal-input", "terminal-screen", "terminal-resize":
 		w.mode = "terminal-session"
 		w.selected.State = v.Detail
-		w.message = ""
+		if q.Action == "terminal-input" && (q.Argument == w.message || q.Argument == w.message+"\r") {
+			w.message = ""
+		}
 	case "changes":
 		w.changes = v.Changes
 	case "review":
